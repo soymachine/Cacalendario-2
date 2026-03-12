@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getMonthName, getDaysInMonth, getFirstDayOfMonth, toDateKey } from '../lib/dates';
 import { getEntriesForMonth, type PoopEntry } from '../lib/storage';
+import { asset } from '../lib/config';
 
 interface CalendarProps {
   onDayClick: (date: string, entry?: PoopEntry) => void;
@@ -85,7 +86,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
               style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
             >
               {hasEntry ? (
-                <img src="/poop-small.svg" alt="poop" className="w-7 h-7" />
+                <img src={asset('/poop-small.svg')} alt="poop" className="w-7 h-7" />
               ) : (
                 <span className="text-[#231f20]/40 text-xs font-medium">{day}</span>
               )}

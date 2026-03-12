@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatDateForDisplay, formatTime } from '../lib/dates';
 import { saveEntry, type PoopEntry } from '../lib/storage';
+import { asset } from '../lib/config';
 
 interface EditScreenProps {
   entry: PoopEntry;
@@ -41,7 +42,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
 
       {/* Logo */}
       <div className="flex justify-center pt-12 pb-6">
-        <img src="/logo.svg" alt="Cacalendario" className="w-20 h-[71px]" />
+        <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
       </div>
 
       <div className="flex-1 px-10 overflow-auto pb-32">

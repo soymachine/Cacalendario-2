@@ -5,6 +5,7 @@ import RegisterScreen from './RegisterScreen';
 import EditScreen from './EditScreen';
 import CongratsScreen from './CongratsScreen';
 import type { PoopEntry } from '../lib/storage';
+import { asset } from '../lib/config';
 
 type Screen = 'home' | 'register' | 'edit' | 'congrats';
 
@@ -31,7 +32,7 @@ export default function App() {
       <div className="flex flex-col min-h-screen">
         {/* Logo */}
         <div className="flex justify-center pt-12 pb-4">
-          <img src="/logo.svg" alt="Cacalendario" className="w-20 h-[71px]" />
+          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
         </div>
 
         {/* Calendar */}
@@ -47,7 +48,7 @@ export default function App() {
             className="w-full bg-black rounded-full py-5 flex items-center justify-center gap-4 active:scale-95 transition-transform"
           >
             <span className="text-white text-3xl">registrar</span>
-            <img src="/poop-button.svg" alt="" className="w-16 h-16" />
+            <img src={asset('/poop-button.svg')} alt="" className="w-16 h-16" />
           </button>
         </div>
       </div>

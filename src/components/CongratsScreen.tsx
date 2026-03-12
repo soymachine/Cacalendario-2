@@ -1,4 +1,5 @@
 import { formatDateForDisplay } from '../lib/dates';
+import { asset } from '../lib/config';
 
 interface CongratsScreenProps {
   date: string;
@@ -29,7 +30,7 @@ export default function CongratsScreen({ date, time, onClose }: CongratsScreenPr
 
         {/* Big poop emoji */}
         <div className="flex justify-center py-8">
-          <img src="/poop-big.svg" alt="Happy poop" className="w-64 h-64" />
+          <img src={asset('/poop-big.svg')} alt="Happy poop" className="w-64 h-64" />
         </div>
 
         {/* Date and time */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatDateLong, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry } from '../lib/storage';
+import { asset } from '../lib/config';
 
 interface RegisterScreenProps {
   onClose: () => void;
@@ -41,7 +42,7 @@ export default function RegisterScreen({ onClose, onSuccess }: RegisterScreenPro
 
       {/* Logo */}
       <div className="flex justify-center pt-12 pb-6">
-        <img src="/logo.svg" alt="Cacalendario" className="w-20 h-[71px]" />
+        <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
       </div>
 
       <div className="flex-1 px-10 overflow-auto pb-32">
@@ -94,7 +95,7 @@ export default function RegisterScreen({ onClose, onSuccess }: RegisterScreenPro
           className="w-full max-w-sm bg-black rounded-full py-5 flex items-center justify-center gap-4 active:scale-95 transition-transform"
         >
           <span className="text-white text-3xl">registrar</span>
-          <img src="/poop-button.svg" alt="" className="w-16 h-16" />
+          <img src={asset('/poop-button.svg')} alt="" className="w-16 h-16" />
         </button>
       </div>
     </div>
