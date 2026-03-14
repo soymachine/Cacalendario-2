@@ -31,7 +31,8 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-salmon flex flex-col min-h-screen z-50">
+    <div className="fixed inset-0 z-50 flex justify-center bg-salmon">
+    <div className="w-full max-w-md flex flex-col min-h-screen relative">
       {/* Close button */}
       <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -83,13 +84,13 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Escribe tus notas aquí..."
-          className="w-full mt-2 rounded-lg p-4 text-black text-base resize-none outline-none"
+          className="w-full mt-2 rounded-lg p-4 text-black text-base resize-none outline-none placeholder-white"
           style={{ minHeight: '220px', backgroundColor: 'rgba(255,255,255,0.28)' }}
         />
       </div>
 
       {/* Edit button */}
-      <div className="fixed bottom-8 left-0 right-0 flex justify-center px-10">
+      <div className="absolute bottom-8 left-0 right-0 flex justify-center px-10">
         <button
           onClick={handleSave}
           className="bg-black rounded-full px-12 py-4 active:scale-95 transition-transform"
@@ -97,6 +98,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           <span className="text-white text-3xl">editar</span>
         </button>
       </div>
+    </div>
     </div>
   );
 }

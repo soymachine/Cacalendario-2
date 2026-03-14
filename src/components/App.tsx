@@ -45,10 +45,10 @@ export default function App() {
         <div className="px-10 pb-10 mt-auto">
           <button
             onClick={() => setScreen('register')}
-            className="w-full bg-black rounded-full py-5 flex items-center justify-center gap-4 active:scale-95 transition-transform"
+            className="w-full bg-black rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
           >
-            <span className="text-white text-3xl">registrar</span>
-            <img src={asset('/poop-button.svg')} alt="" className="w-16 h-16" />
+            <span className="text-white text-xl">registrar</span>
+            <img src={asset('/poop-button.svg')} alt="" className="w-10 h-10" />
           </button>
         </div>
       </div>

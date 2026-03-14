@@ -11,7 +11,8 @@ export default function CongratsScreen({ date, time, onClose }: CongratsScreenPr
   const dayText = formatDateForDisplay(date);
 
   return (
-    <div className="fixed inset-0 bg-salmon flex flex-col min-h-screen z-50">
+    <div className="fixed inset-0 z-50 flex justify-center bg-salmon">
+    <div className="w-full max-w-md flex flex-col min-h-screen relative">
       {/* Close button */}
       <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -41,6 +42,7 @@ export default function CongratsScreen({ date, time, onClose }: CongratsScreenPr
           <p className="text-3xl text-black mt-1">{time}</p>
         </div>
       </div>
+    </div>
     </div>
   );
 }
