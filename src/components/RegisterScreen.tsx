@@ -32,7 +32,7 @@ export default function RegisterScreen({ onClose, onSuccess }: RegisterScreenPro
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-salmon">
-    <div className="w-full max-w-md flex flex-col min-h-screen relative">
+    <div className="w-full max-w-md flex flex-col h-screen relative">
       {/* Close button */}
       <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -42,18 +42,18 @@ export default function RegisterScreen({ onClose, onSuccess }: RegisterScreenPro
       </button>
 
       {/* Logo */}
-      <div className="flex justify-center pt-12 pb-6">
+      <div className="flex justify-center pt-12 pb-6 shrink-0">
         <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
       </div>
 
-      <div className="flex-1 px-10 overflow-auto pb-32">
+      <div className="flex-1 px-10 flex flex-col min-h-0">
         {/* Day */}
-        <p className="text-sm font-black text-black">DÍA</p>
-        <p className="text-3xl text-black mt-1">{dayText}</p>
+        <p className="text-sm font-black text-black shrink-0">DÍA</p>
+        <p className="text-3xl text-black mt-1 shrink-0">{dayText}</p>
 
         {/* Time */}
-        <p className="text-sm font-black text-black mt-4">HORA</p>
-        <div className="flex items-center gap-4 mt-1">
+        <p className="text-sm font-black text-black mt-4 shrink-0">HORA</p>
+        <div className="flex items-center gap-4 mt-1 shrink-0">
           {editingTime ? (
             <input
               type="time"
@@ -79,24 +79,24 @@ export default function RegisterScreen({ onClose, onSuccess }: RegisterScreenPro
         </div>
 
         {/* Notes */}
-        <p className="text-sm font-black text-black mt-6">NOTAS</p>
+        <p className="text-sm font-black text-black mt-6 shrink-0">NOTAS</p>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Escribe tus notas aquí..."
-          className="w-full mt-2 bg-white/28 rounded-lg p-4 text-black text-base resize-none outline-none placeholder-white"
-          style={{ minHeight: '250px', backgroundColor: 'rgba(255,255,255,0.28)' }}
+          className="w-full mt-2 flex-1 min-h-[80px] rounded-lg p-4 text-black text-base resize-none outline-none placeholder-white"
+          style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
         />
       </div>
 
       {/* Register button */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center px-10">
+      <div className="shrink-0 flex justify-center px-10 py-6">
         <button
           onClick={handleSave}
-          className="w-full max-w-sm bg-black rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+          className="w-full max-w-sm bg-black rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
         >
-          <span className="text-white text-xl">registrar</span>
-          <img src={asset('/poop-button.svg')} alt="" className="w-10 h-10" />
+          <span className="text-white text-lg">registrar</span>
+          <img src={asset('/poop-button.svg')} alt="" className="w-8 h-8" />
         </button>
       </div>
     </div>
