@@ -4,6 +4,7 @@ import DaysSinceCounter from './DaysSinceCounter';
 import RegisterScreen from './RegisterScreen';
 import EditScreen from './EditScreen';
 import CongratsScreen from './CongratsScreen';
+import StatsScreen from './StatsScreen';
 import AuthScreen from './AuthScreen';
 import ProfileScreen from './ProfileScreen';
 import ProfileButton from './ProfileButton';
@@ -12,7 +13,7 @@ import { syncOnLogin } from '../lib/sync';
 import type { PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'congrats' | 'auth' | 'profile';
+type Screen = 'home' | 'register' | 'edit' | 'congrats' | 'stats' | 'auth' | 'profile';
 
 function AppContent() {
   const { user } = useAuth();
@@ -77,6 +78,17 @@ function AppContent() {
         {/* Days since counter */}
         <DaysSinceCounter />
 
+        {/* Stats button */}
+        <div className="px-10 mb-2">
+          <button
+            onClick={() => setScreen('stats')}
+            className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+            style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
+          >
+            <span className="text-black text-base font-bold">📊 ver estadísticas</span>
+          </button>
+        </div>
+
         {/* Register button */}
         <div className="px-10 pb-10 mt-auto">
           <button
@@ -110,6 +122,10 @@ function AppContent() {
           time={congratsData.time}
           onClose={() => { setCongratsData(null); setScreen('home'); }}
         />
+      )}
+
+      {screen === 'stats' && (
+        <StatsScreen onClose={() => setScreen('home')} />
       )}
 
       {screen === 'auth' && (
