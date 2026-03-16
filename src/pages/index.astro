@@ -1,5 +1,6 @@
 ---
 import App from '../components/App';
+import { asset } from '../lib/config';
 ---
 
 <html lang="es">
@@ -8,8 +9,21 @@ import App from '../components/App';
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="generator" content={Astro.generator} />
     <title>Cacalendario</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href={asset('/favicon.svg')} />
+
+    <!-- PWA -->
+    <link rel="manifest" href={asset('/manifest.json')} />
+    <meta name="theme-color" content="#dd8273" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cacalendario" />
+    <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
+
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet" />
+
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
@@ -24,5 +38,16 @@ import App from '../components/App';
     <div style="max-width: 448px; margin: 0 auto; min-height: 100vh; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
       <App client:only="react" />
     </div>
+
+    <script define:vars={{ base: import.meta.env.BASE_URL }}>
+      if ('serviceWorker' in navigator) {
+        const swPath = base.endsWith('/') ? base + 'sw.js' : base + '/sw.js';
+        navigator.serviceWorker.register(swPath).then(() => {
+          console.log('Service Worker registered');
+        }).catch((err) => {
+          console.log('SW registration failed:', err);
+        });
+      }
+    </script>
   </body>
 </html>
