@@ -9,6 +9,12 @@ const TIME_SLOTS = [
   { label: 'Madrugada', emoji: '💤', range: [0, 6] },
 ];
 
+export interface BristolStats {
+  type: number;
+  emoji: string;
+  count: number;
+}
+
 export interface Stats {
   total: number;
   thisMonth: number;
@@ -19,6 +25,8 @@ export interface Stats {
   currentStreak: number;
   bestStreak: number;
   avgPerWeek: number;
+  bristolDistribution: BristolStats[];
+  bristolAvg: number | null;
 }
 
 export function computeStats(): Stats {
@@ -58,6 +66,9 @@ export function computeStats(): Stats {
   // Average per week
   const avgPerWeek = computeAvgPerWeek(entries);
 
+  // Bristol distribution
+  const { bristolDistribution, bristolAvg } = computeBristol(entries);
+
   return {
     total,
     thisMonth: thisMonthCount,
@@ -68,6 +79,8 @@ export function computeStats(): Stats {
     currentStreak,
     bestStreak,
     avgPerWeek,
+    bristolDistribution,
+    bristolAvg,
   };
 }
 
@@ -166,6 +179,31 @@ function computeAvgPerWeek(entries: PoopEntry[]) {
   const weeks = Math.max(1, (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
   return Math.round((entries.length / weeks) * 10) / 10;
+}
+
+function computeBristol(entries: PoopEntry[]) {
+  const EMOJIS = ['🫘', '🪵', '🌭', '🍌', '🫧', '☁️', '💧'];
+  const counts = [0, 0, 0, 0, 0, 0, 0];
+  let sum = 0;
+  let total = 0;
+
+  entries.forEach((e) => {
+    if (e.bristol && e.bristol >= 1 && e.bristol <= 7) {
+      counts[e.bristol - 1]++;
+      sum += e.bristol;
+      total++;
+    }
+  });
+
+  const bristolDistribution: BristolStats[] = EMOJIS.map((emoji, i) => ({
+    type: i + 1,
+    emoji,
+    count: counts[i],
+  }));
+
+  const bristolAvg = total > 0 ? Math.round((sum / total) * 10) / 10 : null;
+
+  return { bristolDistribution, bristolAvg };
 }
 
 function toKey(d: Date): string {

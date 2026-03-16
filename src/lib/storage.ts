@@ -6,6 +6,7 @@ export interface PoopEntry {
   time: string; // HH:mm
   notes: string;
   timestamp: number; // full timestamp for sorting
+  bristol?: number | null; // Bristol scale 1-7
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
