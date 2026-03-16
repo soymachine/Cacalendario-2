@@ -1,0 +1,153 @@
+import { useState } from 'react';
+import { useAuth } from '../lib/auth';
+import { asset } from '../lib/config';
+
+interface AuthScreenProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+type Mode = 'login' | 'signup';
+
+export default function AuthScreen({ onClose, onSuccess }: AuthScreenProps) {
+  const { signIn, signUp } = useAuth();
+  const [mode, setMode] = useState<Mode>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+    setLoading(true);
+
+    if (!email || !password) {
+      setError('Rellena todos los campos');
+      setLoading(false);
+      return;
+    }
+
+    if (mode === 'signup') {
+      const { error } = await signUp(email, password);
+      if (error) {
+        setError(error);
+      } else {
+        setSignupSuccess(true);
+      }
+    } else {
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(error);
+      } else {
+        onSuccess();
+      }
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-center bg-salmon">
+      <div className="w-full max-w-md flex flex-col h-screen relative">
+        {/* Close button */}
+        <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="12" fill="#231f20" />
+            <path d="M8 8L16 16M16 8L8 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+          </svg>
+        </button>
+
+        {/* Logo */}
+        <div className="flex justify-center pt-12 pb-6 shrink-0">
+          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
+        </div>
+
+        <div className="flex-1 px-10 flex flex-col min-h-0">
+          {signupSuccess ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <p className="text-3xl text-black mb-4">📧</p>
+              <p className="text-xl font-black text-black">¡Revisa tu email!</p>
+              <p className="text-base text-black mt-3">
+                Te hemos enviado un enlace de confirmación a <strong>{email}</strong>
+              </p>
+              <p className="text-sm text-black/60 mt-4">
+                Después de confirmar, vuelve aquí e inicia sesión.
+              </p>
+              <button
+                onClick={() => { setSignupSuccess(false); setMode('login'); setPassword(''); }}
+                className="mt-8 bg-black rounded-full px-10 py-3 active:scale-95 transition-transform"
+              >
+                <span className="text-white text-lg">iniciar sesión</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Title */}
+              <p className="text-2xl font-black text-black shrink-0">
+                {mode === 'login' ? 'INICIAR SESIÓN' : 'CREAR CUENTA'}
+              </p>
+              <p className="text-sm text-black/60 mt-1 shrink-0">
+                {mode === 'login'
+                  ? 'Sincroniza tus datos entre dispositivos'
+                  : 'Crea una cuenta para no perder tus registros'}
+              </p>
+
+              {/* Email */}
+              <p className="text-sm font-black text-black mt-6 shrink-0">EMAIL</p>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                autoComplete="email"
+                className="w-full mt-2 rounded-lg p-4 text-black text-base outline-none placeholder-white/60"
+                style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
+              />
+
+              {/* Password */}
+              <p className="text-sm font-black text-black mt-4 shrink-0">CONTRASEÑA</p>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                className="w-full mt-2 rounded-lg p-4 text-black text-base outline-none placeholder-white/60"
+                style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
+              />
+
+              {/* Error message */}
+              {error && (
+                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
+              )}
+
+              {/* Toggle mode */}
+              <button
+                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+                className="text-sm text-black/60 underline mt-4 shrink-0 text-left"
+              >
+                {mode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Submit button */}
+        {!signupSuccess && (
+          <div className="shrink-0 flex justify-center px-10 py-6">
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full max-w-sm bg-black rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+            >
+              <span className="text-white text-lg">
+                {loading ? '...' : mode === 'login' ? 'entrar' : 'crear cuenta'}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,3 +1,6 @@
+import { saveEntryToCloud } from './sync';
+import { supabase } from './supabase';
+
 export interface PoopEntry {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
@@ -6,6 +9,12 @@ export interface PoopEntry {
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
+
+// Helper to get current user ID (if logged in)
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
 
 export function getEntries(): PoopEntry[] {
   if (typeof window === 'undefined') return [];
@@ -26,6 +35,7 @@ export function getEntryForDate(date: string): PoopEntry | undefined {
 }
 
 export function saveEntry(entry: PoopEntry): void {
+  // Always save to localStorage
   const entries = getEntries();
   const idx = entries.findIndex((e) => e.date === entry.date);
   if (idx >= 0) {
@@ -35,6 +45,13 @@ export function saveEntry(entry: PoopEntry): void {
   }
   entries.sort((a, b) => a.timestamp - b.timestamp);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+
+  // Also save to cloud if user is logged in (fire and forget)
+  getCurrentUserId().then((userId) => {
+    if (userId) {
+      saveEntryToCloud(userId, entry);
+    }
+  });
 }
 
 export function getLastEntry(): PoopEntry | undefined {
