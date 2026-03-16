@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getDaysSinceLastEntry } from '../lib/storage';
 import { formatSinceDate } from '../lib/dates';
+import { usePreferences } from '../lib/usePreferences';
 
 export default function DaysSinceCounter() {
+  const { theme } = usePreferences();
   const [data, setData] = useState({ days: 0, hours: 0, sinceText: '' });
 
   const refresh = () => {
@@ -24,22 +26,22 @@ export default function DaysSinceCounter() {
   if (!data.sinceText) {
     return (
       <div className="px-7 py-4">
-        <p className="text-sm font-black text-black">DÍAS SIN OBRAR</p>
-        <p className="text-3xl font-normal text-black mt-1">Sin registros aún</p>
+        <p className="text-sm font-black" style={{ color: theme.text }}>DÍAS SIN OBRAR</p>
+        <p className="text-3xl font-normal mt-1" style={{ color: theme.text }}>Sin registros aún</p>
       </div>
     );
   }
 
   return (
     <div className="px-7 py-4">
-      <p className="text-sm font-black text-black">DÍAS SIN OBRAR</p>
+      <p className="text-sm font-black" style={{ color: theme.text }}>DÍAS SIN OBRAR</p>
       <div className="flex items-baseline gap-0 mt-1">
-        <span className="text-[80px] font-black text-black leading-none">{data.days}</span>
-        <span className="text-3xl font-normal text-black">días</span>
-        <span className="text-[80px] font-black text-black leading-none ml-1">{data.hours}</span>
-        <span className="text-3xl font-normal text-black"> horas</span>
+        <span className="text-[80px] font-black leading-none" style={{ color: theme.text }}>{data.days}</span>
+        <span className="text-3xl font-normal" style={{ color: theme.text }}>días</span>
+        <span className="text-[80px] font-black leading-none ml-1" style={{ color: theme.text }}>{data.hours}</span>
+        <span className="text-3xl font-normal" style={{ color: theme.text }}> horas</span>
       </div>
-      <p className="text-sm text-black mt-2">{data.sinceText}</p>
+      <p className="text-sm mt-2" style={{ color: theme.text }}>{data.sinceText}</p>
     </div>
   );
 }

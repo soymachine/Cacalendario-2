@@ -5,18 +5,21 @@ import RegisterScreen from './RegisterScreen';
 import EditScreen from './EditScreen';
 import CongratsScreen from './CongratsScreen';
 import StatsScreen from './StatsScreen';
+import SettingsScreen from './SettingsScreen';
 import AuthScreen from './AuthScreen';
 import ProfileScreen from './ProfileScreen';
 import ProfileButton from './ProfileButton';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
+import { usePreferences } from '../lib/usePreferences';
 import type { PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'congrats' | 'stats' | 'auth' | 'profile';
+type Screen = 'home' | 'register' | 'edit' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile';
 
 function AppContent() {
   const { user } = useAuth();
+  const { emoji, theme } = usePreferences();
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
@@ -51,24 +54,33 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-salmon relative">
+    <div className="min-h-screen relative" style={{ backgroundColor: theme.main }}>
       {/* Home screen */}
       <div className="flex flex-col min-h-screen">
-        {/* Profile button */}
-        <ProfileButton
-          onLoginClick={() => setScreen('auth')}
-          onProfileClick={() => setScreen('profile')}
-        />
+        {/* Top bar: settings + profile */}
+        <div className="flex items-center justify-between px-4 pt-4 shrink-0">
+          <button
+            onClick={() => setScreen('settings')}
+            className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
+            style={{ backgroundColor: theme.glass }}
+          >
+            <span className="text-lg">⚙️</span>
+          </button>
+          <ProfileButton
+            onLoginClick={() => setScreen('auth')}
+            onProfileClick={() => setScreen('profile')}
+          />
+        </div>
 
         {/* Logo */}
-        <div className="flex justify-center pt-12 pb-4">
+        <div className="flex justify-center pt-4 pb-4">
           <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
         </div>
 
         {/* Sync indicator */}
         {syncing && (
           <div className="flex justify-center">
-            <span className="text-xs text-black/50">Sincronizando...</span>
+            <span className="text-xs" style={{ color: `${theme.text}80` }}>Sincronizando...</span>
           </div>
         )}
 
@@ -83,9 +95,9 @@ function AppContent() {
           <button
             onClick={() => setScreen('stats')}
             className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-            style={{ backgroundColor: 'rgba(255,255,255,0.28)' }}
+            style={{ backgroundColor: theme.glass }}
           >
-            <span className="text-black text-base font-bold">📊 ver estadísticas</span>
+            <span className="text-base font-bold" style={{ color: theme.text }}>📊 ver estadísticas</span>
           </button>
         </div>
 
@@ -93,10 +105,15 @@ function AppContent() {
         <div className="px-10 pb-10 mt-auto">
           <button
             onClick={() => setScreen('register')}
-            className="w-full bg-black rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+            className="w-full rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+            style={{ backgroundColor: theme.text }}
           >
-            <span className="text-white text-xl">registrar</span>
-            <img src={asset('/poop-button.svg')} alt="" className="w-10 h-10" />
+            <span className="text-xl" style={{ color: theme.id === 'night' ? '#1a1a2e' : 'white' }}>registrar</span>
+            {emoji.char === 'svg' ? (
+              <img src={asset('/poop-button.svg')} alt="" className="w-10 h-10" />
+            ) : (
+              <span className="text-3xl">{emoji.char}</span>
+            )}
           </button>
         </div>
       </div>
@@ -126,6 +143,10 @@ function AppContent() {
 
       {screen === 'stats' && (
         <StatsScreen onClose={() => setScreen('home')} />
+      )}
+
+      {screen === 'settings' && (
+        <SettingsScreen onClose={() => setScreen('home')} />
       )}
 
       {screen === 'auth' && (
