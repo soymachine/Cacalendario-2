@@ -51,21 +51,30 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      // 1. Delete all entries from Supabase
-      await supabase
-        .from('entries')
-        .delete()
-        .eq('user_id', user.id);
+      // 1. Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      // 2. Clear local storage
+      if (session?.access_token) {
+        // 2. Call Edge Function to delete user + data server-side
+        const { error: fnError } = await supabase.functions.invoke('delete-user', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (fnError) {
+          console.error('Edge function error, falling back to client-side delete:', fnError);
+          // Fallback: delete entries client-side
+          await supabase.from('entries').delete().eq('user_id', user.id);
+          await supabase.auth.signOut();
+        }
+      } else {
+        // No session, just clean up what we can
+        await supabase.from('entries').delete().eq('user_id', user.id);
+        await supabase.auth.signOut();
+      }
+
+      // 3. Clear local storage
       localStorage.removeItem('cacalendario_entries');
       localStorage.removeItem('cacalendario_prefs');
-
-      // 3. Delete auth user (via Edge Function or sign out)
-      // Note: Supabase client-side can't delete the auth user directly.
-      // We sign out and the data is already deleted.
-      // For full auth deletion, an admin/edge function would be needed.
-      await supabase.auth.signOut();
 
       window.dispatchEvent(new Event('cacalendario-updated'));
       onClose();
