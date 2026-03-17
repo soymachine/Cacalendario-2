@@ -16,7 +16,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
   // 2. Get cloud entries
   const { data: cloudRows } = await supabase
     .from('entries')
-    .select('date, time, notes, timestamp, bristol')
+    .select('date, time, notes, timestamp, bristol, floats')
     .eq('user_id', userId);
 
   const cloudEntries: PoopEntry[] = (cloudRows || []).map((r) => ({
@@ -25,6 +25,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     notes: r.notes || '',
     timestamp: Number(r.timestamp),
     bristol: r.bristol ?? null,
+    floats: r.floats ?? null,
   }));
 
   // 3. Merge: for each date, keep the one with the latest timestamp
@@ -55,6 +56,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     notes: e.notes,
     timestamp: e.timestamp,
     bristol: e.bristol ?? null,
+    floats: e.floats ?? null,
   }));
 
   if (upsertData.length > 0) {
@@ -75,6 +77,7 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       notes: entry.notes,
       timestamp: entry.timestamp,
       bristol: entry.bristol ?? null,
+      floats: entry.floats ?? null,
     },
     { onConflict: 'user_id,date' }
   );

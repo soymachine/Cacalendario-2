@@ -13,6 +13,7 @@ const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export default function Calendar({ onDayClick }: CalendarProps) {
   const { emoji, theme } = usePreferences();
   const now = new Date();
+  const todayKey = toDateKey(now);
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [entries, setEntries] = useState<PoopEntry[]>([]);
@@ -77,13 +78,18 @@ export default function Calendar({ onDayClick }: CalendarProps) {
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const hasEntry = entryDates.has(dateKey);
           const entry = hasEntry ? entries.find((e) => e.date === dateKey) : undefined;
+          // Only allow clicking past or today dates (not future)
+          const isFuture = dateKey > todayKey;
 
           return (
             <button
               key={dateKey}
-              onClick={() => hasEntry ? onDayClick(dateKey, entry) : undefined}
+              onClick={() => {
+                if (isFuture) return;
+                onDayClick(dateKey, entry);
+              }}
               className={`aspect-square rounded-full flex items-center justify-center text-sm relative ${
-                hasEntry ? 'cursor-pointer active:scale-95' : 'cursor-default'
+                isFuture ? 'cursor-default opacity-40' : 'cursor-pointer active:scale-95'
               }`}
               style={{ backgroundColor: theme.glass }}
             >

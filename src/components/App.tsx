@@ -22,6 +22,7 @@ function AppContent() {
   const { emoji, theme } = usePreferences();
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
+  const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -41,11 +42,16 @@ function AppContent() {
     if (entry) {
       setEditEntry(entry);
       setScreen('edit');
+    } else {
+      // Empty day clicked → register for that date
+      setRegisterDate(date);
+      setScreen('register');
     }
   };
 
   const handleRegisterSuccess = (date: string, time: string) => {
     setCongratsData({ date, time });
+    setRegisterDate(null);
     setScreen('congrats');
   };
 
@@ -104,7 +110,7 @@ function AppContent() {
         {/* Register button */}
         <div className="px-10 pb-10 mt-auto">
           <button
-            onClick={() => setScreen('register')}
+            onClick={() => { setRegisterDate(null); setScreen('register'); }}
             className="w-full rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
             style={{ backgroundColor: theme.text }}
           >
@@ -121,7 +127,8 @@ function AppContent() {
       {/* Overlays */}
       {screen === 'register' && (
         <RegisterScreen
-          onClose={() => setScreen('home')}
+          date={registerDate}
+          onClose={() => { setRegisterDate(null); setScreen('home'); }}
           onSuccess={handleRegisterSuccess}
         />
       )}

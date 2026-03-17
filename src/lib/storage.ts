@@ -1,4 +1,4 @@
-import { saveEntryToCloud } from './sync';
+import { saveEntryToCloud, deleteEntryFromCloud } from './sync';
 import { supabase } from './supabase';
 
 export interface PoopEntry {
@@ -7,6 +7,7 @@ export interface PoopEntry {
   notes: string;
   timestamp: number; // full timestamp for sorting
   bristol?: number | null; // Bristol scale 1-7
+  floats?: boolean | null; // Does it float?
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
@@ -55,22 +56,36 @@ export function saveEntry(entry: PoopEntry): void {
   });
 }
 
+export function deleteEntry(date: string): void {
+  const entries = getEntries().filter((e) => e.date !== date);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+
+  // Also delete from cloud if user is logged in
+  getCurrentUserId().then((userId) => {
+    if (userId) {
+      deleteEntryFromCloud(userId, date);
+    }
+  });
+}
+
 export function getLastEntry(): PoopEntry | undefined {
   const entries = getEntries();
   if (entries.length === 0) return undefined;
   return entries[entries.length - 1];
 }
 
-export function getDaysSinceLastEntry(): { days: number; hours: number; lastEntry: PoopEntry | undefined } {
+export function getDaysSinceLastEntry(): { days: number; hours: number; minutes: number; seconds: number; lastEntry: PoopEntry | undefined } {
   const last = getLastEntry();
-  if (!last) return { days: 0, hours: 0, lastEntry: undefined };
+  if (!last) return { days: 0, hours: 0, minutes: 0, seconds: 0, lastEntry: undefined };
 
   const lastDate = new Date(`${last.date}T${last.time}:00`);
   const now = new Date();
   const diffMs = now.getTime() - lastDate.getTime();
-  const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const days = Math.floor(totalHours / 24);
-  const hours = totalHours % 24;
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
-  return { days, hours, lastEntry: last };
+  return { days, hours, minutes, seconds, lastEntry: last };
 }
