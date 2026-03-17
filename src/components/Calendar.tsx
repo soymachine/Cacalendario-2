@@ -5,7 +5,7 @@ import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
 
 interface CalendarProps {
-  onDayClick: (date: string, entry?: PoopEntry) => void;
+  onDayClick: (date: string, entries: PoopEntry[]) => void;
 }
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -29,7 +29,14 @@ export default function Calendar({ onDayClick }: CalendarProps) {
     return () => window.removeEventListener('cacalendario-updated', handler);
   }, [year, month]);
 
-  const entryDates = new Set(entries.map((e) => e.date));
+  // Group entries by date
+  const entriesByDate = new Map<string, PoopEntry[]>();
+  entries.forEach((e) => {
+    const existing = entriesByDate.get(e.date) || [];
+    existing.push(e);
+    entriesByDate.set(e.date, existing);
+  });
+
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
@@ -76,9 +83,9 @@ export default function Calendar({ onDayClick }: CalendarProps) {
         {cells.map((day, i) => {
           if (day === null) return <div key={`empty-${i}`} />;
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const hasEntry = entryDates.has(dateKey);
-          const entry = hasEntry ? entries.find((e) => e.date === dateKey) : undefined;
-          // Only allow clicking past or today dates (not future)
+          const dayEntries = entriesByDate.get(dateKey) || [];
+          const hasEntry = dayEntries.length > 0;
+          const count = dayEntries.length;
           const isFuture = dateKey > todayKey;
 
           return (
@@ -86,7 +93,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
               key={dateKey}
               onClick={() => {
                 if (isFuture) return;
-                onDayClick(dateKey, entry);
+                onDayClick(dateKey, dayEntries);
               }}
               className={`aspect-square rounded-full flex items-center justify-center text-sm relative ${
                 isFuture ? 'cursor-default opacity-40' : 'cursor-pointer active:scale-95'
@@ -94,11 +101,22 @@ export default function Calendar({ onDayClick }: CalendarProps) {
               style={{ backgroundColor: theme.glass }}
             >
               {hasEntry ? (
-                emoji.char === 'svg' ? (
-                  <img src={asset('/poop-small.svg')} alt="poop" className="w-7 h-7" />
-                ) : (
-                  <span className="text-xl">{emoji.char}</span>
-                )
+                <>
+                  {emoji.char === 'svg' ? (
+                    <img src={asset('/poop-small.svg')} alt="poop" className="w-7 h-7" />
+                  ) : (
+                    <span className="text-xl">{emoji.char}</span>
+                  )}
+                  {/* Badge for multiple entries */}
+                  {count > 1 && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
+                      style={{ backgroundColor: theme.text, color: invertColorFor(theme) }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </>
               ) : (
                 <span className="text-xs font-medium" style={{ color: `${theme.text}66` }}>{day}</span>
               )}
@@ -108,4 +126,8 @@ export default function Calendar({ onDayClick }: CalendarProps) {
       </div>
     </div>
   );
+}
+
+function invertColorFor(theme: { id: string }): string {
+  return theme.id === 'night' ? '#1a1a2e' : 'white';
 }

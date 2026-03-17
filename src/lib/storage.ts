@@ -2,6 +2,7 @@ import { saveEntryToCloud, deleteEntryFromCloud } from './sync';
 import { supabase } from './supabase';
 
 export interface PoopEntry {
+  id: string; // unique entry ID
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   notes: string;
@@ -12,6 +13,27 @@ export interface PoopEntry {
 
 const STORAGE_KEY = 'cacalendario_entries';
 
+// Generate a unique ID for entries
+export function generateEntryId(): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Migrate old entries that don't have an ID
+function migrateEntries(entries: PoopEntry[]): PoopEntry[] {
+  let migrated = false;
+  const result = entries.map((e) => {
+    if (!e.id) {
+      migrated = true;
+      return { ...e, id: `${e.timestamp}_${Math.random().toString(36).slice(2, 8)}` };
+    }
+    return e;
+  });
+  if (migrated) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+  }
+  return result;
+}
+
 // Helper to get current user ID (if logged in)
 async function getCurrentUserId(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -21,7 +43,8 @@ async function getCurrentUserId(): Promise<string | null> {
 export function getEntries(): PoopEntry[] {
   if (typeof window === 'undefined') return [];
   const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  return migrateEntries(JSON.parse(raw));
 }
 
 export function getEntriesForMonth(year: number, month: number): PoopEntry[] {
@@ -32,14 +55,17 @@ export function getEntriesForMonth(year: number, month: number): PoopEntry[] {
   });
 }
 
-export function getEntryForDate(date: string): PoopEntry | undefined {
-  return getEntries().find((e) => e.date === date);
+export function getEntriesForDate(date: string): PoopEntry[] {
+  return getEntries().filter((e) => e.date === date);
+}
+
+export function getEntryById(id: string): PoopEntry | undefined {
+  return getEntries().find((e) => e.id === id);
 }
 
 export function saveEntry(entry: PoopEntry): void {
-  // Always save to localStorage
   const entries = getEntries();
-  const idx = entries.findIndex((e) => e.date === entry.date);
+  const idx = entries.findIndex((e) => e.id === entry.id);
   if (idx >= 0) {
     entries[idx] = entry;
   } else {
@@ -56,16 +82,19 @@ export function saveEntry(entry: PoopEntry): void {
   });
 }
 
-export function deleteEntry(date: string): void {
-  const entries = getEntries().filter((e) => e.date !== date);
+export function deleteEntry(id: string): void {
+  const entry = getEntries().find((e) => e.id === id);
+  const entries = getEntries().filter((e) => e.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 
   // Also delete from cloud if user is logged in
-  getCurrentUserId().then((userId) => {
-    if (userId) {
-      deleteEntryFromCloud(userId, date);
-    }
-  });
+  if (entry) {
+    getCurrentUserId().then((userId) => {
+      if (userId) {
+        deleteEntryFromCloud(userId, entry.id);
+      }
+    });
+  }
 }
 
 export function getLastEntry(): PoopEntry | undefined {

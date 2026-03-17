@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatDateLong, formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
-import { saveEntry } from '../lib/storage';
+import { saveEntry, generateEntryId } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
 import BristolPicker from './BristolPicker';
@@ -32,6 +32,7 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
 
   const handleSave = () => {
     saveEntry({
+      id: generateEntryId(),
       date: targetDate,
       time: timeText,
       notes,

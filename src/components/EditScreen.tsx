@@ -28,6 +28,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const handleSave = () => {
     const [y, mo, d] = entry.date.split('-').map(Number);
     saveEntry({
+      id: entry.id,
       date: entry.date,
       time: timeText,
       notes,
@@ -40,7 +41,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   };
 
   const handleDelete = () => {
-    deleteEntry(entry.date);
+    deleteEntry(entry.id);
     window.dispatchEvent(new Event('cacalendario-updated'));
     onClose();
   };

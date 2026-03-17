@@ -3,6 +3,7 @@ import Calendar from './Calendar';
 import DaysSinceCounter from './DaysSinceCounter';
 import RegisterScreen from './RegisterScreen';
 import EditScreen from './EditScreen';
+import DayDetailScreen from './DayDetailScreen';
 import CongratsScreen from './CongratsScreen';
 import StatsScreen from './StatsScreen';
 import SettingsScreen from './SettingsScreen';
@@ -15,7 +16,7 @@ import { usePreferences } from '../lib/usePreferences';
 import type { PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile';
+type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile';
 
 function AppContent() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ function AppContent() {
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
+  const [detailDate, setDetailDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -38,14 +40,19 @@ function AppContent() {
     }
   }, [user]);
 
-  const handleDayClick = (date: string, entry?: PoopEntry) => {
-    if (entry) {
-      setEditEntry(entry);
-      setScreen('edit');
-    } else {
-      // Empty day clicked → register for that date
+  const handleDayClick = (date: string, entries: PoopEntry[]) => {
+    if (entries.length === 0) {
+      // Empty day → register for that date
       setRegisterDate(date);
       setScreen('register');
+    } else if (entries.length === 1) {
+      // Single entry → go straight to edit
+      setEditEntry(entries[0]);
+      setScreen('edit');
+    } else {
+      // Multiple entries → show day detail
+      setDetailDate(date);
+      setScreen('dayDetail');
     }
   };
 
@@ -136,7 +143,30 @@ function AppContent() {
       {screen === 'edit' && editEntry && (
         <EditScreen
           entry={editEntry}
-          onClose={() => { setEditEntry(null); setScreen('home'); }}
+          onClose={() => {
+            setEditEntry(null);
+            // If we came from dayDetail, go back there
+            if (detailDate) {
+              setScreen('dayDetail');
+            } else {
+              setScreen('home');
+            }
+          }}
+        />
+      )}
+
+      {screen === 'dayDetail' && detailDate && (
+        <DayDetailScreen
+          date={detailDate}
+          onClose={() => { setDetailDate(null); setScreen('home'); }}
+          onAddEntry={(date) => {
+            setRegisterDate(date);
+            setScreen('register');
+          }}
+          onEditEntry={(entry) => {
+            setEditEntry(entry);
+            setScreen('edit');
+          }}
         />
       )}
 
@@ -144,7 +174,15 @@ function AppContent() {
         <CongratsScreen
           date={congratsData.date}
           time={congratsData.time}
-          onClose={() => { setCongratsData(null); setScreen('home'); }}
+          onClose={() => {
+            setCongratsData(null);
+            // If registering from dayDetail, go back there
+            if (detailDate) {
+              setScreen('dayDetail');
+            } else {
+              setScreen('home');
+            }
+          }}
         />
       )}
 
