@@ -10,6 +10,7 @@ import SettingsScreen from './SettingsScreen';
 import AuthScreen from './AuthScreen';
 import ProfileScreen from './ProfileScreen';
 import ProfileButton from './ProfileButton';
+import SplashScreen from './SplashScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
@@ -27,6 +28,7 @@ function AppContent() {
   const [detailDate, setDetailDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   // Sync when user logs in
   useEffect(() => {
@@ -204,6 +206,9 @@ function AppContent() {
       {screen === 'profile' && (
         <ProfileScreen onClose={() => setScreen('home')} />
       )}
+
+      {/* Splash intro animation */}
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
     </div>
   );
 }

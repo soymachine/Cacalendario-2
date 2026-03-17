@@ -169,10 +169,10 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           <div className="flex gap-3">
             <button
               onClick={() => setConfirmDelete(true)}
-              className="rounded-full px-5 py-2.5 active:scale-95 transition-transform border-2"
-              style={{ borderColor: '#c0392b' }}
+              className="rounded-full px-5 py-2.5 active:scale-95 transition-transform"
+              style={{ backgroundColor: '#c0392b' }}
             >
-              <span className="text-sm" style={{ color: '#c0392b' }}>🗑️ eliminar</span>
+              <span className="text-sm font-bold text-white">🗑️ eliminar</span>
             </button>
             <button
               onClick={handleSave}
