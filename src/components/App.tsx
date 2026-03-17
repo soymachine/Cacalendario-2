@@ -49,12 +49,8 @@ function AppContent() {
       // Empty day → register for that date
       setRegisterDate(date);
       setScreen('register');
-    } else if (entries.length === 1) {
-      // Single entry → go straight to edit
-      setEditEntry(entries[0]);
-      setScreen('edit');
     } else {
-      // Multiple entries → show day detail
+      // One or more entries → show day detail (edit + add more)
       setDetailDate(date);
       setScreen('dayDetail');
     }
