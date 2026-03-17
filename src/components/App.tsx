@@ -11,13 +11,14 @@ import AuthScreen from './AuthScreen';
 import ProfileScreen from './ProfileScreen';
 import ProfileButton from './ProfileButton';
 import SplashScreen from './SplashScreen';
+import PrivacyScreen from './PrivacyScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import type { PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile';
+type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy';
 
 function AppContent() {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ function AppContent() {
   const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [prevScreen, setPrevScreen] = useState<Screen>('home');
 
   // Sync when user logs in
   useEffect(() => {
@@ -200,11 +202,19 @@ function AppContent() {
         <AuthScreen
           onClose={() => setScreen('home')}
           onSuccess={handleAuthSuccess}
+          onShowPrivacy={() => { setPrevScreen('auth'); setScreen('privacy'); }}
         />
       )}
 
       {screen === 'profile' && (
-        <ProfileScreen onClose={() => setScreen('home')} />
+        <ProfileScreen
+          onClose={() => setScreen('home')}
+          onShowPrivacy={() => { setPrevScreen('profile'); setScreen('privacy'); }}
+        />
+      )}
+
+      {screen === 'privacy' && (
+        <PrivacyScreen onClose={() => setScreen(prevScreen)} />
       )}
 
       {/* Splash intro animation */}

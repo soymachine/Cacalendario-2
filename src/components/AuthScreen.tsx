@@ -6,11 +6,12 @@ import { usePreferences } from '../lib/usePreferences';
 interface AuthScreenProps {
   onClose: () => void;
   onSuccess: () => void;
+  onShowPrivacy: () => void;
 }
 
 type Mode = 'login' | 'signup';
 
-export default function AuthScreen({ onClose, onSuccess }: AuthScreenProps) {
+export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthScreenProps) {
   const { signIn, signUp } = useAuth();
   const { theme } = usePreferences();
   const [mode, setMode] = useState<Mode>('login');
@@ -19,6 +20,7 @@ export default function AuthScreen({ onClose, onSuccess }: AuthScreenProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
 
   const handleSubmit = async () => {
@@ -27,6 +29,12 @@ export default function AuthScreen({ onClose, onSuccess }: AuthScreenProps) {
 
     if (!email || !password) {
       setError('Rellena todos los campos');
+      setLoading(false);
+      return;
+    }
+
+    if (mode === 'signup' && !acceptedPrivacy) {
+      setError('Debes aceptar la política de privacidad');
       setLoading(false);
       return;
     }
@@ -126,9 +134,34 @@ export default function AuthScreen({ onClose, onSuccess }: AuthScreenProps) {
                 <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
               )}
 
+              {/* Privacy consent (only on signup) */}
+              {mode === 'signup' && (
+                <label className="flex items-start gap-3 mt-4 shrink-0 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPrivacy}
+                    onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                    className="mt-1 w-5 h-5 shrink-0 accent-current rounded"
+                    style={{ accentColor: theme.text }}
+                  />
+                  <span className="text-sm leading-snug" style={{ color: `${theme.text}cc` }}>
+                    He leído y acepto la{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); onShowPrivacy(); }}
+                      className="underline font-bold"
+                      style={{ color: theme.text }}
+                    >
+                      política de privacidad
+                    </button>
+                    . Consiento el tratamiento de mis datos de salud.
+                  </span>
+                </label>
+              )}
+
               {/* Toggle mode */}
               <button
-                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setAcceptedPrivacy(false); }}
                 className="text-sm underline mt-4 shrink-0 text-left"
                 style={{ color: `${theme.text}99` }}
               >
