@@ -8,7 +8,7 @@ interface FeedbackItem {
   created_at: string;
 }
 
-const ADMIN_EMAIL = 'admin@cacalendario.com';
+const ADMIN_EMAIL = 'soymachine@gmail.com';
 
 export default function AdminPanel() {
   const [loggedIn, setLoggedIn] = useState(false);
