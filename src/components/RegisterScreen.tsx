@@ -8,7 +8,7 @@ import BristolPicker from './BristolPicker';
 interface RegisterScreenProps {
   date?: string | null; // Optional: YYYY-MM-DD for past date registration
   onClose: () => void;
-  onSuccess: (date: string, time: string) => void;
+  onSuccess: (date: string, time: string, bristol: number | null, floats: boolean | null) => void;
 }
 
 export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScreenProps) {
@@ -41,7 +41,7 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
       floats,
     });
     window.dispatchEvent(new Event('cacalendario-updated'));
-    onSuccess(targetDate, timeText);
+    onSuccess(targetDate, timeText, bristol, floats);
   };
 
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';

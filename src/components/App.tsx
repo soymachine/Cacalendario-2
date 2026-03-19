@@ -28,7 +28,7 @@ function AppContent() {
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
-  const [congratsData, setCongratsData] = useState<{ date: string; time: string } | null>(null);
+  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: boolean | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [prevScreen, setPrevScreen] = useState<Screen>('home');
@@ -57,8 +57,8 @@ function AppContent() {
     }
   };
 
-  const handleRegisterSuccess = (date: string, time: string) => {
-    setCongratsData({ date, time });
+  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: boolean | null) => {
+    setCongratsData({ date, time, bristol, floats });
     setRegisterDate(null);
     setScreen('congrats');
   };
@@ -187,6 +187,8 @@ function AppContent() {
         <CongratsScreen
           date={congratsData.date}
           time={congratsData.time}
+          bristol={congratsData.bristol}
+          floats={congratsData.floats}
           onClose={() => {
             setCongratsData(null);
             // If registering from dayDetail, go back there
