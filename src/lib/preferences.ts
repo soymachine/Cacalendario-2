@@ -124,7 +124,8 @@ export function applyTheme(theme?: Theme): void {
   document.documentElement.style.setProperty('--theme-main', t.main);
   document.documentElement.style.setProperty('--theme-text', t.text);
   document.documentElement.style.setProperty('--theme-glass', t.glass);
-  document.body.style.backgroundColor = t.bg;
+  document.body.style.backgroundColor = t.main;
+  document.documentElement.style.setProperty('--cacalendario-bg', t.main);
 
   // Update meta theme-color for mobile browsers
   const meta = document.querySelector('meta[name="theme-color"]');
