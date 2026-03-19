@@ -1,4 +1,6 @@
-const CACHE_NAME = 'cacalendario-v1';
+// 🔄 CHANGE THIS VERSION on every deploy to trigger an update
+const CACHE_VERSION = 2;
+const CACHE_NAME = `cacalendario-v${CACHE_VERSION}`;
 const BASE = '/Cacalendario-2';
 
 // Assets to precache on install
@@ -9,30 +11,40 @@ const PRECACHE_URLS = [
   `${BASE}/poop-button.svg`,
   `${BASE}/poop-big.svg`,
   `${BASE}/poop-small.svg`,
-  `${BASE}/favicon.svg`,
+  `${BASE}/icons/icon-96x96.png`,
   `${BASE}/icons/icon-192x192.png`,
   `${BASE}/icons/icon-512x512.png`,
 ];
 
-// Install: precache shell assets
+// Install: precache shell assets, then immediately activate
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
+  // Don't wait for old SW to stop — activate immediately
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: delete ALL old caches, then take control of all tabs
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
+  // Take control of all open tabs immediately (no reload needed for future fetches)
   self.clients.claim();
 });
 
-// Fetch: network-first for HTML/API, cache-first for assets
+// Listen for message from the app to trigger reload
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Fetch: network-first for everything (ensures fresh content)
+// Falls back to cache only when offline
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -47,31 +59,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For navigation (HTML pages): network first, fallback to cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // For assets: cache first, fallback to network
+  // Network-first strategy: try network, update cache, fall back to cache if offline
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
+    fetch(request)
+      .then((response) => {
+        // Got a fresh response — cache it for offline use
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        // Offline — serve from cache
+        return caches.match(request);
+      })
   );
 });
