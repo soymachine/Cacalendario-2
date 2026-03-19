@@ -12,13 +12,14 @@ import ProfileScreen from './ProfileScreen';
 import ProfileButton from './ProfileButton';
 import SplashScreen from './SplashScreen';
 import PrivacyScreen from './PrivacyScreen';
+import FeedbackScreen from './FeedbackScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import type { PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy';
+type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback';
 
 function AppContent() {
   const { user } = useAuth();
@@ -72,13 +73,25 @@ function AppContent() {
       <div className="flex flex-col min-h-screen">
         {/* Top bar: settings + profile */}
         <div className="flex items-center justify-between px-4 pt-4 shrink-0">
-          <button
-            onClick={() => setScreen('settings')}
-            className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
-            style={{ backgroundColor: theme.glass }}
-          >
-            <span className="text-lg">⚙️</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setScreen('settings')}
+              className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
+              style={{ backgroundColor: theme.glass }}
+            >
+              <span className="text-lg">⚙️</span>
+            </button>
+            <button
+              onClick={() => setScreen('feedback')}
+              className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
+              style={{ backgroundColor: theme.glass }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H8l-4 4V6c0-1.1.9-2 2-2z" stroke={theme.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M12 11v.01M8 11v.01M16 11v.01" stroke={theme.text} strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
           <ProfileButton
             onLoginClick={() => setScreen('auth')}
             onProfileClick={() => setScreen('profile')}
@@ -211,6 +224,10 @@ function AppContent() {
 
       {screen === 'privacy' && (
         <PrivacyScreen onClose={() => setScreen(prevScreen)} />
+      )}
+
+      {screen === 'feedback' && (
+        <FeedbackScreen onClose={() => setScreen('home')} />
       )}
 
       {/* Splash intro animation */}
