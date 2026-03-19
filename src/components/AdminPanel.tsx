@@ -114,7 +114,7 @@ export default function AdminPanel() {
     // Also populate users list from RPC data
     setUsers(usersFromRpc.map(u => ({
       id: u.id,
-      email: '',
+      email: u.email || '',
       created_at: u.created_at,
       last_sign_in_at: u.last_activity,
     })));
