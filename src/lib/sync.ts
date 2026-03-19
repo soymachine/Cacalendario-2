@@ -30,20 +30,29 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     floats: r.floats ?? null,
   }));
 
-  // 3. Merge by entry ID: combine all unique entries
+  // 3. Merge: cloud takes precedence over local
+  //    Deduplicate by ID AND by date+time (same event can have different IDs
+  //    if migrated independently on different devices)
   const merged = new Map<string, PoopEntry>();
+  const seenDateTimes = new Set<string>();
 
+  // Cloud entries first (they take precedence)
   for (const entry of cloudEntries) {
     merged.set(entry.id, entry);
+    seenDateTimes.add(`${entry.date}_${entry.time}`);
   }
 
-  // Local entries override cloud for same ID (local is more recent)
+  // Only add local entries that don't already exist in cloud
   for (const entry of localEntries) {
-    // Ensure entry has an ID (migration for old entries)
     if (!entry.id) {
       entry.id = `${entry.timestamp}_${Math.random().toString(36).slice(2, 8)}`;
     }
-    merged.set(entry.id, entry);
+    const dateTimeKey = `${entry.date}_${entry.time}`;
+    // Skip if cloud already has an entry with the same ID or same date+time
+    if (!merged.has(entry.id) && !seenDateTimes.has(dateTimeKey)) {
+      merged.set(entry.id, entry);
+      seenDateTimes.add(dateTimeKey);
+    }
   }
 
   const allEntries = Array.from(merged.values()).sort((a, b) => a.timestamp - b.timestamp);
