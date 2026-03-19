@@ -8,7 +8,7 @@ interface FeedbackItem {
   created_at: string;
 }
 
-const ADMIN_EMAIL = 'soymachine@gmail.com';
+const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
 export default function AdminPanel() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -28,7 +28,7 @@ export default function AdminPanel() {
       return;
     }
     // Check if user is admin
-    if (data.user?.email !== ADMIN_EMAIL) {
+    if (!data.user?.email || !ADMIN_EMAILS.includes(data.user.email)) {
       setError('No tienes permisos de administrador');
       await supabase.auth.signOut();
       setLoading(false);
