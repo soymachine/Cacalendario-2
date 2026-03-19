@@ -73,49 +73,51 @@ export default function AdminPanel() {
   };
 
   const loadStats = async () => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Feedback
+    // Get global stats from the SECURITY DEFINER function (bypasses RLS)
+    const { data: adminData, error: rpcError } = await supabase.rpc('admin_get_stats');
+
+    // Feedback (admin can read all feedback)
     const { data: allFeedback } = await supabase.from('feedback').select('id, created_at');
     const totalFeedback = allFeedback?.length || 0;
-    const unreadFeedback = allFeedback?.filter(f => {
-      const d = new Date(f.created_at);
-      return d >= new Date(weekAgo);
-    }).length || 0;
+    const unreadFeedback = allFeedback?.filter(f => new Date(f.created_at) >= new Date(weekAgo)).length || 0;
 
-    // Entries
-    const { data: allEntries } = await supabase.from('entries').select('id, date, user_id, created_at');
-    const totalEntries = allEntries?.length || 0;
-    const entriesToday = allEntries?.filter(e => e.date === todayStr).length || 0;
-    const entriesWeek = allEntries?.filter(e => {
-      const d = new Date(e.created_at);
-      return d >= new Date(weekAgo);
-    }).length || 0;
+    if (rpcError || !adminData) {
+      // Fallback if RPC fails
+      console.error('admin_get_stats error:', rpcError);
+      setStats({
+        totalUsers: 0, newUsersToday: 0, newUsersWeek: 0,
+        totalFeedback, unreadFeedback,
+        totalEntries: 0, entriesToday: 0, entriesWeek: 0, activeUsersWeek: 0,
+      });
+      return;
+    }
 
-    // Active users (unique users with entries this week)
-    const activeUserIds = new Set(
-      allEntries?.filter(e => {
-        const d = new Date(e.created_at);
-        return d >= new Date(weekAgo);
-      }).map(e => e.user_id) || []
-    );
-
-    // Users — we get count from auth.users via entries unique user_ids
-    const uniqueUserIds = new Set(allEntries?.map(e => e.user_id) || []);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const usersFromRpc: { id: string; created_at: string; last_activity: string }[] = adminData.users || [];
+    const newUsersWeek = usersFromRpc.filter(u => new Date(u.created_at) >= new Date(weekAgo)).length;
+    const newUsersToday = usersFromRpc.filter(u => u.created_at?.startsWith(todayStr)).length;
 
     setStats({
-      totalUsers: uniqueUserIds.size,
-      newUsersToday: 0, // will be calculated from users list
-      newUsersWeek: 0,
+      totalUsers: adminData.total_users || 0,
+      newUsersToday,
+      newUsersWeek,
       totalFeedback,
       unreadFeedback,
-      totalEntries,
-      entriesToday,
-      entriesWeek,
-      activeUsersWeek: activeUserIds.size,
+      totalEntries: adminData.total_entries || 0,
+      entriesToday: adminData.entries_today || 0,
+      entriesWeek: adminData.entries_week || 0,
+      activeUsersWeek: adminData.active_users_week || 0,
     });
+
+    // Also populate users list from RPC data
+    setUsers(usersFromRpc.map(u => ({
+      id: u.id,
+      email: '',
+      created_at: u.created_at,
+      last_sign_in_at: u.last_activity,
+    })));
   };
 
   const loadFeedback = async () => {
@@ -124,58 +126,16 @@ export default function AdminPanel() {
       .select('*')
       .order('created_at', { ascending: false });
     setFeedback(data || []);
+
+    // Enrich users with emails from feedback
+    const emailMap = new Map<string, string>();
+    // We don't have user_id in feedback, but we have emails
+    // This won't map to user_ids, but it's still useful info
   };
 
   const loadUsers = async () => {
-    // Get unique users from entries table
-    const { data: entries } = await supabase
-      .from('entries')
-      .select('user_id, created_at')
-      .order('created_at', { ascending: false });
-
-    if (!entries) {
-      setUsers([]);
-      return;
-    }
-
-    // Group by user_id, get earliest created_at
-    const userMap = new Map<string, { firstSeen: string; lastSeen: string }>();
-    for (const e of entries) {
-      const existing = userMap.get(e.user_id);
-      if (!existing) {
-        userMap.set(e.user_id, { firstSeen: e.created_at, lastSeen: e.created_at });
-      } else {
-        if (e.created_at < existing.firstSeen) existing.firstSeen = e.created_at;
-        if (e.created_at > existing.lastSeen) existing.lastSeen = e.created_at;
-      }
-    }
-
-    // Also get emails from feedback
-    const { data: feedbackData } = await supabase.from('feedback').select('user_email');
-    const emailSet = new Set(feedbackData?.map(f => f.user_email) || []);
-
-    // We can't query auth.users from the client, but we know emails from feedback
-    // For now, list user_ids with activity info
-    const userList: UserInfo[] = Array.from(userMap.entries()).map(([uid, info]) => ({
-      id: uid,
-      email: '', // will be filled if we find it
-      created_at: info.firstSeen,
-      last_sign_in_at: info.lastSeen,
-    }));
-
-    setUsers(userList);
-
-    // Update stats with user counts
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    setStats(prev => prev ? {
-      ...prev,
-      totalUsers: userList.length,
-      newUsersToday: userList.filter(u => u.created_at.startsWith(todayStr)).length,
-      newUsersWeek: userList.filter(u => new Date(u.created_at) >= weekAgo).length,
-    } : prev);
+    // Users are loaded from admin_get_stats RPC in loadStats
+    // Nothing extra needed here
   };
 
   const handleDeleteFeedback = async (id: string) => {
@@ -399,8 +359,10 @@ export default function AdminPanel() {
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 12, color: '#aaa' }}>Primera actividad</p>
-                  <p style={{ fontSize: 12, color: '#666' }}>{formatDate(user.created_at)}</p>
+                  <p style={{ fontSize: 11, color: '#aaa' }}>Registro: {formatDate(user.created_at)}</p>
+                  {user.last_sign_in_at && (
+                    <p style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Última actividad: {relativeTime(user.last_sign_in_at)}</p>
+                  )}
                 </div>
               </div>
             ))}
