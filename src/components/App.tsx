@@ -13,6 +13,7 @@ import ProfileButton from './ProfileButton';
 import SplashScreen from './SplashScreen';
 import PrivacyScreen from './PrivacyScreen';
 import FeedbackScreen from './FeedbackScreen';
+import PremiumScreen from './PremiumScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
@@ -154,6 +155,19 @@ function AppContent() {
           </button>
         </div>
 
+        {/* Premium upsell button (for non-premium users) */}
+        {tier !== 'premium' && tier !== 'anon' && (
+          <div className="px-10 mb-2">
+            <button
+              onClick={() => setScreen('premium')}
+              className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              style={{ backgroundColor: '#f39c12' }}
+            >
+              <span className="text-base font-bold text-white">⭐ Hazte Premium</span>
+            </button>
+          </div>
+        )}
+
         {/* Register button */}
         <div className="px-10 pb-10 mt-auto">
           {tier === 'anon' && (
@@ -238,7 +252,10 @@ function AppContent() {
       )}
 
       {screen === 'settings' && (
-        <SettingsScreen onClose={() => setScreen('home')} />
+        <SettingsScreen
+          onClose={() => setScreen('home')}
+          onPremium={() => setScreen('premium')}
+        />
       )}
 
       {screen === 'auth' && (
@@ -262,6 +279,10 @@ function AppContent() {
 
       {screen === 'feedback' && (
         <FeedbackScreen onClose={() => setScreen('home')} />
+      )}
+
+      {screen === 'premium' && (
+        <PremiumScreen onClose={() => setScreen('home')} />
       )}
 
       {/* Splash intro animation */}

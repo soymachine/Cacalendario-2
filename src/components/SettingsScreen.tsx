@@ -14,9 +14,10 @@ import { useTier } from '../lib/useTier';
 
 interface SettingsScreenProps {
   onClose: () => void;
+  onPremium?: () => void;
 }
 
-export default function SettingsScreen({ onClose }: SettingsScreenProps) {
+export default function SettingsScreen({ onClose, onPremium }: SettingsScreenProps) {
   const [prefs, setPrefs] = useState(getPreferences);
   const [showTipThanks, setShowTipThanks] = useState(false);
   const { tier, limits } = useTier();
@@ -153,6 +154,26 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               🔒 = {tier === 'anon' ? 'Regístrate para desbloquear más' : 'Disponible con Premium ⭐'}
             </p>
           </div>
+
+          {/* === PREMIUM CTA === */}
+          {tier !== 'premium' && onPremium && (
+            <div className="mb-8">
+              <button
+                onClick={onPremium}
+                className="w-full rounded-2xl p-5 text-center active:scale-[0.98] transition-transform"
+                style={{ backgroundColor: '#f39c12' }}
+              >
+                <span className="text-3xl">⭐</span>
+                <p className="text-lg font-black text-white mt-2">Hazte Premium</p>
+                <p className="text-xs text-white/80 mt-1">
+                  Desbloquea todos los temas, emojis, estadísticas completas y más
+                </p>
+                <p className="text-sm font-bold text-white mt-3 underline">
+                  Desde 1,99€/mes →
+                </p>
+              </button>
+            </div>
+          )}
 
           {/* === TIP JAR === */}
           <div className="mb-4">
