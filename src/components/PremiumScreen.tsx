@@ -90,12 +90,10 @@ export default function PremiumScreen({ onClose }: PremiumScreenProps) {
   const [purchasing, setPurchasing] = useState(false);
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
 
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
   const handlePurchase = () => {
-    setPurchasing(true);
-    // TODO: Integrate with Stripe Checkout
-    // For now, open a placeholder
-    window.open('https://buymeacoffee.com/cacalendario', '_blank');
-    setTimeout(() => setPurchasing(false), 2000);
+    setShowComingSoon(true);
   };
 
   if (tier === 'premium') {
@@ -320,18 +318,41 @@ export default function PremiumScreen({ onClose }: PremiumScreenProps) {
         <div className="shrink-0 px-6 py-4" style={{ backgroundColor: theme.main }}>
           <button
             onClick={handlePurchase}
-            disabled={purchasing}
-            className="w-full rounded-full py-3.5 flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+            className="w-full rounded-full py-3.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
             style={{ backgroundColor: '#f39c12' }}
           >
             <span className="text-lg font-bold text-white">
-              {purchasing ? 'Redirigiendo...' : `⭐ Hazte Premium — ${PLANS.find(p => p.id === selectedPlan)?.price}`}
+              {`⭐ Hazte Premium — ${PLANS.find(p => p.id === selectedPlan)?.price}`}
             </span>
           </button>
           <p className="text-[10px] text-center mt-2" style={{ color: `${theme.text}60` }}>
             Cancela cuando quieras · Pago seguro · Sin compromisos
           </p>
         </div>
+
+        {/* Coming Soon overlay */}
+        {showComingSoon && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center"
+            style={{ backgroundColor: `${theme.main}ee` }}
+            onClick={() => setShowComingSoon(false)}
+          >
+            <div className="text-center px-8" onClick={(e) => e.stopPropagation()}>
+              <span className="text-6xl block mb-4">🚧</span>
+              <p className="text-2xl font-black" style={{ color: theme.text }}>¡Próximamente!</p>
+              <p className="text-base mt-3" style={{ color: `${theme.text}99` }}>
+                Estamos preparando los pagos Premium. Muy pronto podrás desbloquear todas las funciones.
+              </p>
+              <button
+                onClick={() => setShowComingSoon(false)}
+                className="mt-8 rounded-full px-10 py-3 active:scale-95 transition-transform"
+                style={{ backgroundColor: theme.text }}
+              >
+                <span className="text-lg" style={{ color: invertColor }}>entendido</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
