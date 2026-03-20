@@ -5,8 +5,16 @@ interface FeedbackItem {
   id: string;
   user_email: string;
   message: string;
+  type: string | null;
   created_at: string;
 }
+
+const FEEDBACK_TYPE_META: Record<string, { emoji: string; label: string; color: string }> = {
+  bug: { emoji: '🐛', label: 'Error', color: '#e74c3c' },
+  suggestion: { emoji: '💡', label: 'Sugerencia', color: '#f39c12' },
+  question: { emoji: '❓', label: 'Pregunta', color: '#3498db' },
+  other: { emoji: '💬', label: 'Otro', color: '#95a5a6' },
+};
 
 interface UserInfo {
   id: string;
@@ -39,6 +47,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [section, setSection] = useState<Section>('dashboard');
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [feedbackFilter, setFeedbackFilter] = useState<string>('all');
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
@@ -262,17 +271,30 @@ export default function AdminPanel() {
             {feedback.length === 0 ? (
               <p style={{ color: '#aaa', fontSize: 14 }}>No hay mensajes</p>
             ) : (
-              feedback.slice(0, 3).map(item => (
-                <div key={item.id} style={styles.previewItem}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>{item.user_email}</span>
-                    <span style={{ color: '#aaa', fontSize: 12 }}>{relativeTime(item.created_at)}</span>
+              feedback.slice(0, 3).map(item => {
+                const typeMeta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
+                return (
+                  <div key={item.id} style={styles.previewItem}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span
+                          style={{
+                            fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8,
+                            backgroundColor: typeMeta.color + '20', color: typeMeta.color,
+                          }}
+                        >
+                          {typeMeta.emoji} {typeMeta.label}
+                        </span>
+                        <span style={{ fontWeight: 600, fontSize: 13 }}>{item.user_email}</span>
+                      </div>
+                      <span style={{ color: '#aaa', fontSize: 12 }}>{relativeTime(item.created_at)}</span>
+                    </div>
+                    <p style={{ fontSize: 13, color: '#555', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.message}
+                    </p>
                   </div>
-                  <p style={{ fontSize: 13, color: '#555', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.message}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -299,36 +321,82 @@ export default function AdminPanel() {
       )}
 
       {/* ── FEEDBACK SECTION ── */}
-      {section === 'feedback' && (
-        <div>
-          <div style={{ marginBottom: 16 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800 }}>Todos los mensajes ({feedback.length})</h2>
-          </div>
-
-          {feedback.length === 0 && !loading && (
-            <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>No hay mensajes</p>
-          )}
-
-          {feedback.map((item) => (
-            <div key={item.id} style={styles.feedbackCard}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{item.user_email}</span>
-                  <span style={{ color: '#999', fontSize: 12, marginLeft: 8 }}>{formatDate(item.created_at)}</span>
-                </div>
-                <button
-                  onClick={() => handleDeleteFeedback(item.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: '4px 8px' }}
-                  title="Eliminar"
-                >
-                  🗑️
-                </button>
-              </div>
-              <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: '#333' }}>{item.message}</p>
+      {section === 'feedback' && (() => {
+        const filtered = feedbackFilter === 'all' ? feedback : feedback.filter(f => f.type === feedbackFilter);
+        return (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800 }}>Todos los mensajes ({feedback.length})</h2>
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Type filters */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setFeedbackFilter('all')}
+                style={{
+                  ...styles.tab,
+                  backgroundColor: feedbackFilter === 'all' ? '#222' : 'white',
+                  color: feedbackFilter === 'all' ? 'white' : '#666',
+                }}
+              >
+                Todos ({feedback.length})
+              </button>
+              {Object.entries(FEEDBACK_TYPE_META).map(([key, meta]) => {
+                const count = feedback.filter(f => f.type === key).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setFeedbackFilter(key)}
+                    style={{
+                      ...styles.tab,
+                      backgroundColor: feedbackFilter === key ? meta.color : 'white',
+                      color: feedbackFilter === key ? 'white' : '#666',
+                      borderColor: feedbackFilter === key ? meta.color : '#ddd',
+                    }}
+                  >
+                    {meta.emoji} {meta.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {filtered.length === 0 && !loading && (
+              <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>No hay mensajes</p>
+            )}
+
+            {filtered.map((item) => {
+              const typeMeta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
+              return (
+                <div key={item.id} style={styles.feedbackCard}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                          backgroundColor: typeMeta.color + '20', color: typeMeta.color,
+                        }}
+                      >
+                        {typeMeta.emoji} {typeMeta.label}
+                      </span>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>{item.user_email}</span>
+                      <span style={{ color: '#999', fontSize: 12 }}>{formatDate(item.created_at)}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteFeedback(item.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: '4px 8px' }}
+                      title="Eliminar"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: '#333' }}>{item.message}</p>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* ── USERS SECTION ── */}
       {section === 'users' && (

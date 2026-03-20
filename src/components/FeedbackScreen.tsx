@@ -7,11 +7,21 @@ interface FeedbackScreenProps {
   onClose: () => void;
 }
 
+const FEEDBACK_TYPES = [
+  { id: 'bug', emoji: '🐛', label: 'Error' },
+  { id: 'suggestion', emoji: '💡', label: 'Sugerencia' },
+  { id: 'question', emoji: '❓', label: 'Pregunta' },
+  { id: 'other', emoji: '💬', label: 'Otro' },
+] as const;
+
+type FeedbackType = typeof FEEDBACK_TYPES[number]['id'];
+
 export default function FeedbackScreen({ onClose }: FeedbackScreenProps) {
   const { theme } = usePreferences();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState(user?.email || '');
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>('suggestion');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +42,7 @@ export default function FeedbackScreen({ onClose }: FeedbackScreenProps) {
 
     const { error: dbError } = await supabase
       .from('feedback')
-      .insert({ user_email: email.trim(), message: message.trim() });
+      .insert({ user_email: email.trim(), message: message.trim(), type: feedbackType });
 
     if (dbError) {
       setError('Error al enviar. Inténtalo de nuevo.');
@@ -90,6 +100,32 @@ export default function FeedbackScreen({ onClose }: FeedbackScreenProps) {
                   />
                 </>
               )}
+
+              {/* Type selector */}
+              <p className="text-sm font-black mt-5" style={{ color: theme.text }}>TIPO</p>
+              <div className="flex gap-2 mt-2">
+                {FEEDBACK_TYPES.map((type) => {
+                  const isSelected = feedbackType === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => setFeedbackType(type.id)}
+                      className="flex-1 rounded-lg py-2.5 flex flex-col items-center gap-1 active:scale-95 transition-all"
+                      style={{
+                        backgroundColor: isSelected ? theme.text : theme.glass,
+                      }}
+                    >
+                      <span className="text-lg">{type.emoji}</span>
+                      <span
+                        className="text-[11px] font-bold"
+                        style={{ color: isSelected ? invertColor : `${theme.text}99` }}
+                      >
+                        {type.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Message */}
               <p className="text-sm font-black mt-5" style={{ color: theme.text }}>MENSAJE</p>
