@@ -8,24 +8,26 @@ interface BristolPickerProps {
     glass: string;
     id: string;
   };
+  restrictedTypes?: number[]; // If set, only these types are selectable
 }
 
-export default function BristolPicker({ value, onChange, theme }: BristolPickerProps) {
+export default function BristolPicker({ value, onChange, theme, restrictedTypes }: BristolPickerProps) {
   return (
     <div>
       <div className="grid grid-cols-7 gap-1.5">
         {BRISTOL_SCALE.map((b) => {
           const isSelected = value === b.type;
+          const isLocked = restrictedTypes ? !restrictedTypes.includes(b.type) : false;
           return (
             <button
               key={b.type}
-              onClick={() => onChange(isSelected ? null : b.type)}
-              className="flex flex-col items-center gap-0.5 rounded-xl py-2 px-1 transition-all active:scale-95"
+              onClick={() => !isLocked && onChange(isSelected ? null : b.type)}
+              className={`flex flex-col items-center gap-0.5 rounded-xl py-2 px-1 transition-all active:scale-95 ${isLocked ? 'opacity-35' : ''}`}
               style={{
                 backgroundColor: isSelected ? theme.text : theme.glass,
               }}
             >
-              <span className="text-xl">{b.emoji}</span>
+              <span className="text-xl">{isLocked ? '🔒' : b.emoji}</span>
               <span
                 className="text-[9px] font-black leading-tight"
                 style={{

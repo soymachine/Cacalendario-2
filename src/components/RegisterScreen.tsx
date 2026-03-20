@@ -3,6 +3,7 @@ import { formatDateLong, formatDateForDisplay, formatTime, toDateKey } from '../
 import { saveEntry, generateEntryId } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
+import { useTier } from '../lib/useTier';
 import BristolPicker from './BristolPicker';
 
 interface RegisterScreenProps {
@@ -13,6 +14,7 @@ interface RegisterScreenProps {
 
 export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScreenProps) {
   const { emoji, theme } = usePreferences();
+  const { tier, limits } = useTier();
   const now = new Date();
 
   // If a specific date was passed, use it; otherwise use today
@@ -107,41 +109,63 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
           Escala de Bristol — selecciona el tipo más parecido
         </p>
         <div className="mt-1.5 shrink-0">
-          <BristolPicker value={bristol} onChange={setBristol} theme={theme} />
+          <BristolPicker value={bristol} onChange={setBristol} theme={theme} restrictedTypes={!limits.bristolFull ? [3, 4, 5] : undefined} />
         </div>
 
         {/* Floats? */}
-        <p className="text-sm font-black mt-3 shrink-0" style={{ color: theme.text }}>
-          ¿FLOTA LA DEPOSICIÓN?
-        </p>
-        <div className="flex gap-2 mt-1 shrink-0">
-          {[
-            { label: '🫧 Sí, flota', value: true },
-            { label: '⬇️ No, se hunde', value: false },
-          ].map((opt) => (
-            <button
-              key={String(opt.value)}
-              onClick={() => setFloats(floats === opt.value ? null : opt.value)}
-              className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
-              style={{
-                backgroundColor: floats === opt.value ? theme.text : theme.glass,
-                color: floats === opt.value ? invertColor : theme.text,
-              }}
-            >
-              <span className="text-sm font-bold">{opt.label}</span>
-            </button>
-          ))}
-        </div>
+        {limits.floatsField ? (
+          <>
+            <p className="text-sm font-black mt-3 shrink-0" style={{ color: theme.text }}>
+              ¿FLOTA LA DEPOSICIÓN?
+            </p>
+            <div className="flex gap-2 mt-1 shrink-0">
+              {[
+                { label: '🫧 Sí, flota', value: true },
+                { label: '⬇️ No, se hunde', value: false },
+              ].map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => setFloats(floats === opt.value ? null : opt.value)}
+                  className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
+                  style={{
+                    backgroundColor: floats === opt.value ? theme.text : theme.glass,
+                    color: floats === opt.value ? invertColor : theme.text,
+                  }}
+                >
+                  <span className="text-sm font-bold">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="mt-3 shrink-0 rounded-xl p-3 opacity-50" style={{ backgroundColor: theme.glass }}>
+            <p className="text-sm font-bold" style={{ color: theme.text }}>🔒 ¿Flota? — Regístrate para desbloquear</p>
+          </div>
+        )}
 
         {/* Notes */}
-        <p className="text-sm font-black mt-3 shrink-0" style={{ color: theme.text }}>NOTAS</p>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Escribe tus notas aquí..."
-          className="w-full mt-1 flex-1 min-h-[50px] rounded-lg p-3 text-sm resize-none outline-none placeholder-white/50"
-          style={{ backgroundColor: theme.glass, color: theme.text }}
-        />
+        {limits.maxNoteLength > 0 ? (
+          <>
+            <p className="text-sm font-black mt-3 shrink-0" style={{ color: theme.text }}>NOTAS</p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value.slice(0, limits.maxNoteLength === Infinity ? undefined : limits.maxNoteLength))}
+              placeholder="Escribe tus notas aquí..."
+              maxLength={limits.maxNoteLength === Infinity ? undefined : limits.maxNoteLength}
+              className="w-full mt-1 flex-1 min-h-[50px] rounded-lg p-3 text-sm resize-none outline-none placeholder-white/50"
+              style={{ backgroundColor: theme.glass, color: theme.text }}
+            />
+            {limits.maxNoteLength !== Infinity && (
+              <p className="text-[10px] mt-0.5 shrink-0" style={{ color: `${theme.text}60` }}>
+                {notes.length}/{limits.maxNoteLength} caracteres {tier !== 'premium' && '— Premium: ilimitado'}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="mt-3 shrink-0 rounded-xl p-3 opacity-50" style={{ backgroundColor: theme.glass }}>
+            <p className="text-sm font-bold" style={{ color: theme.text }}>🔒 Notas — Regístrate para desbloquear</p>
+          </div>
+        )}
       </div>
 
       {/* Register button */}

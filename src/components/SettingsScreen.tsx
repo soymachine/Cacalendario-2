@@ -10,6 +10,7 @@ import {
   type Theme,
 } from '../lib/preferences';
 import { asset } from '../lib/config';
+import { useTier } from '../lib/useTier';
 
 interface SettingsScreenProps {
   onClose: () => void;
@@ -18,16 +19,18 @@ interface SettingsScreenProps {
 export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [prefs, setPrefs] = useState(getPreferences);
   const [showTipThanks, setShowTipThanks] = useState(false);
+  const { tier, limits } = useTier();
   const theme = THEMES.find((t) => t.id === prefs.themeId) || THEMES[0];
 
-  const selectEmoji = (emoji: PoopEmoji) => {
-    if (emoji.premium) return; // locked
+  const selectEmoji = (emoji: PoopEmoji, index: number) => {
+    // Check if within tier limit
+    if (index >= limits.freeEmojis && tier !== 'premium') return;
     const updated = savePreferences({ emojiId: emoji.id });
     setPrefs(updated);
   };
 
-  const selectTheme = (t: Theme) => {
-    if (t.premium) return; // locked
+  const selectTheme = (t: Theme, index: number) => {
+    if (index >= limits.freeThemes && tier !== 'premium') return;
     const updated = savePreferences({ themeId: t.id });
     setPrefs(updated);
     applyTheme(t);
@@ -66,13 +69,13 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               EMOJI DE CACA
             </p>
             <div className="grid grid-cols-5 gap-2">
-              {POOP_EMOJIS.map((emoji) => {
+              {POOP_EMOJIS.map((emoji, idx) => {
                 const isSelected = prefs.emojiId === emoji.id;
-                const isLocked = emoji.premium;
+                const isLocked = idx >= limits.freeEmojis && tier !== 'premium';
                 return (
                   <button
                     key={emoji.id}
-                    onClick={() => selectEmoji(emoji)}
+                    onClick={() => selectEmoji(emoji, idx)}
                     className={`relative rounded-xl p-3 flex flex-col items-center gap-1 transition-all active:scale-95 ${
                       isLocked ? 'opacity-50' : ''
                     }`}
@@ -100,7 +103,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               })}
             </div>
             <p className="text-[10px] mt-2" style={{ color: theme.text, opacity: 0.4 }}>
-              🔒 = Próximamente con la versión premium
+              🔒 = {tier === 'anon' ? 'Regístrate para desbloquear más' : 'Disponible con Premium ⭐'}
             </p>
           </div>
 
@@ -110,13 +113,13 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               TEMA
             </p>
             <div className="grid grid-cols-4 gap-2">
-              {THEMES.map((t) => {
+              {THEMES.map((t, idx) => {
                 const isSelected = prefs.themeId === t.id;
-                const isLocked = t.premium;
+                const isLocked = idx >= limits.freeThemes && tier !== 'premium';
                 return (
                   <button
                     key={t.id}
-                    onClick={() => selectTheme(t)}
+                    onClick={() => selectTheme(t, idx)}
                     className={`relative rounded-xl p-3 flex flex-col items-center gap-1 transition-all active:scale-95 ${
                       isLocked ? 'opacity-50' : ''
                     }`}
@@ -147,7 +150,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               })}
             </div>
             <p className="text-[10px] mt-2" style={{ color: theme.text, opacity: 0.4 }}>
-              🔒 = Próximamente con la versión premium
+              🔒 = {tier === 'anon' ? 'Regístrate para desbloquear más' : 'Disponible con Premium ⭐'}
             </p>
           </div>
 

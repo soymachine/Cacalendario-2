@@ -16,14 +16,16 @@ import FeedbackScreen from './FeedbackScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
-import type { PoopEntry } from '../lib/storage';
+import { useTier } from '../lib/useTier';
+import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback';
+type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback' | 'premium';
 
 function AppContent() {
   const { user } = useAuth();
   const { emoji, theme } = usePreferences();
+  const { tier, limits } = useTier();
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
@@ -47,7 +49,12 @@ function AppContent() {
 
   const handleDayClick = (date: string, entries: PoopEntry[]) => {
     if (entries.length === 0) {
-      // Empty day → register for that date
+      // Check total entries limit for anon users
+      const totalEntries = getEntries().length;
+      if (totalEntries >= limits.maxEntries) {
+        setScreen('auth'); // Prompt to register
+        return;
+      }
       setRegisterDate(date);
       setScreen('register');
     } else {
@@ -55,6 +62,24 @@ function AppContent() {
       setDetailDate(date);
       setScreen('dayDetail');
     }
+  };
+
+  const handleRegisterClick = () => {
+    const totalEntries = getEntries().length;
+    if (totalEntries >= limits.maxEntries) {
+      setScreen('auth');
+      return;
+    }
+    setRegisterDate(null);
+    setScreen('register');
+  };
+
+  const handleStatsClick = () => {
+    if (tier === 'anon') {
+      setScreen('auth');
+      return;
+    }
+    setScreen('stats');
   };
 
   const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: boolean | null) => {
@@ -119,18 +144,25 @@ function AppContent() {
         {/* Stats button */}
         <div className="px-10 mb-2">
           <button
-            onClick={() => setScreen('stats')}
+            onClick={handleStatsClick}
             className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
             style={{ backgroundColor: theme.glass }}
           >
-            <span className="text-base font-bold" style={{ color: theme.text }}>📊 ver estadísticas</span>
+            <span className="text-base font-bold" style={{ color: theme.text }}>
+              📊 ver estadísticas {tier === 'anon' && '🔒'}
+            </span>
           </button>
         </div>
 
         {/* Register button */}
         <div className="px-10 pb-10 mt-auto">
+          {tier === 'anon' && (
+            <p className="text-center text-xs mb-2" style={{ color: `${theme.text}80` }}>
+              {getEntries().length}/{limits.maxEntries} registros gratuitos
+            </p>
+          )}
           <button
-            onClick={() => { setRegisterDate(null); setScreen('register'); }}
+            onClick={handleRegisterClick}
             className="w-full rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
             style={{ backgroundColor: theme.text }}
           >

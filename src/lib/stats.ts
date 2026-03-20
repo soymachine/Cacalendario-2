@@ -29,8 +29,16 @@ export interface Stats {
   bristolAvg: number | null;
 }
 
-export function computeStats(): Stats {
-  const entries = getEntries();
+export function computeStats(daysLimit?: number): Stats {
+  let entries = getEntries();
+
+  // Filter entries to daysLimit if specified
+  if (daysLimit && daysLimit !== Infinity) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysLimit);
+    const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+    entries = entries.filter((e) => e.date >= cutoffStr);
+  }
   const now = new Date();
   const thisYear = now.getFullYear();
   const thisMonth = now.getMonth() + 1;

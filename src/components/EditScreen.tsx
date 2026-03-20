@@ -3,6 +3,7 @@ import { formatDateForDisplay, formatTime } from '../lib/dates';
 import { saveEntry, deleteEntry, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
+import { useTier } from '../lib/useTier';
 import BristolPicker from './BristolPicker';
 
 interface EditScreenProps {
@@ -12,6 +13,7 @@ interface EditScreenProps {
 
 export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const { emoji, theme } = usePreferences();
+  const { tier, limits } = useTier();
   const [h, m] = entry.time.split(':').map(Number);
   const [hours, setHours] = useState(h);
   const [minutes, setMinutes] = useState(m);
@@ -134,10 +136,12 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
         <p className="text-sm font-black mt-3 shrink-0" style={{ color: theme.text }}>NOTAS</p>
         <textarea
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Escribe tus notas aquí..."
+          onChange={(e) => setNotes(limits.maxNoteLength === Infinity ? e.target.value : e.target.value.slice(0, limits.maxNoteLength))}
+          placeholder={limits.maxNoteLength === 0 ? '🔒 Regístrate para usar notas' : 'Escribe tus notas aquí...'}
+          disabled={limits.maxNoteLength === 0}
+          maxLength={limits.maxNoteLength === Infinity ? undefined : limits.maxNoteLength}
           className="w-full mt-1 flex-1 min-h-[50px] rounded-lg p-3 text-sm resize-none outline-none placeholder-white/50"
-          style={{ backgroundColor: theme.glass, color: theme.text }}
+          style={{ backgroundColor: theme.glass, color: theme.text, opacity: limits.maxNoteLength === 0 ? 0.5 : 1 }}
         />
       </div>
 
@@ -167,13 +171,15 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           </div>
         ) : (
           <div className="flex gap-3">
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="rounded-full px-5 py-2.5 active:scale-95 transition-transform"
-              style={{ backgroundColor: '#c0392b' }}
-            >
-              <span className="text-sm font-bold text-white">🗑️ eliminar</span>
-            </button>
+            {limits.canDeleteEntries && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-full px-5 py-2.5 active:scale-95 transition-transform"
+                style={{ backgroundColor: '#c0392b' }}
+              >
+                <span className="text-sm font-bold text-white">🗑️ eliminar</span>
+              </button>
+            )}
             <button
               onClick={handleSave}
               className="flex-1 rounded-full py-2.5 active:scale-95 transition-transform"

@@ -3,6 +3,7 @@ import { formatDateForDisplay } from '../lib/dates';
 import { getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
+import { useTier } from '../lib/useTier';
 import { getBristolType, getBristolHealthLabel, getBristolHealthColor } from '../lib/bristol';
 
 interface DayDetailScreenProps {
@@ -14,6 +15,7 @@ interface DayDetailScreenProps {
 
 export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry }: DayDetailScreenProps) {
   const { emoji, theme } = usePreferences();
+  const { tier, limits } = useTier();
   const [entries, setEntries] = useState<PoopEntry[]>([]);
 
   const refresh = () => setEntries(getEntriesForDate(date));
@@ -119,18 +121,26 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
 
         {/* Add another entry button */}
         <div className="shrink-0 flex justify-center px-8 py-4">
-          <button
-            onClick={() => onAddEntry(date)}
-            className="w-full max-w-sm rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-            style={{ backgroundColor: theme.text }}
-          >
-            <span className="text-lg" style={{ color: invertColor }}>+ añadir registro</span>
-            {emoji.char === 'svg' ? (
-              <img src={asset('/poop-button.svg')} alt="" className="w-7 h-7" />
-            ) : (
-              <span className="text-xl">{emoji.char}</span>
-            )}
-          </button>
+          {entries.length < limits.maxEntriesPerDay ? (
+            <button
+              onClick={() => onAddEntry(date)}
+              className="w-full max-w-sm rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              style={{ backgroundColor: theme.text }}
+            >
+              <span className="text-lg" style={{ color: invertColor }}>+ añadir registro</span>
+              {emoji.char === 'svg' ? (
+                <img src={asset('/poop-button.svg')} alt="" className="w-7 h-7" />
+              ) : (
+                <span className="text-xl">{emoji.char}</span>
+              )}
+            </button>
+          ) : (
+            <div className="w-full max-w-sm rounded-full py-2.5 text-center" style={{ backgroundColor: theme.glass }}>
+              <span className="text-sm" style={{ color: `${theme.text}80` }}>
+                {tier === 'anon' ? '🔒 Regístrate para añadir más' : tier === 'free' ? '🔒 Premium: registros ilimitados/día' : ''}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
