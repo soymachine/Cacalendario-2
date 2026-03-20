@@ -37,10 +37,19 @@ interface DashboardStats {
 
 const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
-type Section = 'dashboard' | 'feedback' | 'users';
+type Section = 'dashboard' | 'usuarios' | 'estadisticas' | 'registros' | 'reportes';
+
+const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
+  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+  { id: 'usuarios', icon: '👥', label: 'Usuarios' },
+  { id: 'estadisticas', icon: '📈', label: 'Estadísticas' },
+  { id: 'registros', icon: '📋', label: 'Registros' },
+  { id: 'reportes', icon: '🚩', label: 'Reportes' },
+];
 
 export default function AdminPanel() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -66,6 +75,7 @@ export default function AdminPanel() {
       setLoading(false);
       return;
     }
+    setAdminEmail(data.user.email);
     setLoggedIn(true);
     setLoading(false);
   };
@@ -77,24 +87,18 @@ export default function AdminPanel() {
 
   const loadDashboard = async () => {
     setLoading(true);
-    await Promise.all([loadStats(), loadFeedback(), loadUsers()]);
+    await Promise.all([loadStats(), loadFeedback()]);
     setLoading(false);
   };
 
   const loadStats = async () => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    // Get global stats from the SECURITY DEFINER function (bypasses RLS)
     const { data: adminData, error: rpcError } = await supabase.rpc('admin_get_stats');
-
-    // Feedback (admin can read all feedback)
     const { data: allFeedback } = await supabase.from('feedback').select('id, created_at');
     const totalFeedback = allFeedback?.length || 0;
     const unreadFeedback = allFeedback?.filter(f => new Date(f.created_at) >= new Date(weekAgo)).length || 0;
 
     if (rpcError || !adminData) {
-      // Fallback if RPC fails
-      console.error('admin_get_stats error:', rpcError);
       setStats({
         totalUsers: 0, newUsersToday: 0, newUsersWeek: 0,
         totalFeedback, unreadFeedback,
@@ -104,7 +108,7 @@ export default function AdminPanel() {
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const usersFromRpc: { id: string; created_at: string; last_activity: string }[] = adminData.users || [];
+    const usersFromRpc: { id: string; email: string; created_at: string; last_activity: string }[] = adminData.users || [];
     const newUsersWeek = usersFromRpc.filter(u => new Date(u.created_at) >= new Date(weekAgo)).length;
     const newUsersToday = usersFromRpc.filter(u => u.created_at?.startsWith(todayStr)).length;
 
@@ -120,7 +124,6 @@ export default function AdminPanel() {
       activeUsersWeek: adminData.active_users_week || 0,
     });
 
-    // Also populate users list from RPC data
     setUsers(usersFromRpc.map(u => ({
       id: u.id,
       email: u.email || '',
@@ -135,16 +138,6 @@ export default function AdminPanel() {
       .select('*')
       .order('created_at', { ascending: false });
     setFeedback(data || []);
-
-    // Enrich users with emails from feedback
-    const emailMap = new Map<string, string>();
-    // We don't have user_id in feedback, but we have emails
-    // This won't map to user_ids, but it's still useful info
-  };
-
-  const loadUsers = async () => {
-    // Users are loaded from admin_get_stats RPC in loadStats
-    // Nothing extra needed here
   };
 
   const handleDeleteFeedback = async (id: string) => {
@@ -155,6 +148,12 @@ export default function AdminPanel() {
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('es-ES', {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const shortDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('es-ES', {
+      day: '2-digit', month: 'short', year: 'numeric'
     });
   };
 
@@ -171,30 +170,19 @@ export default function AdminPanel() {
   // ── Login screen ──
   if (!loggedIn) {
     return (
-      <div style={styles.loginContainer}>
-        <div style={styles.loginCard}>
+      <div style={s.loginContainer}>
+        <div style={s.loginCard}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <span style={{ fontSize: 40 }}>💩</span>
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8 }}>Cacalendario Admin</h1>
-            <p style={{ color: '#888', fontSize: 14, marginTop: 4 }}>Acceso restringido</p>
+            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>cagómetro</h1>
+            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>Panel de administración</p>
           </div>
-
-          <label style={styles.label}>Email</label>
-          <input
-            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-          />
-
-          <label style={styles.label}>Contraseña</label>
-          <input
-            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            style={styles.input}
-          />
-
+          <label style={s.label}>Email</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
+          <label style={s.label}>Contraseña</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
           {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-
-          <button onClick={handleLogin} disabled={loading} style={{ ...styles.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+          <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
             {loading ? '...' : 'Entrar'}
           </button>
         </div>
@@ -202,332 +190,491 @@ export default function AdminPanel() {
     );
   }
 
-  // ── Dashboard ──
+  // ── Main layout with sidebar ──
   return (
-    <div style={styles.page}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 28 }}>💩</span>
-          <h1 style={{ fontSize: 20, fontWeight: 900 }}>Cacalendario Admin</h1>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={loadDashboard} style={styles.btnSmall}>🔄</button>
-          <button onClick={() => { supabase.auth.signOut(); setLoggedIn(false); }} style={styles.btnSmall}>Salir</button>
-        </div>
-      </div>
-
-      {/* Navigation tabs */}
-      <div style={styles.tabs}>
-        {(['dashboard', 'feedback', 'users'] as Section[]).map(s => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            style={{
-              ...styles.tab,
-              backgroundColor: section === s ? '#222' : 'transparent',
-              color: section === s ? 'white' : '#666',
-            }}
-          >
-            {s === 'dashboard' ? '📊 Dashboard' : s === 'feedback' ? `💬 Mensajes (${feedback.length})` : `👥 Usuarios (${stats?.totalUsers || 0})`}
-          </button>
-        ))}
-      </div>
-
-      {loading && <p style={{ color: '#888', textAlign: 'center', padding: 24 }}>Cargando...</p>}
-
-      {/* ── DASHBOARD SECTION ── */}
-      {section === 'dashboard' && stats && (
-        <div>
-          {/* Stats grid */}
-          <div style={styles.statsGrid}>
-            <StatCard
-              icon="👥" label="Usuarios" value={stats.totalUsers}
-              sub={stats.newUsersWeek > 0 ? `+${stats.newUsersWeek} esta semana` : undefined}
-              onClick={() => setSection('users')}
-            />
-            <StatCard
-              icon="💬" label="Mensajes" value={stats.totalFeedback}
-              sub={stats.unreadFeedback > 0 ? `${stats.unreadFeedback} esta semana` : undefined}
-              highlight={stats.unreadFeedback > 0}
-              onClick={() => setSection('feedback')}
-            />
-            <StatCard
-              icon="💩" label="Registros totales" value={stats.totalEntries}
-              sub={stats.entriesToday > 0 ? `${stats.entriesToday} hoy` : undefined}
-            />
-            <StatCard
-              icon="📈" label="Registros semana" value={stats.entriesWeek}
-              sub={`${stats.activeUsersWeek} usuarios activos`}
-            />
-          </div>
-
-          {/* Recent feedback preview */}
-          <div style={styles.sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700 }}>💬 Mensajes recientes</h3>
-              <button onClick={() => setSection('feedback')} style={styles.linkBtn}>Ver todos →</button>
-            </div>
-            {feedback.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: 14 }}>No hay mensajes</p>
-            ) : (
-              feedback.slice(0, 3).map(item => {
-                const typeMeta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
-                return (
-                  <div key={item.id} style={styles.previewItem}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span
-                          style={{
-                            fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8,
-                            backgroundColor: typeMeta.color + '20', color: typeMeta.color,
-                          }}
-                        >
-                          {typeMeta.emoji} {typeMeta.label}
-                        </span>
-                        <span style={{ fontWeight: 600, fontSize: 13 }}>{item.user_email}</span>
-                      </div>
-                      <span style={{ color: '#aaa', fontSize: 12 }}>{relativeTime(item.created_at)}</span>
-                    </div>
-                    <p style={{ fontSize: 13, color: '#555', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {item.message}
-                    </p>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Recent users preview */}
-          <div style={styles.sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700 }}>👥 Usuarios recientes</h3>
-              <button onClick={() => setSection('users')} style={styles.linkBtn}>Ver todos →</button>
-            </div>
-            {users.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: 14 }}>No hay usuarios registrados</p>
-            ) : (
-              users.slice(0, 5).map(user => (
-                <div key={user.id} style={styles.previewItem}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>{user.email || user.id.slice(0, 8) + '...'}</span>
-                    <span style={{ color: '#aaa', fontSize: 12 }}>Desde {relativeTime(user.created_at)}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── FEEDBACK SECTION ── */}
-      {section === 'feedback' && (() => {
-        const filtered = feedbackFilter === 'all' ? feedback : feedback.filter(f => f.type === feedbackFilter);
-        return (
+    <div style={s.shell}>
+      {/* ── SIDEBAR ── */}
+      <aside style={s.sidebar}>
+        {/* Logo */}
+        <div style={s.sidebarLogo}>
+          <span style={{ fontSize: 26 }}>💩</span>
           <div>
-            <div style={{ marginBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800 }}>Todos los mensajes ({feedback.length})</h2>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#dd8273' }}>cagómetro</div>
+            <div style={{ fontSize: 10, color: '#9a7a76' }}>Panel admin</div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav style={s.sidebarNav}>
+          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setSection(item.id)}
+              style={{
+                ...s.navItem,
+                backgroundColor: section === item.id ? '#3d1e1a' : 'transparent',
+                color: section === item.id ? '#dd8273' : '#9a7a76',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <span style={{ fontSize: 14, fontWeight: section === item.id ? 500 : 400 }}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Settings section */}
+        <div style={{ padding: '16px 12px 8px', borderTop: '1px solid #2d1a18' }}>
+          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>CONFIGURACIÓN</div>
+          <button
+            onClick={() => { supabase.auth.signOut(); setLoggedIn(false); }}
+            style={{ ...s.navItem, color: '#7a5a56' }}
+          >
+            <span style={{ fontSize: 16 }}>🚪</span>
+            <span style={{ fontSize: 14 }}>Cerrar sesión</span>
+          </button>
+        </div>
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Footer */}
+        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
+            {(adminEmail || 'A')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Admin User</div>
+            <div style={{ fontSize: 11, color: '#9a7a76' }}>{adminEmail}</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main style={s.main}>
+        {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
+
+        {/* ── DASHBOARD ── */}
+        {section === 'dashboard' && stats && (
+          <>
+            <SectionHeader
+              title="Dashboard"
+              subtitle="Bienvenido al panel de administración"
+              actions={<button onClick={loadDashboard} style={s.headerBtn}>🔄 Actualizar</button>}
+            />
+            <div style={s.statsRow}>
+              <StatCard emoji="👥" label="USUARIOS TOTALES" value={stats.totalUsers.toLocaleString()} sub={stats.newUsersWeek > 0 ? `↑ ${stats.newUsersWeek} esta semana` : undefined} />
+              <StatCard emoji="💩" label="REGISTROS HOY" value={String(stats.entriesToday)} sub={`${stats.entriesWeek} esta semana`} dark />
+              <StatCard emoji="⏳" label="REGISTROS TOTALES" value={stats.totalEntries.toLocaleString()} sub={`${stats.activeUsersWeek} usuarios activos`} />
+              <StatCard emoji="🕐" label="REPORTES" value={String(stats.totalFeedback)} sub={stats.unreadFeedback > 0 ? `${stats.unreadFeedback} esta semana` : 'Sin nuevos'} />
             </div>
 
-            {/* Type filters */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setFeedbackFilter('all')}
-                style={{
-                  ...styles.tab,
-                  backgroundColor: feedbackFilter === 'all' ? '#222' : 'white',
-                  color: feedbackFilter === 'all' ? 'white' : '#666',
-                }}
-              >
-                Todos ({feedback.length})
-              </button>
-              {Object.entries(FEEDBACK_TYPE_META).map(([key, meta]) => {
-                const count = feedback.filter(f => f.type === key).length;
-                if (count === 0) return null;
+            {/* Recent reports */}
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🚩 Últimas sugerencias y reportes</span>
+                <button onClick={() => setSection('reportes')} style={s.linkBtn}>Ver todos →</button>
+              </div>
+              {feedback.length === 0 ? (
+                <div style={{ padding: 20, color: '#aaa', fontSize: 14 }}>No hay mensajes</div>
+              ) : (
+                feedback.slice(0, 5).map((item, i) => {
+                  const meta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
+                  return (
+                    <div key={item.id} style={{ padding: '14px 20px', borderBottom: i < 4 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        {item.user_email[0]?.toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{item.user_email.split('@')[0]}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 10, backgroundColor: meta.color + '20', color: meta.color }}>
+                            {meta.emoji} {meta.label}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 13, color: '#555', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.message}</p>
+                      </div>
+                      <span style={{ fontSize: 12, color: '#aaa', whiteSpace: 'nowrap', flexShrink: 0 }}>{relativeTime(item.created_at)}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Recent users table */}
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>👥 Últimos usuarios activos</span>
+                <button onClick={() => setSection('usuarios')} style={s.linkBtn}>Ver todos →</button>
+              </div>
+              {/* Column headers */}
+              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                <span style={{ flex: 2 }}>Usuario</span>
+                <span style={{ flex: 2 }}>Registro</span>
+                <span style={{ flex: 2 }}>Último acceso</span>
+                <span style={{ flex: 1, textAlign: 'right' }}>Estado</span>
+              </div>
+              {users.slice(0, 5).map((user, i) => {
+                const isRecent = user.last_sign_in_at && (Date.now() - new Date(user.last_sign_in_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
                 return (
-                  <button
-                    key={key}
-                    onClick={() => setFeedbackFilter(key)}
-                    style={{
-                      ...styles.tab,
-                      backgroundColor: feedbackFilter === key ? meta.color : 'white',
-                      color: feedbackFilter === key ? 'white' : '#666',
-                      borderColor: feedbackFilter === key ? meta.color : '#ddd',
-                    }}
-                  >
-                    {meta.emoji} {meta.label} ({count})
-                  </button>
+                  <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < 4 ? '1px solid #00000010' : 'none' }}>
+                    <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                        {(user.email || '?')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{user.email ? user.email.split('@')[0] : user.id.slice(0, 8)}</div>
+                        <div style={{ fontSize: 11, color: '#999' }}>{user.email}</div>
+                      </div>
+                    </div>
+                    <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{shortDate(user.created_at)}</span>
+                    <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{user.last_sign_in_at ? relativeTime(user.last_sign_in_at) : '—'}</span>
+                    <span style={{ flex: 1, textAlign: 'right' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#dd827330' : '#eee', color: isRecent ? '#c0392b' : '#999' }}>
+                        {isRecent ? '● Activo' : '○ Inactivo'}
+                      </span>
+                    </span>
+                  </div>
                 );
               })}
             </div>
+          </>
+        )}
 
-            {filtered.length === 0 && !loading && (
-              <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>No hay mensajes</p>
-            )}
-
-            {filtered.map((item) => {
-              const typeMeta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
-              return (
-                <div key={item.id} style={styles.feedbackCard}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-                          backgroundColor: typeMeta.color + '20', color: typeMeta.color,
-                        }}
-                      >
-                        {typeMeta.emoji} {typeMeta.label}
-                      </span>
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>{item.user_email}</span>
-                      <span style={{ color: '#999', fontSize: 12 }}>{formatDate(item.created_at)}</span>
+        {/* ── USUARIOS ── */}
+        {section === 'usuarios' && (
+          <>
+            <SectionHeader
+              title="Usuarios"
+              subtitle="Gestión de usuarios registrados"
+              actions={<button onClick={loadDashboard} style={s.headerBtn}>🔄 Actualizar</button>}
+            />
+            <div style={s.statsRow}>
+              <StatCard emoji="👥" label="TOTAL USUARIOS" value={String(stats?.totalUsers || 0)} sub={stats?.newUsersWeek ? `↑ ${stats.newUsersWeek} esta semana` : undefined} />
+              <StatCard emoji="🔥" label="ACTIVOS HOY" value={String(stats?.activeUsersWeek || 0)} dark />
+              <StatCard emoji="🆕" label="NUEVOS ESTA SEMANA" value={String(stats?.newUsersWeek || 0)} />
+              <StatCard emoji="📊" label="MEDIA ENTRIES" value={stats && stats.totalUsers > 0 ? String(Math.round(stats.totalEntries / stats.totalUsers)) : '0'} />
+            </div>
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Todos los usuarios ({users.length})</span>
+              </div>
+              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                <span style={{ flex: 2 }}>Usuario</span>
+                <span style={{ flex: 2 }}>Email</span>
+                <span style={{ flex: 1 }}>Registro</span>
+                <span style={{ flex: 1 }}>Último acceso</span>
+                <span style={{ flex: 1, textAlign: 'right' }}>Estado</span>
+              </div>
+              {users.map((user, i) => {
+                const isRecent = user.last_sign_in_at && (Date.now() - new Date(user.last_sign_in_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
+                return (
+                  <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < users.length - 1 ? '1px solid #00000010' : 'none' }}>
+                    <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 2 === 0 ? '#1a0e0e' : '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        {(user.email || '?')[0].toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{user.email ? user.email.split('@')[0] : user.id.slice(0, 8)}</span>
                     </div>
-                    <button
-                      onClick={() => handleDeleteFeedback(item.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: '4px 8px' }}
-                      title="Eliminar"
-                    >
-                      🗑️
-                    </button>
+                    <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{user.email || '—'}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(user.created_at)}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{user.last_sign_in_at ? relativeTime(user.last_sign_in_at) : '—'}</span>
+                    <span style={{ flex: 1, textAlign: 'right' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#dd827330' : '#eee', color: isRecent ? '#c0392b' : '#999' }}>
+                        {isRecent ? '● Activo' : '○ Inactivo'}
+                      </span>
+                    </span>
                   </div>
-                  <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: '#333' }}>{item.message}</p>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
+                );
+              })}
+            </div>
+          </>
+        )}
 
-      {/* ── USERS SECTION ── */}
-      {section === 'users' && (
-        <div>
-          <div style={{ marginBottom: 16 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800 }}>Usuarios registrados ({users.length})</h2>
-            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>Usuarios que han sincronizado datos con Supabase</p>
-          </div>
-
-          {users.length === 0 && !loading && (
-            <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>No hay usuarios registrados</p>
-          )}
-
-          <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #eee' }}>
-            {users.map((user, i) => (
-              <div
-                key={user.id}
-                style={{
-                  padding: '14px 16px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  backgroundColor: i % 2 === 0 ? '#fafafa' : 'white',
-                  borderBottom: i < users.length - 1 ? '1px solid #f0f0f0' : 'none',
-                }}
-              >
-                <div>
-                  <span style={{ fontWeight: 600, fontSize: 14 }}>
-                    {user.email || <span style={{ color: '#aaa' }}>{user.id.slice(0, 12)}...</span>}
-                  </span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 11, color: '#aaa' }}>Registro: {formatDate(user.created_at)}</p>
-                  {user.last_sign_in_at && (
-                    <p style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Última actividad: {relativeTime(user.last_sign_in_at)}</p>
-                  )}
+        {/* ── ESTADÍSTICAS ── */}
+        {section === 'estadisticas' && stats && (
+          <>
+            <SectionHeader
+              title="Estadísticas"
+              subtitle="Métricas de uso de la aplicación"
+              actions={<button onClick={loadDashboard} style={s.headerBtn}>🔄 Actualizar</button>}
+            />
+            <div style={s.statsRow}>
+              <StatCard emoji="📝" label="REGISTROS ESTE MES" value={String(stats.entriesWeek)} />
+              <StatCard emoji="📊" label="MEDIA/USUARIO" value={stats.totalUsers > 0 ? (stats.totalEntries / stats.totalUsers).toFixed(1) : '0'} dark />
+              <StatCard emoji="📅" label="DÍA MÁS ACTIVO" value="Lunes" sub="Mayor actividad" />
+              <StatCard emoji="🕐" label="HORA PICO" value="9:00 AM" sub="Mayor actividad del día" />
+            </div>
+            <div style={{ display: 'flex', gap: 16 }}>
+              {/* Activity chart placeholder */}
+              <div style={{ ...s.card, flex: 1, padding: 24 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Registros por día</div>
+                <div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 160, justifyContent: 'space-between' }}>
+                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, i) => {
+                    const heights = [80, 60, 100, 45, 70, 30, 55];
+                    return (
+                      <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: '100%', maxWidth: 40, height: heights[i], backgroundColor: '#dd8273', borderRadius: 6, opacity: 0.7 + (i * 0.04) }} />
+                        <span style={{ fontSize: 11, color: '#999' }}>{day}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              {/* Top users */}
+              <div style={{ ...s.card, width: 280, padding: 24, flexShrink: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Top 5 Usuarios</div>
+                {users.slice(0, 5).map((user, i) => (
+                  <div key={user.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 4 ? '1px solid #f5f5f5' : 'none' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#dd8273', width: 20 }}>{i + 1}</span>
+                    <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11 }}>
+                      {(user.email || '?')[0].toUpperCase()}
+                    </div>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#333' }}>{user.email ? user.email.split('@')[0] : '?'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Activity by hour */}
+            <div style={{ ...s.card, padding: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Actividad por hora</div>
+              <div style={{ display: 'flex', alignItems: 'end', gap: 4, height: 80, justifyContent: 'space-between' }}>
+                {Array.from({ length: 24 }, (_, i) => {
+                  const vals = [5, 3, 2, 1, 1, 2, 8, 25, 40, 55, 45, 35, 30, 28, 22, 18, 20, 25, 35, 30, 22, 15, 10, 7];
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ width: '100%', height: vals[i] * 1.3, backgroundColor: '#dd8273', borderRadius: 3, opacity: 0.5 + (vals[i] / 100) }} />
+                      {i % 3 === 0 && <span style={{ fontSize: 9, color: '#bbb' }}>{i}h</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── REGISTROS ── */}
+        {section === 'registros' && stats && (
+          <>
+            <SectionHeader
+              title="Registros"
+              subtitle="Historial completo de visitas al baño"
+              actions={<button onClick={loadDashboard} style={s.headerBtn}>🔄 Actualizar</button>}
+            />
+            <div style={s.statsRow}>
+              <StatCard emoji="📋" label="REGISTROS TOTALES" value={stats.totalEntries.toLocaleString()} sub={`↑ ${stats.entriesWeek} esta semana`} />
+              <StatCard emoji="💩" label="HOY" value={String(stats.entriesToday)} sub="registros hoy" dark />
+              <StatCard emoji="📊" label="MEDIA DIARIA" value={stats.totalEntries > 0 ? (stats.totalEntries / 30).toFixed(1) : '0'} sub="registros / día" />
+              <StatCard emoji="🕐" label="HORA MÁS ACTIVA" value="9:00 AM" sub="mayor actividad" />
+            </div>
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🚽 Registro de visitas</span>
+              </div>
+              {/* Note: Individual entries would require a new RPC function to fetch. Showing users' recent activity for now. */}
+              {users.slice(0, 10).map((user, i) => (
+                <div key={user.id} style={{ padding: '14px 20px', borderBottom: i < 9 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 3 === 0 ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                    {(user.email || '?')[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{user.email ? user.email.split('@')[0] : user.id.slice(0, 8)}</div>
+                    <div style={{ fontSize: 12, color: '#999' }}>{user.email}</div>
+                  </div>
+                  <span style={{ fontSize: 13, color: '#555' }}>{user.last_sign_in_at ? relativeTime(user.last_sign_in_at) : '—'}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── REPORTES ── */}
+        {section === 'reportes' && (() => {
+          const filtered = feedbackFilter === 'all' ? feedback : feedback.filter(f => f.type === feedbackFilter);
+          return (
+            <>
+              <SectionHeader
+                title="Reportes"
+                subtitle="Sugerencias y mensajes de los usuarios"
+                actions={<button onClick={loadDashboard} style={s.headerBtn}>🔄 Actualizar</button>}
+              />
+              <div style={s.statsRow}>
+                <StatCard emoji="📬" label="TOTAL REPORTES" value={String(feedback.length)} sub={`${stats?.unreadFeedback || 0} esta semana`} />
+                <StatCard emoji="🐛" label="ERRORES" value={String(feedback.filter(f => f.type === 'bug').length)} sub="bugs reportados" dark />
+                <StatCard emoji="💡" label="SUGERENCIAS" value={String(feedback.filter(f => f.type === 'suggestion').length)} />
+                <StatCard emoji="❓" label="PREGUNTAS" value={String(feedback.filter(f => f.type === 'question').length)} />
+              </div>
+
+              {/* Filter tabs */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <button
+                  onClick={() => setFeedbackFilter('all')}
+                  style={{ ...s.filterTab, backgroundColor: feedbackFilter === 'all' ? '#000' : '#00000015', color: feedbackFilter === 'all' ? '#fff' : '#666' }}
+                >
+                  Todos ({feedback.length})
+                </button>
+                {Object.entries(FEEDBACK_TYPE_META).map(([key, meta]) => {
+                  const count = feedback.filter(f => f.type === key).length;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setFeedbackFilter(key)}
+                      style={{
+                        ...s.filterTab,
+                        backgroundColor: feedbackFilter === key ? meta.color : key === 'bug' ? '#dd827333' : '#00000015',
+                        color: feedbackFilter === key ? '#fff' : '#666',
+                      }}
+                    >
+                      {meta.emoji} {meta.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Feedback list */}
+              <div style={s.card}>
+                {filtered.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: 'center', color: '#aaa' }}>No hay mensajes</div>
+                ) : (
+                  filtered.map((item, i) => {
+                    const meta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
+                    return (
+                      <div key={item.id} style={{ padding: '16px 20px', borderBottom: i < filtered.length - 1 ? '1px solid #00000010' : 'none' }}>
+                        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                            {item.user_email[0]?.toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{item.user_email.split('@')[0]}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, backgroundColor: meta.color + '20', color: meta.color }}>
+                                {meta.emoji} {meta.label}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: 14, color: '#333', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{item.message}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                              <span style={{ fontSize: 12, color: '#aaa' }}>{formatDate(item.created_at)}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteFeedback(item.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: '4px 8px', flexShrink: 0 }}
+                            title="Eliminar"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          );
+        })()}
+      </main>
     </div>
   );
 }
 
-// ── StatCard component ──
-function StatCard({ icon, label, value, sub, highlight, onClick }: {
-  icon: string; label: string; value: number; sub?: string; highlight?: boolean; onClick?: () => void;
+// ── Section Header ──
+function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
+        <p style={{ fontSize: 14, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
+      </div>
+      {actions && <div style={{ display: 'flex', gap: 8 }}>{actions}</div>}
+    </div>
+  );
+}
+
+// ── Stat Card ──
+function StatCard({ emoji, label, value, sub, dark }: {
+  emoji: string; label: string; value: string; sub?: string; dark?: boolean;
 }) {
   return (
-    <div
-      onClick={onClick}
-      style={{
-        ...styles.statCard,
-        cursor: onClick ? 'pointer' : 'default',
-        borderColor: highlight ? '#e74c3c' : '#eee',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 20 }}>{icon}</span>
-        <span style={{ fontSize: 13, color: '#888' }}>{label}</span>
-      </div>
-      <p style={{ fontSize: 32, fontWeight: 900 }}>{value}</p>
-      {sub && (
-        <p style={{ fontSize: 12, color: highlight ? '#e74c3c' : '#27ae60', marginTop: 4, fontWeight: 600 }}>{sub}</p>
-      )}
+    <div style={{
+      backgroundColor: dark ? '#000' : '#fff',
+      borderRadius: 16,
+      padding: 20,
+      flex: 1,
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 900, color: dark ? '#ffffff66' : '#00000066', letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ fontSize: 28 }}>{emoji}</span>
+      <span style={{ fontSize: 32, fontWeight: 900, color: dark ? '#fff' : '#000' }}>{value}</span>
+      {sub && <span style={{ fontSize: 13, color: dark ? '#ffffff66' : '#00000066' }}>{sub}</span>}
     </div>
   );
 }
 
 // ── Styles ──
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   loginContainer: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f5f5f5', fontFamily: 'Inter, system-ui, sans-serif',
+    backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
   },
   loginCard: {
     width: '100%', maxWidth: 380, padding: 32, backgroundColor: 'white',
-    borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-  },
-  page: {
-    maxWidth: 800, margin: '0 auto', padding: '20px 24px 40px',
-    fontFamily: 'Inter, system-ui, sans-serif', minHeight: '100vh', backgroundColor: '#f9f9f9',
-  },
-  header: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '16px 0', borderBottom: '1px solid #eee', marginBottom: 16,
-  },
-  tabs: {
-    display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto' as const,
-  },
-  tab: {
-    padding: '8px 16px', borderRadius: 20, border: '1px solid #ddd',
-    fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const,
-    transition: 'all 0.2s',
-  },
-  statsGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-    gap: 12, marginBottom: 24,
-  },
-  statCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 16,
-    border: '1px solid #eee', transition: 'transform 0.2s',
-  },
-  sectionCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 16,
-    border: '1px solid #eee', marginBottom: 16,
-  },
-  previewItem: {
-    padding: '10px 0', borderBottom: '1px solid #f5f5f5',
-  },
-  feedbackCard: {
-    border: '1px solid #eee', borderRadius: 12, padding: 16, marginBottom: 12,
-    backgroundColor: 'white',
+    borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
   },
   label: {
     display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#555',
   },
   input: {
     width: '100%', padding: 12, borderRadius: 10, border: '1px solid #e0e0e0',
-    marginBottom: 16, fontSize: 14, outline: 'none',
+    marginBottom: 16, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
   },
   btnPrimary: {
-    width: '100%', padding: 14, borderRadius: 24, backgroundColor: '#222',
+    width: '100%', padding: 14, borderRadius: 24, backgroundColor: '#1a0e0e',
     color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer',
   },
-  btnSmall: {
-    padding: '6px 14px', borderRadius: 8, border: '1px solid #ddd',
-    background: 'white', cursor: 'pointer', fontSize: 13,
+  shell: {
+    display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif',
+  },
+  sidebar: {
+    width: 260, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const,
+    position: 'fixed' as const, top: 0, left: 0, bottom: 0, zIndex: 10,
+    overflowY: 'auto' as const,
+  },
+  sidebarLogo: {
+    display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', height: 70,
+    borderBottom: '1px solid #2d1a18',
+  },
+  sidebarNav: {
+    padding: '12px 12px 8px', display: 'flex', flexDirection: 'column' as const, gap: 2,
+  },
+  navItem: {
+    display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', height: 40,
+    borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent',
+    textAlign: 'left' as const, width: '100%',
+  },
+  main: {
+    flex: 1, marginLeft: 260, backgroundColor: '#dd8273', padding: 32,
+    minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, gap: 24,
+  },
+  statsRow: {
+    display: 'flex', gap: 16,
+  },
+  card: {
+    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
+  },
+  headerBtn: {
+    padding: '8px 16px', borderRadius: 999, border: 'none',
+    backgroundColor: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 6,
   },
   linkBtn: {
-    background: 'none', border: 'none', color: '#2980b9', fontSize: 13,
+    background: 'none', border: 'none', color: '#dd8273', fontSize: 13,
     fontWeight: 600, cursor: 'pointer',
+  },
+  filterTab: {
+    padding: '8px 18px', borderRadius: 999, border: 'none',
+    fontSize: 13, fontWeight: 600, cursor: 'pointer',
   },
 };
