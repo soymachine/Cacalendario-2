@@ -13,20 +13,17 @@ import ProfileButton from './ProfileButton';
 import SplashScreen from './SplashScreen';
 import PrivacyScreen from './PrivacyScreen';
 import FeedbackScreen from './FeedbackScreen';
-import PremiumScreen from './PremiumScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
-import { useTier } from '../lib/useTier';
 import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
-type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback' | 'premium';
+type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback';
 
 function AppContent() {
   const { user } = useAuth();
   const { emoji, theme } = usePreferences();
-  const { tier, limits } = useTier();
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
@@ -50,36 +47,20 @@ function AppContent() {
 
   const handleDayClick = (date: string, entries: PoopEntry[]) => {
     if (entries.length === 0) {
-      // Check total entries limit for anon users
-      const totalEntries = getEntries().length;
-      if (totalEntries >= limits.maxEntries) {
-        setScreen('auth'); // Prompt to register
-        return;
-      }
       setRegisterDate(date);
       setScreen('register');
     } else {
-      // One or more entries → show day detail (edit + add more)
       setDetailDate(date);
       setScreen('dayDetail');
     }
   };
 
   const handleRegisterClick = () => {
-    const totalEntries = getEntries().length;
-    if (totalEntries >= limits.maxEntries) {
-      setScreen('auth');
-      return;
-    }
     setRegisterDate(null);
     setScreen('register');
   };
 
   const handleStatsClick = () => {
-    if (tier === 'anon') {
-      setScreen('auth');
-      return;
-    }
     setScreen('stats');
   };
 
@@ -150,31 +131,13 @@ function AppContent() {
             style={{ backgroundColor: theme.glass }}
           >
             <span className="text-base font-bold" style={{ color: theme.text }}>
-              📊 ver estadísticas {tier === 'anon' && '🔒'}
+              📊 ver estadísticas
             </span>
           </button>
         </div>
 
-        {/* Premium upsell button (for non-premium users) */}
-        {tier !== 'premium' && tier !== 'anon' && (
-          <div className="px-10 mb-2">
-            <button
-              onClick={() => setScreen('premium')}
-              className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-              style={{ backgroundColor: '#f39c12' }}
-            >
-              <span className="text-base font-bold text-white">⭐ Hazte Premium</span>
-            </button>
-          </div>
-        )}
-
         {/* Register button */}
         <div className="px-10 pb-10 mt-auto">
-          {tier === 'anon' && (
-            <p className="text-center text-xs mb-2" style={{ color: `${theme.text}80` }}>
-              {getEntries().length}/{limits.maxEntries} registros gratuitos
-            </p>
-          )}
           <button
             onClick={handleRegisterClick}
             className="w-full rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
@@ -204,7 +167,6 @@ function AppContent() {
           entry={editEntry}
           onClose={() => {
             setEditEntry(null);
-            // If we came from dayDetail, go back there
             if (detailDate) {
               setScreen('dayDetail');
             } else {
@@ -237,7 +199,6 @@ function AppContent() {
           floats={congratsData.floats}
           onClose={() => {
             setCongratsData(null);
-            // If registering from dayDetail, go back there
             if (detailDate) {
               setScreen('dayDetail');
             } else {
@@ -252,10 +213,7 @@ function AppContent() {
       )}
 
       {screen === 'settings' && (
-        <SettingsScreen
-          onClose={() => setScreen('home')}
-          onPremium={() => setScreen('premium')}
-        />
+        <SettingsScreen onClose={() => setScreen('home')} />
       )}
 
       {screen === 'auth' && (
@@ -279,10 +237,6 @@ function AppContent() {
 
       {screen === 'feedback' && (
         <FeedbackScreen onClose={() => setScreen('home')} />
-      )}
-
-      {screen === 'premium' && (
-        <PremiumScreen onClose={() => setScreen('home')} />
       )}
 
       {/* Splash intro animation */}

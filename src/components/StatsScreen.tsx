@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { computeStats, type Stats } from '../lib/stats';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
-import { useTier } from '../lib/useTier';
 import { getBristolHealthLabel, getBristolHealthColor, BRISTOL_SCALE } from '../lib/bristol';
 
 interface StatsScreenProps {
@@ -11,11 +10,10 @@ interface StatsScreenProps {
 
 export default function StatsScreen({ onClose }: StatsScreenProps) {
   const { theme } = usePreferences();
-  const { tier, limits } = useTier();
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    setStats(computeStats(limits.statsHistoryDays));
+    setStats(computeStats(Infinity));
   }, []);
 
   if (!stats) return null;
@@ -234,17 +232,6 @@ export default function StatsScreen({ onClose }: StatsScreenProps) {
             </div>
           )}
 
-          {/* Free tier limitation banner */}
-          {tier === 'free' && limits.statsHistoryDays !== Infinity && (
-            <div className="rounded-xl p-4 mt-4 text-center" style={{ backgroundColor: theme.glass }}>
-              <p className="text-sm" style={{ color: theme.text }}>
-                ⭐ Mostrando últimos <strong>{limits.statsHistoryDays} días</strong>
-              </p>
-              <p className="text-xs mt-1" style={{ color: `${theme.text}80` }}>
-                Hazte Premium para ver tu historial completo
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
