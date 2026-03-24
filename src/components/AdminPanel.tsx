@@ -149,27 +149,56 @@ export default function AdminPanel() {
   // Note: Centers query requires RLS policy "Admins can read all centers" or disabling RLS on centers table.
   // TODO: Add an RPC or proper RLS policy for admin access to centers.
   const loadCenters = async () => {
-    const { data } = await supabase.from('centers').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('centers').select('*').order('created_at', { ascending: false });
+    console.log('loadCenters result:', { data, error });
     setCenters(data || []);
   };
 
   const handleCreateCenter = async () => {
-    const { error } = await supabase.rpc('admin_create_center', {
-      p_center_name: newCenter.name,
-      p_specialty: newCenter.specialty || null,
-      p_address: newCenter.address || null,
-      p_phone: newCenter.phone || null,
-      p_doctor_email: newCenter.doctorEmail,
-      p_doctor_name: newCenter.doctorName,
-      p_doctor_specialty: newCenter.doctorSpecialty || null,
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      loadCenters();
-      setShowCreateCenter(false);
-      setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
+    setError('');
+    console.log('Creating center:', newCenter);
+
+    // 1. Create the center
+    const { data: centerData, error: centerError } = await supabase
+      .from('centers')
+      .insert({
+        name: newCenter.name,
+        specialty: newCenter.specialty || null,
+        address: newCenter.address || null,
+        phone: newCenter.phone || null,
+      })
+      .select()
+      .single();
+
+    if (centerError) {
+      console.error('Center creation error:', centerError);
+      setError('Error al crear centro: ' + centerError.message);
+      return;
     }
+    console.log('Center created:', centerData);
+
+    // 2. Try to link the doctor if they have an existing account
+    if (newCenter.doctorEmail) {
+      // Look up user by email via admin_get_stats (users list)
+      const { data: usersData } = await supabase.rpc('admin_get_stats');
+      const doctorUser = usersData?.users?.find((u: { email: string }) => u.email === newCenter.doctorEmail);
+
+      if (doctorUser) {
+        // Doctor has an account — insert into doctors table
+        await supabase.from('doctors').insert({
+          id: doctorUser.id,
+          center_id: centerData.id,
+          name: newCenter.doctorName,
+          specialty: newCenter.doctorSpecialty || null,
+        });
+      }
+      // If doctor doesn't have an account yet, center is created without a linked doctor.
+      // The doctor can register and be linked later.
+    }
+
+    loadCenters();
+    setShowCreateCenter(false);
+    setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
   };
 
   const loadFeedback = async () => {
@@ -226,6 +255,7 @@ export default function AdminPanel() {
             {loading ? '...' : 'Entrar'}
           </button>
         </div>
+        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.1</p>
       </div>
     );
   }
@@ -506,7 +536,7 @@ export default function AdminPanel() {
                   </div>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <label style={s.label}>Email del doctor *</label>
+                      <label style={s.label}>Email del doctor</label>
                       <input
                         type="email"
                         value={newCenter.doctorEmail}
@@ -516,7 +546,7 @@ export default function AdminPanel() {
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label style={s.label}>Nombre del doctor *</label>
+                      <label style={s.label}>Nombre del doctor</label>
                       <input
                         type="text"
                         value={newCenter.doctorName}
@@ -546,8 +576,8 @@ export default function AdminPanel() {
                     </button>
                     <button
                       onClick={handleCreateCenter}
-                      disabled={!newCenter.name || !newCenter.doctorEmail || !newCenter.doctorName}
-                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff', opacity: (!newCenter.name || !newCenter.doctorEmail || !newCenter.doctorName) ? 0.5 : 1 }}
+                      disabled={!newCenter.name}
+                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff', opacity: !newCenter.name ? 0.5 : 1 }}
                     >
                       Crear Centro
                     </button>
@@ -826,7 +856,7 @@ function StatCard({ emoji, label, value, sub, dark }: {
 // ── Styles ──
 const s: Record<string, React.CSSProperties> = {
   loginContainer: {
-    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
   },
   loginCard: {
