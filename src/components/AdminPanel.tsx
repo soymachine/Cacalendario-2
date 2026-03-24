@@ -201,6 +201,16 @@ export default function AdminPanel() {
     setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
   };
 
+  const handleDeleteCenter = async (id: string) => {
+    if (!confirm('¿Eliminar este centro? Esta acción no se puede deshacer.')) return;
+    const { error } = await supabase.from('centers').delete().eq('id', id);
+    if (error) {
+      setError('Error al eliminar: ' + error.message);
+    } else {
+      setCenters(centers.filter((c) => c.id !== id));
+    }
+  };
+
   const loadFeedback = async () => {
     const { data } = await supabase
       .from('feedback')
@@ -597,7 +607,8 @@ export default function AdminPanel() {
                 <span style={{ flex: 2 }}>Especialidad</span>
                 <span style={{ flex: 2 }}>Dirección</span>
                 <span style={{ flex: 1 }}>Estado</span>
-                <span style={{ flex: 1, textAlign: 'right' }}>Creado</span>
+                <span style={{ flex: 1 }}>Creado</span>
+                <span style={{ flex: 0.5, textAlign: 'right' }}></span>
               </div>
               {centers.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay centros registrados</div>
@@ -622,7 +633,16 @@ export default function AdminPanel() {
                           {isActive ? '● Activo' : '○ Inactivo'}
                         </span>
                       </span>
-                      <span style={{ flex: 1, fontSize: 13, color: '#555', textAlign: 'right' }}>{shortDate(center.created_at)}</span>
+                      <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(center.created_at)}</span>
+                      <span style={{ flex: 0.5, textAlign: 'right' }}>
+                        <button
+                          onClick={() => handleDeleteCenter(center.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.4, padding: '4px 8px' }}
+                          title="Eliminar centro"
+                        >
+                          🗑️
+                        </button>
+                      </span>
                     </div>
                   );
                 })
