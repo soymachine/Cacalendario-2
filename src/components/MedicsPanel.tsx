@@ -77,15 +77,55 @@ export default function MedicsPanel() {
         return;
       }
 
-      // Check if the user is a doctor
-      const { data: doctorData, error: doctorError } = await supabase
+      // Check if the user is already a doctor
+      let { data: doctorData } = await supabase
         .from('doctors')
         .select('*, centers(name)')
         .eq('id', data.user.id)
         .single();
 
-      if (doctorError || !doctorData) {
-        setError('No tienes permisos de acceso médico');
+      // If not found, check if there's a pending invitation by email
+      if (!doctorData) {
+        const userEmail = data.user.email?.toLowerCase();
+        if (userEmail) {
+          const { data: pendingCenter } = await supabase
+            .from('centers')
+            .select('*')
+            .eq('pending_doctor_email', userEmail)
+            .limit(1)
+            .single();
+
+          if (pendingCenter) {
+            // Auto-link: create doctor record and clear pending fields
+            const { error: insertErr } = await supabase.from('doctors').insert({
+              id: data.user.id,
+              center_id: pendingCenter.id,
+              name: pendingCenter.pending_doctor_name || userEmail.split('@')[0],
+              specialty: pendingCenter.pending_doctor_specialty || null,
+            });
+
+            if (!insertErr) {
+              // Clear pending fields
+              await supabase.from('centers').update({
+                pending_doctor_email: null,
+                pending_doctor_name: null,
+                pending_doctor_specialty: null,
+              }).eq('id', pendingCenter.id);
+
+              // Re-fetch doctor data with center name
+              const { data: newDoctor } = await supabase
+                .from('doctors')
+                .select('*, centers(name)')
+                .eq('id', data.user.id)
+                .single();
+              doctorData = newDoctor;
+            }
+          }
+        }
+      }
+
+      if (!doctorData) {
+        setError('No tienes permisos de acceso médico. Pide a tu administrador que te vincule a un centro.');
         await supabase.auth.signOut();
         setLoading(false);
         return;

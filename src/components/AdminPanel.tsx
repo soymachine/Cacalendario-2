@@ -177,23 +177,13 @@ export default function AdminPanel() {
     }
     console.log('Center created:', centerData);
 
-    // 2. Try to link the doctor if they have an existing account
+    // 2. Save pending doctor info on the center (doctor will self-register later)
     if (newCenter.doctorEmail) {
-      // Look up user by email via admin_get_stats (users list)
-      const { data: usersData } = await supabase.rpc('admin_get_stats');
-      const doctorUser = usersData?.users?.find((u: { email: string }) => u.email === newCenter.doctorEmail);
-
-      if (doctorUser) {
-        // Doctor has an account — insert into doctors table
-        await supabase.from('doctors').insert({
-          id: doctorUser.id,
-          center_id: centerData.id,
-          name: newCenter.doctorName,
-          specialty: newCenter.doctorSpecialty || null,
-        });
-      }
-      // If doctor doesn't have an account yet, center is created without a linked doctor.
-      // The doctor can register and be linked later.
+      await supabase.from('centers').update({
+        pending_doctor_email: newCenter.doctorEmail.trim().toLowerCase(),
+        pending_doctor_name: newCenter.doctorName || null,
+        pending_doctor_specialty: newCenter.doctorSpecialty || null,
+      }).eq('id', centerData.id);
     }
 
     loadCenters();
@@ -265,7 +255,7 @@ export default function AdminPanel() {
             {loading ? '...' : 'Entrar'}
           </button>
         </div>
-        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.2</p>
+        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.3</p>
       </div>
     );
   }
