@@ -23,6 +23,16 @@ interface UserInfo {
   last_sign_in_at: string | null;
 }
 
+interface Center {
+  id: string;
+  name: string;
+  specialty: string | null;
+  address: string | null;
+  phone: string | null;
+  subscription_status: string;
+  created_at: string;
+}
+
 interface DashboardStats {
   totalUsers: number;
   newUsersToday: number;
@@ -37,11 +47,12 @@ interface DashboardStats {
 
 const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
-type Section = 'dashboard' | 'usuarios' | 'estadisticas' | 'registros' | 'reportes';
+type Section = 'dashboard' | 'usuarios' | 'centros' | 'estadisticas' | 'registros' | 'reportes';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
   { id: 'usuarios', icon: '👥', label: 'Usuarios' },
+  { id: 'centros', icon: '🏥', label: 'Centros' },
   { id: 'estadisticas', icon: '📈', label: 'Estadísticas' },
   { id: 'registros', icon: '📋', label: 'Registros' },
   { id: 'reportes', icon: '🚩', label: 'Reportes' },
@@ -59,6 +70,9 @@ export default function AdminPanel() {
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all');
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [centers, setCenters] = useState<Center[]>([]);
+  const [showCreateCenter, setShowCreateCenter] = useState(false);
+  const [newCenter, setNewCenter] = useState({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
 
   const handleLogin = async () => {
     setError('');
@@ -87,7 +101,7 @@ export default function AdminPanel() {
 
   const loadDashboard = async () => {
     setLoading(true);
-    await Promise.all([loadStats(), loadFeedback()]);
+    await Promise.all([loadStats(), loadFeedback(), loadCenters()]);
     setLoading(false);
   };
 
@@ -130,6 +144,32 @@ export default function AdminPanel() {
       created_at: u.created_at,
       last_sign_in_at: u.last_activity,
     })));
+  };
+
+  // Note: Centers query requires RLS policy "Admins can read all centers" or disabling RLS on centers table.
+  // TODO: Add an RPC or proper RLS policy for admin access to centers.
+  const loadCenters = async () => {
+    const { data } = await supabase.from('centers').select('*').order('created_at', { ascending: false });
+    setCenters(data || []);
+  };
+
+  const handleCreateCenter = async () => {
+    const { error } = await supabase.rpc('admin_create_center', {
+      p_center_name: newCenter.name,
+      p_specialty: newCenter.specialty || null,
+      p_address: newCenter.address || null,
+      p_phone: newCenter.phone || null,
+      p_doctor_email: newCenter.doctorEmail,
+      p_doctor_name: newCenter.doctorName,
+      p_doctor_specialty: newCenter.doctorSpecialty || null,
+    });
+    if (error) {
+      setError(error.message);
+    } else {
+      loadCenters();
+      setShowCreateCenter(false);
+      setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
+    }
   };
 
   const loadFeedback = async () => {
@@ -387,6 +427,176 @@ export default function AdminPanel() {
                   </div>
                 );
               })}
+            </div>
+          </>
+        )}
+
+        {/* ── CENTROS MÉDICOS ── */}
+        {section === 'centros' && (
+          <>
+            <SectionHeader
+              title="Centros Médicos"
+              subtitle="Gestión de centros y clínicas registradas"
+              actions={
+                <button onClick={() => setShowCreateCenter(true)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
+                  + Nuevo Centro
+                </button>
+              }
+            />
+            <div style={s.statsRow}>
+              <StatCard emoji="🏥" label="TOTAL CENTROS" value={String(centers.length)} />
+              <StatCard emoji="✅" label="ACTIVOS" value={String(centers.filter(c => c.subscription_status === 'active').length)} dark />
+              <StatCard emoji="⏸️" label="INACTIVOS" value={String(centers.filter(c => c.subscription_status !== 'active').length)} />
+              <StatCard emoji="🩺" label="ESPECIALIDADES" value={String(new Set(centers.map(c => c.specialty).filter(Boolean)).size)} />
+            </div>
+
+            {/* Create center form */}
+            {showCreateCenter && (
+              <div style={s.card}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Crear nuevo centro</span>
+                </div>
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Nombre del centro *</label>
+                      <input
+                        type="text"
+                        value={newCenter.name}
+                        onChange={(e) => setNewCenter({ ...newCenter, name: e.target.value })}
+                        placeholder="Ej: Clínica San Rafael"
+                        style={s.input}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Especialidad</label>
+                      <input
+                        type="text"
+                        value={newCenter.specialty}
+                        onChange={(e) => setNewCenter({ ...newCenter, specialty: e.target.value })}
+                        placeholder="Ej: Gastroenterología"
+                        style={s.input}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Dirección</label>
+                      <input
+                        type="text"
+                        value={newCenter.address}
+                        onChange={(e) => setNewCenter({ ...newCenter, address: e.target.value })}
+                        placeholder="Ej: Calle Mayor 10, Madrid"
+                        style={s.input}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Teléfono</label>
+                      <input
+                        type="text"
+                        value={newCenter.phone}
+                        onChange={(e) => setNewCenter({ ...newCenter, phone: e.target.value })}
+                        placeholder="Ej: +34 612 345 678"
+                        style={s.input}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid #00000010', paddingTop: 12, marginTop: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>Doctor principal</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Email del doctor *</label>
+                      <input
+                        type="email"
+                        value={newCenter.doctorEmail}
+                        onChange={(e) => setNewCenter({ ...newCenter, doctorEmail: e.target.value })}
+                        placeholder="doctor@email.com"
+                        style={s.input}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Nombre del doctor *</label>
+                      <input
+                        type="text"
+                        value={newCenter.doctorName}
+                        onChange={(e) => setNewCenter({ ...newCenter, doctorName: e.target.value })}
+                        placeholder="Dr. García López"
+                        style={s.input}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Especialidad del doctor</label>
+                      <input
+                        type="text"
+                        value={newCenter.doctorSpecialty}
+                        onChange={(e) => setNewCenter({ ...newCenter, doctorSpecialty: e.target.value })}
+                        placeholder="Gastroenterología"
+                        style={s.input}
+                      />
+                    </div>
+                  </div>
+                  {error && <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{error}</p>}
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                    <button
+                      onClick={() => { setShowCreateCenter(false); setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' }); setError(''); }}
+                      style={{ ...s.headerBtn, backgroundColor: '#eee', color: '#666' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleCreateCenter}
+                      disabled={!newCenter.name || !newCenter.doctorEmail || !newCenter.doctorName}
+                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff', opacity: (!newCenter.name || !newCenter.doctorEmail || !newCenter.doctorName) ? 0.5 : 1 }}
+                    >
+                      Crear Centro
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Centers list */}
+            <div style={s.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Todos los centros ({centers.length})</span>
+                <button onClick={loadCenters} style={s.linkBtn}>🔄 Actualizar</button>
+              </div>
+              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                <span style={{ flex: 2 }}>Centro</span>
+                <span style={{ flex: 2 }}>Especialidad</span>
+                <span style={{ flex: 2 }}>Dirección</span>
+                <span style={{ flex: 1 }}>Estado</span>
+                <span style={{ flex: 1, textAlign: 'right' }}>Creado</span>
+              </div>
+              {centers.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay centros registrados</div>
+              ) : (
+                centers.map((center, i) => {
+                  const isActive = center.subscription_status === 'active';
+                  return (
+                    <div key={center.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < centers.length - 1 ? '1px solid #00000010' : 'none' }}>
+                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isActive ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                          🏥
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{center.name}</div>
+                          {center.phone && <div style={{ fontSize: 11, color: '#999' }}>{center.phone}</div>}
+                        </div>
+                      </div>
+                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.specialty || '—'}</span>
+                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.address || '—'}</span>
+                      <span style={{ flex: 1 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isActive ? '#dd827330' : '#eee', color: isActive ? '#c0392b' : '#999' }}>
+                          {isActive ? '● Activo' : '○ Inactivo'}
+                        </span>
+                      </span>
+                      <span style={{ flex: 1, fontSize: 13, color: '#555', textAlign: 'right' }}>{shortDate(center.created_at)}</span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </>
         )}
