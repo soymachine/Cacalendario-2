@@ -59,6 +59,11 @@ export default function MedicsPanel() {
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [registerStep, setRegisterStep] = useState<'email' | 'password' | 'done'>('email');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [pendingCenterName, setPendingCenterName] = useState('');
 
   // ── Login ──
   const handleLogin = async () => {
@@ -259,27 +264,149 @@ export default function MedicsPanel() {
     return `hace ${days}d`;
   };
 
+  // ── Registration flow ──
+  const handleRegisterCheckEmail = async () => {
+    setError('');
+    if (!registerEmail.trim()) { setError('Introduce tu email'); return; }
+    setLoading(true);
+    const { data: pendingCenter } = await supabase
+      .from('centers')
+      .select('name')
+      .eq('pending_doctor_email', registerEmail.trim().toLowerCase())
+      .limit(1)
+      .single();
+    setLoading(false);
+    if (!pendingCenter) {
+      setError('Este email no está asociado a ningún centro. Contacta con tu administrador.');
+      return;
+    }
+    setPendingCenterName(pendingCenter.name);
+    setRegisterStep('password');
+  };
+
+  const handleRegisterCreate = async () => {
+    setError('');
+    if (!registerPassword || registerPassword.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    setLoading(true);
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: registerEmail.trim().toLowerCase(),
+      password: registerPassword,
+    });
+    setLoading(false);
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+    setRegisterStep('done');
+  };
+
   const acceptedPatients = patients.filter(p => p.status === 'accepted');
   const pendingPatients = patients.filter(p => p.status === 'pending');
 
-  // ── Login screen ──
+  // ── Login / Register screen ──
   if (!loggedIn) {
     return (
-      <div style={s.loginContainer}>
+      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
         <div style={s.loginCard}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
             <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Portal Médico</h1>
-            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>Acceso para profesionales</p>
+            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>
+              {registerMode ? 'Completar registro' : 'Acceso para profesionales'}
+            </p>
           </div>
-          <label style={s.label}>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
-          <label style={s.label}>Contraseña</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
-          {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-          <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
-            {loading ? '...' : 'Entrar'}
-          </button>
+
+          {!registerMode ? (
+            <>
+              <label style={s.label}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
+              <label style={s.label}>Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Entrar'}
+              </button>
+              <button
+                onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); }}
+                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Completar registro
+              </button>
+            </>
+          ) : registerStep === 'email' ? (
+            <>
+              <p style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
+                Introduce el email con el que tu administrador te ha dado de alta.
+              </p>
+              <label style={s.label}>Email</label>
+              <input
+                type="email"
+                value={registerEmail}
+                onChange={(e) => setRegisterEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleRegisterCheckEmail()}
+                placeholder="tu@email.com"
+                style={s.input}
+              />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Continuar'}
+              </button>
+              <button
+                onClick={() => { setRegisterMode(false); setError(''); }}
+                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Volver al inicio de sesión
+              </button>
+            </>
+          ) : registerStep === 'password' ? (
+            <>
+              <div style={{ backgroundColor: '#dd827320', borderRadius: 10, padding: 12, marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#1a0e0e', margin: 0 }}>
+                  {'\u{1F3E5}'} {pendingCenterName}
+                </p>
+                <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>{registerEmail}</p>
+              </div>
+              <label style={s.label}>Elige una contraseña</label>
+              <input
+                type="password"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleRegisterCreate()}
+                placeholder="Mínimo 6 caracteres"
+                style={s.input}
+              />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Finalizar registro'}
+              </button>
+              <button
+                onClick={() => { setRegisterStep('email'); setError(''); }}
+                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Volver
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: 40 }}>{'\u{1F4E7}'}</span>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Revisa tu email!</p>
+                <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
+                  Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>.
+                  Confirma tu cuenta y después inicia sesión aquí.
+                </p>
+              </div>
+              <button
+                onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }}
+                style={{ ...s.btnPrimary, marginTop: 20 }}
+              >
+                Ir a iniciar sesión
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
