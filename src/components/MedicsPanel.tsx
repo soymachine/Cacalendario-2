@@ -19,10 +19,22 @@ interface DoctorInfo {
   center_name?: string;
 }
 
-interface PatientStats {
+interface PatientEntry {
+  id: string;
+  date: string;
+  time: string;
+  notes: string;
+  bristol: number | null;
+  floats: boolean | null;
+  entry_id: string;
+  created_at: string;
+}
+
+interface PatientDetail {
+  entries: PatientEntry[];
   totalEntries: number;
-  lastEntry: string | null;
   bristolAvg: number | null;
+  lastEntryDate: string | null;
   daysSinceLast: number | null;
 }
 
@@ -43,7 +55,8 @@ export default function MedicsPanel() {
   const [loading, setLoading] = useState(false);
   const [section, setSection] = useState<Section>('dashboard');
   const [patients, setPatients] = useState<PatientLink[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
+  const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
@@ -138,6 +151,45 @@ export default function MedicsPanel() {
     }
   };
 
+  // ── Load patient detail ──
+  const loadPatientDetail = async (patient: PatientLink) => {
+    if (!patient.patient_id) return;
+    setSelectedPatient(patient);
+    setLoading(true);
+
+    const { data: entries } = await supabase
+      .from('entries')
+      .select('*')
+      .eq('user_id', patient.patient_id)
+      .order('date', { ascending: false })
+      .order('time', { ascending: false });
+
+    const entryList: PatientEntry[] = (entries || []).map((e: any) => ({
+      id: e.id,
+      date: e.date,
+      time: e.time || '',
+      notes: e.notes || '',
+      bristol: e.bristol,
+      floats: e.floats,
+      entry_id: e.entry_id || '',
+      created_at: e.created_at,
+    }));
+
+    const bristolValues = entryList.filter(e => e.bristol != null).map(e => e.bristol!);
+    const bristolAvg = bristolValues.length > 0 ? bristolValues.reduce((a, b) => a + b, 0) / bristolValues.length : null;
+    const lastEntryDate = entryList.length > 0 ? entryList[0].date : null;
+    const daysSinceLast = lastEntryDate ? Math.floor((Date.now() - new Date(lastEntryDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+    setPatientDetail({
+      entries: entryList,
+      totalEntries: entryList.length,
+      bristolAvg,
+      lastEntryDate,
+      daysSinceLast,
+    });
+    setLoading(false);
+  };
+
   const handleCopyCode = () => {
     if (inviteCode) {
       navigator.clipboard.writeText(inviteCode).catch(() => {});
@@ -213,7 +265,7 @@ export default function MedicsPanel() {
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              onClick={() => { setSection(item.id); setSelectedPatient(null); }}
+              onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
               style={{
                 ...s.navItem,
                 backgroundColor: section === item.id ? '#3d1e1a' : 'transparent',
@@ -284,7 +336,7 @@ export default function MedicsPanel() {
                 </div>
               ) : (
                 acceptedPatients.slice(0, 5).map((patient, i) => (
-                  <div key={patient.id} style={{ padding: '14px 20px', borderBottom: i < Math.min(acceptedPatients.length, 5) - 1 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <div key={patient.id} onClick={() => loadPatientDetail(patient)} style={{ padding: '14px 20px', borderBottom: i < Math.min(acceptedPatients.length, 5) - 1 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}>
                     <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                       {(patient.patient_email || patient.patient_id || '?')[0].toUpperCase()}
                     </div>
@@ -335,7 +387,7 @@ export default function MedicsPanel() {
                 patients.map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
                   return (
-                    <div key={patient.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none' }}>
+                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {(patient.patient_email || patient.patient_id || '?')[0].toUpperCase()}
@@ -495,9 +547,155 @@ export default function MedicsPanel() {
             </div>
           </>
         )}
+
+        {/* ── PATIENT DETAIL (overlay) ── */}
+        {selectedPatient && patientDetail && (
+          <>
+            <SectionHeader
+              title={selectedPatient.patient_email || selectedPatient.patient_id?.slice(0, 12) + '...' || 'Paciente'}
+              subtitle={`Código: ${selectedPatient.invite_code} · Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
+              actions={
+                <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
+                  ← Volver
+                </button>
+              }
+            />
+
+            {/* Stats */}
+            <div style={s.statsRow}>
+              <StatCard emoji="📝" label="TOTAL REGISTROS" value={String(patientDetail.totalEntries)} />
+              <StatCard emoji="💩" label="BRISTOL MEDIO" value={patientDetail.bristolAvg ? patientDetail.bristolAvg.toFixed(1) : '—'} sub={patientDetail.bristolAvg ? getBristolLabel(patientDetail.bristolAvg) : undefined} dark />
+              <StatCard emoji="📅" label="ÚLTIMO REGISTRO" value={patientDetail.lastEntryDate || '—'} sub={patientDetail.daysSinceLast !== null ? `hace ${patientDetail.daysSinceLast} días` : undefined} />
+              <StatCard emoji="📊" label="FRECUENCIA" value={patientDetail.totalEntries > 0 ? (patientDetail.totalEntries / Math.max(1, getActiveDays(patientDetail.entries))).toFixed(1) : '—'} sub="registros/día activo" />
+            </div>
+
+            {/* Alerts */}
+            {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast >= 3 && (
+              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #e74c3c' }}>
+                <span style={{ fontSize: 24 }}>⚠️</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#c0392b', fontSize: 14 }}>Alerta: {patientDetail.daysSinceLast} días sin registrar</div>
+                  <div style={{ fontSize: 13, color: '#666' }}>Este paciente lleva varios días sin registrar actividad.</div>
+                </div>
+              </div>
+            )}
+
+            {patientDetail.bristolAvg !== null && (patientDetail.bristolAvg < 3 || patientDetail.bristolAvg > 5) && (
+              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #f39c12' }}>
+                <span style={{ fontSize: 24 }}>🔬</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#e67e22', fontSize: 14 }}>Bristol fuera de rango normal (3-5)</div>
+                  <div style={{ fontSize: 13, color: '#666' }}>Media Bristol: {patientDetail.bristolAvg.toFixed(1)} — {getBristolLabel(patientDetail.bristolAvg)}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Bristol distribution */}
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ ...s.card, flex: 1, padding: 24 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Distribución Bristol</div>
+                <div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 120 }}>
+                  {[1, 2, 3, 4, 5, 6, 7].map(type => {
+                    const count = patientDetail.entries.filter(e => e.bristol === type).length;
+                    const maxCount = Math.max(1, ...([1, 2, 3, 4, 5, 6, 7].map(t => patientDetail.entries.filter(e => e.bristol === t).length)));
+                    const height = count > 0 ? (count / maxCount) * 100 : 4;
+                    const isNormal = type >= 3 && type <= 5;
+                    return (
+                      <div key={type} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>{count}</span>
+                        <div style={{ width: '100%', height, backgroundColor: isNormal ? '#27ae60' : type < 3 ? '#f39c12' : '#e74c3c', borderRadius: 4, minHeight: 4 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#999' }}>T{type}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12, fontSize: 11, color: '#999' }}>
+                  <span>🟡 Estreñimiento (1-2)</span>
+                  <span>🟢 Normal (3-5)</span>
+                  <span>🔴 Diarrea (6-7)</span>
+                </div>
+              </div>
+
+              {/* Recent entries */}
+              <div style={{ ...s.card, width: 320, flexShrink: 0, maxHeight: 300, overflowY: 'auto' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015', position: 'sticky', top: 0, backgroundColor: '#fff' }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Últimos registros</span>
+                </div>
+                {patientDetail.entries.slice(0, 20).map((entry, i) => (
+                  <div key={entry.entry_id || i} style={{ padding: '10px 20px', borderBottom: '1px solid #00000008', fontSize: 13 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 600, color: '#111' }}>{entry.date}</span>
+                      <span style={{ color: '#999' }}>{entry.time}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      {entry.bristol != null && (
+                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 6, backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : '#e74c3c20', color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : '#e74c3c' }}>
+                          Bristol {entry.bristol}
+                        </span>
+                      )}
+                      {entry.floats != null && (
+                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db' }}>
+                          {entry.floats ? '🫧 Flota' : '⬇️ Hunde'}
+                        </span>
+                      )}
+                    </div>
+                    {entry.notes && (
+                      <p style={{ fontSize: 12, color: '#888', marginTop: 4, fontStyle: 'italic' }}>"{entry.notes}"</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Calendar-like monthly view */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>📅 Calendario de actividad (últimos 30 días)</span>
+              </div>
+              <div style={{ padding: 20 }}>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {Array.from({ length: 30 }, (_, i) => {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (29 - i));
+                    const dateStr = date.toISOString().split('T')[0];
+                    const count = patientDetail.entries.filter(e => e.date === dateStr).length;
+                    const bgColor = count === 0 ? '#f0f0f0' : count === 1 ? '#dd827360' : count === 2 ? '#dd8273a0' : '#dd8273';
+                    return (
+                      <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
+                        width: 28, height: 28, borderRadius: 6, backgroundColor: bgColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 10, fontWeight: 600, color: count > 0 ? '#fff' : '#bbb',
+                      }}>
+                        {date.getDate()}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 11, color: '#999', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#f0f0f0' }} /> Sin registro</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd827360' }} /> 1</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273a0' }} /> 2</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273' }} /> 3+</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
+}
+
+// ── Helpers ──
+function getBristolLabel(avg: number): string {
+  if (avg < 3) return 'Estreñimiento';
+  if (avg <= 5) return 'Normal';
+  return 'Diarrea';
+}
+
+function getActiveDays(entries: PatientEntry[]): number {
+  const uniqueDays = new Set(entries.map(e => e.date));
+  return uniqueDays.size;
 }
 
 // ── Section Header ──
