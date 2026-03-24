@@ -555,9 +555,14 @@ export default function MedicsPanel() {
               title={selectedPatient.patient_email || selectedPatient.patient_id?.slice(0, 12) + '...' || 'Paciente'}
               subtitle={`Código: ${selectedPatient.invite_code} · Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
-                <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
-                  ← Volver
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
+                    📄 Exportar PDF
+                  </button>
+                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
+                    ← Volver
+                  </button>
+                </div>
               }
             />
 
@@ -696,6 +701,114 @@ function getBristolLabel(avg: number): string {
 function getActiveDays(entries: PatientEntry[]): number {
   const uniqueDays = new Set(entries.map(e => e.date));
   return uniqueDays.size;
+}
+
+function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: DoctorInfo | null) {
+  const bristolCounts = [1, 2, 3, 4, 5, 6, 7].map(t => detail.entries.filter(e => e.bristol === t).length);
+  const floatsYes = detail.entries.filter(e => e.floats === true).length;
+  const floatsNo = detail.entries.filter(e => e.floats === false).length;
+  const activeDays = getActiveDays(detail.entries);
+  const frequency = activeDays > 0 ? (detail.totalEntries / activeDays).toFixed(2) : '0';
+
+  const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  const patientName = patient.patient_email || patient.patient_id?.slice(0, 12) || 'Paciente';
+
+  // Build entries table rows
+  const entryRows = detail.entries.slice(0, 50).map(e => {
+    const bristol = e.bristol != null ? `Tipo ${e.bristol}` : '-';
+    const floats = e.floats === true ? 'Sí' : e.floats === false ? 'No' : '-';
+    const notes = (e.notes || '-').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return `<tr><td>${e.date}</td><td>${e.time || '-'}</td><td>${bristol}</td><td>${floats}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notes}</td></tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe - ${patientName}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a0e0e; padding: 40px; font-size: 12px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 15px; margin: 24px 0 8px; color: #dd8273; border-bottom: 2px solid #dd8273; padding-bottom: 4px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
+  .header-left h1 { color: #1a0e0e; }
+  .header-right { text-align: right; color: #888; font-size: 11px; }
+  .stats { display: flex; gap: 12px; margin: 16px 0; }
+  .stat { flex: 1; background: #f9f5f4; border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-value { font-size: 24px; font-weight: 900; color: #1a0e0e; }
+  .stat-label { font-size: 10px; color: #888; text-transform: uppercase; margin-top: 4px; }
+  .alert { background: #fff3cd; border-left: 4px solid #f39c12; padding: 8px 12px; margin: 8px 0; font-size: 12px; border-radius: 4px; }
+  .alert-red { background: #fde8e8; border-left-color: #e74c3c; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: #f5f0ef; text-align: left; padding: 6px 8px; font-weight: 700; color: #555; font-size: 10px; text-transform: uppercase; }
+  td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
+  .bristol-bar { display: flex; align-items: end; gap: 4px; height: 60px; margin: 8px 0; }
+  .bristol-col { flex: 1; text-align: center; }
+  .bristol-col .bar { margin: 0 auto; width: 80%; border-radius: 3px; }
+  .bristol-col .label { font-size: 9px; color: #999; margin-top: 2px; }
+  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #eee; font-size: 10px; color: #aaa; text-align: center; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <h1>💩 Informe de Seguimiento Intestinal</h1>
+    <p style="color:#888;margin-top:4px">Paciente: <strong>${patientName}</strong></p>
+  </div>
+  <div class="header-right">
+    <p><strong>${doctor?.center_name || 'Centro médico'}</strong></p>
+    <p>Dr. ${doctor?.name || ''} · ${doctor?.specialty || 'Medicina general'}</p>
+    <p>Fecha: ${today}</p>
+  </div>
+</div>
+
+<h2>Resumen</h2>
+<div class="stats">
+  <div class="stat"><div class="stat-value">${detail.totalEntries}</div><div class="stat-label">Registros totales</div></div>
+  <div class="stat"><div class="stat-value">${detail.bristolAvg ? detail.bristolAvg.toFixed(1) : '—'}</div><div class="stat-label">Bristol medio</div></div>
+  <div class="stat"><div class="stat-value">${activeDays}</div><div class="stat-label">Días con actividad</div></div>
+  <div class="stat"><div class="stat-value">${frequency}</div><div class="stat-label">Registros/día</div></div>
+</div>
+
+${detail.daysSinceLast !== null && detail.daysSinceLast >= 3 ? `<div class="alert alert-red">⚠️ El paciente lleva <strong>${detail.daysSinceLast} días</strong> sin registrar actividad.</div>` : ''}
+${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5) ? `<div class="alert">🔬 Bristol medio fuera de rango normal (3-5): <strong>${detail.bristolAvg.toFixed(1)}</strong> — ${getBristolLabel(detail.bristolAvg)}</div>` : ''}
+
+<h2>Distribución Escala de Bristol</h2>
+<table>
+  <tr>
+    ${[1, 2, 3, 4, 5, 6, 7].map(t => `<th style="text-align:center">Tipo ${t}</th>`).join('')}
+  </tr>
+  <tr>
+    ${bristolCounts.map((c, i) => `<td style="text-align:center;font-weight:700;color:${i < 2 ? '#f39c12' : i < 5 ? '#27ae60' : '#e74c3c'}">${c}</td>`).join('')}
+  </tr>
+</table>
+<p style="font-size:10px;color:#999;margin-top:4px">Tipos 1-2: Estreñimiento · Tipos 3-5: Normal · Tipos 6-7: Diarrea</p>
+
+<h2>Flotabilidad</h2>
+<p>Flota: <strong>${floatsYes}</strong> registros · Hunde: <strong>${floatsNo}</strong> registros · Sin datos: <strong>${detail.totalEntries - floatsYes - floatsNo}</strong></p>
+
+<h2>Historial de Registros (últimos 50)</h2>
+<table>
+  <tr><th>Fecha</th><th>Hora</th><th>Bristol</th><th>Flota</th><th>Notas</th></tr>
+  ${entryRows}
+</table>
+
+<div class="footer">
+  Generado por Cacalendario · ${today} · Este informe es orientativo y no sustituye el diagnóstico médico.
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
 }
 
 // ── Section Header ──
