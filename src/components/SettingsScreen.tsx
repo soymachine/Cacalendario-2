@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import { usePreferences } from '../lib/usePreferences';
+import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 import { asset } from '../lib/config';
 
 interface SettingsScreenProps {
@@ -7,6 +10,64 @@ interface SettingsScreenProps {
 
 export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const { theme } = usePreferences();
+  const { user } = useAuth();
+  const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
+  const [code, setCode] = useState('');
+  const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [linkMessage, setLinkMessage] = useState('');
+  const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
+
+  // Check if already linked to a center
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('patient_links')
+      .select('id, status, center_id')
+      .eq('patient_id', user.id)
+      .eq('status', 'accepted')
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          // Get center name
+          supabase.from('centers').select('name').eq('id', data[0].center_id).single()
+            .then(({ data: center }) => {
+              if (center) setLinkedCenter(center.name);
+            });
+        }
+      });
+  }, [user]);
+
+  const handleLinkDoctor = async () => {
+    if (!code.trim()) return;
+    if (!user) {
+      setLinkStatus('error');
+      setLinkMessage('Debes iniciar sesión primero');
+      return;
+    }
+    setLinkStatus('loading');
+    const { data, error } = await supabase.rpc('patient_accept_invite', { p_code: code.trim().toUpperCase() });
+    if (error || !data?.success) {
+      setLinkStatus('error');
+      setLinkMessage(data?.error || 'Código no válido');
+    } else {
+      setLinkStatus('success');
+      setLinkMessage(`Vinculado con ${data.center_name}`);
+      setLinkedCenter(data.center_name);
+    }
+  };
+
+  const handleUnlink = async () => {
+    if (!user) return;
+    await supabase
+      .from('patient_links')
+      .update({ status: 'rejected' })
+      .eq('patient_id', user.id)
+      .eq('status', 'accepted');
+    setLinkedCenter(null);
+    setLinkStatus('idle');
+    setLinkMessage('');
+    setCode('');
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center" style={{ backgroundColor: theme.main }}>
@@ -15,7 +76,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="12" fill={theme.text} />
-            <path d="M8 8L16 16M16 8L8 16" stroke={theme.id === 'night' ? '#1a1a2e' : 'white'} strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </button>
 
@@ -28,6 +89,61 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         <div className="flex-1 overflow-auto px-6 pb-8">
           <h2 className="text-sm font-black mb-6" style={{ color: theme.text }}>AJUSTES</h2>
 
+          {/* Link with doctor */}
+          {user && (
+            <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: theme.glass }}>
+              <p className="text-sm font-black mb-1" style={{ color: theme.text }}>🏥 VINCULAR CON MI MÉDICO</p>
+
+              {linkedCenter ? (
+                <div>
+                  <p className="text-sm mt-3" style={{ color: theme.text }}>
+                    Vinculado con: <strong>{linkedCenter}</strong>
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: `${theme.text}80` }}>
+                    Tu médico puede ver tus registros para ayudarte mejor.
+                  </p>
+                  <button
+                    onClick={handleUnlink}
+                    className="mt-4 rounded-full px-6 py-2 text-sm active:scale-95 transition-transform"
+                    style={{ backgroundColor: '#c0392b', color: 'white' }}
+                  >
+                    Desvincular
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
+                    Si tu médico te ha dado un código, introdúcelo aquí para compartir tus registros.
+                  </p>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    placeholder="CAC-XXXXXX"
+                    maxLength={10}
+                    className="w-full rounded-lg p-3 text-center text-lg font-bold tracking-widest outline-none uppercase"
+                    style={{ backgroundColor: theme.main, color: theme.text, letterSpacing: 3 }}
+                  />
+                  <button
+                    onClick={handleLinkDoctor}
+                    disabled={linkStatus === 'loading' || !code.trim()}
+                    className="w-full mt-3 rounded-full py-2.5 text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
+                    style={{ backgroundColor: theme.text, color: invertColor }}
+                  >
+                    {linkStatus === 'loading' ? 'Verificando...' : 'Vincular'}
+                  </button>
+                  {linkStatus === 'success' && (
+                    <p className="text-xs mt-2 text-center" style={{ color: '#27ae60' }}>✅ {linkMessage}</p>
+                  )}
+                  {linkStatus === 'error' && (
+                    <p className="text-xs mt-2 text-center" style={{ color: '#c0392b' }}>❌ {linkMessage}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* About */}
           <div className="rounded-2xl p-5 text-center" style={{ backgroundColor: theme.glass }}>
             <p className="text-base font-bold" style={{ color: theme.text }}>
               Cacalendario es 100% gratis
