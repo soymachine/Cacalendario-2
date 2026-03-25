@@ -164,15 +164,19 @@ export default function MedicsPanel() {
       setError(loadError.message);
       return;
     }
-    // Enrich with display_name from user_profiles
+    // Enrich with display_name and email from user_profiles
     const enriched = await Promise.all((data || []).map(async (p: any) => {
       if (p.patient_id) {
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('display_name')
+          .select('display_name, email')
           .eq('id', p.patient_id)
           .single();
-        return { ...p, display_name: profile?.display_name || null };
+        return {
+          ...p,
+          display_name: profile?.display_name || null,
+          patient_email: p.patient_email || profile?.email || null,
+        };
       }
       return { ...p, display_name: null };
     }));
