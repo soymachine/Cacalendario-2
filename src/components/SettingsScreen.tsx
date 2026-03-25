@@ -16,10 +16,18 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [linkMessage, setLinkMessage] = useState('');
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState('');
+  const [nameSaved, setNameSaved] = useState(false);
 
-  // Check if already linked to a center
+  // Load profile data and linked center
   useEffect(() => {
     if (!user) return;
+    // Load display_name
+    supabase.from('user_profiles').select('display_name').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.display_name) setDisplayName(data.display_name);
+      });
+    // Load linked center
     supabase
       .from('patient_links')
       .select('id, status, center_id')
@@ -28,7 +36,6 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
       .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
-          // Get center name
           supabase.from('centers').select('name').eq('id', data[0].center_id).single()
             .then(({ data: center }) => {
               if (center) setLinkedCenter(center.name);
@@ -36,6 +43,14 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         }
       });
   }, [user]);
+
+  const handleSaveName = async () => {
+    if (!user) return;
+    const trimmed = displayName.trim();
+    await supabase.from('user_profiles').update({ display_name: trimmed || null }).eq('id', user.id);
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
+  };
 
   const handleLinkDoctor = async () => {
     if (!code.trim()) return;
@@ -88,6 +103,32 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         {/* Content */}
         <div className="flex-1 overflow-auto px-6 pb-8">
           <h2 className="text-sm font-black mb-6" style={{ color: theme.text }}>AJUSTES</h2>
+
+          {/* Display name */}
+          {user && (
+            <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: theme.glass }}>
+              <p className="text-sm font-black mb-1" style={{ color: theme.text }}>👤 TU NOMBRE</p>
+              <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
+                Opcional. Si lo introduces, tu médico lo verá en lugar de tu email.
+              </p>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Ej: María García"
+                maxLength={60}
+                className="w-full rounded-lg p-3 text-sm outline-none"
+                style={{ backgroundColor: theme.main, color: theme.text }}
+              />
+              <button
+                onClick={handleSaveName}
+                className="w-full mt-3 rounded-full py-2.5 text-sm font-bold active:scale-95 transition-transform"
+                style={{ backgroundColor: theme.text, color: invertColor }}
+              >
+                {nameSaved ? '✅ Guardado' : 'Guardar nombre'}
+              </button>
+            </div>
+          )}
 
           {/* Link with doctor */}
           {user && (

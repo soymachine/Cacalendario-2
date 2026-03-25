@@ -9,6 +9,7 @@ interface PatientLink {
   invited_at: string;
   accepted_at: string | null;
   patient_email?: string;
+  display_name?: string | null;
 }
 
 interface DoctorInfo {
@@ -163,7 +164,19 @@ export default function MedicsPanel() {
       setError(loadError.message);
       return;
     }
-    setPatients(data || []);
+    // Enrich with display_name from user_profiles
+    const enriched = await Promise.all((data || []).map(async (p: any) => {
+      if (p.patient_id) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('display_name')
+          .eq('id', p.patient_id)
+          .single();
+        return { ...p, display_name: profile?.display_name || null };
+      }
+      return { ...p, display_name: null };
+    }));
+    setPatients(enriched);
   };
 
   useEffect(() => {
@@ -302,6 +315,9 @@ export default function MedicsPanel() {
     }
     setRegisterStep('done');
   };
+
+  const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
+  const patientInitial = (p: PatientLink) => (p.display_name || p.patient_email || '?')[0].toUpperCase();
 
   const acceptedPatients = patients.filter(p => p.status === 'accepted');
   const pendingPatients = patients.filter(p => p.status === 'pending');
@@ -505,13 +521,15 @@ export default function MedicsPanel() {
                 acceptedPatients.slice(0, 5).map((patient, i) => (
                   <div key={patient.id} onClick={() => loadPatientDetail(patient)} style={{ padding: '14px 20px', borderBottom: i < Math.min(acceptedPatients.length, 5) - 1 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}>
                     <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                      {(patient.patient_email || patient.patient_id || '?')[0].toUpperCase()}
+                      {patientInitial(patient)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
-                        {patient.patient_email || (patient.patient_id ? patient.patient_id.slice(0, 8) + '...' : 'Paciente')}
+                        {patientLabel(patient)}
                       </div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Código: {patient.invite_code}</div>
+                      {patient.display_name && patient.patient_email && (
+                        <div style={{ fontSize: 12, color: '#999' }}>{patient.patient_email}</div>
+                      )}
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: '#dd827330', color: '#2ecc71' }}>
                       {'\u{2705}'} Vinculado
@@ -557,14 +575,14 @@ export default function MedicsPanel() {
                     <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                          {(patient.patient_email || patient.patient_id || '?')[0].toUpperCase()}
+                          {patientInitial(patient)}
                         </div>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
-                            {patient.patient_email || (patient.patient_id ? patient.patient_id.slice(0, 8) + '...' : 'Sin asignar')}
+                            {patientLabel(patient)}
                           </div>
-                          {patient.patient_id && !patient.patient_email && (
-                            <div style={{ fontSize: 11, color: '#999' }}>ID: {patient.patient_id.slice(0, 12)}...</div>
+                          {patient.display_name && patient.patient_email && (
+                            <div style={{ fontSize: 11, color: '#999' }}>{patient.patient_email}</div>
                           )}
                         </div>
                       </div>
@@ -719,8 +737,8 @@ export default function MedicsPanel() {
         {selectedPatient && patientDetail && (
           <>
             <SectionHeader
-              title={selectedPatient.patient_email || selectedPatient.patient_id?.slice(0, 12) + '...' || 'Paciente'}
-              subtitle={`Código: ${selectedPatient.invite_code} · Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
+              title={patientLabel(selectedPatient)}
+              subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
@@ -878,7 +896,7 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   const frequency = activeDays > 0 ? (detail.totalEntries / activeDays).toFixed(2) : '0';
 
   const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-  const patientName = patient.patient_email || patient.patient_id?.slice(0, 12) || 'Paciente';
+  const patientName = patient.display_name || patient.patient_email || 'Paciente';
 
   // Build entries table rows
   const entryRows = detail.entries.slice(0, 50).map(e => {
