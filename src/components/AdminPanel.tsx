@@ -31,6 +31,7 @@ interface Center {
   phone: string | null;
   subscription_status: string;
   created_at: string;
+  pending_doctor_email: string | null;
 }
 
 interface DashboardStats {
@@ -73,6 +74,7 @@ export default function AdminPanel() {
   const [centers, setCenters] = useState<Center[]>([]);
   const [showCreateCenter, setShowCreateCenter] = useState(false);
   const [newCenter, setNewCenter] = useState({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleLogin = async () => {
     setError('');
@@ -156,7 +158,15 @@ export default function AdminPanel() {
 
   const handleCreateCenter = async () => {
     setError('');
-    console.log('Creating center:', newCenter);
+    // Validate required fields
+    const missing: string[] = [];
+    if (!newCenter.name.trim()) missing.push('Nombre del centro');
+    if (!newCenter.doctorEmail.trim()) missing.push('Email del doctor');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCenter.doctorEmail.trim())) missing.push('Email del doctor (formato inválido)');
+    if (missing.length > 0) {
+      setValidationErrors(missing);
+      return;
+    }
 
     // 1. Create the center
     const { data: centerData, error: centerError } = await supabase
@@ -255,7 +265,7 @@ export default function AdminPanel() {
             {loading ? '...' : 'Entrar'}
           </button>
         </div>
-        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.6</p>
+        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.7</p>
       </div>
     );
   }
@@ -576,8 +586,7 @@ export default function AdminPanel() {
                     </button>
                     <button
                       onClick={handleCreateCenter}
-                      disabled={!newCenter.name}
-                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff', opacity: !newCenter.name ? 0.5 : 1 }}
+                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}
                     >
                       Crear Centro
                     </button>
@@ -594,9 +603,9 @@ export default function AdminPanel() {
               </div>
               <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
                 <span style={{ flex: 2 }}>Centro</span>
+                <span style={{ flex: 2 }}>Email Doctor</span>
                 <span style={{ flex: 2 }}>Especialidad</span>
                 <span style={{ flex: 2 }}>Dirección</span>
-                <span style={{ flex: 1 }}>Estado</span>
                 <span style={{ flex: 1 }}>Creado</span>
                 <span style={{ flex: 0.5, textAlign: 'right' }}></span>
               </div>
@@ -604,11 +613,10 @@ export default function AdminPanel() {
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay centros registrados</div>
               ) : (
                 centers.map((center, i) => {
-                  const isActive = center.subscription_status === 'active';
                   return (
                     <div key={center.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < centers.length - 1 ? '1px solid #00000010' : 'none' }}>
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isActive ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           🏥
                         </div>
                         <div>
@@ -616,13 +624,9 @@ export default function AdminPanel() {
                           {center.phone && <div style={{ fontSize: 11, color: '#999' }}>{center.phone}</div>}
                         </div>
                       </div>
+                      <span style={{ flex: 2, fontSize: 13, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{center.pending_doctor_email || '—'}</span>
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.specialty || '—'}</span>
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.address || '—'}</span>
-                      <span style={{ flex: 1 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isActive ? '#dd827330' : '#eee', color: isActive ? '#c0392b' : '#999' }}>
-                          {isActive ? '● Activo' : '○ Inactivo'}
-                        </span>
-                      </span>
                       <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(center.created_at)}</span>
                       <span style={{ flex: 0.5, textAlign: 'right' }}>
                         <button
@@ -823,6 +827,33 @@ export default function AdminPanel() {
           );
         })()}
       </main>
+
+      {/* Validation modal */}
+      {validationErrors.length > 0 && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 36 }}>⚠️</span>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', marginTop: 8 }}>Campos obligatorios</h3>
+              <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Completa los siguientes campos para continuar:</p>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0' }}>
+              {validationErrors.map((err, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: i < validationErrors.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                  <span style={{ color: '#c0392b', fontSize: 14 }}>✗</span>
+                  <span style={{ fontSize: 14, color: '#333' }}>{err}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setValidationErrors([])}
+              style={{ width: '100%', padding: 12, borderRadius: 24, backgroundColor: '#1a0e0e', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
