@@ -117,7 +117,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Ej: María García"
                 maxLength={60}
-                className="w-full rounded-lg p-3 text-sm outline-none"
+                className="w-full rounded-lg p-3 text-sm outline-none placeholder-white/50"
                 style={{ backgroundColor: theme.main, color: theme.text }}
               />
               <button
@@ -162,7 +162,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                     placeholder="CAC-XXXXXX"
                     maxLength={10}
-                    className="w-full rounded-lg p-3 text-center text-lg font-bold tracking-widest outline-none uppercase"
+                    className="w-full rounded-lg p-3 text-center text-lg font-bold tracking-widest outline-none uppercase placeholder-white/50"
                     style={{ backgroundColor: theme.main, color: theme.text, letterSpacing: 3 }}
                   />
                   <button
