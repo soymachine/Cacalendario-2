@@ -22,7 +22,7 @@ import { asset } from '../lib/config';
 type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback';
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, isRecovery } = useAuth();
   const { emoji, theme } = usePreferences();
   const [screen, setScreen] = useState<Screen>('home');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
@@ -32,6 +32,11 @@ function AppContent() {
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [prevScreen, setPrevScreen] = useState<Screen>('home');
+
+  // Show auth screen when recovery link is clicked
+  useEffect(() => {
+    if (isRecovery) setScreen('auth');
+  }, [isRecovery]);
 
   // Sync when user logs in
   useEffect(() => {

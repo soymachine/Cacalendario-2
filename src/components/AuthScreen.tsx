@@ -9,19 +9,42 @@ interface AuthScreenProps {
   onShowPrivacy: () => void;
 }
 
-type Mode = 'login' | 'signup';
+type Mode = 'login' | 'signup' | 'forgot' | 'forgot-sent' | 'reset';
 
 export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthScreenProps) {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword, isRecovery, clearRecovery } = useAuth();
   const { theme } = usePreferences();
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>(isRecovery ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
+
+  const handleForgot = async () => {
+    setError('');
+    if (!email) { setError('Introduce tu email'); return; }
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    if (error) { setError(error); return; }
+    setMode('forgot-sent');
+  };
+
+  const handleResetPassword = async () => {
+    setError('');
+    if (!password || password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
+    if (password !== password2) { setError('Las contraseñas no coinciden'); return; }
+    setLoading(true);
+    const { error } = await updatePassword(password);
+    setLoading(false);
+    if (error) { setError(error); return; }
+    clearRecovery();
+    onSuccess();
+  };
 
   const handleSubmit = async () => {
     setError('');
@@ -74,7 +97,121 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
         </div>
 
         <div className="flex-1 px-10 flex flex-col min-h-0">
-          {signupSuccess ? (
+          {mode === 'reset' ? (
+            /* ── Reset password (after clicking recovery link) ── */
+            <div className="flex-1 flex flex-col justify-center">
+              <p className="text-3xl mb-2 text-center">🔐</p>
+              <p className="text-2xl font-black shrink-0 text-center" style={{ color: theme.text }}>
+                NUEVA CONTRASEÑA
+              </p>
+              <p className="text-sm mt-1 shrink-0 text-center" style={{ color: `${theme.text}99` }}>
+                Introduce tu nueva contraseña
+              </p>
+
+              <p className="text-sm font-black mt-6 shrink-0" style={{ color: theme.text }}>NUEVA CONTRASEÑA</p>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
+                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
+                style={{ backgroundColor: theme.glass, color: theme.text }}
+              />
+
+              <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>CONFIRMAR CONTRASEÑA</p>
+              <input
+                type="password"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
+                style={{ backgroundColor: theme.glass, color: theme.text }}
+              />
+
+              {error && (
+                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
+              )}
+
+              <button
+                onClick={handleResetPassword}
+                disabled={loading}
+                className="w-full mt-6 rounded-full py-3 active:scale-95 transition-transform disabled:opacity-50"
+                style={{ backgroundColor: theme.text }}
+              >
+                <span className="text-lg" style={{ color: invertColor }}>
+                  {loading ? '...' : 'Cambiar contraseña'}
+                </span>
+              </button>
+            </div>
+          ) : mode === 'forgot' ? (
+            /* ── Forgot password: enter email ── */
+            <div className="flex-1 flex flex-col justify-center">
+              <p className="text-3xl mb-2 text-center">📧</p>
+              <p className="text-2xl font-black shrink-0 text-center" style={{ color: theme.text }}>
+                RECUPERAR CONTRASEÑA
+              </p>
+              <p className="text-sm mt-1 shrink-0 text-center" style={{ color: `${theme.text}99` }}>
+                Te enviaremos un enlace para restablecer tu contraseña
+              </p>
+
+              <p className="text-sm font-black mt-6 shrink-0" style={{ color: theme.text }}>EMAIL</p>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                autoComplete="email"
+                onKeyDown={(e) => e.key === 'Enter' && handleForgot()}
+                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
+                style={{ backgroundColor: theme.glass, color: theme.text }}
+              />
+
+              {error && (
+                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
+              )}
+
+              <button
+                onClick={handleForgot}
+                disabled={loading}
+                className="w-full mt-6 rounded-full py-3 active:scale-95 transition-transform disabled:opacity-50"
+                style={{ backgroundColor: theme.text }}
+              >
+                <span className="text-lg" style={{ color: invertColor }}>
+                  {loading ? '...' : 'Enviar enlace'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setMode('login'); setError(''); }}
+                className="text-sm underline mt-4 shrink-0 text-center"
+                style={{ color: `${theme.text}99` }}
+              >
+                Volver al inicio de sesión
+              </button>
+            </div>
+          ) : mode === 'forgot-sent' ? (
+            /* ── Forgot password: email sent confirmation ── */
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <p className="text-3xl mb-4">✅</p>
+              <p className="text-xl font-black" style={{ color: theme.text }}>¡Email enviado!</p>
+              <p className="text-base mt-3" style={{ color: theme.text }}>
+                Hemos enviado un enlace de recuperación a <strong>{email}</strong>
+              </p>
+              <p className="text-sm mt-4" style={{ color: `${theme.text}99` }}>
+                Revisa tu bandeja de entrada (y spam). Haz clic en el enlace para crear una nueva contraseña.
+              </p>
+              <button
+                onClick={() => { setMode('login'); setError(''); setPassword(''); }}
+                className="mt-8 rounded-full px-10 py-3 active:scale-95 transition-transform"
+                style={{ backgroundColor: theme.text }}
+              >
+                <span className="text-lg" style={{ color: invertColor }}>Volver al login</span>
+              </button>
+            </div>
+          ) : signupSuccess ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center">
               <p className="text-3xl mb-4">📧</p>
               <p className="text-xl font-black" style={{ color: theme.text }}>¡Revisa tu email!</p>
@@ -159,10 +296,21 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
                 </label>
               )}
 
+              {/* Forgot password (only on login) */}
+              {mode === 'login' && (
+                <button
+                  onClick={() => { setMode('forgot'); setError(''); }}
+                  className="text-sm underline mt-3 shrink-0 text-left"
+                  style={{ color: `${theme.text}99` }}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+
               {/* Toggle mode */}
               <button
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setAcceptedPrivacy(false); }}
-                className="text-sm underline mt-4 shrink-0 text-left"
+                className="text-sm underline mt-2 shrink-0 text-left"
                 style={{ color: `${theme.text}99` }}
               >
                 {mode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
@@ -172,7 +320,7 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
         </div>
 
         {/* Submit button */}
-        {!signupSuccess && (
+        {(mode === 'login' || mode === 'signup') && !signupSuccess && (
           <div className="shrink-0 flex justify-center px-10 py-6">
             <button
               onClick={handleSubmit}

@@ -60,6 +60,7 @@ export default function MedicsPanel() {
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [forgotMode, setForgotMode] = useState<'off' | 'email' | 'sent'>('off');
   const [registerMode, setRegisterMode] = useState(false);
   const [registerStep, setRegisterStep] = useState<'email' | 'password' | 'done'>('email');
   const [registerEmail, setRegisterEmail] = useState('');
@@ -281,6 +282,20 @@ export default function MedicsPanel() {
     return `hace ${days}d`;
   };
 
+  // ── Forgot password flow ──
+  const handleForgotPassword = async () => {
+    setError('');
+    if (!email.trim()) { setError('Introduce tu email'); return; }
+    setLoading(true);
+    const siteUrl = window.location.origin + '/Cacalendario-2/medics';
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: siteUrl,
+    });
+    setLoading(false);
+    if (resetError) { setError(resetError.message); return; }
+    setForgotMode('sent');
+  };
+
   // ── Registration flow ──
   const handleRegisterCheckEmail = async () => {
     setError('');
@@ -335,11 +350,45 @@ export default function MedicsPanel() {
             <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
             <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Portal Médico</h1>
             <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>
-              {registerMode ? 'Completar registro' : 'Acceso para profesionales'}
+              {forgotMode !== 'off' ? 'Recuperar contraseña' : registerMode ? 'Completar registro' : 'Acceso para profesionales'}
             </p>
           </div>
 
-          {!registerMode ? (
+          {forgotMode === 'email' ? (
+            <>
+              <p style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
+                Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+              </p>
+              <label style={s.label}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} style={s.input} />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleForgotPassword} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Enviar enlace'}
+              </button>
+              <button
+                onClick={() => { setForgotMode('off'); setError(''); }}
+                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Volver al inicio de sesión
+              </button>
+            </>
+          ) : forgotMode === 'sent' ? (
+            <>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: 40 }}>✅</span>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Email enviado!</p>
+                <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
+                  Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada (y spam).
+                </p>
+              </div>
+              <button
+                onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }}
+                style={{ ...s.btnPrimary, marginTop: 20 }}
+              >
+                Volver al login
+              </button>
+            </>
+          ) : !registerMode ? (
             <>
               <label style={s.label}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
@@ -350,8 +399,14 @@ export default function MedicsPanel() {
                 {loading ? '...' : 'Entrar'}
               </button>
               <button
+                onClick={() => { setForgotMode('email'); setError(''); }}
+                style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+              <button
                 onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); }}
-                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ width: '100%', marginTop: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Completar registro
               </button>

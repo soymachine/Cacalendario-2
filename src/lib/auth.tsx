@@ -6,9 +6,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isRecovery: boolean;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
+  clearRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -17,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -27,9 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -51,8 +59,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const resetPassword = async (email: string) => {
+    const siteUrl = window.location.origin + '/Cacalendario-2/';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: siteUrl,
+    });
+    if (error) return { error: translateAuthError(error.message) };
+    return { error: null };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { error: translateAuthError(error.message) };
+    setIsRecovery(false);
+    return { error: null };
+  };
+
+  const clearRecovery = () => setIsRecovery(false);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isRecovery, signUp, signIn, signOut, resetPassword, updatePassword, clearRecovery }}>
       {children}
     </AuthContext.Provider>
   );

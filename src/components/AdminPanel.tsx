@@ -265,7 +265,7 @@ export default function AdminPanel() {
             {loading ? '...' : 'Entrar'}
           </button>
         </div>
-        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.7</p>
+        <p style={{ color: '#fff', fontSize: 12, marginTop: 24, textAlign: 'center', opacity: 0.5 }}>v0.8</p>
       </div>
     );
   }
