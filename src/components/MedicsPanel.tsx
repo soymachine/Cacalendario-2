@@ -239,8 +239,13 @@ export default function MedicsPanel() {
   }, [loggedIn, doctorInfo]);
 
   // ── Invite patient ──
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState('');
+
   const handleInvite = async (useEmail: boolean) => {
     setError('');
+    setEmailSent(false);
+    setEmailError('');
     setLoading(true);
     try {
       const { data, error: rpcError } = await supabase.rpc('doctor_create_invite', {
@@ -253,6 +258,28 @@ export default function MedicsPanel() {
       }
       if (data) {
         setInviteCode(data.invite_code);
+
+        // Send email if email was provided
+        if (useEmail && inviteEmail) {
+          try {
+            const { data: fnData, error: fnError } = await supabase.functions.invoke('send-invite-email', {
+              body: {
+                patientEmail: inviteEmail,
+                inviteCode: data.invite_code,
+                doctorName: doctorInfo?.name || '',
+                centerName: doctorInfo?.center_name || '',
+              },
+            });
+            if (fnError) {
+              setEmailError('Código creado pero no se pudo enviar el email. Comparte el código manualmente.');
+            } else {
+              setEmailSent(true);
+            }
+          } catch (_) {
+            setEmailError('Código creado pero no se pudo enviar el email. Comparte el código manualmente.');
+          }
+        }
+
         setInviteEmail('');
         loadPatients();
       }
@@ -965,7 +992,21 @@ export default function MedicsPanel() {
                     textAlign: 'center',
                     border: '2px dashed #dd8273',
                   }}>
-                    <p style={{ fontSize: 14, color: '#666', margin: '0 0 16px' }}>Comparte este código con tu paciente</p>
+                    {emailSent && (
+                      <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>✅</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Email enviado correctamente</span>
+                      </div>
+                    )}
+                    {emailError && (
+                      <div style={{ backgroundColor: '#f39c1220', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>⚠️</span>
+                        <span style={{ fontSize: 12, color: '#e67e22' }}>{emailError}</span>
+                      </div>
+                    )}
+                    <p style={{ fontSize: 14, color: '#666', margin: '0 0 16px' }}>
+                      {emailSent ? 'Email enviado. También puedes compartir el código:' : 'Comparte este código con tu paciente'}
+                    </p>
                     <div style={{
                       fontSize: 36,
                       fontWeight: 900,
