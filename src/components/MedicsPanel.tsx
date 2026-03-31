@@ -10,6 +10,8 @@ interface PatientLink {
   accepted_at: string | null;
   patient_email?: string;
   display_name?: string | null;
+  lastEntryDate?: string | null;
+  daysSinceLast?: number | null;
 }
 
 interface DoctorInfo {
@@ -39,22 +41,22 @@ interface PatientDetail {
   daysSinceLast: number | null;
 }
 
-type Section = 'dashboard' | 'pacientes' | 'invitar';
+type Section = 'pacientes' | 'invitar';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
-  { id: 'dashboard', icon: '\u{1F4CA}', label: 'Dashboard' },
   { id: 'pacientes', icon: '\u{1F465}', label: 'Pacientes' },
   { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
 ];
 
 export default function MedicsPanel() {
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [doctorInfo, setDoctorInfo] = useState<DoctorInfo | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [section, setSection] = useState<Section>('dashboard');
+  const [section, setSection] = useState<Section>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
@@ -66,6 +68,38 @@ export default function MedicsPanel() {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [pendingCenterName, setPendingCenterName] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+
+  // ── Recover session on mount ──
+  useEffect(() => {
+    const recoverSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: doctorData } = await supabase
+            .from('doctors')
+            .select('*, centers(name)')
+            .eq('id', session.user.id)
+            .single();
+          if (doctorData) {
+            setDoctorInfo({
+              id: doctorData.id,
+              name: doctorData.name,
+              specialty: doctorData.specialty,
+              center_id: doctorData.center_id,
+              center_name: (doctorData.centers as { name: string } | null)?.name || 'Centro médico',
+            });
+            setLoggedIn(true);
+          }
+        }
+      } catch (_) {
+        // Session expired or invalid — stay on login
+      }
+      setInitialLoading(false);
+    };
+    recoverSession();
+  }, []);
 
   // ── Login ──
   const handleLogin = async () => {
@@ -103,7 +137,6 @@ export default function MedicsPanel() {
             .single();
 
           if (pendingCenter) {
-            // Auto-link: create doctor record and clear pending fields
             const { error: insertErr } = await supabase.from('doctors').insert({
               id: data.user.id,
               center_id: pendingCenter.id,
@@ -112,14 +145,12 @@ export default function MedicsPanel() {
             });
 
             if (!insertErr) {
-              // Clear pending fields
               await supabase.from('centers').update({
                 pending_doctor_email: null,
                 pending_doctor_name: null,
                 pending_doctor_specialty: null,
               }).eq('id', pendingCenter.id);
 
-              // Re-fetch doctor data with center name
               const { data: newDoctor } = await supabase
                 .from('doctors')
                 .select('*, centers(name)')
@@ -165,21 +196,38 @@ export default function MedicsPanel() {
       setError(loadError.message);
       return;
     }
-    // Enrich with display_name and email from user_profiles
+    // Enrich with display_name, email, and last entry date
     const enriched = await Promise.all((data || []).map(async (p: any) => {
+      let display_name: string | null = null;
+      let patient_email = p.patient_email;
+      let lastEntryDate: string | null = null;
+      let daysSinceLast: number | null = null;
+
       if (p.patient_id) {
         const { data: profile } = await supabase
           .from('user_profiles')
           .select('display_name, email')
           .eq('id', p.patient_id)
           .single();
-        return {
-          ...p,
-          display_name: profile?.display_name || null,
-          patient_email: p.patient_email || profile?.email || null,
-        };
+        display_name = profile?.display_name || null;
+        patient_email = p.patient_email || profile?.email || null;
+
+        // Fetch last entry
+        const { data: lastEntry } = await supabase
+          .from('entries')
+          .select('date')
+          .eq('user_id', p.patient_id)
+          .order('date', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (lastEntry) {
+          lastEntryDate = lastEntry.date;
+          daysSinceLast = Math.floor((Date.now() - new Date(lastEntry.date).getTime()) / (1000 * 60 * 60 * 24));
+        }
       }
-      return { ...p, display_name: null };
+
+      return { ...p, display_name, patient_email, lastEntryDate, daysSinceLast };
     }));
     setPatients(enriched);
   };
@@ -242,6 +290,10 @@ export default function MedicsPanel() {
     const bristolAvg = bristolValues.length > 0 ? bristolValues.reduce((a, b) => a + b, 0) / bristolValues.length : null;
     const lastEntryDate = entryList.length > 0 ? entryList[0].date : null;
     const daysSinceLast = lastEntryDate ? Math.floor((Date.now() - new Date(lastEntryDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+    // Reset calendar to current month when opening a patient
+    setCalendarMonth(new Date().getMonth());
+    setCalendarYear(new Date().getFullYear());
 
     setPatientDetail({
       entries: entryList,
@@ -340,6 +392,26 @@ export default function MedicsPanel() {
 
   const acceptedPatients = patients.filter(p => p.status === 'accepted');
   const pendingPatients = patients.filter(p => p.status === 'pending');
+
+  // ── Semáforo helper ──
+  const getSemaforo = (daysSinceLast: number | null) => {
+    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' }; // grey - no data
+    if (daysSinceLast < 1) return { color: '#27ae60', icon: '\u{1F7E2}' }; // green
+    if (daysSinceLast <= 3) return { color: '#f39c12', icon: '\u{1F7E0}' }; // orange
+    return { color: '#e74c3c', icon: '\u{1F534}' }; // red
+  };
+
+  // ── Initial loading ──
+  if (initialLoading) {
+    return (
+      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
+        <div style={{ textAlign: 'center', color: '#fff' }}>
+          <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
+          <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600 }}>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Login / Register screen ──
   if (!loggedIn) {
@@ -551,77 +623,21 @@ export default function MedicsPanel() {
       <main style={s.main}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
-        {/* ── DASHBOARD ── */}
-        {section === 'dashboard' && (
-          <>
-            <SectionHeader
-              title="Dashboard"
-              subtitle={`Bienvenido, Dr. ${doctorInfo?.name || ''}`}
-              actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
-            />
-            <div style={s.statsRow}>
-              <StatCard emoji={'\u{1F465}'} label="TOTAL PACIENTES" value={String(acceptedPatients.length)} sub={acceptedPatients.length > 0 ? 'pacientes vinculados' : 'Sin pacientes aún'} />
-              <StatCard emoji={'\u{23F3}'} label="PENDIENTES" value={String(pendingPatients.length)} sub={pendingPatients.length > 0 ? 'esperando aceptación' : 'Sin pendientes'} />
-              <StatCard emoji={'\u{1F4E9}'} label="INVITACIONES ENVIADAS" value={String(patients.length)} sub="total histórico" />
-              <StatCard emoji={'\u{1F4C8}'} label="TASA DE ACEPTACIÓN" value={patients.length > 0 ? `${Math.round((acceptedPatients.length / patients.length) * 100)}%` : '—'} sub="de invitaciones" dark />
-            </div>
-
-            {/* Recent patients */}
-            <div style={s.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{'\u{1F465}'} Pacientes recientes</span>
-                <button onClick={() => setSection('pacientes')} style={s.linkBtn}>Ver todos {'\u{2192}'}</button>
-              </div>
-              {acceptedPatients.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  No hay pacientes vinculados aún. Invita a tu primer paciente.
-                </div>
-              ) : (
-                acceptedPatients.slice(0, 5).map((patient, i) => (
-                  <div key={patient.id} onClick={() => loadPatientDetail(patient)} style={{ padding: '14px 20px', borderBottom: i < Math.min(acceptedPatients.length, 5) - 1 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                      {patientInitial(patient)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
-                        {patientLabel(patient)}
-                      </div>
-                      {patient.display_name && patient.patient_email && (
-                        <div style={{ fontSize: 12, color: '#999' }}>{patient.patient_email}</div>
-                      )}
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: '#dd827330', color: '#2ecc71' }}>
-                      {'\u{2705}'} Vinculado
-                    </span>
-                    {patient.accepted_at && (
-                      <span style={{ fontSize: 12, color: '#aaa', whiteSpace: 'nowrap', flexShrink: 0 }}>{relativeTime(patient.accepted_at)}</span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
-
         {/* ── PACIENTES ── */}
-        {section === 'pacientes' && (
+        {section === 'pacientes' && !selectedPatient && (
           <>
             <SectionHeader
               title="Mis Pacientes"
-              subtitle={`${patients.length} invitaciones totales`}
+              subtitle={`${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
               actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
             />
             <div style={s.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Todos los pacientes ({patients.length})</span>
-              </div>
               {/* Column headers */}
               <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
                 <span style={{ flex: 2 }}>Paciente</span>
-                <span style={{ flex: 1 }}>Código</span>
                 <span style={{ flex: 1 }}>Estado</span>
-                <span style={{ flex: 1 }}>Fecha invitación</span>
-                <span style={{ flex: 1, textAlign: 'right' }}>Fecha aceptación</span>
+                <span style={{ flex: 1 }}>Último registro</span>
+                <span style={{ width: 50, textAlign: 'center' }}>Estado</span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -630,8 +646,10 @@ export default function MedicsPanel() {
               ) : (
                 patients.map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
+                  const semaforo = getSemaforo(patient.daysSinceLast);
                   return (
                     <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                      {/* Patient name */}
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {patientInitial(patient)}
@@ -645,7 +663,7 @@ export default function MedicsPanel() {
                           )}
                         </div>
                       </div>
-                      <span style={{ flex: 1, fontSize: 13, color: '#555', fontFamily: 'monospace' }}>{patient.invite_code}</span>
+                      {/* Status badge */}
                       <span style={{ flex: 1 }}>
                         <span style={{
                           fontSize: 11,
@@ -658,13 +676,216 @@ export default function MedicsPanel() {
                           {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
                         </span>
                       </span>
-                      <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(patient.invited_at)}</span>
-                      <span style={{ flex: 1, fontSize: 13, color: '#555', textAlign: 'right' }}>
-                        {patient.accepted_at ? shortDate(patient.accepted_at) : '—'}
-                      </span>
+                      {/* Last entry */}
+                      <div style={{ flex: 1 }}>
+                        {isAccepted && patient.lastEntryDate ? (
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
+                              {patient.daysSinceLast === 0 ? 'Hoy' : `hace ${patient.daysSinceLast} día${patient.daysSinceLast !== 1 ? 's' : ''}`}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#999' }}>{shortDate(patient.lastEntryDate)}</div>
+                          </div>
+                        ) : isAccepted ? (
+                          <span style={{ fontSize: 12, color: '#aaa' }}>Sin registros</span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                        )}
+                      </div>
+                      {/* Semáforo */}
+                      <div style={{ width: 50, textAlign: 'center' }}>
+                        {isAccepted ? (
+                          <span style={{ fontSize: 20 }}>{semaforo.icon}</span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── PATIENT DETAIL ── */}
+        {section === 'pacientes' && selectedPatient && patientDetail && (
+          <>
+            <SectionHeader
+              title={patientLabel(selectedPatient)}
+              subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
+              actions={
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
+                    📄 Exportar PDF
+                  </button>
+                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
+                    ← Volver
+                  </button>
+                </div>
+              }
+            />
+
+            {/* Last entry + Semáforo */}
+            <div style={{ ...s.card, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ fontSize: 36 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>
+                  {patientDetail.daysSinceLast === null
+                    ? 'Sin registros'
+                    : patientDetail.daysSinceLast === 0
+                      ? 'Último registro: hoy'
+                      : `Último registro: hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
+                </div>
+                {patientDetail.lastEntryDate && (
+                  <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{shortDate(patientDetail.lastEntryDate)}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Alert for 3+ days */}
+            {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #e74c3c' }}>
+                <span style={{ fontSize: 24 }}>⚠️</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#c0392b', fontSize: 14 }}>Alerta: {patientDetail.daysSinceLast} días sin registrar</div>
+                  <div style={{ fontSize: 13, color: '#666' }}>Este paciente lleva varios días sin registrar actividad.</div>
+                </div>
+              </div>
+            )}
+
+            {/* Mini calendar */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button onClick={() => {
+                  if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
+                  else setCalendarMonth(calendarMonth - 1);
+                }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 8px' }}>←</button>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>
+                  {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                </span>
+                <button onClick={() => {
+                  if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
+                  else setCalendarMonth(calendarMonth + 1);
+                }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 8px' }}>→</button>
+              </div>
+              <div style={{ padding: 20 }}>
+                {/* Weekday headers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+                  {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                    <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#999', padding: 4 }}>{d}</div>
+                  ))}
+                </div>
+                {/* Calendar days */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                  {(() => {
+                    const firstDay = new Date(calendarYear, calendarMonth, 1);
+                    const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
+                    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+                    // Build entries map for this month
+                    const entriesByDate = new Map<string, number>();
+                    patientDetail.entries.forEach(e => {
+                      const [y, m] = e.date.split('-').map(Number);
+                      if (y === calendarYear && m === calendarMonth + 1) {
+                        entriesByDate.set(e.date, (entriesByDate.get(e.date) || 0) + 1);
+                      }
+                    });
+
+                    const cells: React.ReactNode[] = [];
+                    // Empty cells before first day
+                    for (let i = 0; i < startDay; i++) {
+                      cells.push(<div key={`empty-${i}`} />);
+                    }
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const count = entriesByDate.get(dateStr) || 0;
+                      const isToday = dateStr === todayStr;
+                      const isFuture = new Date(dateStr) > today;
+                      const hasEntry = count > 0;
+
+                      cells.push(
+                        <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
+                          aspectRatio: '1',
+                          borderRadius: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column' as const,
+                          backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
+                          opacity: isFuture ? 0.3 : 1,
+                          border: isToday ? '2px solid #dd8273' : '1px solid #00000010',
+                        }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: hasEntry ? '#fff' : '#555' }}>{day}</span>
+                          {hasEntry && count > 1 && (
+                            <span style={{ fontSize: 9, color: '#ffffff99' }}>x{count}</span>
+                          )}
+                        </div>
+                      );
+                    }
+                    return cells;
+                  })()}
+                </div>
+                <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: '#999', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273' }} /> Con registro</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, border: '1px solid #00000020' }} /> Sin registro</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Full entry list */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Historial de registros ({patientDetail.totalEntries})</span>
+              </div>
+              {/* Column headers */}
+              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                <span style={{ width: 110 }}>Fecha</span>
+                <span style={{ width: 60 }}>Hora</span>
+                <span style={{ width: 80 }}>Bristol</span>
+                <span style={{ width: 80 }}>Flota</span>
+                <span style={{ flex: 1 }}>Comentarios</span>
+              </div>
+              {patientDetail.entries.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                  Este paciente no tiene registros aún.
+                </div>
+              ) : (
+                patientDetail.entries.map((entry, i) => (
+                  <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                    <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
+                    <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
+                    <span style={{ width: 80 }}>
+                      {entry.bristol != null ? (
+                        <span style={{
+                          fontSize: 11,
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
+                          color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
+                          fontWeight: 600,
+                        }}>
+                          Tipo {entry.bristol}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                      )}
+                    </span>
+                    <span style={{ width: 80 }}>
+                      {entry.floats != null ? (
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
+                          {entry.floats ? 'Sí' : 'No'}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                      )}
+                    </span>
+                    <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
+                      {entry.notes || 'Sin comentarios'}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </>
@@ -791,145 +1012,6 @@ export default function MedicsPanel() {
             </div>
           </>
         )}
-
-        {/* ── PATIENT DETAIL (overlay) ── */}
-        {selectedPatient && patientDetail && (
-          <>
-            <SectionHeader
-              title={patientLabel(selectedPatient)}
-              subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
-              actions={
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
-                    📄 Exportar PDF
-                  </button>
-                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
-                    ← Volver
-                  </button>
-                </div>
-              }
-            />
-
-            {/* Stats */}
-            <div style={s.statsRow}>
-              <StatCard emoji="📝" label="TOTAL REGISTROS" value={String(patientDetail.totalEntries)} />
-              <StatCard emoji="💩" label="BRISTOL MEDIO" value={patientDetail.bristolAvg ? patientDetail.bristolAvg.toFixed(1) : '—'} sub={patientDetail.bristolAvg ? getBristolLabel(patientDetail.bristolAvg) : undefined} dark />
-              <StatCard emoji="📅" label="ÚLTIMO REGISTRO" value={patientDetail.lastEntryDate || '—'} sub={patientDetail.daysSinceLast !== null ? `hace ${patientDetail.daysSinceLast} días` : undefined} />
-              <StatCard emoji="📊" label="FRECUENCIA" value={patientDetail.totalEntries > 0 ? (patientDetail.totalEntries / Math.max(1, getActiveDays(patientDetail.entries))).toFixed(1) : '—'} sub="registros/día activo" />
-            </div>
-
-            {/* Alerts */}
-            {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast >= 3 && (
-              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #e74c3c' }}>
-                <span style={{ fontSize: 24 }}>⚠️</span>
-                <div>
-                  <div style={{ fontWeight: 700, color: '#c0392b', fontSize: 14 }}>Alerta: {patientDetail.daysSinceLast} días sin registrar</div>
-                  <div style={{ fontSize: 13, color: '#666' }}>Este paciente lleva varios días sin registrar actividad.</div>
-                </div>
-              </div>
-            )}
-
-            {patientDetail.bristolAvg !== null && (patientDetail.bristolAvg < 3 || patientDetail.bristolAvg > 5) && (
-              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #f39c12' }}>
-                <span style={{ fontSize: 24 }}>🔬</span>
-                <div>
-                  <div style={{ fontWeight: 700, color: '#e67e22', fontSize: 14 }}>Bristol fuera de rango normal (3-5)</div>
-                  <div style={{ fontSize: 13, color: '#666' }}>Media Bristol: {patientDetail.bristolAvg.toFixed(1)} — {getBristolLabel(patientDetail.bristolAvg)}</div>
-                </div>
-              </div>
-            )}
-
-            {/* Bristol distribution */}
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div style={{ ...s.card, flex: 1, padding: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Distribución Bristol</div>
-                <div style={{ display: 'flex', alignItems: 'end', gap: 8, height: 120 }}>
-                  {[1, 2, 3, 4, 5, 6, 7].map(type => {
-                    const count = patientDetail.entries.filter(e => e.bristol === type).length;
-                    const maxCount = Math.max(1, ...([1, 2, 3, 4, 5, 6, 7].map(t => patientDetail.entries.filter(e => e.bristol === t).length)));
-                    const height = count > 0 ? (count / maxCount) * 100 : 4;
-                    const isNormal = type >= 3 && type <= 5;
-                    return (
-                      <div key={type} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>{count}</span>
-                        <div style={{ width: '100%', height, backgroundColor: isNormal ? '#27ae60' : type < 3 ? '#f39c12' : '#e74c3c', borderRadius: 4, minHeight: 4 }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#999' }}>T{type}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12, fontSize: 11, color: '#999' }}>
-                  <span>🟡 Estreñimiento (1-2)</span>
-                  <span>🟢 Normal (3-5)</span>
-                  <span>🔴 Diarrea (6-7)</span>
-                </div>
-              </div>
-
-              {/* Recent entries */}
-              <div style={{ ...s.card, width: 320, flexShrink: 0, maxHeight: 300, overflowY: 'auto' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015', position: 'sticky', top: 0, backgroundColor: '#fff' }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Últimos registros</span>
-                </div>
-                {patientDetail.entries.slice(0, 20).map((entry, i) => (
-                  <div key={entry.entry_id || i} style={{ padding: '10px 20px', borderBottom: '1px solid #00000008', fontSize: 13 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 600, color: '#111' }}>{entry.date}</span>
-                      <span style={{ color: '#999' }}>{entry.time}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                      {entry.bristol != null && (
-                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 6, backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : '#e74c3c20', color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : '#e74c3c' }}>
-                          Bristol {entry.bristol}
-                        </span>
-                      )}
-                      {entry.floats != null && (
-                        <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db' }}>
-                          {entry.floats ? '🫧 Flota' : '⬇️ Hunde'}
-                        </span>
-                      )}
-                    </div>
-                    {entry.notes && (
-                      <p style={{ fontSize: 12, color: '#888', marginTop: 4, fontStyle: 'italic' }}>"{entry.notes}"</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Calendar-like monthly view */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>📅 Calendario de actividad (últimos 30 días)</span>
-              </div>
-              <div style={{ padding: 20 }}>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {Array.from({ length: 30 }, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (29 - i));
-                    const dateStr = date.toISOString().split('T')[0];
-                    const count = patientDetail.entries.filter(e => e.date === dateStr).length;
-                    const bgColor = count === 0 ? '#f0f0f0' : count === 1 ? '#dd827360' : count === 2 ? '#dd8273a0' : '#dd8273';
-                    return (
-                      <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
-                        width: 28, height: 28, borderRadius: 6, backgroundColor: bgColor,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 600, color: count > 0 ? '#fff' : '#bbb',
-                      }}>
-                        {date.getDate()}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 11, color: '#999', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#f0f0f0' }} /> Sin registro</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd827360' }} /> 1</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273a0' }} /> 2</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273' }} /> 3+</div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </main>
     </div>
   );
@@ -987,10 +1069,6 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
   th { background: #f5f0ef; text-align: left; padding: 6px 8px; font-weight: 700; color: #555; font-size: 10px; text-transform: uppercase; }
   td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
-  .bristol-bar { display: flex; align-items: end; gap: 4px; height: 60px; margin: 8px 0; }
-  .bristol-col { flex: 1; text-align: center; }
-  .bristol-col .bar { margin: 0 auto; width: 80%; border-radius: 3px; }
-  .bristol-col .label { font-size: 9px; color: #999; margin-top: 2px; }
   .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #eee; font-size: 10px; color: #aaa; text-align: center; }
   @media print { body { padding: 20px; } }
 </style>
