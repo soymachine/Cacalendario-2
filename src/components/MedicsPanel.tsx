@@ -271,12 +271,17 @@ export default function MedicsPanel() {
               },
             });
             if (fnError) {
-              setEmailError('Código creado pero no se pudo enviar el email. Comparte el código manualmente.');
+              console.error('Edge Function error:', fnError);
+              setEmailError(`No se pudo enviar el email: ${fnError.message || JSON.stringify(fnError)}`);
+            } else if (fnData?.error) {
+              console.error('Email service error:', fnData.error, fnData.details);
+              setEmailError(`No se pudo enviar el email: ${fnData.error}${fnData.details ? ' — ' + fnData.details : ''}`);
             } else {
               setEmailSent(true);
             }
-          } catch (_) {
-            setEmailError('Código creado pero no se pudo enviar el email. Comparte el código manualmente.');
+          } catch (e: any) {
+            console.error('Email catch error:', e);
+            setEmailError(`No se pudo enviar el email: ${e?.message || 'Error desconocido'}`);
           }
         }
 
@@ -287,6 +292,21 @@ export default function MedicsPanel() {
       setError('Error al crear la invitación');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Revoke pending invitation ──
+  const handleRevokeInvite = async (patient: PatientLink) => {
+    if (!confirm(`¿Eliminar la invitación de ${patientLabel(patient)}?`)) return;
+    const { error: delError } = await supabase
+      .from('patient_links')
+      .delete()
+      .eq('id', patient.id)
+      .eq('status', 'pending');
+    if (delError) {
+      setError(delError.message);
+    } else {
+      loadPatients();
     }
   };
 
@@ -677,7 +697,7 @@ export default function MedicsPanel() {
                 <span style={{ width: 50 }}></span>
                 <span style={{ flex: 2 }}>Paciente</span>
                 <span style={{ flex: 1 }}>Último registro</span>
-                <span style={{ width: 100 }}>Estado</span>
+                <span style={{ width: 140 }}>Estado</span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -732,8 +752,8 @@ export default function MedicsPanel() {
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
                       </div>
-                      {/* Status badge */}
-                      <span style={{ width: 100 }}>
+                      {/* Status badge + actions */}
+                      <div style={{ width: 140, display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{
                           fontSize: 11,
                           fontWeight: 600,
@@ -744,7 +764,18 @@ export default function MedicsPanel() {
                         }}>
                           {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
                         </span>
-                      </span>
+                        {!isAccepted && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRevokeInvite(patient); }}
+                            title="Eliminar invitación"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#ccc', padding: '2px 4px', borderRadius: 4 }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#e74c3c')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#ccc')}
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })

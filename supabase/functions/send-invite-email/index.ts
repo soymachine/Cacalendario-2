@@ -3,7 +3,10 @@
 // Deploy via: supabase functions deploy send-invite-email
 // Requires RESEND_API_KEY secret: supabase secrets set RESEND_API_KEY=re_xxxxx
 
-import { corsHeaders } from '../_shared/cors.ts'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 const APP_URL = 'https://soymachine.github.io/Cacalendario-2/'
 
@@ -140,7 +143,7 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'Cacalendario <noreply@cacalendario.com>',
+        from: 'Cacalendario <onboarding@resend.dev>',
         to: [patientEmail],
         subject: `Dr. ${doctor} te invita a Cacalendario`,
         html,
