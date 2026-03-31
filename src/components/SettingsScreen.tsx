@@ -47,7 +47,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const handleSaveName = async () => {
     if (!user) return;
     const trimmed = displayName.trim();
-    await supabase.from('user_profiles').update({ display_name: trimmed || null }).eq('id', user.id);
+    await supabase.from('user_profiles').upsert({ id: user.id, display_name: trimmed || null, email: user.email ?? null }, { onConflict: 'id' });
     setNameSaved(true);
     setTimeout(() => setNameSaved(false), 2000);
   };

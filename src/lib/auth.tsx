@@ -29,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      // Ensure user_profiles row exists for existing sessions
+      if (session?.user) {
+        supabase.from('user_profiles').upsert(
+          { id: session.user.id, email: session.user.email ?? null },
+          { onConflict: 'id', ignoreDuplicates: true },
+        ).then(() => {});
+      }
     });
 
     // Listen for auth changes
@@ -37,6 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecovery(true);
+      }
+      // Ensure user_profiles row exists on sign-in/sign-up
+      if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
+        supabase.from('user_profiles').upsert(
+          { id: session.user.id, email: session.user.email ?? null },
+          { onConflict: 'id', ignoreDuplicates: true },
+        ).then(() => {});
       }
     });
 
