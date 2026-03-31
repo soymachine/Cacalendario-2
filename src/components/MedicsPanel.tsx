@@ -83,6 +83,13 @@ export default function MedicsPanel() {
   const [centerImageUrl, setCenterImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageModal, setImageModal] = useState<{ type: 'success' | 'error'; url?: string; message?: string } | null>(null);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Helpers for building DoctorInfo ──
   const buildDoctorInfo = (d: any): DoctorInfo => ({
@@ -685,8 +692,8 @@ export default function MedicsPanel() {
   // ── Main layout with sidebar ──
   return (
     <div style={s.shell}>
-      {/* ── SIDEBAR ── */}
-      <aside style={s.sidebar}>
+      {/* ── SIDEBAR (desktop) ── */}
+      <aside style={{ ...s.sidebar, display: isMobile ? 'none' : 'flex' }}>
         {/* Logo */}
         <div style={s.sidebarLogo}>
           <span style={{ fontSize: 26 }}>{'\u{1F3E5}'}</span>
@@ -741,7 +748,7 @@ export default function MedicsPanel() {
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={s.main}>
+      <main style={{ ...s.main, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
         {/* ── PACIENTES ── */}
@@ -766,11 +773,11 @@ export default function MedicsPanel() {
                   </button>
                 ))}
               </div>
-              <div style={{ display: 'flex', padding: '8px 20px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
-                <span style={{ width: 50 }}></span>
+              <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
+                <span style={{ width: 40 }}></span>
                 <span style={{ flex: 2 }}>Paciente</span>
-                <span style={{ flex: 1 }}>Último registro</span>
-                <span style={{ width: 140 }}>Estado</span>
+                {!isMobile && <span style={{ flex: 1 }}>Último registro</span>}
+                <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -787,31 +794,31 @@ export default function MedicsPanel() {
                   const isAccepted = patient.status === 'accepted';
                   const semaforo = getSemaforo(patient.daysSinceLast);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       {/* Semáforo */}
-                      <div style={{ width: 50 }}>
+                      <div style={{ width: 40 }}>
                         {isAccepted ? (
-                          <span style={{ fontSize: 20 }}>{semaforo.icon}</span>
+                          <span style={{ fontSize: 18 }}>{semaforo.icon}</span>
                         ) : (
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
                       </div>
                       {/* Patient name */}
-                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {patientInitial(patient)}
                         </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {patientLabel(patient)}
                           </div>
-                          {patient.display_name && patient.patient_email && (
+                          {!isMobile && patient.display_name && patient.patient_email && (
                             <div style={{ fontSize: 11, color: '#999' }}>{patient.patient_email}</div>
                           )}
                         </div>
                       </div>
-                      {/* Last entry */}
-                      <div style={{ flex: 1 }}>
+                      {/* Last entry — hidden on mobile */}
+                      {!isMobile && <div style={{ flex: 1 }}>
                         {isAccepted && patient.lastEntryDate ? (
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
@@ -824,9 +831,9 @@ export default function MedicsPanel() {
                         ) : (
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
-                      </div>
+                      </div>}
                       {/* Status badge + actions */}
-                      <div style={{ width: 140, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: isMobile ? 90 : 140, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11,
                           fontWeight: 600,
@@ -835,7 +842,7 @@ export default function MedicsPanel() {
                           backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
                           color: isAccepted ? '#27ae60' : '#e67e22',
                         }}>
-                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
+                          {isAccepted ? (isMobile ? '✅' : '✅ Vinculado') : (isMobile ? '⏳' : '⏳ Pendiente')}
                         </span>
                         {!isAccepted && (
                           <button
@@ -894,7 +901,7 @@ export default function MedicsPanel() {
             </div>
 
             {/* Row 2: Calendar (25%) + Entry list (75%) */}
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Mini calendar */}
               <div style={{ ...s.card, flex: 1 }}>
                 <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1213,7 +1220,7 @@ export default function MedicsPanel() {
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
               </div>
-              <div style={{ padding: 24, display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+              <div style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
                 {/* Preview */}
                 <div style={{ width: 120, height: 120, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
                   {centerImageUrl ? (
@@ -1337,6 +1344,26 @@ export default function MedicsPanel() {
           </>
         )}
       </main>
+
+      {/* ── BOTTOM NAV (mobile) ── */}
+      {isMobile && (
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1a0e0e', display: 'flex', zIndex: 20, borderTop: '1px solid #2d1a18' }}>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
+                gap: 3, padding: '10px 0', border: 'none', cursor: 'pointer', background: 'transparent',
+                borderTop: section === item.id ? '2px solid #dd8273' : '2px solid transparent',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{item.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? '#dd8273' : '#9a7a76' }}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* ── IMAGE UPLOAD MODAL ── */}
       {imageModal && (
@@ -1508,13 +1535,14 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 
 // ── Section Header ──
 function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) {
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 14, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
+        <h1 style={{ fontSize: mobile ? 22 : 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
+        <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
       </div>
-      {actions && <div style={{ display: 'flex', gap: 8 }}>{actions}</div>}
+      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>{actions}</div>}
     </div>
   );
 }
@@ -1549,8 +1577,9 @@ const s: Record<string, React.CSSProperties> = {
     backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
   },
   loginCard: {
-    width: '100%', maxWidth: 380, padding: 32, backgroundColor: 'white',
+    width: '100%', maxWidth: 380, padding: 24, backgroundColor: 'white',
     borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+    margin: '0 16px',
   },
   label: {
     display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#555',
