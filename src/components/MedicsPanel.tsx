@@ -20,6 +20,9 @@ interface DoctorInfo {
   specialty: string | null;
   center_id: string;
   center_name?: string;
+  center_image_url?: string | null;
+  semaforo_green: number;
+  semaforo_red: number;
 }
 
 interface PatientEntry {
@@ -41,11 +44,12 @@ interface PatientDetail {
   daysSinceLast: number | null;
 }
 
-type Section = 'pacientes' | 'invitar';
+type Section = 'pacientes' | 'invitar' | 'config';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'pacientes', icon: '\u{1F465}', label: 'Pacientes' },
   { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
+  { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
 ];
 
 export default function MedicsPanel() {
@@ -71,6 +75,32 @@ export default function MedicsPanel() {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
+  const [configName, setConfigName] = useState('');
+  const [configGreen, setConfigGreen] = useState(1);
+  const [configRed, setConfigRed] = useState(3);
+  const [configSaved, setConfigSaved] = useState(false);
+  const [centerImageUrl, setCenterImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // ── Helpers for building DoctorInfo ──
+  const buildDoctorInfo = (d: any): DoctorInfo => ({
+    id: d.id,
+    name: d.name,
+    specialty: d.specialty,
+    center_id: d.center_id,
+    center_name: (d.centers as { name: string; image_url?: string } | null)?.name || 'Centro médico',
+    center_image_url: (d.centers as { name: string; image_url?: string } | null)?.image_url || null,
+    semaforo_green: d.semaforo_green ?? 1,
+    semaforo_red: d.semaforo_red ?? 3,
+  });
+
+  const applyDoctorInfo = (info: DoctorInfo) => {
+    setDoctorInfo(info);
+    setConfigName(info.name);
+    setConfigGreen(info.semaforo_green);
+    setConfigRed(info.semaforo_red);
+    setCenterImageUrl(info.center_image_url || null);
+  };
 
   // ── Recover session on mount ──
   useEffect(() => {
@@ -80,17 +110,11 @@ export default function MedicsPanel() {
         if (session?.user) {
           const { data: doctorData } = await supabase
             .from('doctors')
-            .select('*, centers(name)')
+            .select('*, centers(name, image_url)')
             .eq('id', session.user.id)
             .single();
           if (doctorData) {
-            setDoctorInfo({
-              id: doctorData.id,
-              name: doctorData.name,
-              specialty: doctorData.specialty,
-              center_id: doctorData.center_id,
-              center_name: (doctorData.centers as { name: string } | null)?.name || 'Centro médico',
-            });
+            applyDoctorInfo(buildDoctorInfo(doctorData));
             setLoggedIn(true);
           }
         }
@@ -122,7 +146,7 @@ export default function MedicsPanel() {
       // Check if the user is already a doctor
       let { data: doctorData } = await supabase
         .from('doctors')
-        .select('*, centers(name)')
+        .select('*, centers(name, image_url)')
         .eq('id', data.user.id)
         .single();
 
@@ -154,7 +178,7 @@ export default function MedicsPanel() {
 
               const { data: newDoctor } = await supabase
                 .from('doctors')
-                .select('*, centers(name)')
+                .select('*, centers(name, image_url)')
                 .eq('id', data.user.id)
                 .single();
               doctorData = newDoctor;
@@ -170,13 +194,7 @@ export default function MedicsPanel() {
         return;
       }
 
-      setDoctorInfo({
-        id: doctorData.id,
-        name: doctorData.name,
-        specialty: doctorData.specialty,
-        center_id: doctorData.center_id,
-        center_name: (doctorData.centers as { name: string } | null)?.name || 'Centro médico',
-      });
+      applyDoctorInfo(buildDoctorInfo(doctorData));
       setLoggedIn(true);
     } catch (err) {
       setError('Error inesperado al iniciar sesión');
@@ -435,6 +453,47 @@ export default function MedicsPanel() {
     setRegisterStep('done');
   };
 
+  // ── Save config ──
+  const handleSaveConfig = async () => {
+    if (!doctorInfo) return;
+    setLoading(true);
+    const trimmedName = configName.trim() || doctorInfo.name;
+    const { error: updateErr } = await supabase
+      .from('doctors')
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed })
+      .eq('id', doctorInfo.id);
+    setLoading(false);
+    if (!updateErr) {
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed };
+      setDoctorInfo(updated);
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 3000);
+    }
+  };
+
+  // ── Upload center image ──
+  const handleImageUpload = async (file: File) => {
+    if (!doctorInfo) return;
+    setUploadingImage(true);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `centers/${doctorInfo.center_id}/image.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('center-images')
+      .upload(path, file, { upsert: true });
+    if (uploadErr) {
+      setUploadingImage(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('center-images').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl || null;
+    if (publicUrl) {
+      await supabase.from('centers').update({ image_url: publicUrl }).eq('id', doctorInfo.center_id);
+      setCenterImageUrl(publicUrl);
+      setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
+    }
+    setUploadingImage(false);
+  };
+
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
   const patientInitial = (p: PatientLink) => (p.display_name || p.patient_email || '?')[0].toUpperCase();
 
@@ -444,8 +503,10 @@ export default function MedicsPanel() {
   // ── Semáforo helper ──
   const getSemaforo = (daysSinceLast: number | null) => {
     if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' }; // grey - no data
-    if (daysSinceLast < 1) return { color: '#27ae60', icon: '\u{1F7E2}' }; // green
-    if (daysSinceLast <= 3) return { color: '#f39c12', icon: '\u{1F7E0}' }; // orange
+    const green = doctorInfo?.semaforo_green ?? 1;
+    const red = doctorInfo?.semaforo_red ?? 3;
+    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' }; // green
+    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' }; // orange
     return { color: '#e74c3c', icon: '\u{1F534}' }; // red
   };
 
@@ -640,30 +701,27 @@ export default function MedicsPanel() {
           ))}
         </nav>
 
-        {/* Settings section */}
-        <div style={{ padding: '16px 12px 8px', borderTop: '1px solid #2d1a18' }}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>CONFIGURACIÓN</div>
-          <button
-            onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
-            style={{ ...s.navItem, color: '#7a5a56' }}
-          >
-            <span style={{ fontSize: 16 }}>{'\u{1F6AA}'}</span>
-            <span style={{ fontSize: 14 }}>Cerrar sesión</span>
-          </button>
-        </div>
-
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
-            {(doctorInfo?.name || 'D')[0].toUpperCase()}
+        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+              {(doctorInfo?.name || 'D')[0].toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Dr. {doctorInfo?.name}</div>
+              <div style={{ fontSize: 11, color: '#9a7a76' }}>{doctorInfo?.specialty || 'Médico'}</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Dr. {doctorInfo?.name}</div>
-            <div style={{ fontSize: 11, color: '#9a7a76' }}>{doctorInfo?.specialty || 'Médico'}</div>
-          </div>
+          <button
+            onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
+            style={{ ...s.navItem, color: '#7a5a56', width: '100%' }}
+          >
+            <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
+            <span style={{ fontSize: 13 }}>Cerrar sesión</span>
+          </button>
         </div>
       </aside>
 
@@ -1080,6 +1138,185 @@ export default function MedicsPanel() {
                     Una vez vinculado, podrás ver los registros del paciente desde tu panel.
                   </p>
                 </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── CONFIGURACIÓN ── */}
+        {section === 'config' && (
+          <>
+            <SectionHeader
+              title="Configuración"
+              subtitle="Ajusta tu perfil y los parámetros del semáforo"
+            />
+
+            {/* ── Datos del médico ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
+              </div>
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                <div>
+                  <label style={s.label}>Nombre</label>
+                  <input
+                    type="text"
+                    value={configName}
+                    onChange={(e) => setConfigName(e.target.value)}
+                    style={{ ...s.input, marginBottom: 0 }}
+                    placeholder="Dr. Nombre Apellido"
+                  />
+                </div>
+                <div>
+                  <label style={s.label}>Centro médico</label>
+                  <input
+                    type="text"
+                    value={doctorInfo?.center_name || ''}
+                    disabled
+                    style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
+                  />
+                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>El nombre del centro lo gestiona el administrador.</p>
+                </div>
+                {configSaved && (
+                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>✅</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Cambios guardados correctamente</span>
+                  </div>
+                )}
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={loading}
+                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                >
+                  {loading ? '...' : 'Guardar cambios'}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Imagen del centro ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
+              </div>
+              <div style={{ padding: 24, display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                {/* Preview */}
+                <div style={{ width: 120, height: 120, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
+                  {centerImageUrl ? (
+                    <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: 36 }}>🏥</span>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 14, color: '#555', margin: '0 0 12px', lineHeight: 1.6 }}>
+                    Sube el logo o imagen de tu centro. Esta imagen aparecerá en la app para los pacientes vinculados contigo.
+                  </p>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...s.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImage}
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                    />
+                  </label>
+                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>PNG, JPG o WEBP. Máx 2 MB.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Semáforo ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🚦 Configuración del semáforo</span>
+              </div>
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 20 }}>
+                <p style={{ fontSize: 14, color: '#555', margin: 0, lineHeight: 1.6 }}>
+                  Define cuántos días sin registrar corresponden a cada color del semáforo.
+                </p>
+
+                {/* Visual preview */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #27ae60' }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟢</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#27ae60' }}>Verde</div>
+                    <div style={{ fontSize: 12, color: '#555' }}>≤ {configGreen} día{configGreen !== 1 ? 's' : ''}</div>
+                  </div>
+                  <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #f39c12' }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟠</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e67e22' }}>Naranja</div>
+                    <div style={{ fontSize: 12, color: '#555' }}>{configGreen + 1}–{configRed} día{configRed !== 1 ? 's' : ''}</div>
+                  </div>
+                  <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #e74c3c' }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>🔴</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e74c3c' }}>Rojo</div>
+                    <div style={{ fontSize: 12, color: '#555' }}>&gt; {configRed} días</div>
+                  </div>
+                </div>
+
+                {/* Green threshold */}
+                <div>
+                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🟢 Umbral verde: ≤ <strong>{configGreen}</strong> día{configGreen !== 1 ? 's' : ''}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(configRed - 1, 1)}
+                    value={configGreen}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setConfigGreen(val);
+                      if (val >= configRed) setConfigRed(val + 1);
+                    }}
+                    style={{ width: '100%', accentColor: '#27ae60' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                    <span>0 días</span>
+                    <span>{Math.max(configRed - 1, 1)} días</span>
+                  </div>
+                </div>
+
+                {/* Red threshold */}
+                <div>
+                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🔴 Umbral rojo: &gt; <strong>{configRed}</strong> día{configRed !== 1 ? 's' : ''}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={Math.max(configGreen + 1, 1)}
+                    max={30}
+                    value={configRed}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setConfigRed(val);
+                      if (val <= configGreen) setConfigGreen(val - 1);
+                    }}
+                    style={{ width: '100%', accentColor: '#e74c3c' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                    <span>{Math.max(configGreen + 1, 1)} días</span>
+                    <span>30 días</span>
+                  </div>
+                </div>
+
+                {configSaved && (
+                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>✅</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Configuración guardada</span>
+                  </div>
+                )}
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={loading}
+                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                >
+                  {loading ? '...' : 'Guardar configuración'}
+                </button>
               </div>
             </div>
           </>
