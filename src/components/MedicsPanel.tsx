@@ -81,6 +81,7 @@ export default function MedicsPanel() {
   const [configSaved, setConfigSaved] = useState(false);
   const [centerImageUrl, setCenterImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageModal, setImageModal] = useState<{ type: 'success' | 'error'; url?: string; message?: string } | null>(null);
 
   // ── Helpers for building DoctorInfo ──
   const buildDoctorInfo = (d: any): DoctorInfo => ({
@@ -482,6 +483,7 @@ export default function MedicsPanel() {
       .upload(path, file, { upsert: true });
     if (uploadErr) {
       setUploadingImage(false);
+      setImageModal({ type: 'error', message: uploadErr.message });
       return;
     }
     const { data: urlData } = supabase.storage.from('center-images').getPublicUrl(path);
@@ -490,6 +492,9 @@ export default function MedicsPanel() {
       await supabase.from('centers').update({ image_url: publicUrl }).eq('id', doctorInfo.center_id);
       setCenterImageUrl(publicUrl);
       setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
+      setImageModal({ type: 'success', url: publicUrl });
+    } else {
+      setImageModal({ type: 'error', message: 'No se pudo obtener la URL pública de la imagen.' });
     }
     setUploadingImage(false);
   };
@@ -1322,6 +1327,55 @@ export default function MedicsPanel() {
           </>
         )}
       </main>
+
+      {/* ── IMAGE UPLOAD MODAL ── */}
+      {imageModal && (
+        <div
+          onClick={() => setImageModal(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: '#fff', borderRadius: 20, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}
+          >
+            <button
+              onClick={() => setImageModal(null)}
+              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}
+            >
+              ×
+            </button>
+
+            {imageModal.type === 'success' ? (
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <img
+                    src={imageModal.url}
+                    alt="Imagen del centro"
+                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: '3px solid #dd8273' }}
+                  />
+                </div>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Imagen subida correctamente</p>
+                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>La imagen ya está visible para tus pacientes.</p>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Error al subir la imagen</p>
+                <p style={{ fontSize: 13, color: '#e74c3c', margin: '0 0 20px', lineHeight: 1.5 }}>{imageModal.message}</p>
+                <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Asegúrate de que el bucket <strong>center-images</strong> existe y es público en Supabase Storage.</p>
+              </>
+            )}
+
+            <button
+              onClick={() => setImageModal(null)}
+              style={{ ...s.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
