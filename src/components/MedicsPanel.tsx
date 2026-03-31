@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { APP_VERSION } from '../lib/version';
 
 interface PatientLink {
   id: string;
@@ -735,7 +736,7 @@ export default function MedicsPanel() {
             <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
             <span style={{ fontSize: 13 }}>Cerrar sesión</span>
           </button>
-          <div style={{ fontSize: 10, color: '#3d2a28', marginTop: 8, paddingLeft: 4 }}>v1.0.3</div>
+          <div style={{ fontSize: 10, color: '#3d2a28', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
         </div>
       </aside>
 
