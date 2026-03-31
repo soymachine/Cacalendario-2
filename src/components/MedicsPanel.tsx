@@ -647,10 +647,10 @@ export default function MedicsPanel() {
                 ))}
               </div>
               <div style={{ display: 'flex', padding: '8px 20px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
-                <span style={{ width: 100 }}>Estado</span>
+                <span style={{ width: 50 }}></span>
                 <span style={{ flex: 2 }}>Paciente</span>
                 <span style={{ flex: 1 }}>Último registro</span>
-                <span style={{ width: 50, textAlign: 'center' }}></span>
+                <span style={{ width: 100 }}>Estado</span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -668,19 +668,14 @@ export default function MedicsPanel() {
                   const semaforo = getSemaforo(patient.daysSinceLast);
                   return (
                     <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
-                      {/* Status badge */}
-                      <span style={{ width: 100 }}>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
-                          color: isAccepted ? '#27ae60' : '#e67e22',
-                        }}>
-                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
-                        </span>
-                      </span>
+                      {/* Semáforo */}
+                      <div style={{ width: 50 }}>
+                        {isAccepted ? (
+                          <span style={{ fontSize: 20 }}>{semaforo.icon}</span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                        )}
+                      </div>
                       {/* Patient name */}
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
@@ -710,14 +705,19 @@ export default function MedicsPanel() {
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
                       </div>
-                      {/* Semáforo */}
-                      <div style={{ width: 50, textAlign: 'center' }}>
-                        {isAccepted ? (
-                          <span style={{ fontSize: 20 }}>{semaforo.icon}</span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
-                        )}
-                      </div>
+                      {/* Status badge */}
+                      <span style={{ width: 100 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
+                          color: isAccepted ? '#27ae60' : '#e67e22',
+                        }}>
+                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
+                        </span>
+                      </span>
                     </div>
                   );
                 })
