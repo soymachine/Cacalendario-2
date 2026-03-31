@@ -743,8 +743,77 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Entry list (75%) + Calendar (25%) */}
+            {/* Row 2: Calendar (25%) + Entry list (75%) */}
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              {/* Mini calendar */}
+              <div style={{ ...s.card, flex: 1 }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button onClick={() => {
+                    if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
+                    else setCalendarMonth(calendarMonth - 1);
+                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>←</button>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                  </span>
+                  <button onClick={() => {
+                    if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
+                    else setCalendarMonth(calendarMonth + 1);
+                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>→</button>
+                </div>
+                <div style={{ padding: '6px 8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
+                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                      <div key={d} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: '#aaa' }}>{d}</div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                    {(() => {
+                      const firstDay = new Date(calendarYear, calendarMonth, 1);
+                      const startDay = (firstDay.getDay() + 6) % 7;
+                      const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+                      const today = new Date();
+                      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+                      const entriesByDate = new Map<string, number>();
+                      patientDetail.entries.forEach(e => {
+                        const [y, m] = e.date.split('-').map(Number);
+                        if (y === calendarYear && m === calendarMonth + 1) {
+                          entriesByDate.set(e.date, (entriesByDate.get(e.date) || 0) + 1);
+                        }
+                      });
+
+                      const cells: React.ReactNode[] = [];
+                      for (let i = 0; i < startDay; i++) {
+                        cells.push(<div key={`empty-${i}`} />);
+                      }
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const count = entriesByDate.get(dateStr) || 0;
+                        const isToday = dateStr === todayStr;
+                        const isFuture = new Date(dateStr) > today;
+                        const hasEntry = count > 0;
+
+                        cells.push(
+                          <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
+                            aspectRatio: '1',
+                            borderRadius: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
+                            opacity: isFuture ? 0.3 : 1,
+                            border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
+                          }}>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                          </div>
+                        );
+                      }
+                      return cells;
+                    })()}
+                  </div>
+                </div>
+              </div>
+
               {/* Entry list */}
               <div style={{ ...s.card, flex: 3 }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
@@ -798,77 +867,6 @@ export default function MedicsPanel() {
                     </div>
                   ))
                 )}
-              </div>
-
-              {/* Mini calendar */}
-              <div style={{ ...s.card, flex: 1 }}>
-                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button onClick={() => {
-                    if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
-                    else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>←</button>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
-                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
-                  </span>
-                  <button onClick={() => {
-                    if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
-                    else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>→</button>
-                </div>
-                <div style={{ padding: '6px 8px' }}>
-                  {/* Weekday headers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
-                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: '#aaa' }}>{d}</div>
-                    ))}
-                  </div>
-                  {/* Calendar days */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-                    {(() => {
-                      const firstDay = new Date(calendarYear, calendarMonth, 1);
-                      const startDay = (firstDay.getDay() + 6) % 7;
-                      const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-                      const today = new Date();
-                      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-                      const entriesByDate = new Map<string, number>();
-                      patientDetail.entries.forEach(e => {
-                        const [y, m] = e.date.split('-').map(Number);
-                        if (y === calendarYear && m === calendarMonth + 1) {
-                          entriesByDate.set(e.date, (entriesByDate.get(e.date) || 0) + 1);
-                        }
-                      });
-
-                      const cells: React.ReactNode[] = [];
-                      for (let i = 0; i < startDay; i++) {
-                        cells.push(<div key={`empty-${i}`} />);
-                      }
-                      for (let day = 1; day <= daysInMonth; day++) {
-                        const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        const count = entriesByDate.get(dateStr) || 0;
-                        const isToday = dateStr === todayStr;
-                        const isFuture = new Date(dateStr) > today;
-                        const hasEntry = count > 0;
-
-                        cells.push(
-                          <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
-                            aspectRatio: '1',
-                            borderRadius: 4,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
-                            opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
-                          }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
-                          </div>
-                        );
-                      }
-                      return cells;
-                    })()}
-                  </div>
-                </div>
               </div>
             </div>
           </>
