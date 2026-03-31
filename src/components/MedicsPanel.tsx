@@ -70,6 +70,7 @@ export default function MedicsPanel() {
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
 
   // ── Recover session on mount ──
   useEffect(() => {
@@ -632,23 +633,54 @@ export default function MedicsPanel() {
               actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
             />
             <div style={s.card}>
-              {/* Column headers */}
-              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+              {/* Sort controls + Column headers */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#888' }}>Ordenar por:</span>
+                {(['estado', 'nombre'] as const).map(opt => (
+                  <button key={opt} onClick={() => setSortBy(opt)} style={{
+                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                    backgroundColor: sortBy === opt ? '#1a0e0e' : '#00000010',
+                    color: sortBy === opt ? '#fff' : '#666',
+                  }}>
+                    {opt === 'estado' ? 'Estado' : 'Nombre'}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', padding: '8px 20px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
+                <span style={{ width: 100 }}>Estado</span>
                 <span style={{ flex: 2 }}>Paciente</span>
-                <span style={{ flex: 1 }}>Estado</span>
                 <span style={{ flex: 1 }}>Último registro</span>
-                <span style={{ width: 50, textAlign: 'center' }}>Estado</span>
+                <span style={{ width: 50, textAlign: 'center' }}></span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                   No hay pacientes. Invita a tu primer paciente desde la sección "Invitar Paciente".
                 </div>
               ) : (
-                patients.map((patient, i) => {
+                [...patients].sort((a, b) => {
+                  if (sortBy === 'estado') {
+                    if (a.status === b.status) return patientLabel(a).localeCompare(patientLabel(b));
+                    return a.status === 'accepted' ? -1 : 1;
+                  }
+                  return patientLabel(a).localeCompare(patientLabel(b));
+                }).map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
                   const semaforo = getSemaforo(patient.daysSinceLast);
                   return (
                     <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                      {/* Status badge */}
+                      <span style={{ width: 100 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
+                          color: isAccepted ? '#27ae60' : '#e67e22',
+                        }}>
+                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
+                        </span>
+                      </span>
                       {/* Patient name */}
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
@@ -663,19 +695,6 @@ export default function MedicsPanel() {
                           )}
                         </div>
                       </div>
-                      {/* Status badge */}
-                      <span style={{ flex: 1 }}>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
-                          color: isAccepted ? '#27ae60' : '#e67e22',
-                        }}>
-                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
-                        </span>
-                      </span>
                       {/* Last entry */}
                       <div style={{ flex: 1 }}>
                         {isAccepted && patient.lastEntryDate ? (
