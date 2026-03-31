@@ -472,44 +472,39 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Upload center image ──
+  // ── Upload center image (stored as base64 in DB) ──
   const handleImageUpload = async (file: File) => {
     if (!doctorInfo) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setImageModal({ type: 'error', message: 'La imagen supera los 2 MB. Elige una más pequeña.' });
+      return;
+    }
+
     setUploadingImage(true);
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `centers/${doctorInfo.center_id}/image.${ext}`;
 
-    const { error: uploadErr } = await supabase.storage
-      .from('center-images')
-      .upload(path, file, { upsert: true });
-    if (uploadErr) {
-      setUploadingImage(false);
-      setImageModal({ type: 'error', message: `[Storage] ${uploadErr.message}` });
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from('center-images').getPublicUrl(path);
-    const publicUrl = urlData?.publicUrl || null;
-    if (!publicUrl) {
-      setUploadingImage(false);
-      setImageModal({ type: 'error', message: 'No se pudo obtener la URL pública.' });
-      return;
-    }
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
     const { error: dbErr } = await supabase
       .from('centers')
-      .update({ image_url: publicUrl })
+      .update({ image_url: base64 })
       .eq('id', doctorInfo.center_id);
+
     if (dbErr) {
       setUploadingImage(false);
-      setImageModal({ type: 'error', message: `[DB centers] ${dbErr.message}` });
+      setImageModal({ type: 'error', message: dbErr.message });
       return;
     }
 
-    setCenterImageUrl(publicUrl);
-    setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
+    setCenterImageUrl(base64);
+    setDoctorInfo({ ...doctorInfo, center_image_url: base64 });
     setUploadingImage(false);
-    setImageModal({ type: 'success', url: publicUrl });
+    setImageModal({ type: 'success', url: base64 });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
