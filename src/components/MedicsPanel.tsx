@@ -883,7 +883,7 @@ export default function MedicsPanel() {
             />
 
             {/* Row 1: Semáforo — all inline */}
-            <div style={{ ...s.card, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ ...s.card, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
               <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
                 {patientDetail.daysSinceLast === null
@@ -900,30 +900,30 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Calendar (25%) + Entry list (75%) */}
+            {/* Row 2: Calendar + Entry list */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
-              {/* Mini calendar */}
-              <div style={{ ...s.card, flex: 1 }}>
-                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Calendar */}
+              <div style={{ ...s.card, flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
                     else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>←</button>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
-                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>←</button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                   </span>
                   <button onClick={() => {
                     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
                     else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>→</button>
+                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>→</button>
                 </div>
-                <div style={{ padding: '6px 8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
+                <div style={{ padding: isMobile ? '10px 12px' : '6px 8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2, marginBottom: isMobile ? 4 : 2 }}>
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: '#aaa' }}>{d}</div>
+                      <div key={d} style={{ textAlign: 'center', fontSize: isMobile ? 11 : 8, fontWeight: 700, color: '#aaa', paddingBottom: 2 }}>{d}</div>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2 }}>
                     {(() => {
                       const firstDay = new Date(calendarYear, calendarMonth, 1);
                       const startDay = (firstDay.getDay() + 6) % 7;
@@ -953,7 +953,7 @@ export default function MedicsPanel() {
                         cells.push(
                           <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
                             aspectRatio: '1',
-                            borderRadius: 4,
+                            borderRadius: isMobile ? 6 : 4,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -961,7 +961,7 @@ export default function MedicsPanel() {
                             opacity: isFuture ? 0.3 : 1,
                             border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
                           }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                            <span style={{ fontSize: isMobile ? 12 : 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
                         );
                       }
@@ -972,57 +972,84 @@ export default function MedicsPanel() {
               </div>
 
               {/* Entry list */}
-              <div style={{ ...s.card, flex: 3 }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Historial de registros ({patientDetail.totalEntries})</span>
-                </div>
-                {/* Column headers */}
-                <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                  <span style={{ width: 110 }}>Fecha</span>
-                  <span style={{ width: 60 }}>Hora</span>
-                  <span style={{ width: 80 }}>Bristol</span>
-                  <span style={{ width: 80 }}>Flota</span>
-                  <span style={{ flex: 1 }}>Comentarios</span>
+              <div style={{ ...s.card, flex: 3, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #00000015' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Historial ({patientDetail.totalEntries})</span>
                 </div>
                 {patientDetail.entries.length === 0 ? (
                   <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                     Este paciente no tiene registros aún.
                   </div>
+                ) : isMobile ? (
+                  /* ── Mobile: card per entry ── */
+                  <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                    {patientDetail.entries.map((entry, i) => {
+                      const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                      return (
+                        <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {entry.bristol != null && (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>
+                                  T{entry.bristol}
+                                </span>
+                              )}
+                              {entry.floats != null && (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>
+                                  {entry.floats ? 'Flota' : 'Hunde'}
+                                </span>
+                              )}
+                              {entry.time && (
+                                <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>
+                              )}
+                            </div>
+                          </div>
+                          {entry.notes && (
+                            <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  patientDetail.entries.map((entry, i) => (
-                    <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                      <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                      <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                      <span style={{ width: 80 }}>
-                        {entry.bristol != null ? (
-                          <span style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                            color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                            fontWeight: 600,
-                          }}>
-                            Tipo {entry.bristol}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                        )}
-                      </span>
-                      <span style={{ width: 80 }}>
-                        {entry.floats != null ? (
-                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
-                            {entry.floats ? 'Sí' : 'No'}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                        )}
-                      </span>
-                      <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                        {entry.notes || 'Sin comentarios'}
-                      </span>
+                  /* ── Desktop: table layout ── */
+                  <>
+                    <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                      <span style={{ width: 110 }}>Fecha</span>
+                      <span style={{ width: 60 }}>Hora</span>
+                      <span style={{ width: 80 }}>Bristol</span>
+                      <span style={{ width: 80 }}>Flota</span>
+                      <span style={{ flex: 1 }}>Comentarios</span>
                     </div>
-                  ))
+                    {patientDetail.entries.map((entry, i) => (
+                      <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                        <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
+                        <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
+                        <span style={{ width: 80 }}>
+                          {entry.bristol != null ? (
+                            <span style={{
+                              fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
+                              backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
+                              color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
+                            }}>
+                              Tipo {entry.bristol}
+                            </span>
+                          ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                        </span>
+                        <span style={{ width: 80 }}>
+                          {entry.floats != null ? (
+                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
+                              {entry.floats ? 'Sí' : 'No'}
+                            </span>
+                          ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                        </span>
+                        <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
+                          {entry.notes || 'Sin comentarios'}
+                        </span>
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
             </div>
