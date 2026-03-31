@@ -725,111 +725,96 @@ export default function MedicsPanel() {
               }
             />
 
-            {/* Last entry + Semáforo */}
-            <div style={{ ...s.card, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ fontSize: 36 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>
-                  {patientDetail.daysSinceLast === null
-                    ? 'Sin registros'
-                    : patientDetail.daysSinceLast === 0
-                      ? 'Último registro: hoy'
-                      : `Último registro: hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
-                </div>
-                {patientDetail.lastEntryDate && (
-                  <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{shortDate(patientDetail.lastEntryDate)}</div>
-                )}
-              </div>
-            </div>
-
-            {/* Alert for 3+ days */}
-            {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-              <div style={{ ...s.card, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '2px solid #e74c3c' }}>
-                <span style={{ fontSize: 24 }}>⚠️</span>
+            {/* Widget row: Semáforo + Calendar */}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
+              {/* Semáforo widget */}
+              <div style={{ ...s.card, padding: 20, display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+                <span style={{ fontSize: 36 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#c0392b', fontSize: 14 }}>Alerta: {patientDetail.daysSinceLast} días sin registrar</div>
-                  <div style={{ fontSize: 13, color: '#666' }}>Este paciente lleva varios días sin registrar actividad.</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>
+                    {patientDetail.daysSinceLast === null
+                      ? 'Sin registros'
+                      : patientDetail.daysSinceLast === 0
+                        ? 'Último registro: hoy'
+                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
+                  </div>
+                  {patientDetail.lastEntryDate && (
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{shortDate(patientDetail.lastEntryDate)}</div>
+                  )}
+                  {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+                    <div style={{ fontSize: 11, color: '#c0392b', fontWeight: 600, marginTop: 4 }}>⚠️ Varios días sin registrar</div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* Mini calendar */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button onClick={() => {
-                  if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
-                  else setCalendarMonth(calendarMonth - 1);
-                }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 8px' }}>←</button>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>
-                  {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                </span>
-                <button onClick={() => {
-                  if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
-                  else setCalendarMonth(calendarMonth + 1);
-                }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 8px' }}>→</button>
-              </div>
-              <div style={{ padding: 20 }}>
-                {/* Weekday headers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-                  {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                    <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#999', padding: 4 }}>{d}</div>
-                  ))}
+              {/* Mini calendar widget */}
+              <div style={{ ...s.card, flex: 1 }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button onClick={() => {
+                    if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
+                    else setCalendarMonth(calendarMonth - 1);
+                  }} style={{ background: 'none', border: 'none', fontSize: 14, cursor: 'pointer', padding: '2px 6px' }}>←</button>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button onClick={() => {
+                    if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
+                    else setCalendarMonth(calendarMonth + 1);
+                  }} style={{ background: 'none', border: 'none', fontSize: 14, cursor: 'pointer', padding: '2px 6px' }}>→</button>
                 </div>
-                {/* Calendar days */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-                  {(() => {
-                    const firstDay = new Date(calendarYear, calendarMonth, 1);
-                    const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
-                    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-                    const today = new Date();
-                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                <div style={{ padding: '8px 10px' }}>
+                  {/* Weekday headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
+                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                      <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: '#aaa', padding: 1 }}>{d}</div>
+                    ))}
+                  </div>
+                  {/* Calendar days */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                    {(() => {
+                      const firstDay = new Date(calendarYear, calendarMonth, 1);
+                      const startDay = (firstDay.getDay() + 6) % 7;
+                      const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+                      const today = new Date();
+                      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-                    // Build entries map for this month
-                    const entriesByDate = new Map<string, number>();
-                    patientDetail.entries.forEach(e => {
-                      const [y, m] = e.date.split('-').map(Number);
-                      if (y === calendarYear && m === calendarMonth + 1) {
-                        entriesByDate.set(e.date, (entriesByDate.get(e.date) || 0) + 1);
+                      const entriesByDate = new Map<string, number>();
+                      patientDetail.entries.forEach(e => {
+                        const [y, m] = e.date.split('-').map(Number);
+                        if (y === calendarYear && m === calendarMonth + 1) {
+                          entriesByDate.set(e.date, (entriesByDate.get(e.date) || 0) + 1);
+                        }
+                      });
+
+                      const cells: React.ReactNode[] = [];
+                      for (let i = 0; i < startDay; i++) {
+                        cells.push(<div key={`empty-${i}`} />);
                       }
-                    });
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const count = entriesByDate.get(dateStr) || 0;
+                        const isToday = dateStr === todayStr;
+                        const isFuture = new Date(dateStr) > today;
+                        const hasEntry = count > 0;
 
-                    const cells: React.ReactNode[] = [];
-                    // Empty cells before first day
-                    for (let i = 0; i < startDay; i++) {
-                      cells.push(<div key={`empty-${i}`} />);
-                    }
-                    for (let day = 1; day <= daysInMonth; day++) {
-                      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                      const count = entriesByDate.get(dateStr) || 0;
-                      const isToday = dateStr === todayStr;
-                      const isFuture = new Date(dateStr) > today;
-                      const hasEntry = count > 0;
-
-                      cells.push(
-                        <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
-                          aspectRatio: '1',
-                          borderRadius: 8,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexDirection: 'column' as const,
-                          backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
-                          opacity: isFuture ? 0.3 : 1,
-                          border: isToday ? '2px solid #dd8273' : '1px solid #00000010',
-                        }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: hasEntry ? '#fff' : '#555' }}>{day}</span>
-                          {hasEntry && count > 1 && (
-                            <span style={{ fontSize: 9, color: '#ffffff99' }}>x{count}</span>
-                          )}
-                        </div>
-                      );
-                    }
-                    return cells;
-                  })()}
-                </div>
-                <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: '#999', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#dd8273' }} /> Con registro</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 12, height: 12, borderRadius: 3, border: '1px solid #00000020' }} /> Sin registro</div>
+                        cells.push(
+                          <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
+                            aspectRatio: '1',
+                            borderRadius: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
+                            opacity: isFuture ? 0.3 : 1,
+                            border: isToday ? '1.5px solid #dd8273' : '1px solid #00000008',
+                          }}>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#777' }}>{day}</span>
+                          </div>
+                        );
+                      }
+                      return cells;
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
