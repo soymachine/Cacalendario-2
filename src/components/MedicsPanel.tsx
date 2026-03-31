@@ -478,25 +478,38 @@ export default function MedicsPanel() {
     setUploadingImage(true);
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `centers/${doctorInfo.center_id}/image.${ext}`;
+
     const { error: uploadErr } = await supabase.storage
       .from('center-images')
       .upload(path, file, { upsert: true });
     if (uploadErr) {
       setUploadingImage(false);
-      setImageModal({ type: 'error', message: uploadErr.message });
+      setImageModal({ type: 'error', message: `[Storage] ${uploadErr.message}` });
       return;
     }
+
     const { data: urlData } = supabase.storage.from('center-images').getPublicUrl(path);
     const publicUrl = urlData?.publicUrl || null;
-    if (publicUrl) {
-      await supabase.from('centers').update({ image_url: publicUrl }).eq('id', doctorInfo.center_id);
-      setCenterImageUrl(publicUrl);
-      setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
-      setImageModal({ type: 'success', url: publicUrl });
-    } else {
-      setImageModal({ type: 'error', message: 'No se pudo obtener la URL pública de la imagen.' });
+    if (!publicUrl) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: 'No se pudo obtener la URL pública.' });
+      return;
     }
+
+    const { error: dbErr } = await supabase
+      .from('centers')
+      .update({ image_url: publicUrl })
+      .eq('id', doctorInfo.center_id);
+    if (dbErr) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: `[DB centers] ${dbErr.message}` });
+      return;
+    }
+
+    setCenterImageUrl(publicUrl);
+    setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
     setUploadingImage(false);
+    setImageModal({ type: 'success', url: publicUrl });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
