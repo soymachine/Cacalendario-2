@@ -725,52 +725,105 @@ export default function MedicsPanel() {
               }
             />
 
-            {/* Widget row: Semáforo + Calendar */}
-            <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
-              {/* Semáforo widget */}
-              <div style={{ ...s.card, padding: 20, display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
-                <span style={{ fontSize: 36 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>
-                    {patientDetail.daysSinceLast === null
-                      ? 'Sin registros'
-                      : patientDetail.daysSinceLast === 0
-                        ? 'Último registro: hoy'
-                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
-                  </div>
-                  {patientDetail.lastEntryDate && (
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{shortDate(patientDetail.lastEntryDate)}</div>
-                  )}
-                  {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                    <div style={{ fontSize: 11, color: '#c0392b', fontWeight: 600, marginTop: 4 }}>⚠️ Varios días sin registrar</div>
-                  )}
+            {/* Row 1: Semáforo — all inline */}
+            <div style={{ ...s.card, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+                {patientDetail.daysSinceLast === null
+                  ? 'Sin registros'
+                  : patientDetail.daysSinceLast === 0
+                    ? 'Último registro: hoy'
+                    : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
+              </span>
+              {patientDetail.lastEntryDate && (
+                <span style={{ fontSize: 12, color: '#888' }}>· {shortDate(patientDetail.lastEntryDate)}</span>
+              )}
+              {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+                <span style={{ fontSize: 11, color: '#c0392b', fontWeight: 600, marginLeft: 4 }}>⚠️ Varios días sin registrar</span>
+              )}
+            </div>
+
+            {/* Row 2: Entry list (75%) + Calendar (25%) */}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              {/* Entry list */}
+              <div style={{ ...s.card, flex: 3 }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Historial de registros ({patientDetail.totalEntries})</span>
                 </div>
+                {/* Column headers */}
+                <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                  <span style={{ width: 110 }}>Fecha</span>
+                  <span style={{ width: 60 }}>Hora</span>
+                  <span style={{ width: 80 }}>Bristol</span>
+                  <span style={{ width: 80 }}>Flota</span>
+                  <span style={{ flex: 1 }}>Comentarios</span>
+                </div>
+                {patientDetail.entries.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                    Este paciente no tiene registros aún.
+                  </div>
+                ) : (
+                  patientDetail.entries.map((entry, i) => (
+                    <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                      <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
+                      <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
+                      <span style={{ width: 80 }}>
+                        {entry.bristol != null ? (
+                          <span style={{
+                            fontSize: 11,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
+                            color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
+                            fontWeight: 600,
+                          }}>
+                            Tipo {entry.bristol}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                        )}
+                      </span>
+                      <span style={{ width: 80 }}>
+                        {entry.floats != null ? (
+                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
+                            {entry.floats ? 'Sí' : 'No'}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                        )}
+                      </span>
+                      <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
+                        {entry.notes || 'Sin comentarios'}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
 
-              {/* Mini calendar widget */}
-              <div style={{ ...s.card, width: 220, flexShrink: 0 }}>
-                <div style={{ padding: '4px 8px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Mini calendar */}
+              <div style={{ ...s.card, flex: 1 }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
                     else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 11, cursor: 'pointer', padding: '1px 4px' }}>←</button>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>←</button>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
                     {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
                   </span>
                   <button onClick={() => {
                     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
                     else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 11, cursor: 'pointer', padding: '1px 4px' }}>→</button>
+                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>→</button>
                 </div>
-                <div style={{ padding: '4px 6px' }}>
+                <div style={{ padding: '6px 8px' }}>
                   {/* Weekday headers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, marginBottom: 1 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: 7, fontWeight: 700, color: '#aaa' }}>{d}</div>
+                      <div key={d} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: '#aaa' }}>{d}</div>
                     ))}
                   </div>
                   {/* Calendar days */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
                     {(() => {
                       const firstDay = new Date(calendarYear, calendarMonth, 1);
                       const startDay = (firstDay.getDay() + 6) % 7;
@@ -800,15 +853,15 @@ export default function MedicsPanel() {
                         cells.push(
                           <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
                             aspectRatio: '1',
-                            borderRadius: 3,
+                            borderRadius: 4,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? '1px solid #dd8273' : '1px solid #00000006',
+                            border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
                           }}>
-                            <span style={{ fontSize: 7, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
                         );
                       }
@@ -817,61 +870,6 @@ export default function MedicsPanel() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Full entry list */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Historial de registros ({patientDetail.totalEntries})</span>
-              </div>
-              {/* Column headers */}
-              <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                <span style={{ width: 110 }}>Fecha</span>
-                <span style={{ width: 60 }}>Hora</span>
-                <span style={{ width: 80 }}>Bristol</span>
-                <span style={{ width: 80 }}>Flota</span>
-                <span style={{ flex: 1 }}>Comentarios</span>
-              </div>
-              {patientDetail.entries.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  Este paciente no tiene registros aún.
-                </div>
-              ) : (
-                patientDetail.entries.map((entry, i) => (
-                  <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                    <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                    <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                    <span style={{ width: 80 }}>
-                      {entry.bristol != null ? (
-                        <span style={{
-                          fontSize: 11,
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                          backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                          color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                          fontWeight: 600,
-                        }}>
-                          Tipo {entry.bristol}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                      )}
-                    </span>
-                    <span style={{ width: 80 }}>
-                      {entry.floats != null ? (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
-                          {entry.floats ? 'Sí' : 'No'}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                      )}
-                    </span>
-                    <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                      {entry.notes || 'Sin comentarios'}
-                    </span>
-                  </div>
-                ))
-              )}
             </div>
           </>
         )}
