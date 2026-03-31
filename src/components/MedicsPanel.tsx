@@ -748,29 +748,29 @@ export default function MedicsPanel() {
               </div>
 
               {/* Mini calendar widget */}
-              <div style={{ ...s.card, flex: 1 }}>
-                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ ...s.card, width: 220, flexShrink: 0 }}>
+                <div style={{ padding: '4px 8px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
                     else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 14, cursor: 'pointer', padding: '2px 6px' }}>←</button>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
-                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                  }} style={{ background: 'none', border: 'none', fontSize: 11, cursor: 'pointer', padding: '1px 4px' }}>←</button>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
                   </span>
                   <button onClick={() => {
                     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
                     else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 14, cursor: 'pointer', padding: '2px 6px' }}>→</button>
+                  }} style={{ background: 'none', border: 'none', fontSize: 11, cursor: 'pointer', padding: '1px 4px' }}>→</button>
                 </div>
-                <div style={{ padding: '8px 10px' }}>
+                <div style={{ padding: '4px 6px' }}>
                   {/* Weekday headers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, marginBottom: 1 }}>
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: '#aaa', padding: 1 }}>{d}</div>
+                      <div key={d} style={{ textAlign: 'center', fontSize: 7, fontWeight: 700, color: '#aaa' }}>{d}</div>
                     ))}
                   </div>
                   {/* Calendar days */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
                     {(() => {
                       const firstDay = new Date(calendarYear, calendarMonth, 1);
                       const startDay = (firstDay.getDay() + 6) % 7;
@@ -800,15 +800,15 @@ export default function MedicsPanel() {
                         cells.push(
                           <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
                             aspectRatio: '1',
-                            borderRadius: 4,
+                            borderRadius: 3,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? '1.5px solid #dd8273' : '1px solid #00000008',
+                            border: isToday ? '1px solid #dd8273' : '1px solid #00000006',
                           }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#777' }}>{day}</span>
+                            <span style={{ fontSize: 7, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
                         );
                       }
