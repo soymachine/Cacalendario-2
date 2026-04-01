@@ -13,6 +13,9 @@ interface PatientLink {
   display_name?: string | null;
   lastEntryDate?: string | null;
   daysSinceLast?: number | null;
+  semaforo_override?: boolean;
+  semaforo_green_override?: number | null;
+  semaforo_red_override?: number | null;
 }
 
 interface DoctorInfo {
@@ -83,6 +86,10 @@ export default function MedicsPanel() {
   const [centerImageUrl, setCenterImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageModal, setImageModal] = useState<{ type: 'success' | 'error'; url?: string; message?: string } | null>(null);
+  const [patientSemaforoOverride, setPatientSemaforoOverride] = useState(false);
+  const [patientSemaforoGreen, setPatientSemaforoGreen] = useState(1);
+  const [patientSemaforoRed, setPatientSemaforoRed] = useState(3);
+  const [patientSemaforoSaved, setPatientSemaforoSaved] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
   useEffect(() => {
@@ -370,6 +377,12 @@ export default function MedicsPanel() {
     setCalendarMonth(new Date().getMonth());
     setCalendarYear(new Date().getFullYear());
 
+    // Initialize per-patient semáforo override state
+    setPatientSemaforoOverride(patient.semaforo_override ?? false);
+    setPatientSemaforoGreen(patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1);
+    setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
+    setPatientSemaforoSaved(false);
+
     setPatientDetail({
       entries: entryList,
       totalEntries: entryList.length,
@@ -480,6 +493,29 @@ export default function MedicsPanel() {
     }
   };
 
+  // ── Save per-patient semáforo override ──
+  const handleSavePatientSemaforo = async () => {
+    if (!selectedPatient) return;
+    const { error } = await supabase
+      .from('patient_links')
+      .update({
+        semaforo_override: patientSemaforoOverride,
+        semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
+        semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
+      })
+      .eq('id', selectedPatient.id);
+    if (!error) {
+      setSelectedPatient({
+        ...selectedPatient,
+        semaforo_override: patientSemaforoOverride,
+        semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
+        semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
+      });
+      setPatientSemaforoSaved(true);
+      setTimeout(() => setPatientSemaforoSaved(false), 3000);
+    }
+  };
+
   // ── Upload center image (stored as base64 in DB) ──
   const handleImageUpload = async (file: File) => {
     if (!doctorInfo) return;
@@ -522,14 +558,22 @@ export default function MedicsPanel() {
   const pendingPatients = patients.filter(p => p.status === 'pending');
 
   // ── Semáforo helper ──
-  const getSemaforo = (daysSinceLast: number | null) => {
-    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' }; // grey - no data
-    const green = doctorInfo?.semaforo_green ?? 1;
-    const red = doctorInfo?.semaforo_red ?? 3;
-    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' }; // green
-    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' }; // orange
-    return { color: '#e74c3c', icon: '\u{1F534}' }; // red
+  const getSemaforo = (daysSinceLast: number | null, overrideGreen?: number, overrideRed?: number) => {
+    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' };
+    const green = overrideGreen ?? doctorInfo?.semaforo_green ?? 1;
+    const red = overrideRed ?? doctorInfo?.semaforo_red ?? 3;
+    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' };
+    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' };
+    return { color: '#e74c3c', icon: '\u{1F534}' };
   };
+
+  // Effective semáforo thresholds for the currently selected patient
+  const effectiveGreen = selectedPatient?.semaforo_override
+    ? (selectedPatient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1)
+    : (doctorInfo?.semaforo_green ?? 1);
+  const effectiveRed = selectedPatient?.semaforo_override
+    ? (selectedPatient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3)
+    : (doctorInfo?.semaforo_red ?? 3);
 
   // ── Initial loading ──
   if (initialLoading) {
@@ -792,7 +836,9 @@ export default function MedicsPanel() {
                   return patientLabel(a).localeCompare(patientLabel(b));
                 }).map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
-                  const semaforo = getSemaforo(patient.daysSinceLast);
+                  const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
+                  const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
+                  const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
                     <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       {/* Semáforo */}
@@ -884,7 +930,7 @@ export default function MedicsPanel() {
 
             {/* Row 1: Semáforo — all inline */}
             <div style={{ ...s.card, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
+              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).icon}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
                 {patientDetail.daysSinceLast === null
                   ? 'Sin registros'
@@ -969,6 +1015,79 @@ export default function MedicsPanel() {
                     })()}
                   </div>
                 </div>
+              </div>
+
+              {/* Per-patient semáforo override */}
+              <div style={{ ...s.card, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const, padding: '14px 16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={patientSemaforoOverride}
+                    onChange={(e) => {
+                      setPatientSemaforoOverride(e.target.checked);
+                      setPatientSemaforoSaved(false);
+                    }}
+                    style={{ width: 16, height: 16, accentColor: '#dd8273', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
+                  {!patientSemaforoOverride && (
+                    <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
+                  )}
+                </label>
+
+                {patientSemaforoOverride && (
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                    {/* Preview */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #27ae60' }}>
+                        <div style={{ fontSize: 14 }}>🟢</div>
+                        <div style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #f39c12' }}>
+                        <div style={{ fontSize: 14 }}>🟠</div>
+                        <div style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #e74c3c' }}>
+                        <div style={{ fontSize: 14 }}>🔴</div>
+                        <div style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</div>
+                      </div>
+                    </div>
+
+                    {/* Green slider */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''}</div>
+                      <input type="range" min={0} max={Math.max(patientSemaforoRed - 1, 1)} value={patientSemaforoGreen}
+                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }}
+                        style={{ width: '100%', accentColor: '#27ae60' }} />
+                    </div>
+
+                    {/* Red slider */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {patientSemaforoRed} día{patientSemaforoRed !== 1 ? 's' : ''}</div>
+                      <input type="range" min={Math.max(patientSemaforoGreen + 1, 1)} max={30} value={patientSemaforoRed}
+                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }}
+                        style={{ width: '100%', accentColor: '#e74c3c' }} />
+                    </div>
+
+                    {patientSemaforoSaved && (
+                      <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
+                    )}
+
+                    <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
+                      Guardar
+                    </button>
+                  </div>
+                )}
+
+                {!patientSemaforoOverride && patientSemaforoSaved && (
+                  <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                )}
+
+                {!patientSemaforoOverride && (
+                  <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
+                    Guardar
+                  </button>
+                )}
               </div>
 
               {/* Entry list */}
