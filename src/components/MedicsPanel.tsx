@@ -90,6 +90,11 @@ export default function MedicsPanel() {
   const [patientSemaforoGreen, setPatientSemaforoGreen] = useState(1);
   const [patientSemaforoRed, setPatientSemaforoRed] = useState(3);
   const [patientSemaforoSaved, setPatientSemaforoSaved] = useState(false);
+  const [entryPage, setEntryPage] = useState(0);
+  const [entryFilterFrom, setEntryFilterFrom] = useState('');
+  const [entryFilterTo, setEntryFilterTo] = useState('');
+
+  const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
 
   useEffect(() => {
@@ -382,6 +387,9 @@ export default function MedicsPanel() {
     setPatientSemaforoGreen(patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1);
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientSemaforoSaved(false);
+    setEntryPage(0);
+    setEntryFilterFrom('');
+    setEntryFilterTo('');
 
     setPatientDetail({
       entries: entryList,
@@ -1093,86 +1101,127 @@ export default function MedicsPanel() {
               </div>{/* end left column */}
 
               {/* Right column: entry list */}
-              <div style={{ ...s.card, flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid #00000015' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Historial ({patientDetail.totalEntries})</span>
-                </div>
-                {patientDetail.entries.length === 0 ? (
-                  <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                    Este paciente no tiene registros aún.
-                  </div>
-                ) : isMobile ? (
-                  /* ── Mobile: card per entry ── */
-                  <div style={{ display: 'flex', flexDirection: 'column' as const }}>
-                    {patientDetail.entries.map((entry, i) => {
-                      const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
-                      return (
-                        <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                              {entry.bristol != null && (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>
-                                  T{entry.bristol}
-                                </span>
-                              )}
-                              {entry.floats != null && (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>
-                                  {entry.floats ? 'Flota' : 'Hunde'}
-                                </span>
-                              )}
-                              {entry.time && (
-                                <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>
-                              )}
-                            </div>
-                          </div>
-                          {entry.notes && (
-                            <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  /* ── Desktop: table layout ── */
-                  <>
-                    <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                      <span style={{ width: 110 }}>Fecha</span>
-                      <span style={{ width: 60 }}>Hora</span>
-                      <span style={{ width: 80 }}>Bristol</span>
-                      <span style={{ width: 80 }}>Flota</span>
-                      <span style={{ flex: 1 }}>Comentarios</span>
-                    </div>
-                    {patientDetail.entries.map((entry, i) => (
-                      <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                        <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                        <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                        <span style={{ width: 80 }}>
-                          {entry.bristol != null ? (
-                            <span style={{
-                              fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
-                              backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                              color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                            }}>
-                              Tipo {entry.bristol}
-                            </span>
-                          ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+              {(() => {
+                const filteredEntries = patientDetail.entries.filter(e => {
+                  if (entryFilterFrom && e.date < entryFilterFrom) return false;
+                  if (entryFilterTo && e.date > entryFilterTo) return false;
+                  return true;
+                });
+                const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+                const pagedEntries = filteredEntries.slice(entryPage * ENTRIES_PER_PAGE, (entryPage + 1) * ENTRIES_PER_PAGE);
+                const hasFilter = entryFilterFrom || entryFilterTo;
+
+                return (
+                  <div style={{ ...s.card, flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+                    {/* Header + filter bar */}
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #00000015' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+                          Historial
+                          {hasFilter
+                            ? ` (${filteredEntries.length} de ${patientDetail.totalEntries})`
+                            : ` (${patientDetail.totalEntries})`}
                         </span>
-                        <span style={{ width: 80 }}>
-                          {entry.floats != null ? (
-                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
-                              {entry.floats ? 'Sí' : 'No'}
-                            </span>
-                          ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
-                        </span>
-                        <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                          {entry.notes || 'Sin comentarios'}
-                        </span>
+                        {hasFilter && (
+                          <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryPage(0); }}
+                            style={{ fontSize: 11, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                            ✕ Limpiar filtro
+                          </button>
+                        )}
                       </div>
-                    ))}
-                  </>
-                )}
-              </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>De</span>
+                        <input type="date" value={entryFilterFrom}
+                          onChange={(e) => { setEntryFilterFrom(e.target.value); setEntryPage(0); }}
+                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>a</span>
+                        <input type="date" value={entryFilterTo}
+                          onChange={(e) => { setEntryFilterTo(e.target.value); setEntryPage(0); }}
+                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
+                      </div>
+                    </div>
+
+                    {filteredEntries.length === 0 ? (
+                      <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                        {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
+                      </div>
+                    ) : isMobile ? (
+                      <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                        {pagedEntries.map((entry, i) => {
+                          const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                          return (
+                            <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  {entry.bristol != null && (
+                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>T{entry.bristol}</span>
+                                  )}
+                                  {entry.floats != null && (
+                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>{entry.floats ? 'Flota' : 'Hunde'}</span>
+                                  )}
+                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>}
+                                </div>
+                              </div>
+                              {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                          <span style={{ width: 110 }}>Fecha</span>
+                          <span style={{ width: 60 }}>Hora</span>
+                          <span style={{ width: 80 }}>Bristol</span>
+                          <span style={{ width: 80 }}>Flota</span>
+                          <span style={{ flex: 1 }}>Comentarios</span>
+                        </div>
+                        {pagedEntries.map((entry, i) => (
+                          <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                            <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
+                            <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
+                            <span style={{ width: 80 }}>
+                              {entry.bristol != null ? (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
+                                  backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
+                                  color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
+                                }}>Tipo {entry.bristol}</span>
+                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                            </span>
+                            <span style={{ width: 80 }}>
+                              {entry.floats != null ? (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>{entry.floats ? 'Sí' : 'No'}</span>
+                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                            </span>
+                            <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
+                              {entry.notes || 'Sin comentarios'}
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid #00000010', backgroundColor: '#00000005' }}>
+                        <button onClick={() => setEntryPage(p => Math.max(0, p - 1))} disabled={entryPage === 0}
+                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === 0 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === 0 ? 0.4 : 1 }}>
+                          ← Anterior
+                        </button>
+                        <span style={{ fontSize: 12, color: '#666' }}>
+                          Página <strong>{entryPage + 1}</strong> de <strong>{totalPages}</strong>
+                          <span style={{ color: '#aaa' }}> · {filteredEntries.length} registros</span>
+                        </span>
+                        <button onClick={() => setEntryPage(p => Math.min(totalPages - 1, p + 1))} disabled={entryPage === totalPages - 1}
+                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === totalPages - 1 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === totalPages - 1 ? 0.4 : 1 }}>
+                          Siguiente →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </>
         )}
