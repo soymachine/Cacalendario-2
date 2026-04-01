@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
+import Switch from 'rc-switch';
+import 'rc-switch/assets/index.css';
 
 interface PatientLink {
   id: string;
@@ -1028,21 +1030,20 @@ export default function MedicsPanel() {
 
               {/* Per-patient semáforo override */}
               <div style={{ ...s.card, padding: '14px 16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: patientSemaforoOverride ? 14 : 0 }}>
-                  <input
-                    type="checkbox"
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                  <Switch
                     checked={patientSemaforoOverride}
-                    onChange={(e) => {
-                      setPatientSemaforoOverride(e.target.checked);
+                    onChange={(checked) => {
+                      setPatientSemaforoOverride(checked);
                       setPatientSemaforoSaved(false);
                     }}
-                    style={{ width: 16, height: 16, accentColor: '#dd8273', cursor: 'pointer' }}
+                    style={{ backgroundColor: patientSemaforoOverride ? '#dd8273' : undefined }}
                   />
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
                   {!patientSemaforoOverride && (
                     <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
                   )}
-                </label>
+                </div>
 
                 {patientSemaforoOverride && (
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
