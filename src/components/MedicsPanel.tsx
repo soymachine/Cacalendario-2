@@ -69,7 +69,7 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
       <Slider.Control style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
         <Slider.Track style={{ position: 'relative', flexGrow: 1, borderRadius: 4, height: 6, backgroundColor: '#e0e0e0' }}>
           <Slider.Indicator style={{ position: 'absolute', borderRadius: 4, height: '100%', backgroundColor: color, opacity: 0.7 }} />
-          <Slider.Thumb style={{ display: 'block', width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none', top: '50%', transform: 'translateY(-50%)', position: 'absolute' }} />
+          <Slider.Thumb style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none' }} />
         </Slider.Track>
       </Slider.Control>
     </Slider.Root>
