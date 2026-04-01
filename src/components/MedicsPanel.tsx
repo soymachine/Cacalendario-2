@@ -946,10 +946,11 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Calendar + Entry list */}
+            {/* Row 2: Left column (calendar + semáforo) + Right column (entries) */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
-              {/* Calendar */}
-              <div style={{ ...s.card, flex: isMobile ? undefined : 1, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+              {/* Left column: calendar + semáforo override */}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
+              <div style={{ ...s.card }}>
                 <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
@@ -1018,7 +1019,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Per-patient semáforo override */}
-              <div style={{ ...s.card, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const, padding: '14px 16px' }}>
+              <div style={{ ...s.card, padding: '14px 16px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: patientSemaforoOverride ? 14 : 0 }}>
                   <input
                     type="checkbox"
@@ -1089,9 +1090,10 @@ export default function MedicsPanel() {
                   </button>
                 )}
               </div>
+              </div>{/* end left column */}
 
-              {/* Entry list */}
-              <div style={{ ...s.card, flex: 3, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+              {/* Right column: entry list */}
+              <div style={{ ...s.card, flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid #00000015' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Historial ({patientDetail.totalEntries})</span>
                 </div>
