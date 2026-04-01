@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { APP_VERSION } from '../lib/version';
 
 interface PatientLink {
   id: string;
@@ -12,6 +13,9 @@ interface PatientLink {
   display_name?: string | null;
   lastEntryDate?: string | null;
   daysSinceLast?: number | null;
+  semaforo_override?: boolean;
+  semaforo_green_override?: number | null;
+  semaforo_red_override?: number | null;
 }
 
 interface DoctorInfo {
@@ -81,6 +85,23 @@ export default function MedicsPanel() {
   const [configSaved, setConfigSaved] = useState(false);
   const [centerImageUrl, setCenterImageUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageModal, setImageModal] = useState<{ type: 'success' | 'error'; url?: string; message?: string } | null>(null);
+  const [patientSemaforoOverride, setPatientSemaforoOverride] = useState(false);
+  const [patientSemaforoGreen, setPatientSemaforoGreen] = useState(1);
+  const [patientSemaforoRed, setPatientSemaforoRed] = useState(3);
+  const [patientSemaforoSaved, setPatientSemaforoSaved] = useState(false);
+  const [entryPage, setEntryPage] = useState(0);
+  const [entryFilterFrom, setEntryFilterFrom] = useState('');
+  const [entryFilterTo, setEntryFilterTo] = useState('');
+
+  const ENTRIES_PER_PAGE = 10;
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Helpers for building DoctorInfo ──
   const buildDoctorInfo = (d: any): DoctorInfo => ({
@@ -361,6 +382,15 @@ export default function MedicsPanel() {
     setCalendarMonth(new Date().getMonth());
     setCalendarYear(new Date().getFullYear());
 
+    // Initialize per-patient semáforo override state
+    setPatientSemaforoOverride(patient.semaforo_override ?? false);
+    setPatientSemaforoGreen(patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1);
+    setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
+    setPatientSemaforoSaved(false);
+    setEntryPage(0);
+    setEntryFilterFrom('');
+    setEntryFilterTo('');
+
     setPatientDetail({
       entries: entryList,
       totalEntries: entryList.length,
@@ -471,27 +501,62 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Upload center image ──
+  // ── Save per-patient semáforo override ──
+  const handleSavePatientSemaforo = async () => {
+    if (!selectedPatient) return;
+    const { error } = await supabase
+      .from('patient_links')
+      .update({
+        semaforo_override: patientSemaforoOverride,
+        semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
+        semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
+      })
+      .eq('id', selectedPatient.id);
+    if (!error) {
+      setSelectedPatient({
+        ...selectedPatient,
+        semaforo_override: patientSemaforoOverride,
+        semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
+        semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
+      });
+      setPatientSemaforoSaved(true);
+      setTimeout(() => setPatientSemaforoSaved(false), 3000);
+    }
+  };
+
+  // ── Upload center image (stored as base64 in DB) ──
   const handleImageUpload = async (file: File) => {
     if (!doctorInfo) return;
-    setUploadingImage(true);
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `centers/${doctorInfo.center_id}/image.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from('center-images')
-      .upload(path, file, { upsert: true });
-    if (uploadErr) {
-      setUploadingImage(false);
+
+    if (file.size > 2 * 1024 * 1024) {
+      setImageModal({ type: 'error', message: 'La imagen supera los 2 MB. Elige una más pequeña.' });
       return;
     }
-    const { data: urlData } = supabase.storage.from('center-images').getPublicUrl(path);
-    const publicUrl = urlData?.publicUrl || null;
-    if (publicUrl) {
-      await supabase.from('centers').update({ image_url: publicUrl }).eq('id', doctorInfo.center_id);
-      setCenterImageUrl(publicUrl);
-      setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
+
+    setUploadingImage(true);
+
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const { error: dbErr } = await supabase
+      .from('centers')
+      .update({ image_url: base64 })
+      .eq('id', doctorInfo.center_id);
+
+    if (dbErr) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: dbErr.message });
+      return;
     }
+
+    setCenterImageUrl(base64);
+    setDoctorInfo({ ...doctorInfo, center_image_url: base64 });
     setUploadingImage(false);
+    setImageModal({ type: 'success', url: base64 });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
@@ -501,14 +566,22 @@ export default function MedicsPanel() {
   const pendingPatients = patients.filter(p => p.status === 'pending');
 
   // ── Semáforo helper ──
-  const getSemaforo = (daysSinceLast: number | null) => {
-    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' }; // grey - no data
-    const green = doctorInfo?.semaforo_green ?? 1;
-    const red = doctorInfo?.semaforo_red ?? 3;
-    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' }; // green
-    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' }; // orange
-    return { color: '#e74c3c', icon: '\u{1F534}' }; // red
+  const getSemaforo = (daysSinceLast: number | null, overrideGreen?: number, overrideRed?: number) => {
+    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' };
+    const green = overrideGreen ?? doctorInfo?.semaforo_green ?? 1;
+    const red = overrideRed ?? doctorInfo?.semaforo_red ?? 3;
+    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' };
+    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' };
+    return { color: '#e74c3c', icon: '\u{1F534}' };
   };
+
+  // Effective semáforo thresholds for the currently selected patient
+  const effectiveGreen = selectedPatient?.semaforo_override
+    ? (selectedPatient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1)
+    : (doctorInfo?.semaforo_green ?? 1);
+  const effectiveRed = selectedPatient?.semaforo_override
+    ? (selectedPatient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3)
+    : (doctorInfo?.semaforo_red ?? 3);
 
   // ── Initial loading ──
   if (initialLoading) {
@@ -671,8 +744,8 @@ export default function MedicsPanel() {
   // ── Main layout with sidebar ──
   return (
     <div style={s.shell}>
-      {/* ── SIDEBAR ── */}
-      <aside style={s.sidebar}>
+      {/* ── SIDEBAR (desktop) ── */}
+      <aside style={{ ...s.sidebar, display: isMobile ? 'none' : 'flex' }}>
         {/* Logo */}
         <div style={s.sidebarLogo}>
           <span style={{ fontSize: 26 }}>{'\u{1F3E5}'}</span>
@@ -722,11 +795,12 @@ export default function MedicsPanel() {
             <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
             <span style={{ fontSize: 13 }}>Cerrar sesión</span>
           </button>
+          <div style={{ fontSize: 10, color: '#3d2a28', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
         </div>
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={s.main}>
+      <main style={{ ...s.main, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
         {/* ── PACIENTES ── */}
@@ -751,11 +825,11 @@ export default function MedicsPanel() {
                   </button>
                 ))}
               </div>
-              <div style={{ display: 'flex', padding: '8px 20px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
-                <span style={{ width: 50 }}></span>
+              <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
+                <span style={{ width: 40 }}></span>
                 <span style={{ flex: 2 }}>Paciente</span>
-                <span style={{ flex: 1 }}>Último registro</span>
-                <span style={{ width: 140 }}>Estado</span>
+                {!isMobile && <span style={{ flex: 1 }}>Último registro</span>}
+                <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
               {patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -770,33 +844,35 @@ export default function MedicsPanel() {
                   return patientLabel(a).localeCompare(patientLabel(b));
                 }).map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
-                  const semaforo = getSemaforo(patient.daysSinceLast);
+                  const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
+                  const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
+                  const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       {/* Semáforo */}
-                      <div style={{ width: 50 }}>
+                      <div style={{ width: 40 }}>
                         {isAccepted ? (
-                          <span style={{ fontSize: 20 }}>{semaforo.icon}</span>
+                          <span style={{ fontSize: 18 }}>{semaforo.icon}</span>
                         ) : (
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
                       </div>
                       {/* Patient name */}
-                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {patientInitial(patient)}
                         </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {patientLabel(patient)}
                           </div>
-                          {patient.display_name && patient.patient_email && (
+                          {!isMobile && patient.display_name && patient.patient_email && (
                             <div style={{ fontSize: 11, color: '#999' }}>{patient.patient_email}</div>
                           )}
                         </div>
                       </div>
-                      {/* Last entry */}
-                      <div style={{ flex: 1 }}>
+                      {/* Last entry — hidden on mobile */}
+                      {!isMobile && <div style={{ flex: 1 }}>
                         {isAccepted && patient.lastEntryDate ? (
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
@@ -809,9 +885,9 @@ export default function MedicsPanel() {
                         ) : (
                           <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
                         )}
-                      </div>
+                      </div>}
                       {/* Status badge + actions */}
-                      <div style={{ width: 140, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: isMobile ? 90 : 140, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11,
                           fontWeight: 600,
@@ -820,7 +896,7 @@ export default function MedicsPanel() {
                           backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
                           color: isAccepted ? '#27ae60' : '#e67e22',
                         }}>
-                          {isAccepted ? '\u{2705} Vinculado' : '\u{23F3} Pendiente'}
+                          {isAccepted ? (isMobile ? '✅' : '✅ Vinculado') : (isMobile ? '⏳' : '⏳ Pendiente')}
                         </span>
                         {!isAccepted && (
                           <button
@@ -861,8 +937,8 @@ export default function MedicsPanel() {
             />
 
             {/* Row 1: Semáforo — all inline */}
-            <div style={{ ...s.card, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast).icon}</span>
+            <div style={{ ...s.card, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).icon}</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
                 {patientDetail.daysSinceLast === null
                   ? 'Sin registros'
@@ -878,30 +954,31 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Calendar (25%) + Entry list (75%) */}
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              {/* Mini calendar */}
-              <div style={{ ...s.card, flex: 1 }}>
-                <div style={{ padding: '8px 12px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Row 2: Left column (calendar + semáforo) + Right column (entries) */}
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
+              {/* Left column: calendar + semáforo override */}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
                     else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>←</button>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
-                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>←</button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                   </span>
                   <button onClick={() => {
                     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
                     else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 12, cursor: 'pointer', padding: '2px 4px' }}>→</button>
+                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>→</button>
                 </div>
-                <div style={{ padding: '6px 8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
+                <div style={{ padding: isMobile ? '10px 12px' : '6px 8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2, marginBottom: isMobile ? 4 : 2 }}>
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: '#aaa' }}>{d}</div>
+                      <div key={d} style={{ textAlign: 'center', fontSize: isMobile ? 11 : 8, fontWeight: 700, color: '#aaa', paddingBottom: 2 }}>{d}</div>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2 }}>
                     {(() => {
                       const firstDay = new Date(calendarYear, calendarMonth, 1);
                       const startDay = (firstDay.getDay() + 6) % 7;
@@ -931,7 +1008,7 @@ export default function MedicsPanel() {
                         cells.push(
                           <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
                             aspectRatio: '1',
-                            borderRadius: 4,
+                            borderRadius: isMobile ? 6 : 4,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -939,7 +1016,7 @@ export default function MedicsPanel() {
                             opacity: isFuture ? 0.3 : 1,
                             border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
                           }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                            <span style={{ fontSize: isMobile ? 12 : 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
                         );
                       }
@@ -949,60 +1026,202 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Entry list */}
-              <div style={{ ...s.card, flex: 3 }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Historial de registros ({patientDetail.totalEntries})</span>
-                </div>
-                {/* Column headers */}
-                <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                  <span style={{ width: 110 }}>Fecha</span>
-                  <span style={{ width: 60 }}>Hora</span>
-                  <span style={{ width: 80 }}>Bristol</span>
-                  <span style={{ width: 80 }}>Flota</span>
-                  <span style={{ flex: 1 }}>Comentarios</span>
-                </div>
-                {patientDetail.entries.length === 0 ? (
-                  <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                    Este paciente no tiene registros aún.
-                  </div>
-                ) : (
-                  patientDetail.entries.map((entry, i) => (
-                    <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < patientDetail.entries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                      <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                      <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                      <span style={{ width: 80 }}>
-                        {entry.bristol != null ? (
-                          <span style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                            color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                            fontWeight: 600,
-                          }}>
-                            Tipo {entry.bristol}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                        )}
-                      </span>
-                      <span style={{ width: 80 }}>
-                        {entry.floats != null ? (
-                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>
-                            {entry.floats ? 'Sí' : 'No'}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
-                        )}
-                      </span>
-                      <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                        {entry.notes || 'Sin comentarios'}
-                      </span>
+              {/* Per-patient semáforo override */}
+              <div style={{ ...s.card, padding: '14px 16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={patientSemaforoOverride}
+                    onChange={(e) => {
+                      setPatientSemaforoOverride(e.target.checked);
+                      setPatientSemaforoSaved(false);
+                    }}
+                    style={{ width: 16, height: 16, accentColor: '#dd8273', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
+                  {!patientSemaforoOverride && (
+                    <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
+                  )}
+                </label>
+
+                {patientSemaforoOverride && (
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                    {/* Preview */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #27ae60' }}>
+                        <div style={{ fontSize: 14 }}>🟢</div>
+                        <div style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #f39c12' }}>
+                        <div style={{ fontSize: 14 }}>🟠</div>
+                        <div style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</div>
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #e74c3c' }}>
+                        <div style={{ fontSize: 14 }}>🔴</div>
+                        <div style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</div>
+                      </div>
                     </div>
-                  ))
+
+                    {/* Green slider */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''}</div>
+                      <input type="range" min={0} max={Math.max(patientSemaforoRed - 1, 1)} value={patientSemaforoGreen}
+                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }}
+                        style={{ width: '100%', accentColor: '#27ae60' }} />
+                    </div>
+
+                    {/* Red slider */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {patientSemaforoRed} día{patientSemaforoRed !== 1 ? 's' : ''}</div>
+                      <input type="range" min={Math.max(patientSemaforoGreen + 1, 1)} max={30} value={patientSemaforoRed}
+                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }}
+                        style={{ width: '100%', accentColor: '#e74c3c' }} />
+                    </div>
+
+                    {patientSemaforoSaved && (
+                      <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
+                    )}
+
+                    <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
+                      Guardar
+                    </button>
+                  </div>
+                )}
+
+                {!patientSemaforoOverride && patientSemaforoSaved && (
+                  <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                )}
+
+                {!patientSemaforoOverride && (
+                  <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
+                    Guardar
+                  </button>
                 )}
               </div>
+              </div>{/* end left column */}
+
+              {/* Right column: entry list */}
+              {(() => {
+                const filteredEntries = patientDetail.entries.filter(e => {
+                  if (entryFilterFrom && e.date < entryFilterFrom) return false;
+                  if (entryFilterTo && e.date > entryFilterTo) return false;
+                  return true;
+                });
+                const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+                const pagedEntries = filteredEntries.slice(entryPage * ENTRIES_PER_PAGE, (entryPage + 1) * ENTRIES_PER_PAGE);
+                const hasFilter = entryFilterFrom || entryFilterTo;
+
+                return (
+                  <div style={{ ...s.card, flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+                    {/* Header + filter bar */}
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #00000015' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+                          Historial
+                          {hasFilter
+                            ? ` (${filteredEntries.length} de ${patientDetail.totalEntries})`
+                            : ` (${patientDetail.totalEntries})`}
+                        </span>
+                        {hasFilter && (
+                          <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryPage(0); }}
+                            style={{ fontSize: 11, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                            ✕ Limpiar filtro
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>De</span>
+                        <input type="date" value={entryFilterFrom}
+                          onChange={(e) => { setEntryFilterFrom(e.target.value); setEntryPage(0); }}
+                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>a</span>
+                        <input type="date" value={entryFilterTo}
+                          onChange={(e) => { setEntryFilterTo(e.target.value); setEntryPage(0); }}
+                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
+                      </div>
+                    </div>
+
+                    {filteredEntries.length === 0 ? (
+                      <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                        {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
+                      </div>
+                    ) : isMobile ? (
+                      <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                        {pagedEntries.map((entry, i) => {
+                          const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                          return (
+                            <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  {entry.bristol != null && (
+                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>T{entry.bristol}</span>
+                                  )}
+                                  {entry.floats != null && (
+                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>{entry.floats ? 'Flota' : 'Hunde'}</span>
+                                  )}
+                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>}
+                                </div>
+                              </div>
+                              {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+                          <span style={{ width: 110 }}>Fecha</span>
+                          <span style={{ width: 60 }}>Hora</span>
+                          <span style={{ width: 80 }}>Bristol</span>
+                          <span style={{ width: 80 }}>Flota</span>
+                          <span style={{ flex: 1 }}>Comentarios</span>
+                        </div>
+                        {pagedEntries.map((entry, i) => (
+                          <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                            <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
+                            <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
+                            <span style={{ width: 80 }}>
+                              {entry.bristol != null ? (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
+                                  backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
+                                  color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
+                                }}>Tipo {entry.bristol}</span>
+                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                            </span>
+                            <span style={{ width: 80 }}>
+                              {entry.floats != null ? (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>{entry.floats ? 'Sí' : 'No'}</span>
+                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
+                            </span>
+                            <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
+                              {entry.notes || 'Sin comentarios'}
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid #00000010', backgroundColor: '#00000005' }}>
+                        <button onClick={() => setEntryPage(p => Math.max(0, p - 1))} disabled={entryPage === 0}
+                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === 0 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === 0 ? 0.4 : 1 }}>
+                          ← Anterior
+                        </button>
+                        <span style={{ fontSize: 12, color: '#666' }}>
+                          Página <strong>{entryPage + 1}</strong> de <strong>{totalPages}</strong>
+                          <span style={{ color: '#aaa' }}> · {filteredEntries.length} registros</span>
+                        </span>
+                        <button onClick={() => setEntryPage(p => Math.min(totalPages - 1, p + 1))} disabled={entryPage === totalPages - 1}
+                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === totalPages - 1 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === totalPages - 1 ? 0.4 : 1 }}>
+                          Siguiente →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </>
         )}
@@ -1198,7 +1417,7 @@ export default function MedicsPanel() {
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
               </div>
-              <div style={{ padding: 24, display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+              <div style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
                 {/* Preview */}
                 <div style={{ width: 120, height: 120, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
                   {centerImageUrl ? (
@@ -1319,9 +1538,81 @@ export default function MedicsPanel() {
                 </button>
               </div>
             </div>
+            {isMobile && (
+              <div style={{ textAlign: 'center', padding: '16px 0 4px', color: '#00000030', fontSize: 11 }}>{APP_VERSION}</div>
+            )}
           </>
         )}
       </main>
+
+      {/* ── BOTTOM NAV (mobile) ── */}
+      {isMobile && (
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1a0e0e', display: 'flex', zIndex: 20, borderTop: '1px solid #2d1a18' }}>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
+                gap: 3, padding: '10px 0', border: 'none', cursor: 'pointer', background: 'transparent',
+                borderTop: section === item.id ? '2px solid #dd8273' : '2px solid transparent',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{item.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? '#dd8273' : '#9a7a76' }}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {/* ── IMAGE UPLOAD MODAL ── */}
+      {imageModal && (
+        <div
+          onClick={() => setImageModal(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: '#fff', borderRadius: 20, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}
+          >
+            <button
+              onClick={() => setImageModal(null)}
+              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}
+            >
+              ×
+            </button>
+
+            {imageModal.type === 'success' ? (
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <img
+                    src={imageModal.url}
+                    alt="Imagen del centro"
+                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: '3px solid #dd8273' }}
+                  />
+                </div>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Imagen subida correctamente</p>
+                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>La imagen ya está visible para tus pacientes.</p>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Error al subir la imagen</p>
+                <p style={{ fontSize: 13, color: '#e74c3c', margin: '0 0 20px', lineHeight: 1.5 }}>{imageModal.message}</p>
+                <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Asegúrate de que el bucket <strong>center-images</strong> existe y es público en Supabase Storage.</p>
+              </>
+            )}
+
+            <button
+              onClick={() => setImageModal(null)}
+              style={{ ...s.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1444,13 +1735,14 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 
 // ── Section Header ──
 function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) {
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+    <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 14, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
+        <h1 style={{ fontSize: mobile ? 22 : 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
+        <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
       </div>
-      {actions && <div style={{ display: 'flex', gap: 8 }}>{actions}</div>}
+      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>{actions}</div>}
     </div>
   );
 }
@@ -1485,8 +1777,9 @@ const s: Record<string, React.CSSProperties> = {
     backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
   },
   loginCard: {
-    width: '100%', maxWidth: 380, padding: 32, backgroundColor: 'white',
+    width: '100%', maxWidth: 380, padding: 24, backgroundColor: 'white',
     borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+    margin: '0 16px',
   },
   label: {
     display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#555',
