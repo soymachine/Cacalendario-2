@@ -75,6 +75,8 @@ export default function AdminPanel() {
   const [showCreateCenter, setShowCreateCenter] = useState(false);
   const [newCenter, setNewCenter] = useState({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
+  const [editCenterData, setEditCenterData] = useState({ name: '', specialty: '', address: '', phone: '', pending_doctor_email: '' });
 
   const handleLogin = async () => {
     setError('');
@@ -208,6 +210,28 @@ export default function AdminPanel() {
       setError('Error al eliminar: ' + error.message);
     } else {
       setCenters(centers.filter((c) => c.id !== id));
+    }
+  };
+
+  const handleStartEditCenter = (center: Center) => {
+    setEditingCenterId(center.id);
+    setEditCenterData({ name: center.name, specialty: center.specialty || '', address: center.address || '', phone: center.phone || '', pending_doctor_email: center.pending_doctor_email || '' });
+  };
+
+  const handleUpdateCenter = async () => {
+    if (!editingCenterId) return;
+    const { error } = await supabase.from('centers').update({
+      name: editCenterData.name.trim(),
+      specialty: editCenterData.specialty.trim() || null,
+      address: editCenterData.address.trim() || null,
+      phone: editCenterData.phone.trim() || null,
+      pending_doctor_email: editCenterData.pending_doctor_email.trim() || null,
+    }).eq('id', editingCenterId);
+    if (error) {
+      setError('Error al actualizar: ' + error.message);
+    } else {
+      setCenters(centers.map(c => c.id === editingCenterId ? { ...c, ...editCenterData, name: editCenterData.name.trim(), specialty: editCenterData.specialty.trim() || null, address: editCenterData.address.trim() || null, phone: editCenterData.phone.trim() || null, pending_doctor_email: editCenterData.pending_doctor_email.trim() || null } : c));
+      setEditingCenterId(null);
     }
   };
 
@@ -613,30 +637,79 @@ export default function AdminPanel() {
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay centros registrados</div>
               ) : (
                 centers.map((center, i) => {
+                  const isEditing = editingCenterId === center.id;
                   return (
-                    <div key={center.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < centers.length - 1 ? '1px solid #00000010' : 'none' }}>
-                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                          🏥
+                    <div key={center.id} style={{ borderBottom: i < centers.length - 1 ? '1px solid #00000010' : 'none' }}>
+                      {/* Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 20px' }}>
+                        <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                            🏥
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{center.name}</div>
+                            {center.phone && <div style={{ fontSize: 11, color: '#999' }}>{center.phone}</div>}
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{center.name}</div>
-                          {center.phone && <div style={{ fontSize: 11, color: '#999' }}>{center.phone}</div>}
-                        </div>
+                        <span style={{ flex: 2, fontSize: 13, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{center.pending_doctor_email || '—'}</span>
+                        <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.specialty || '—'}</span>
+                        <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.address || '—'}</span>
+                        <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(center.created_at)}</span>
+                        <span style={{ flex: 0.5, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                          <button
+                            onClick={() => isEditing ? setEditingCenterId(null) : handleStartEditCenter(center)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, opacity: isEditing ? 1 : 0.4, padding: '4px 6px' }}
+                            title="Editar centro"
+                          >✏️</button>
+                          <button
+                            onClick={() => handleDeleteCenter(center.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, opacity: 0.4, padding: '4px 6px' }}
+                            title="Eliminar centro"
+                          >🗑️</button>
+                        </span>
                       </div>
-                      <span style={{ flex: 2, fontSize: 13, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{center.pending_doctor_email || '—'}</span>
-                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.specialty || '—'}</span>
-                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.address || '—'}</span>
-                      <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(center.created_at)}</span>
-                      <span style={{ flex: 0.5, textAlign: 'right' }}>
-                        <button
-                          onClick={() => handleDeleteCenter(center.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.4, padding: '4px 8px' }}
-                          title="Eliminar centro"
-                        >
-                          🗑️
-                        </button>
-                      </span>
+                      {/* Inline edit form */}
+                      {isEditing && (
+                        <div style={{ padding: '16px 20px 20px', backgroundColor: '#fdf8f7', borderTop: '1px solid #00000008' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Nombre *</label>
+                              <input value={editCenterData.name} onChange={e => setEditCenterData({ ...editCenterData, name: e.target.value })}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Especialidad</label>
+                              <input value={editCenterData.specialty} onChange={e => setEditCenterData({ ...editCenterData, specialty: e.target.value })}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Dirección</label>
+                              <input value={editCenterData.address} onChange={e => setEditCenterData({ ...editCenterData, address: e.target.value })}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Teléfono</label>
+                              <input value={editCenterData.phone} onChange={e => setEditCenterData({ ...editCenterData, phone: e.target.value })}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Email del doctor</label>
+                              <input value={editCenterData.pending_doctor_email} onChange={e => setEditCenterData({ ...editCenterData, pending_doctor_email: e.target.value })}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={handleUpdateCenter} disabled={!editCenterData.name.trim()}
+                              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', backgroundColor: '#dd8273', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                              Guardar
+                            </button>
+                            <button onClick={() => setEditingCenterId(null)}
+                              style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 13, cursor: 'pointer', color: '#666' }}>
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })
