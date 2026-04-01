@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
+import { Slider } from '@base-ui/react/slider';
 
 interface PatientLink {
   id: string;
@@ -57,6 +58,23 @@ const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
   { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
 ];
+
+function SemaforoSlider({ value, min, max, color, onChange }: {
+  value: number; min: number; max: number; color: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <Slider.Root value={value} min={min} max={max} onValueChange={(v) => onChange(v as number)}
+      style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: 28, userSelect: 'none', touchAction: 'none' }}>
+      <Slider.Control style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+        <Slider.Track style={{ position: 'relative', flexGrow: 1, borderRadius: 4, height: 6, backgroundColor: '#e0e0e0' }}>
+          <Slider.Indicator style={{ position: 'absolute', borderRadius: 4, height: '100%', backgroundColor: color, opacity: 0.7 }} />
+          <Slider.Thumb style={{ display: 'block', width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none', top: '50%', transform: 'translateY(-50%)', position: 'absolute' }} />
+        </Slider.Track>
+      </Slider.Control>
+    </Slider.Root>
+  );
+}
 
 export default function MedicsPanel() {
   const [initialLoading, setInitialLoading] = useState(true);
@@ -1066,17 +1084,15 @@ export default function MedicsPanel() {
                     {/* Green slider */}
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''}</div>
-                      <input type="range" min={0} max={Math.max(patientSemaforoRed - 1, 1)} value={patientSemaforoGreen}
-                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }}
-                        style={{ width: '100%', accentColor: '#27ae60' }} />
+                      <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
+                        onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
                     </div>
 
                     {/* Red slider */}
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {patientSemaforoRed} día{patientSemaforoRed !== 1 ? 's' : ''}</div>
-                      <input type="range" min={Math.max(patientSemaforoGreen + 1, 1)} max={30} value={patientSemaforoRed}
-                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }}
-                        style={{ width: '100%', accentColor: '#e74c3c' }} />
+                      <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
+                        onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
                     </div>
 
                     {patientSemaforoSaved && (
@@ -1483,19 +1499,9 @@ export default function MedicsPanel() {
                   <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
                     <span>🟢 Umbral verde: ≤ <strong>{configGreen}</strong> día{configGreen !== 1 ? 's' : ''}</span>
                   </label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(configRed - 1, 1)}
-                    value={configGreen}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setConfigGreen(val);
-                      if (val >= configRed) setConfigRed(val + 1);
-                    }}
-                    style={{ width: '100%', accentColor: '#27ae60' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                  <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
+                    onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
                     <span>0 días</span>
                     <span>{Math.max(configRed - 1, 1)} días</span>
                   </div>
@@ -1506,19 +1512,9 @@ export default function MedicsPanel() {
                   <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
                     <span>🔴 Umbral rojo: &gt; <strong>{configRed}</strong> día{configRed !== 1 ? 's' : ''}</span>
                   </label>
-                  <input
-                    type="range"
-                    min={Math.max(configGreen + 1, 1)}
-                    max={30}
-                    value={configRed}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setConfigRed(val);
-                      if (val <= configGreen) setConfigGreen(val - 1);
-                    }}
-                    style={{ width: '100%', accentColor: '#e74c3c' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                  <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
+                    onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
                     <span>{Math.max(configGreen + 1, 1)} días</span>
                     <span>30 días</span>
                   </div>
