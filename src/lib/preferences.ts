@@ -92,6 +92,26 @@ export function clearDoctorColor(): void {
   window.dispatchEvent(new Event('cacalendario-prefs-changed'));
 }
 
+// ── Doctor hidden fields ──
+
+const DOCTOR_FIELDS_KEY = 'cacalendario_hidden_fields';
+
+export function getDoctorHiddenFields(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DOCTOR_FIELDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function setDoctorHiddenFields(fields: string[]): void {
+  localStorage.setItem(DOCTOR_FIELDS_KEY, JSON.stringify(fields));
+}
+
+export function clearDoctorHiddenFields(): void {
+  localStorage.removeItem(DOCTOR_FIELDS_KEY);
+}
+
 // Apply theme to DOM
 export function applyTheme(theme?: Theme): void {
   const t = theme || getSelectedTheme();

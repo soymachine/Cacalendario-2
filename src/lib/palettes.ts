@@ -24,8 +24,13 @@ export function getPaletteTheme(paletteId: string): MedicsTheme {
   return (PALETTES.find(p => p.id === paletteId) || PALETTES[0]).theme;
 }
 
-/** Fetch the primary color of the palette chosen by the patient's linked doctor. */
-export async function fetchDoctorPalette(userId: string): Promise<string | null> {
+export interface DoctorConfig {
+  palette: string | null;
+  hiddenFields: string[];
+}
+
+/** Fetch the doctor config (palette + hidden fields) for the patient's linked doctor. */
+export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
   try {
     const { data: link } = await supabase
       .from('patient_links')
@@ -35,17 +40,20 @@ export async function fetchDoctorPalette(userId: string): Promise<string | null>
       .limit(1)
       .single();
 
-    if (!link?.center_id) return null;
+    if (!link?.center_id) return { palette: null, hiddenFields: [] };
 
     const { data: doctor } = await supabase
       .from('doctors')
-      .select('palette')
+      .select('palette, hidden_fields')
       .eq('center_id', link.center_id)
       .limit(1)
       .single();
 
-    return doctor?.palette || null;
+    return {
+      palette: doctor?.palette || null,
+      hiddenFields: doctor?.hidden_fields || [],
+    };
   } catch {
-    return null;
+    return { palette: null, hiddenFields: [] };
   }
 }

@@ -16,8 +16,8 @@ import FeedbackScreen from './FeedbackScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
-import { fetchDoctorPalette, getPaletteTheme } from '../lib/palettes';
-import { setDoctorColor, clearDoctorColor } from '../lib/preferences';
+import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
+import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
 import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
@@ -49,12 +49,14 @@ function AppContent() {
           window.dispatchEvent(new Event('cacalendario-updated'));
         })
         .finally(() => setSyncing(false));
-      fetchDoctorPalette(user.id).then(paletteId => {
-        if (paletteId) setDoctorColor(getPaletteTheme(paletteId).primary);
+      fetchDoctorConfig(user.id).then(config => {
+        if (config.palette) setDoctorColor(getPaletteTheme(config.palette).primary);
         else clearDoctorColor();
+        setDoctorHiddenFields(config.hiddenFields);
       });
     } else {
       clearDoctorColor();
+      clearDoctorHiddenFields();
     }
   }, [user]);
 

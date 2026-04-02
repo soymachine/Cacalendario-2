@@ -41,6 +41,7 @@ interface DoctorInfo {
   semaforo_green: number;
   semaforo_red: number;
   palette?: string;
+  hidden_fields?: string[];
 }
 
 interface PatientEntry {
@@ -129,6 +130,7 @@ export default function MedicsPanel() {
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
   const [configPalette, setConfigPalette] = useState('terracotta');
+  const [configHiddenFields, setConfigHiddenFields] = useState<string[]>([]);
 
   const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
@@ -157,6 +159,7 @@ export default function MedicsPanel() {
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
+    hidden_fields: d.hidden_fields || [],
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -166,6 +169,7 @@ export default function MedicsPanel() {
     setConfigRed(info.semaforo_red);
     setCenterImageUrl(info.center_image_url || null);
     setConfigPalette(info.palette || 'terracotta');
+    setConfigHiddenFields(info.hidden_fields || []);
   };
 
   // ── Recover session on mount ──
@@ -539,11 +543,11 @@ export default function MedicsPanel() {
     const trimmedName = configName.trim() || doctorInfo.name;
     const { error: updateErr } = await supabase
       .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette })
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette, hidden_fields: configHiddenFields })
       .eq('id', doctorInfo.id);
     setLoading(false);
     if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette };
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette, hidden_fields: configHiddenFields };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
@@ -1539,6 +1543,57 @@ export default function MedicsPanel() {
                     );
                   })}
                 </div>
+              </div>
+            </div>
+
+            {/* ── Campos del formulario ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>📋 Campos del formulario</span>
+              </div>
+              <div style={{ padding: isMobile ? 16 : 24 }}>
+                <p style={{ fontSize: 14, color: '#555', margin: '0 0 16px', lineHeight: 1.6 }}>
+                  Elige qué campos verá el paciente al registrar. La fecha/hora y las notas siempre aparecen.
+                </p>
+                {[
+                  { id: 'bristol', label: '🪷 Escala de Bristol', desc: 'Tipo de heces (tipos 1–7)' },
+                  { id: 'color', label: '🎨 Color', desc: 'Color de las heces' },
+                  { id: 'floats', label: '🫧 Flotación', desc: 'Si flota, hunde o ambos' },
+                  { id: 'quantity', label: '⚖️ Cantidad', desc: 'Cantidad aproximada' },
+                  { id: 'duration', label: '⏱️ Duración', desc: 'Tiempo en el baño' },
+                  { id: 'symptoms', label: '🤒 Síntomas', desc: 'Síntomas asociados' },
+                ].map((field, i, arr) => {
+                  const isVisible = !configHiddenFields.includes(field.id);
+                  return (
+                    <div key={field.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{field.label}</div>
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>{field.desc}</div>
+                      </div>
+                      <Switch
+                        checked={isVisible}
+                        onChange={(checked) =>
+                          setConfigHiddenFields(prev =>
+                            checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
+                          )
+                        }
+                      />
+                    </div>
+                  );
+                })}
+                {configSaved && (
+                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                    <span>✅</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Configuración guardada</span>
+                  </div>
+                )}
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={loading}
+                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', marginTop: 16, opacity: loading ? 0.5 : 1 }}
+                >
+                  {loading ? '...' : 'Guardar campos'}
+                </button>
               </div>
             </div>
 
