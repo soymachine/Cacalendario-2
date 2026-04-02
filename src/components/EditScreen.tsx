@@ -3,6 +3,7 @@ import { formatDateForDisplay, formatTime } from '../lib/dates';
 import { saveEntry, deleteEntry, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
+import { getDoctorHiddenFields } from '../lib/preferences';
 import BristolPicker from './BristolPicker';
 
 interface EditScreenProps {
@@ -46,6 +47,8 @@ const SYMPTOMS = [
 
 export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const { emoji, theme } = usePreferences();
+  const hiddenFields = getDoctorHiddenFields();
+  const show = (field: string) => !hiddenFields.includes(field);
   const [h, m] = entry.time.split(':').map(Number);
   const [hours, setHours] = useState(h);
   const [minutes, setMinutes] = useState(m);
@@ -143,90 +146,102 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
         </div>
 
         {/* Bristol Scale */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>¿QUÉ FORMA TENÍA?</p>
-        <p className="text-[10px] mt-0.5 shrink-0" style={{ color: `${theme.text}80` }}>
-          Escala de Bristol — selecciona el tipo más parecido
-        </p>
-        <div className="mt-1.5 shrink-0">
-          <BristolPicker value={bristol} onChange={setBristol} theme={theme} />
-        </div>
+        {show('bristol') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>¿QUÉ FORMA TENÍA?</p>
+          <p className="text-[10px] mt-0.5 shrink-0" style={{ color: `${theme.text}80` }}>
+            Escala de Bristol — selecciona el tipo más parecido
+          </p>
+          <div className="mt-1.5 shrink-0">
+            <BristolPicker value={bristol} onChange={setBristol} theme={theme} />
+          </div>
+        </>}
 
         {/* Color */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>COLOR</p>
-        <div className="flex gap-3 mt-2 shrink-0">
-          {COLOR_OPTIONS.map(opt => (
-            <button key={opt.hex} onClick={() => setColor(color === opt.hex ? null : opt.hex)}
-              title={opt.label}
-              style={{
-                width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex, flexShrink: 0,
-                border: color === opt.hex ? `3px solid ${theme.text}` : '3px solid transparent',
-                boxShadow: color === opt.hex ? `0 0 0 2px ${theme.main}` : 'none',
-                transition: 'transform 0.1s',
-                transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
-              }} />
-          ))}
-        </div>
+        {show('color') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>COLOR</p>
+          <div className="flex gap-3 mt-2 shrink-0">
+            {COLOR_OPTIONS.map(opt => (
+              <button key={opt.hex} onClick={() => setColor(color === opt.hex ? null : opt.hex)}
+                title={opt.label}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex, flexShrink: 0,
+                  border: color === opt.hex ? `3px solid ${theme.text}` : '3px solid transparent',
+                  boxShadow: color === opt.hex ? `0 0 0 2px ${theme.main}` : 'none',
+                  transition: 'transform 0.1s',
+                  transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
+                }} />
+            ))}
+          </div>
+        </>}
 
         {/* Floats */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>¿FLOTA?</p>
-        <div className="flex gap-2 mt-1.5 shrink-0">
-          {FLOAT_OPTIONS.map(opt => (
-            <button key={opt.value} onClick={() => setFloats(floats === opt.value ? null : opt.value)}
-              className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
-              style={{
-                backgroundColor: floats === opt.value ? theme.text : theme.glass,
-                color: floats === opt.value ? invertColor : theme.text,
-              }}>
-              <span className="text-xs font-bold">{opt.label}</span>
-            </button>
-          ))}
-        </div>
+        {show('floats') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>¿FLOTA?</p>
+          <div className="flex gap-2 mt-1.5 shrink-0">
+            {FLOAT_OPTIONS.map(opt => (
+              <button key={opt.value} onClick={() => setFloats(floats === opt.value ? null : opt.value)}
+                className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
+                style={{
+                  backgroundColor: floats === opt.value ? theme.text : theme.glass,
+                  color: floats === opt.value ? invertColor : theme.text,
+                }}>
+                <span className="text-xs font-bold">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </>}
 
         {/* Quantity */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>
-          CANTIDAD — <span className="font-normal">{quantityLabel} ({quantity})</span>
-        </p>
-        <div className="mt-2 shrink-0 px-1">
-          <input type="range" min={0} max={100} value={quantity}
-            onChange={e => setQuantity(Number(e.target.value))}
-            className="w-full" style={{ accentColor: theme.text }} />
-          <div className="flex justify-between text-[10px] mt-1" style={{ color: `${theme.text}70` }}>
-            <span>Ligero</span><span>Pesado</span>
+        {show('quantity') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>
+            CANTIDAD — <span className="font-normal">{quantityLabel} ({quantity})</span>
+          </p>
+          <div className="mt-2 shrink-0 px-1">
+            <input type="range" min={0} max={100} value={quantity}
+              onChange={e => setQuantity(Number(e.target.value))}
+              className="w-full" style={{ accentColor: theme.text }} />
+            <div className="flex justify-between text-[10px] mt-1" style={{ color: `${theme.text}70` }}>
+              <span>Ligero</span><span>Pesado</span>
+            </div>
           </div>
-        </div>
+        </>}
 
         {/* Duration */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>DURACIÓN</p>
-        <div className="flex gap-2 mt-1.5 shrink-0">
-          {DURATION_OPTIONS.map(opt => (
-            <button key={opt.value} onClick={() => setDuration(duration === opt.value ? null : opt.value)}
-              className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
-              style={{
-                backgroundColor: duration === opt.value ? theme.text : theme.glass,
-                color: duration === opt.value ? invertColor : theme.text,
-              }}>
-              <span className="text-xs font-bold">{opt.label}</span>
-            </button>
-          ))}
-        </div>
+        {show('duration') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>DURACIÓN</p>
+          <div className="flex gap-2 mt-1.5 shrink-0">
+            {DURATION_OPTIONS.map(opt => (
+              <button key={opt.value} onClick={() => setDuration(duration === opt.value ? null : opt.value)}
+                className="flex-1 rounded-xl py-2 text-center transition-all active:scale-95"
+                style={{
+                  backgroundColor: duration === opt.value ? theme.text : theme.glass,
+                  color: duration === opt.value ? invertColor : theme.text,
+                }}>
+                <span className="text-xs font-bold">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </>}
 
         {/* Symptoms */}
-        <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>SÍNTOMAS</p>
-        <div className="flex flex-wrap gap-2 mt-1.5 shrink-0">
-          {SYMPTOMS.map(s => {
-            const active = symptoms.includes(s.key);
-            return (
-              <button key={s.key} onClick={() => toggleSymptom(s.key)}
-                className="rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95"
-                style={{
-                  backgroundColor: active ? theme.text : theme.glass,
-                  color: active ? invertColor : theme.text,
-                }}>
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
+        {show('symptoms') && <>
+          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>SÍNTOMAS</p>
+          <div className="flex flex-wrap gap-2 mt-1.5 shrink-0">
+            {SYMPTOMS.map(s => {
+              const active = symptoms.includes(s.key);
+              return (
+                <button key={s.key} onClick={() => toggleSymptom(s.key)}
+                  className="rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95"
+                  style={{
+                    backgroundColor: active ? theme.text : theme.glass,
+                    color: active ? invertColor : theme.text,
+                  }}>
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </>}
 
         {/* Notes */}
         <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>NOTAS</p>
