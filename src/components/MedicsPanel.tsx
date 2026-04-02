@@ -5,6 +5,26 @@ import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
 import { Slider } from '@base-ui/react/slider';
 
+interface MedicsTheme {
+  primary: string;
+  dark: string;
+  navActive: string;
+  textMuted: string;
+  border: string;
+  menuLabel: string;
+  logoutColor: string;
+  versionColor: string;
+}
+
+const PALETTES: { id: string; name: string; swatch: string; theme: MedicsTheme }[] = [
+  { id: 'terracotta', name: 'Terracota', swatch: '#dd8273', theme: { primary: '#dd8273', dark: '#1a0e0e', navActive: '#3d1e1a', textMuted: '#9a7a76', border: '#2d1a18', menuLabel: '#5c3e3a', logoutColor: '#7a5a56', versionColor: '#3d2a28' } },
+  { id: 'ocean', name: 'Océano', swatch: '#4a9eca', theme: { primary: '#4a9eca', dark: '#0a1928', navActive: '#143a5e', textMuted: '#5a8aaa', border: '#1a3558', menuLabel: '#3a6888', logoutColor: '#4a7890', versionColor: '#2a4a68' } },
+  { id: 'forest', name: 'Bosque', swatch: '#5aaa72', theme: { primary: '#5aaa72', dark: '#0e1a10', navActive: '#1a3a20', textMuted: '#6a9a78', border: '#1a3420', menuLabel: '#3a6848', logoutColor: '#4a7858', versionColor: '#2a4838' } },
+  { id: 'plum', name: 'Ciruela', swatch: '#9b6db5', theme: { primary: '#9b6db5', dark: '#1a0e28', navActive: '#3a1e58', textMuted: '#8a6a9a', border: '#2d1a48', menuLabel: '#5c3e78', logoutColor: '#7a5a88', versionColor: '#3d2a58' } },
+  { id: 'midnight', name: 'Medianoche', swatch: '#7a8fd8', theme: { primary: '#7a8fd8', dark: '#0e0e1a', navActive: '#1a1a3d', textMuted: '#7a7a96', border: '#1a1a30', menuLabel: '#4a4a68', logoutColor: '#5a5a78', versionColor: '#2a2a48' } },
+  { id: 'sunset', name: 'Atardecer', swatch: '#e8a048', theme: { primary: '#e8a048', dark: '#1a0e00', navActive: '#3d2800', textMuted: '#9a7a50', border: '#2d1a00', menuLabel: '#5c4020', logoutColor: '#7a5a36', versionColor: '#3d2a10' } },
+];
+
 const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
 const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
 const SYMPTOM_LABEL: Record<string, string> = {
@@ -38,6 +58,7 @@ interface DoctorInfo {
   center_image_url?: string | null;
   semaforo_green: number;
   semaforo_red: number;
+  palette?: string;
 }
 
 interface PatientEntry {
@@ -125,6 +146,14 @@ export default function MedicsPanel() {
   const [entryPage, setEntryPage] = useState(0);
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
+  const [configPalette, setConfigPalette] = useState('terracotta');
+
+  const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
+  const ts = {
+    loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
+    btnPrimary: { ...ts.btnPrimary, backgroundColor: th.dark },
+    linkBtn: { ...s.linkBtn, color: th.primary },
+  };
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -145,6 +174,7 @@ export default function MedicsPanel() {
     center_image_url: (d.centers as { name: string; image_url?: string } | null)?.image_url || null,
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
+    palette: d.palette || 'terracotta',
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -153,6 +183,7 @@ export default function MedicsPanel() {
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
     setCenterImageUrl(info.center_image_url || null);
+    setConfigPalette(info.palette || 'terracotta');
   };
 
   // ── Recover session on mount ──
@@ -526,11 +557,11 @@ export default function MedicsPanel() {
     const trimmedName = configName.trim() || doctorInfo.name;
     const { error: updateErr } = await supabase
       .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed })
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette })
       .eq('id', doctorInfo.id);
     setLoading(false);
     if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed };
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
@@ -622,7 +653,7 @@ export default function MedicsPanel() {
   // ── Initial loading ──
   if (initialLoading) {
     return (
-      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
+      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
         <div style={{ textAlign: 'center', color: '#fff' }}>
           <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
           <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600 }}>Cargando...</p>
@@ -634,11 +665,11 @@ export default function MedicsPanel() {
   // ── Login / Register screen ──
   if (!loggedIn) {
     return (
-      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
+      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
         <div style={s.loginCard}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Portal Médico</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: th.dark }}>Portal Médico</h1>
             <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>
               {forgotMode !== 'off' ? 'Recuperar contraseña' : registerMode ? 'Completar registro' : 'Acceso para profesionales'}
             </p>
@@ -652,7 +683,7 @@ export default function MedicsPanel() {
               <label style={s.label}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleForgotPassword} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleForgotPassword} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Enviar enlace'}
               </button>
               <button
@@ -666,14 +697,14 @@ export default function MedicsPanel() {
             <>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: 40 }}>✅</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Email enviado!</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Email enviado!</p>
                 <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
                   Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada (y spam).
                 </p>
               </div>
               <button
                 onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }}
-                style={{ ...s.btnPrimary, marginTop: 20 }}
+                style={{ ...ts.btnPrimary, marginTop: 20 }}
               >
                 Volver al login
               </button>
@@ -685,7 +716,7 @@ export default function MedicsPanel() {
               <label style={s.label}>Contraseña</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Entrar'}
               </button>
               <button
@@ -716,7 +747,7 @@ export default function MedicsPanel() {
                 style={s.input}
               />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Continuar'}
               </button>
               <button
@@ -728,8 +759,8 @@ export default function MedicsPanel() {
             </>
           ) : registerStep === 'password' ? (
             <>
-              <div style={{ backgroundColor: '#dd827320', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#1a0e0e', margin: 0 }}>
+              <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: th.dark, margin: 0 }}>
                   {'\u{1F3E5}'} {pendingCenterName}
                 </p>
                 <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>{registerEmail}</p>
@@ -744,7 +775,7 @@ export default function MedicsPanel() {
                 style={s.input}
               />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Finalizar registro'}
               </button>
               <button
@@ -758,7 +789,7 @@ export default function MedicsPanel() {
             <>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: 40 }}>{'\u{1F4E7}'}</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Revisa tu email!</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Revisa tu email!</p>
                 <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
                   Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>.
                   Confirma tu cuenta y después inicia sesión aquí.
@@ -766,7 +797,7 @@ export default function MedicsPanel() {
               </div>
               <button
                 onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }}
-                style={{ ...s.btnPrimary, marginTop: 20 }}
+                style={{ ...ts.btnPrimary, marginTop: 20 }}
               >
                 Ir a iniciar sesión
               </button>
@@ -781,27 +812,33 @@ export default function MedicsPanel() {
   return (
     <div style={s.shell}>
       {/* ── SIDEBAR (desktop) ── */}
-      <aside style={{ ...s.sidebar, display: isMobile ? 'none' : 'flex' }}>
-        {/* Logo */}
-        <div style={s.sidebarLogo}>
-          <span style={{ fontSize: 26 }}>{'\u{1F3E5}'}</span>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#dd8273' }}>{doctorInfo?.center_name || 'Centro médico'}</div>
-            <div style={{ fontSize: 10, color: '#9a7a76' }}>Dr. {doctorInfo?.name}</div>
+      <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
+        {/* Center image header */}
+        <div style={{ padding: '20px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 72, height: 72, borderRadius: 14, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `2px solid ${th.border}` }}>
+            {centerImageUrl ? (
+              <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: 32 }}>{'\u{1F3E5}'}</span>
+            )}
+          </div>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: th.primary, lineHeight: 1.2 }}>{doctorInfo?.center_name || 'Centro médico'}</div>
+            <div style={{ fontSize: 11, color: th.textMuted, marginTop: 2 }}>Dr. {doctorInfo?.name}</div>
           </div>
         </div>
 
         {/* Nav */}
         <nav style={s.sidebarNav}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
+          <div style={{ fontSize: 9, fontWeight: 900, color: th.menuLabel, marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
               style={{
                 ...s.navItem,
-                backgroundColor: section === item.id ? '#3d1e1a' : 'transparent',
-                color: section === item.id ? '#dd8273' : '#9a7a76',
+                backgroundColor: section === item.id ? th.navActive : 'transparent',
+                color: section === item.id ? th.primary : th.textMuted,
               }}
             >
               <span style={{ fontSize: 16 }}>{item.icon}</span>
@@ -814,29 +851,29 @@ export default function MedicsPanel() {
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px' }}>
+        <div style={{ borderTop: `1px solid ${th.border}`, padding: '12px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: th.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Dr. {doctorInfo?.name}</div>
-              <div style={{ fontSize: 11, color: '#9a7a76' }}>{doctorInfo?.specialty || 'Médico'}</div>
+              <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>
             </div>
           </div>
           <button
             onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
-            style={{ ...s.navItem, color: '#7a5a56', width: '100%' }}
+            style={{ ...s.navItem, color: th.logoutColor, width: '100%' }}
           >
             <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
             <span style={{ fontSize: 13 }}>Cerrar sesión</span>
           </button>
-          <div style={{ fontSize: 10, color: '#3d2a28', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
+          <div style={{ fontSize: 10, color: th.versionColor, marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
         </div>
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ ...s.main, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
+      <main style={{ ...s.main, backgroundColor: th.primary, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
         {/* ── PACIENTES ── */}
@@ -854,7 +891,7 @@ export default function MedicsPanel() {
                 {(['estado', 'nombre'] as const).map(opt => (
                   <button key={opt} onClick={() => setSortBy(opt)} style={{
                     fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                    backgroundColor: sortBy === opt ? '#1a0e0e' : '#00000010',
+                    backgroundColor: sortBy === opt ? th.dark : '#00000010',
                     color: sortBy === opt ? '#fff' : '#666',
                   }}>
                     {opt === 'estado' ? 'Estado' : 'Nombre'}
@@ -895,7 +932,7 @@ export default function MedicsPanel() {
                       </div>
                       {/* Patient name */}
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? th.primary : th.dark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {patientInitial(patient)}
                         </div>
                         <div style={{ minWidth: 0 }}>
@@ -962,7 +999,7 @@ export default function MedicsPanel() {
               subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
+                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: th.dark, color: '#fff' }}>
                     📄 Exportar PDF
                   </button>
                   <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
@@ -1048,9 +1085,9 @@ export default function MedicsPanel() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
+                            backgroundColor: hasEntry ? th.primary : isToday ? `${th.primary}20` : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
+                            border: isToday ? `1px solid ${th.primary}` : '1px solid #00000008',
                           }}>
                             <span style={{ fontSize: isMobile ? 12 : 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
@@ -1071,7 +1108,7 @@ export default function MedicsPanel() {
                       setPatientSemaforoOverride(checked);
                       setPatientSemaforoSaved(false);
                     }}
-                    style={{ backgroundColor: patientSemaforoOverride ? '#dd8273' : undefined }}
+                    style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
                   />
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
                   {!patientSemaforoOverride && (
@@ -1115,7 +1152,7 @@ export default function MedicsPanel() {
                       <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
                     )}
 
-                    <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
+                    <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
                       Guardar
                     </button>
                   </div>
@@ -1126,7 +1163,7 @@ export default function MedicsPanel() {
                 )}
 
                 {!patientSemaforoOverride && (
-                  <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
+                  <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
                     Guardar
                   </button>
                 )}
@@ -1291,7 +1328,7 @@ export default function MedicsPanel() {
                       disabled={loading || !inviteEmail}
                       style={{
                         ...s.headerBtn,
-                        backgroundColor: '#1a0e0e',
+                        backgroundColor: th.dark,
                         color: '#fff',
                         height: 44,
                         opacity: loading || !inviteEmail ? 0.5 : 1,
@@ -1316,7 +1353,7 @@ export default function MedicsPanel() {
                     disabled={loading}
                     style={{
                       ...s.headerBtn,
-                      backgroundColor: '#dd8273',
+                      backgroundColor: th.primary,
                       color: '#fff',
                       opacity: loading ? 0.5 : 1,
                     }}
@@ -1334,7 +1371,7 @@ export default function MedicsPanel() {
                     borderRadius: 16,
                     padding: 32,
                     textAlign: 'center',
-                    border: '2px dashed #dd8273',
+                    border: `2px dashed ${th.primary}`,
                   }}>
                     {emailSent && (
                       <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -1354,7 +1391,7 @@ export default function MedicsPanel() {
                     <div style={{
                       fontSize: 36,
                       fontWeight: 900,
-                      color: '#1a0e0e',
+                      color: th.dark,
                       letterSpacing: 6,
                       fontFamily: 'monospace',
                       marginBottom: 16,
@@ -1365,7 +1402,7 @@ export default function MedicsPanel() {
                       onClick={handleCopyCode}
                       style={{
                         ...s.headerBtn,
-                        backgroundColor: '#1a0e0e',
+                        backgroundColor: th.dark,
                         color: '#fff',
                         padding: '10px 24px',
                       }}
@@ -1441,7 +1478,7 @@ export default function MedicsPanel() {
                 <button
                   onClick={handleSaveConfig}
                   disabled={loading}
-                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
                 >
                   {loading ? '...' : 'Guardar cambios'}
                 </button>
@@ -1466,7 +1503,7 @@ export default function MedicsPanel() {
                   <p style={{ fontSize: 14, color: '#555', margin: '0 0 12px', lineHeight: 1.6 }}>
                     Sube el logo o imagen de tu centro. Esta imagen aparecerá en la app para los pacientes vinculados contigo.
                   </p>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...s.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
                     {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
                     <input
                       type="file"
@@ -1480,6 +1517,45 @@ export default function MedicsPanel() {
                     />
                   </label>
                   <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>PNG, JPG o WEBP. Máx 2 MB.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Paleta de colores ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+              </div>
+              <div style={{ padding: 24 }}>
+                <p style={{ fontSize: 14, color: '#555', margin: '0 0 16px', lineHeight: 1.6 }}>
+                  Elige la paleta de colores para todo el portal. El cambio se aplica al instante y se guarda con la configuración.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
+                  {PALETTES.map(p => {
+                    const isActive = configPalette === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setConfigPalette(p.id)}
+                        title={p.name}
+                        style={{
+                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6,
+                          padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                          backgroundColor: isActive ? '#00000012' : 'transparent',
+                          outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
+                          boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
+                          transition: 'box-shadow 0.15s',
+                        }} />
+                        <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1548,7 +1624,7 @@ export default function MedicsPanel() {
                 <button
                   onClick={handleSaveConfig}
                   disabled={loading}
-                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
                 >
                   {loading ? '...' : 'Guardar configuración'}
                 </button>
@@ -1563,7 +1639,7 @@ export default function MedicsPanel() {
 
       {/* ── BOTTOM NAV (mobile) ── */}
       {isMobile && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1a0e0e', display: 'flex', zIndex: 20, borderTop: '1px solid #2d1a18' }}>
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: th.dark, display: 'flex', zIndex: 20, borderTop: `1px solid ${th.border}` }}>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
@@ -1571,11 +1647,11 @@ export default function MedicsPanel() {
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
                 gap: 3, padding: '10px 0', border: 'none', cursor: 'pointer', background: 'transparent',
-                borderTop: section === item.id ? '2px solid #dd8273' : '2px solid transparent',
+                borderTop: section === item.id ? `2px solid ${th.primary}` : '2px solid transparent',
               }}
             >
               <span style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? '#dd8273' : '#9a7a76' }}>{item.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? th.primary : th.textMuted }}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -1604,7 +1680,7 @@ export default function MedicsPanel() {
                   <img
                     src={imageModal.url}
                     alt="Imagen del centro"
-                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: '3px solid #dd8273' }}
+                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: `3px solid ${th.primary}` }}
                   />
                 </div>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
@@ -1622,7 +1698,7 @@ export default function MedicsPanel() {
 
             <button
               onClick={() => setImageModal(null)}
-              style={{ ...s.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
+              style={{ ...ts.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
             >
               Cerrar
             </button>
