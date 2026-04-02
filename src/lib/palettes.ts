@@ -34,7 +34,7 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
   try {
     const { data: link } = await supabase
       .from('patient_links')
-      .select('center_id')
+      .select('center_id, hidden_fields')
       .eq('patient_id', userId)
       .eq('status', 'accepted')
       .limit(1)
@@ -44,14 +44,14 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
 
     const { data: doctor } = await supabase
       .from('doctors')
-      .select('palette, hidden_fields')
+      .select('palette')
       .eq('center_id', link.center_id)
       .limit(1)
       .single();
 
     return {
       palette: doctor?.palette || null,
-      hiddenFields: doctor?.hidden_fields || [],
+      hiddenFields: link?.hidden_fields || [],
     };
   } catch {
     return { palette: null, hiddenFields: [] };
