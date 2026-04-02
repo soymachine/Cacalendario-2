@@ -5,6 +5,14 @@ import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
 import { Slider } from '@base-ui/react/slider';
 
+const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
+const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
+const SYMPTOM_LABEL: Record<string, string> = {
+  abdominal_pain: 'Dolor abdominal', bloating: 'Hinchazón', heartburn: 'Ardor', cramp: 'Calambre',
+  rectal_pain: 'Dolor rectal', blood: 'Sangre', mucus: 'Moco', smelly: 'Maloliente',
+  sticky: 'Pegajoso', stringy: 'Filamentoso', undigested: 'No digerido',
+};
+
 interface PatientLink {
   id: string;
   patient_id: string | null;
@@ -38,7 +46,11 @@ interface PatientEntry {
   time: string;
   notes: string;
   bristol: number | null;
-  floats: boolean | null;
+  floats: 'floats' | 'sinks' | 'both' | null;
+  color: string | null;
+  quantity: number | null;
+  duration: 'short' | 'medium' | 'long' | null;
+  symptoms: string[];
   entry_id: string;
   created_at: string;
 }
@@ -387,8 +399,12 @@ export default function MedicsPanel() {
       date: e.date,
       time: e.time || '',
       notes: e.notes || '',
-      bristol: e.bristol,
-      floats: e.floats,
+      bristol: e.bristol ?? null,
+      floats: e.floats === true ? 'floats' : e.floats === false ? 'sinks' : (e.floats ?? null),
+      color: e.color ?? null,
+      quantity: e.quantity ?? null,
+      duration: e.duration ?? null,
+      symptoms: e.symptoms ?? [],
       entry_id: e.entry_id || '',
       created_at: e.created_at,
     }));
@@ -1162,61 +1178,43 @@ export default function MedicsPanel() {
                       <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                         {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
                       </div>
-                    ) : isMobile ? (
+                    ) : (
                       <div style={{ display: 'flex', flexDirection: 'column' as const }}>
                         {pagedEntries.map((entry, i) => {
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                          const chip = (label: string, bg: string, color: string) => (
+                            <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
+                          );
                           return (
                             <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  {entry.bristol != null && (
-                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>T{entry.bristol}</span>
-                                  )}
-                                  {entry.floats != null && (
-                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>{entry.floats ? 'Flota' : 'Hunde'}</span>
-                                  )}
-                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>}
+                              {/* Row 1: date + time + bristol + floats */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}{entry.time ? <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span> : null}</span>
+                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
+                                  {entry.bristol != null && chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!)}
+                                  {entry.floats != null && chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9')}
                                 </div>
                               </div>
+                              {/* Row 2: color + quantity + duration */}
+                              {(entry.color != null || entry.quantity != null || entry.duration != null) && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' as const }}>
+                                  {entry.color && <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020', flexShrink: 0 }} />}
+                                  {entry.quantity != null && chip(`${entry.quantity}%`, '#9b59b615', '#8e44ad')}
+                                  {entry.duration != null && chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22')}
+                                </div>
+                              )}
+                              {/* Row 3: symptoms */}
+                              {entry.symptoms.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 5 }}>
+                                  {entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))}
+                                </div>
+                              )}
+                              {/* Row 4: notes */}
                               {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
                             </div>
                           );
                         })}
                       </div>
-                    ) : (
-                      <>
-                        <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                          <span style={{ width: 110 }}>Fecha</span>
-                          <span style={{ width: 60 }}>Hora</span>
-                          <span style={{ width: 80 }}>Bristol</span>
-                          <span style={{ width: 80 }}>Flota</span>
-                          <span style={{ flex: 1 }}>Comentarios</span>
-                        </div>
-                        {pagedEntries.map((entry, i) => (
-                          <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                            <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                            <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                            <span style={{ width: 80 }}>
-                              {entry.bristol != null ? (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
-                                  backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                                  color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                                }}>Tipo {entry.bristol}</span>
-                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
-                            </span>
-                            <span style={{ width: 80 }}>
-                              {entry.floats != null ? (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>{entry.floats ? 'Sí' : 'No'}</span>
-                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
-                            </span>
-                            <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                              {entry.notes || 'Sin comentarios'}
-                            </span>
-                          </div>
-                        ))}
-                      </>
                     )}
 
                     {/* Pagination */}
