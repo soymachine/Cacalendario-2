@@ -7,7 +7,7 @@ interface CongratsScreenProps {
   date: string;
   time: string;
   bristol: number | null;
-  floats: boolean | null;
+  floats: 'floats' | 'sinks' | 'both' | null;
   onClose: () => void;
 }
 
@@ -81,14 +81,11 @@ export default function CongratsScreen({ date, time, bristol, floats, onClose }:
           )}
 
           {/* Floats */}
-          {floats !== null && floats !== undefined && (
-            <div
-              className="rounded-xl p-3 flex items-center gap-3"
-              style={{ backgroundColor: theme.glass }}
-            >
-              <span className="text-2xl">{floats ? '🫧' : '⬇️'}</span>
+          {floats != null && (
+            <div className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: theme.glass }}>
+              <span className="text-2xl">{floats === 'floats' ? '🫧' : floats === 'sinks' ? '⬇️' : '🫧⬇️'}</span>
               <p className="text-sm font-bold" style={{ color: theme.text }}>
-                {floats ? 'Flota en el agua' : 'Se hunde'}
+                {floats === 'floats' ? 'Flota en el agua' : floats === 'sinks' ? 'Se hunde' : 'Flota y se hunde'}
               </p>
             </div>
           )}

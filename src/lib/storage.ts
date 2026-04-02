@@ -8,7 +8,11 @@ export interface PoopEntry {
   notes: string;
   timestamp: number; // full timestamp for sorting
   bristol?: number | null; // Bristol scale 1-7
-  floats?: boolean | null; // Does it float?
+  floats?: 'floats' | 'sinks' | 'both' | null; // float behaviour
+  color?: string | null; // hex color
+  quantity?: number | null; // 0-100
+  duration?: 'short' | 'medium' | 'long' | null; // <3min, 3-5min, >5min
+  symptoms?: string[]; // list of symptom keys
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
@@ -18,19 +22,22 @@ export function generateEntryId(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Migrate old entries that don't have an ID
+// Migrate old entries
 function migrateEntries(entries: PoopEntry[]): PoopEntry[] {
   let migrated = false;
-  const result = entries.map((e) => {
-    if (!e.id) {
+  const result = entries.map((e: any) => {
+    let entry = { ...e };
+    // Add missing id
+    if (!entry.id) {
       migrated = true;
-      return { ...e, id: `${e.timestamp}_${Math.random().toString(36).slice(2, 8)}` };
+      entry.id = `${entry.timestamp}_${Math.random().toString(36).slice(2, 8)}`;
     }
-    return e;
+    // Migrate boolean floats → new string type
+    if (entry.floats === true) { migrated = true; entry.floats = 'floats'; }
+    if (entry.floats === false) { migrated = true; entry.floats = 'sinks'; }
+    return entry as PoopEntry;
   });
-  if (migrated) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
-  }
+  if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
   return result;
 }
 

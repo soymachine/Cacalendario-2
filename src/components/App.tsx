@@ -28,7 +28,7 @@ function AppContent() {
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
-  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: boolean | null } | null>(null);
+  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: 'floats' | 'sinks' | 'both' | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [prevScreen, setPrevScreen] = useState<Screen>('home');
@@ -69,7 +69,7 @@ function AppContent() {
     setScreen('stats');
   };
 
-  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: boolean | null) => {
+  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: 'floats' | 'sinks' | 'both' | null) => {
     setCongratsData({ date, time, bristol, floats });
     setRegisterDate(null);
     setScreen('congrats');
