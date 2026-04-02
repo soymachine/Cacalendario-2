@@ -1185,7 +1185,7 @@ export default function MedicsPanel() {
                           <span style={{ width: 130, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Fecha / Hora</span>
                           <span style={{ width: 62, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Bristol</span>
                           <span style={{ width: 90, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Flotación</span>
-                          <span style={{ width: 34, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
+                          <span style={{ width: 50, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
                           <span style={{ width: 68, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Cantidad</span>
                           <span style={{ width: 76, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Duración</span>
                           <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Síntomas</span>
@@ -1209,7 +1209,7 @@ export default function MedicsPanel() {
                                 <div style={{ width: 90 }}>
                                   {entry.floats != null ? chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
                                 </div>
-                                <div style={{ width: 34 }}>
+                                <div style={{ width: 50 }}>
                                   {entry.color
                                     ? <span style={{ display: 'inline-block', width: 18, height: 18, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020' }} />
                                     : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
