@@ -1180,37 +1180,57 @@ export default function MedicsPanel() {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'center', padding: '7px 16px', backgroundColor: '#00000008', borderBottom: '1px solid #00000010' }}>
+                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const, minWidth: 110 }}>Fecha / Hora</span>
+                          <span style={{ width: 62, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Bristol</span>
+                          <span style={{ width: 90, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Flotación</span>
+                          <span style={{ width: 34, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
+                          <span style={{ width: 68, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Cantidad</span>
+                          <span style={{ width: 76, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Duración</span>
+                        </div>
                         {pagedEntries.map((entry, i) => {
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
                           const chip = (label: string, bg: string, color: string) => (
-                            <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
+                            <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
                           );
                           return (
-                            <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              {/* Row 1: date + time + bristol + floats */}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}{entry.time ? <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span> : null}</span>
-                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
-                                  {entry.bristol != null && chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!)}
-                                  {entry.floats != null && chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9')}
+                            <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                              {/* Main row — aligned to header columns */}
+                              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px' }}>
+                                <div style={{ flex: 1, minWidth: 110 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
+                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa', display: 'block' }}>{entry.time}</span>}
+                                </div>
+                                <div style={{ width: 62 }}>
+                                  {entry.bristol != null ? chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!) : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 90 }}>
+                                  {entry.floats != null ? chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 34 }}>
+                                  {entry.color
+                                    ? <span style={{ display: 'inline-block', width: 18, height: 18, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020' }} />
+                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 68 }}>
+                                  {entry.quantity != null ? chip(`${entry.quantity}`, '#9b59b615', '#8e44ad') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 76 }}>
+                                  {entry.duration != null ? chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
                                 </div>
                               </div>
-                              {/* Row 2: color + quantity + duration */}
-                              {(entry.color != null || entry.quantity != null || entry.duration != null) && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' as const }}>
-                                  {entry.color && <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020', flexShrink: 0 }} />}
-                                  {entry.quantity != null && chip(`${entry.quantity}%`, '#9b59b615', '#8e44ad')}
-                                  {entry.duration != null && chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22')}
+                              {/* Secondary row: symptoms + notes */}
+                              {(entry.symptoms.length > 0 || entry.notes) && (
+                                <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                                  {entry.symptoms.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+                                      {entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))}
+                                    </div>
+                                  )}
+                                  {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
                                 </div>
                               )}
-                              {/* Row 3: symptoms */}
-                              {entry.symptoms.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 5 }}>
-                                  {entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))}
-                                </div>
-                              )}
-                              {/* Row 4: notes */}
-                              {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
                             </div>
                           );
                         })}
