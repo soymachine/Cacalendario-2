@@ -1182,12 +1182,13 @@ export default function MedicsPanel() {
                       <div style={{ display: 'flex', flexDirection: 'column' as const }}>
                         {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'center', padding: '7px 16px', backgroundColor: '#00000008', borderBottom: '1px solid #00000010' }}>
-                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const, minWidth: 110 }}>Fecha / Hora</span>
+                          <span style={{ width: 130, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Fecha / Hora</span>
                           <span style={{ width: 62, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Bristol</span>
                           <span style={{ width: 90, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Flotación</span>
                           <span style={{ width: 34, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
                           <span style={{ width: 68, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Cantidad</span>
                           <span style={{ width: 76, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Duración</span>
+                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Síntomas</span>
                         </div>
                         {pagedEntries.map((entry, i) => {
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
@@ -1196,11 +1197,11 @@ export default function MedicsPanel() {
                           );
                           return (
                             <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              {/* Main row — aligned to header columns */}
+                              {/* Main row — all fields in one line */}
                               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px' }}>
-                                <div style={{ flex: 1, minWidth: 110 }}>
+                                <div style={{ width: 130 }}>
                                   <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
-                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa', display: 'block' }}>{entry.time}</span>}
+                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span>}
                                 </div>
                                 <div style={{ width: 62 }}>
                                   {entry.bristol != null ? chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!) : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
@@ -1219,16 +1220,16 @@ export default function MedicsPanel() {
                                 <div style={{ width: 76 }}>
                                   {entry.duration != null ? chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
                                 </div>
+                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+                                  {entry.symptoms.length > 0
+                                    ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
+                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
                               </div>
-                              {/* Secondary row: symptoms + notes */}
-                              {(entry.symptoms.length > 0 || entry.notes) && (
-                                <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                                  {entry.symptoms.length > 0 && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
-                                      {entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))}
-                                    </div>
-                                  )}
-                                  {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
+                              {/* Notes row — only if present */}
+                              {entry.notes && (
+                                <div style={{ padding: '0 16px 10px' }}>
+                                  <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
                                 </div>
                               )}
                             </div>
