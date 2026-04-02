@@ -48,7 +48,7 @@ interface DashboardStats {
 
 const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
-type Section = 'dashboard' | 'usuarios' | 'centros' | 'estadisticas' | 'registros' | 'reportes';
+type Section = 'dashboard' | 'usuarios' | 'centros' | 'estadisticas' | 'registros' | 'reportes' | 'backups';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
@@ -57,6 +57,7 @@ const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'estadisticas', icon: '📈', label: 'Estadísticas' },
   { id: 'registros', icon: '📋', label: 'Registros' },
   { id: 'reportes', icon: '🚩', label: 'Reportes' },
+  { id: 'backups', icon: '💾', label: 'Backups' },
 ];
 
 export default function AdminPanel() {
@@ -77,6 +78,14 @@ export default function AdminPanel() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
   const [editCenterData, setEditCenterData] = useState({ name: '', specialty: '', address: '', phone: '', pending_doctor_email: '' });
+
+  // Backup state
+  interface BackupRecord { filename: string; createdAt: string; summary: string; }
+  const [backupList, setBackupList] = useState<BackupRecord[]>([]);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restorePreview, setRestorePreview] = useState<{ filename: string; data: any } | null>(null);
+  const [backupMsg, setBackupMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const handleLogin = async () => {
     setError('');
@@ -293,6 +302,86 @@ export default function AdminPanel() {
       </div>
     );
   }
+
+  // ── Backup / Restore ──
+  const handleCreateBackup = async () => {
+    setBackupLoading(true);
+    setBackupMsg(null);
+    try {
+      const [{ data: entries }, { data: centers }, { data: doctors }, { data: links }] = await Promise.all([
+        supabase.from('entries').select('*'),
+        supabase.from('centers').select('*'),
+        supabase.from('doctors').select('*'),
+        supabase.from('patient_links').select('*'),
+      ]);
+      const backup = {
+        version: 1,
+        createdAt: new Date().toISOString(),
+        entries: entries || [],
+        centers: centers || [],
+        doctors: doctors || [],
+        patient_links: links || [],
+      };
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const filename = `cacalendario_backup_${new Date().toISOString().slice(0, 16).replace('T', '_')}.json`;
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      const summary = `${backup.entries.length} registros · ${backup.centers.length} centros · ${backup.doctors.length} médicos`;
+      setBackupList(prev => [{ filename, createdAt: backup.createdAt, summary }, ...prev]);
+      setBackupMsg({ type: 'ok', text: `✅ Backup creado: ${filename}` });
+    } catch (e: any) {
+      setBackupMsg({ type: 'err', text: `❌ Error: ${e.message}` });
+    }
+    setBackupLoading(false);
+  };
+
+  const handleRestoreFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (!data.version || !data.entries) throw new Error('Fichero no válido');
+        setRestorePreview({ filename: file.name, data });
+        setBackupMsg(null);
+      } catch (err: any) {
+        setBackupMsg({ type: 'err', text: `❌ ${err.message}` });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!restorePreview) return;
+    setRestoreLoading(true);
+    setBackupMsg(null);
+    const { data } = restorePreview;
+    try {
+      if (data.entries?.length) {
+        const { error } = await supabase.from('entries').upsert(data.entries, { onConflict: 'user_id,entry_id' });
+        if (error) throw new Error('entries: ' + error.message);
+      }
+      if (data.centers?.length) {
+        const { error } = await supabase.from('centers').upsert(data.centers, { onConflict: 'id' });
+        if (error) throw new Error('centers: ' + error.message);
+      }
+      if (data.doctors?.length) {
+        const { error } = await supabase.from('doctors').upsert(data.doctors, { onConflict: 'id' });
+        if (error) throw new Error('doctors: ' + error.message);
+      }
+      if (data.patient_links?.length) {
+        const { error } = await supabase.from('patient_links').upsert(data.patient_links, { onConflict: 'id' });
+        if (error) throw new Error('patient_links: ' + error.message);
+      }
+      setBackupMsg({ type: 'ok', text: `✅ Restauración completada desde ${restorePreview.filename}` });
+      setRestorePreview(null);
+    } catch (e: any) {
+      setBackupMsg({ type: 'err', text: `❌ Error durante la restauración: ${e.message}` });
+    }
+    setRestoreLoading(false);
+  };
 
   // ── Main layout with sidebar ──
   return (
@@ -899,6 +988,104 @@ export default function AdminPanel() {
             </>
           );
         })()}
+
+        {/* ── BACKUPS ── */}
+        {section === 'backups' && (
+          <>
+            <SectionHeader title="Copias de seguridad" subtitle="Exporta e importa el estado completo de la base de datos" />
+
+            {backupMsg && (
+              <div style={{ padding: '12px 16px', borderRadius: 10, marginBottom: 16,
+                backgroundColor: backupMsg.type === 'ok' ? '#2ecc7118' : '#e74c3c18',
+                color: backupMsg.type === 'ok' ? '#27ae60' : '#c0392b', fontSize: 13, fontWeight: 600 }}>
+                {backupMsg.text}
+              </div>
+            )}
+
+            {/* Create backup */}
+            <div style={s.card}>
+              <div style={{ padding: '20px 24px' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 6 }}>💾 Crear copia de seguridad</div>
+                <p style={{ fontSize: 13, color: '#666', margin: '0 0 16px', lineHeight: 1.5 }}>
+                  Descarga un fichero JSON con todos los registros, centros, médicos y vínculos de pacientes.
+                </p>
+                <button onClick={handleCreateBackup} disabled={backupLoading}
+                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', backgroundColor: '#1a0e0e',
+                    color: '#fff', fontWeight: 700, fontSize: 14, cursor: backupLoading ? 'default' : 'pointer', opacity: backupLoading ? 0.6 : 1 }}>
+                  {backupLoading ? 'Generando...' : '⬇️ Descargar backup'}
+                </button>
+              </div>
+              {backupList.length > 0 && (
+                <div style={{ borderTop: '1px solid #00000010' }}>
+                  <div style={{ padding: '10px 24px 6px', fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>
+                    Backups de esta sesión
+                  </div>
+                  {backupList.map((b, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px', borderTop: '1px solid #00000008' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{b.filename}</div>
+                        <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{b.summary}</div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#bbb' }}>{new Date(b.createdAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Restore */}
+            <div style={s.card}>
+              <div style={{ padding: '20px 24px' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 6 }}>🔄 Restaurar copia</div>
+                <p style={{ fontSize: 13, color: '#666', margin: '0 0 16px', lineHeight: 1.5 }}>
+                  Selecciona un fichero JSON generado por esta herramienta. Los registros existentes se mantienen;
+                  los del backup se añaden o sobreescriben si ya existen (upsert por ID).
+                </p>
+                {!restorePreview ? (
+                  <label style={{ display: 'inline-block', padding: '10px 24px', borderRadius: 10, border: '2px dashed #ddd',
+                    backgroundColor: '#fafafa', color: '#666', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                    📂 Seleccionar fichero de backup
+                    <input type="file" accept=".json" style={{ display: 'none' }}
+                      onChange={e => e.target.files?.[0] && handleRestoreFile(e.target.files[0])} />
+                  </label>
+                ) : (
+                  <div style={{ backgroundColor: '#fff8e1', borderRadius: 10, border: '1px solid #f39c1240', padding: '16px 20px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📋 {restorePreview.filename}</div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 12, lineHeight: 1.7 }}>
+                      📅 Creado: {new Date(restorePreview.data.createdAt).toLocaleString('es')}<br/>
+                      📝 {restorePreview.data.entries?.length || 0} registros ·{' '}
+                      🏥 {restorePreview.data.centers?.length || 0} centros ·{' '}
+                      🩺 {restorePreview.data.doctors?.length || 0} médicos ·{' '}
+                      🔗 {restorePreview.data.patient_links?.length || 0} vínculos
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button onClick={handleConfirmRestore} disabled={restoreLoading}
+                        style={{ padding: '9px 20px', borderRadius: 9, border: 'none', backgroundColor: '#dd8273',
+                          color: '#fff', fontWeight: 700, fontSize: 13, cursor: restoreLoading ? 'default' : 'pointer', opacity: restoreLoading ? 0.6 : 1 }}>
+                        {restoreLoading ? 'Restaurando...' : '✅ Confirmar restauración'}
+                      </button>
+                      <button onClick={() => setRestorePreview(null)}
+                        style={{ padding: '9px 16px', borderRadius: 9, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 13, cursor: 'pointer', color: '#666' }}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div style={{ ...s.card, padding: '16px 20px', backgroundColor: '#f0f4ff', border: '1px solid #c5d0e6' }}>
+              <div style={{ fontSize: 13, color: '#3a5080', lineHeight: 1.7 }}>
+                <strong>ℹ️ Cómo funciona</strong><br/>
+                • <strong>Upsert por ID</strong>: añade lo que no existe, actualiza lo que sí. No borra nada.<br/>
+                • Para restaurar borrando todo primero, hazlo desde <strong>Supabase → SQL Editor</strong>.<br/>
+                • Guarda los backups fuera del ordenador (Drive, iCloud…) para mayor seguridad.<br/>
+                • Para backups automáticos considera el plan Pro de Supabase (PITR).
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       {/* Validation modal */}
