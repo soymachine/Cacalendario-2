@@ -12,7 +12,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
   // 1. Get cloud entries (source of truth)
   const { data: cloudRows } = await supabase
     .from('entries')
-    .select('entry_id, date, time, notes, timestamp, bristol, floats')
+    .select('entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms')
     .eq('user_id', userId);
 
   const cloudEntries: PoopEntry[] = (cloudRows || []).map((r) => ({
@@ -23,6 +23,10 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     timestamp: Number(r.timestamp),
     bristol: r.bristol ?? null,
     floats: r.floats ?? null,
+    color: r.color ?? null,
+    quantity: r.quantity ?? null,
+    duration: r.duration ?? null,
+    symptoms: r.symptoms ?? [],
   }));
 
   cloudEntries.sort((a, b) => a.timestamp - b.timestamp);
@@ -44,6 +48,10 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       timestamp: entry.timestamp,
       bristol: entry.bristol ?? null,
       floats: entry.floats ?? null,
+      color: entry.color ?? null,
+      quantity: entry.quantity ?? null,
+      duration: entry.duration ?? null,
+      symptoms: entry.symptoms ?? [],
     },
     { onConflict: 'user_id,entry_id' }
   );
