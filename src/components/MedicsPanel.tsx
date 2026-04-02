@@ -151,7 +151,7 @@ export default function MedicsPanel() {
   const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
     loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
-    btnPrimary: { ...ts.btnPrimary, backgroundColor: th.dark },
+    btnPrimary: { ...s.btnPrimary, backgroundColor: th.dark },
     linkBtn: { ...s.linkBtn, color: th.primary },
   };
 
