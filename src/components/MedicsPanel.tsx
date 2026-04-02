@@ -1832,7 +1832,7 @@ function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: 
     <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
       <div>
         <h1 style={{ fontSize: mobile ? 22 : 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: '4px 0 0' }}>{subtitle}</p>
       </div>
       {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>{actions}</div>}
     </div>
