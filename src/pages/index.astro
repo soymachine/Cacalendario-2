@@ -23,6 +23,19 @@ import { asset } from '../lib/config';
     <meta name="apple-mobile-web-app-title" content="Cacalendario" />
     <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
 
+    <!-- GitHub Pages SPA: restore redirect from 404.html -->
+    <script is:inline>
+      (function() {
+        var qs = window.location.search;
+        if (qs.indexOf('?p=') === 0 || qs.indexOf('&p=') !== -1) {
+          var params = new URLSearchParams(qs);
+          var path = params.get('p') || '';
+          var hash = params.get('h') || '';
+          window.history.replaceState(null, '', '/Cacalendario-2' + path + hash);
+        }
+      })();
+    </script>
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet" />
 
