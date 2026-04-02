@@ -814,12 +814,12 @@ export default function MedicsPanel() {
       {/* ── SIDEBAR (desktop) ── */}
       <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
         {/* Center image header */}
-        <div style={{ padding: '20px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 14, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `2px solid ${th.border}` }}>
+        <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
+          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span style={{ fontSize: 32 }}>{'\u{1F3E5}'}</span>
+              <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
             )}
           </div>
           <div style={{ textAlign: 'center' as const }}>
