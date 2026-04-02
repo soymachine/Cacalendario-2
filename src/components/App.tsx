@@ -16,6 +16,8 @@ import FeedbackScreen from './FeedbackScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
+import { fetchDoctorPalette, getPaletteTheme } from '../lib/palettes';
+import { setDoctorColor, clearDoctorColor } from '../lib/preferences';
 import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
@@ -38,7 +40,7 @@ function AppContent() {
     if (isRecovery) setScreen('auth');
   }, [isRecovery]);
 
-  // Sync when user logs in
+  // Sync and apply doctor palette when user logs in; clear on logout
   useEffect(() => {
     if (user) {
       setSyncing(true);
@@ -47,6 +49,12 @@ function AppContent() {
           window.dispatchEvent(new Event('cacalendario-updated'));
         })
         .finally(() => setSyncing(false));
+      fetchDoctorPalette(user.id).then(paletteId => {
+        if (paletteId) setDoctorColor(getPaletteTheme(paletteId).primary);
+        else clearDoctorColor();
+      });
+    } else {
+      clearDoctorColor();
     }
   }, [user]);
 

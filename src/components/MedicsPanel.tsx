@@ -4,26 +4,8 @@ import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
 import { Slider } from '@base-ui/react/slider';
-
-interface MedicsTheme {
-  primary: string;
-  dark: string;
-  navActive: string;
-  textMuted: string;
-  border: string;
-  menuLabel: string;
-  logoutColor: string;
-  versionColor: string;
-}
-
-const PALETTES: { id: string; name: string; swatch: string; theme: MedicsTheme }[] = [
-  { id: 'terracotta', name: 'Terracota', swatch: '#dd8273', theme: { primary: '#dd8273', dark: '#1a0e0e', navActive: '#3d1e1a', textMuted: '#9a7a76', border: '#2d1a18', menuLabel: '#5c3e3a', logoutColor: '#7a5a56', versionColor: '#3d2a28' } },
-  { id: 'ocean', name: 'Océano', swatch: '#4a9eca', theme: { primary: '#4a9eca', dark: '#0a1928', navActive: '#143a5e', textMuted: '#5a8aaa', border: '#1a3558', menuLabel: '#3a6888', logoutColor: '#4a7890', versionColor: '#2a4a68' } },
-  { id: 'forest', name: 'Bosque', swatch: '#5aaa72', theme: { primary: '#5aaa72', dark: '#0e1a10', navActive: '#1a3a20', textMuted: '#6a9a78', border: '#1a3420', menuLabel: '#3a6848', logoutColor: '#4a7858', versionColor: '#2a4838' } },
-  { id: 'plum', name: 'Ciruela', swatch: '#9b6db5', theme: { primary: '#9b6db5', dark: '#1a0e28', navActive: '#3a1e58', textMuted: '#8a6a9a', border: '#2d1a48', menuLabel: '#5c3e78', logoutColor: '#7a5a88', versionColor: '#3d2a58' } },
-  { id: 'midnight', name: 'Medianoche', swatch: '#7a8fd8', theme: { primary: '#7a8fd8', dark: '#0e0e1a', navActive: '#1a1a3d', textMuted: '#7a7a96', border: '#1a1a30', menuLabel: '#4a4a68', logoutColor: '#5a5a78', versionColor: '#2a2a48' } },
-  { id: 'sunset', name: 'Atardecer', swatch: '#e8a048', theme: { primary: '#e8a048', dark: '#1a0e00', navActive: '#3d2800', textMuted: '#9a7a50', border: '#2d1a00', menuLabel: '#5c4020', logoutColor: '#7a5a36', versionColor: '#3d2a10' } },
-];
+import { PALETTES } from '../lib/palettes';
+import type { MedicsTheme } from '../lib/palettes';
 
 const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
 const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
