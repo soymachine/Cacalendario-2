@@ -18,6 +18,7 @@ import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
 import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
+import { registerPushSubscription } from '../lib/push';
 import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
@@ -54,6 +55,7 @@ function AppContent() {
         else clearDoctorColor();
         setDoctorHiddenFields(config.hiddenFields);
       });
+      registerPushSubscription(user.id);
     } else {
       clearDoctorColor();
       clearDoctorHiddenFields();

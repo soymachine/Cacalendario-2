@@ -30,6 +30,8 @@ interface PatientLink {
   semaforo_green_override?: number | null;
   semaforo_red_override?: number | null;
   hidden_fields?: string[];
+  push_min_hours?: number;
+  push_frequency?: number;
 }
 
 interface DoctorInfo {
@@ -132,6 +134,9 @@ export default function MedicsPanel() {
   const [configPalette, setConfigPalette] = useState('terracotta');
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
   const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
+  const [patientPushMinHours, setPatientPushMinHours] = useState(24);
+  const [patientPushFrequency, setPatientPushFrequency] = useState(2);
+  const [patientPushSaved, setPatientPushSaved] = useState(false);
 
   const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
@@ -441,6 +446,9 @@ export default function MedicsPanel() {
     setPatientSemaforoSaved(false);
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientFieldsSaved(false);
+    setPatientPushMinHours(patient.push_min_hours ?? 24);
+    setPatientPushFrequency(patient.push_frequency ?? 2);
+    setPatientPushSaved(false);
     setEntryPage(0);
     setEntryFilterFrom('');
     setEntryFilterTo('');
@@ -589,6 +597,22 @@ export default function MedicsPanel() {
       setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields });
       setPatientFieldsSaved(true);
       setTimeout(() => setPatientFieldsSaved(false), 3000);
+    }
+  };
+
+  // ── Save per-patient push notification config ──
+  const handleSavePatientPush = async () => {
+    if (!selectedPatient) return;
+    const freq = Math.max(1, Math.min(8, patientPushFrequency));
+    const mins = Math.max(1, Math.min(168, patientPushMinHours));
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ push_min_hours: mins, push_frequency: freq })
+      .eq('id', selectedPatient.id);
+    if (!error) {
+      setSelectedPatient({ ...selectedPatient, push_min_hours: mins, push_frequency: freq });
+      setPatientPushSaved(true);
+      setTimeout(() => setPatientPushSaved(false), 3000);
     }
   };
 
@@ -1205,6 +1229,53 @@ export default function MedicsPanel() {
                     <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
                   )}
                   <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+                    Guardar
+                  </button>
+                </div>
+              </div>
+              {/* Per-patient push notification config */}
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                  🔔 Notificaciones push
+                </div>
+                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                  <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
+                    Recordatorio automático cuando el paciente lleva X horas sin registrar.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                        Horas sin registrar antes de notificar
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={168}
+                        value={patientPushMinHours}
+                        onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                      />
+                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                        Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={8}
+                        value={patientPushFrequency}
+                        onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                      />
+                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
+                    </div>
+                  </div>
+                  {patientPushSaved && (
+                    <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                  )}
+                  <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
                     Guardar
                   </button>
                 </div>

@@ -1,19 +1,20 @@
 // 🔄 CHANGE THIS VERSION on every deploy to trigger an update
-const CACHE_VERSION = 2;
-const CACHE_NAME = `cacalendario-v${CACHE_VERSION}`;
-const BASE = '/Cacalendario-2';
+const CACHE_VERSION = 3;
+const CACHE_NAME = `fluxia-v${CACHE_VERSION}`;
+const BASE = '';
 
 // Assets to precache on install
 const PRECACHE_URLS = [
-  `${BASE}/`,
-  `${BASE}/manifest.json`,
-  `${BASE}/logo.svg`,
-  `${BASE}/poop-button.svg`,
-  `${BASE}/poop-big.svg`,
-  `${BASE}/poop-small.svg`,
-  `${BASE}/icons/icon-96x96.png`,
-  `${BASE}/icons/icon-192x192.png`,
-  `${BASE}/icons/icon-512x512.png`,
+  '/',
+  '/manifest.json',
+  '/logo.svg',
+  '/fluxia-logo.png',
+  '/poop-button.svg',
+  '/poop-big.svg',
+  '/poop-small.svg',
+  '/icons/icon-96x96.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ];
 
 // Install: precache shell assets, then immediately activate
@@ -41,6 +42,27 @@ self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// ── Web Push ──
+self.addEventListener('push', (event) => {
+  let data = { title: 'Fluxia', body: 'No has registrado nada hoy. Tu médico necesita esta información 🩺' };
+  try { data = { ...data, ...event.data?.json() }; } catch {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/fluxia-logo.png',
+      badge: '/fluxia-logo.png',
+      tag: 'fluxia-reminder',
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/'));
 });
 
 // Fetch: network-first for everything (ensures fresh content)
