@@ -101,7 +101,7 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
           <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
         </div>
 
-        <div className="flex-1 px-10 flex flex-col overflow-y-auto">
+        <div className="flex-1 min-h-0 px-10 flex flex-col overflow-y-auto pb-8">
           <p className="text-2xl font-black" style={{ color: theme.text }}>MI CUENTA</p>
 
           {/* Avatar */}
@@ -196,40 +196,39 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
               </div>
             </div>
           )}
-        </div>
-
-        {/* Sign out button */}
-        <div className="shrink-0 flex justify-center px-10 py-6">
-          {confirmLogout ? (
-            <div className="w-full max-w-sm flex flex-col items-center gap-3">
-              <p className="text-sm text-center" style={{ color: theme.text }}>¿Seguro que quieres cerrar sesión?</p>
-              <p className="text-xs text-center" style={{ color: `${theme.text}80` }}>Tus datos locales se mantendrán en este dispositivo.</p>
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setConfirmLogout(false)}
-                  className="flex-1 rounded-full py-2.5 active:scale-95 transition-transform border-2"
-                  style={{ borderColor: theme.text }}
-                >
-                  <span className="text-base" style={{ color: theme.text }}>cancelar</span>
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="flex-1 rounded-full py-2.5 active:scale-95 transition-transform"
-                  style={{ backgroundColor: '#c0392b' }}
-                >
-                  <span className="text-white text-base font-bold">salir</span>
-                </button>
+          {/* Sign out button */}
+          <div className="flex justify-center mt-6">
+            {confirmLogout ? (
+              <div className="w-full flex flex-col items-center gap-3">
+                <p className="text-sm text-center" style={{ color: theme.text }}>¿Seguro que quieres cerrar sesión?</p>
+                <p className="text-xs text-center" style={{ color: `${theme.text}80` }}>Tus datos locales se mantendrán en este dispositivo.</p>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setConfirmLogout(false)}
+                    className="flex-1 rounded-full py-2.5 active:scale-95 transition-transform border-2"
+                    style={{ borderColor: theme.text }}
+                  >
+                    <span className="text-base" style={{ color: theme.text }}>cancelar</span>
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex-1 rounded-full py-2.5 active:scale-95 transition-transform"
+                    style={{ backgroundColor: '#c0392b' }}
+                  >
+                    <span className="text-white text-base font-bold">salir</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmLogout(true)}
-              className="w-full max-w-sm rounded-full py-2.5 flex items-center justify-center active:scale-95 transition-transform border-2"
-              style={{ borderColor: theme.text }}
-            >
-              <span className="text-lg" style={{ color: theme.text }}>cerrar sesión</span>
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={() => setConfirmLogout(true)}
+                className="w-full rounded-full py-2.5 flex items-center justify-center active:scale-95 transition-transform border-2"
+                style={{ borderColor: theme.text }}
+              >
+                <span className="text-lg" style={{ color: theme.text }}>cerrar sesión</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

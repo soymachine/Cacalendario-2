@@ -25,7 +25,7 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
           <img src={asset('/logo.svg')} alt="Cacalendario" className="w-16 h-[57px]" />
         </div>
 
-        <div className="flex-1 px-6 overflow-y-auto pb-10">
+        <div className="flex-1 min-h-0 px-6 overflow-y-auto pb-10">
           <h1 className="text-xl font-black mb-4" style={{ color: theme.text }}>
             POLÍTICA DE PRIVACIDAD
           </h1>

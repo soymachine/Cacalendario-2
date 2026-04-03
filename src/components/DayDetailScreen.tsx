@@ -53,7 +53,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
         </div>
 
         {/* Entries list */}
-        <div className="flex-1 overflow-auto px-8 mt-4 pb-4">
+        <div className="flex-1 min-h-0 overflow-auto px-8 mt-4 pb-4">
           <div className="space-y-3">
             {entries.map((entry) => {
               const bristolType = getBristolType(entry.bristol);

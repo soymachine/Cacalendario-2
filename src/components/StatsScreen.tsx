@@ -49,7 +49,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-auto px-6 pb-8">
+        <div className="flex-1 min-h-0 overflow-auto px-6 pb-8">
           {/* Title */}
           <h2 className="text-sm font-black mb-6" style={{ color: theme.text }}>ESTADÍSTICAS</h2>
 

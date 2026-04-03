@@ -3,6 +3,7 @@ import { usePreferences } from '../lib/usePreferences';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { asset } from '../lib/config';
+import { registerPushSubscription, unregisterPushSubscription } from '../lib/push';
 
 interface SettingsScreenProps {
   onClose: () => void;
@@ -18,6 +19,36 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [nameSaved, setNameSaved] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [pushLoading, setPushLoading] = useState(false);
+
+  // Check push notification status
+  useEffect(() => {
+    if (!('Notification' in window)) { setPushPermission('unsupported'); return; }
+    setPushPermission(Notification.permission);
+    if (!user) return;
+    supabase.from('push_subscriptions').select('id').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setPushSubscribed(!!data));
+  }, [user]);
+
+  const handleTogglePush = async () => {
+    if (!user) return;
+    setPushLoading(true);
+    if (pushSubscribed) {
+      await unregisterPushSubscription(user.id);
+      setPushSubscribed(false);
+    } else {
+      await registerPushSubscription(user.id);
+      const perm = Notification.permission;
+      setPushPermission(perm);
+      if (perm === 'granted') {
+        const { data } = await supabase.from('push_subscriptions').select('id').eq('user_id', user.id).maybeSingle();
+        setPushSubscribed(!!data);
+      }
+    }
+    setPushLoading(false);
+  };
 
   // Load profile data and linked center
   useEffect(() => {
@@ -101,7 +132,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-6 pb-8">
+        <div className="flex-1 min-h-0 overflow-auto px-6 pb-8">
           <h2 className="text-sm font-black mb-6" style={{ color: theme.text }}>AJUSTES</h2>
 
           {/* Display name */}
@@ -180,6 +211,46 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
                     <p className="text-xs mt-2 text-center" style={{ color: '#c0392b' }}>❌ {linkMessage}</p>
                   )}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Push notifications */}
+          {user && pushPermission !== 'unsupported' && (
+            <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: theme.glass }}>
+              <p className="text-sm font-black mb-1" style={{ color: theme.text }}>🔔 NOTIFICACIONES</p>
+              {pushPermission === 'denied' ? (
+                <p className="text-xs mt-2" style={{ color: `${theme.text}80` }}>
+                  Las notificaciones están bloqueadas en tu navegador. Para activarlas, ve a los ajustes del navegador y permite las notificaciones para este sitio.
+                </p>
+              ) : pushSubscribed ? (
+                <>
+                  <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
+                    Recibirás un recordatorio si llevas un tiempo sin registrar.
+                  </p>
+                  <button
+                    onClick={handleTogglePush}
+                    disabled={pushLoading}
+                    className="w-full mt-1 rounded-full py-2.5 text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
+                    style={{ backgroundColor: 'rgba(192,57,43,0.12)', color: '#c0392b' }}
+                  >
+                    {pushLoading ? '...' : 'Desactivar notificaciones'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
+                    Activa los recordatorios para no olvidar registrar tu actividad.
+                  </p>
+                  <button
+                    onClick={handleTogglePush}
+                    disabled={pushLoading}
+                    className="w-full mt-1 rounded-full py-2.5 text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
+                    style={{ backgroundColor: theme.text, color: theme.id === 'night' ? '#1a1a2e' : 'white' }}
+                  >
+                    {pushLoading ? '...' : 'Activar notificaciones'}
+                  </button>
+                </>
               )}
             </div>
           )}
