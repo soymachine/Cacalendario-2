@@ -285,9 +285,8 @@ export default function AdminPanel() {
       <div style={s.loginContainer}>
         <div style={s.loginCard}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 56, maxWidth: '100%', objectFit: 'contain', marginBottom: 8 }} />
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Panel admin</h1>
-            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>Panel de administración</p>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 56, maxWidth: '100%', objectFit: 'contain' }} />
+            <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>Panel de administración</p>
           </div>
           <label style={s.label}>Email</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
