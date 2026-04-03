@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const APP_URL = 'https://soymachine.github.io/Cacalendario-2/'
+const APP_URL = 'https://fluxia-health.com/'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,15 +42,14 @@ Deno.serve(async (req) => {
 <body style="margin:0;padding:0;background:#f5f0ef;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <div style="background:#1a0e0e;border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:8px;">🏥</div>
-      <h1 style="color:#dd8273;font-size:22px;font-weight:900;margin:0;">Cacalendario</h1>
+      <img src="https://fluxia-health.com/fluxia-logo.png" alt="Fluxia" style="display:block;margin:0 auto 12px;max-width:200px;width:100%;" />
       <p style="color:#9a7a76;font-size:13px;margin:4px 0 0;">Seguimiento intestinal inteligente</p>
     </div>
     <div style="background:#ffffff;padding:32px 24px;border-radius:0 0 16px 16px;">
       <p style="font-size:16px;color:#1a0e0e;margin:0 0 8px;">Hola,</p>
       <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 24px;">
         <strong>Dr. ${doctor}</strong> del centro <strong>${center}</strong> te invita a usar
-        <strong>Cacalendario</strong> para hacer seguimiento de tu salud intestinal.
+        <strong>Fluxia</strong> para hacer seguimiento de tu salud intestinal.
       </p>
       <div style="background:#f9f5f4;border:2px dashed #dd8273;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
         <p style="font-size:12px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tu código de invitación</p>
@@ -106,12 +105,12 @@ Deno.serve(async (req) => {
       </div>
       <div style="text-align:center;margin:28px 0 8px;">
         <a href="${APP_URL}" style="display:inline-block;background:#1a0e0e;color:#ffffff;font-size:15px;font-weight:700;padding:14px 40px;border-radius:999px;text-decoration:none;">
-          Abrir Cacalendario
+          Abrir Fluxia
         </a>
       </div>
     </div>
     <div style="text-align:center;padding:20px 0;font-size:11px;color:#999;">
-      <p style="margin:0 0 4px;">Enviado por <strong>${center}</strong> a través de Cacalendario</p>
+      <p style="margin:0 0 4px;">Enviado por <strong>${center}</strong> a través de Fluxia</p>
       <p style="margin:0;">Si no esperabas este mensaje, puedes ignorarlo.</p>
     </div>
   </div>
@@ -125,9 +124,9 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'Cacalendario <onboarding@resend.dev>',
+        from: 'Fluxia <onboarding@resend.dev>',
         to: [patientEmail],
-        subject: `Dr. ${doctor} te invita a Cacalendario`,
+        subject: `Dr. ${doctor} te invita a Fluxia`,
         html,
       }),
     })
