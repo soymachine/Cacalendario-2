@@ -285,8 +285,8 @@ export default function AdminPanel() {
       <div style={s.loginContainer}>
         <div style={s.loginCard}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span style={{ fontSize: 40 }}>💩</span>
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>cagómetro</h1>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 56, maxWidth: '100%', objectFit: 'contain', marginBottom: 8 }} />
+            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Panel admin</h1>
             <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>Panel de administración</p>
           </div>
           <label style={s.label}>Email</label>
@@ -390,11 +390,8 @@ export default function AdminPanel() {
       <aside style={s.sidebar}>
         {/* Logo */}
         <div style={s.sidebarLogo}>
-          <span style={{ fontSize: 26 }}>💩</span>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#dd8273' }}>cagómetro</div>
-            <div style={{ fontSize: 10, color: '#9a7a76' }}>Panel admin</div>
-          </div>
+          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 36, maxWidth: 120, objectFit: 'contain' }} />
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#dd8273' }}>Panel admin</div>
         </div>
 
         {/* Nav */}

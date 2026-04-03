@@ -668,10 +668,9 @@ export default function MedicsPanel() {
     return (
       <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
         <div style={s.loginCard}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: th.dark }}>Portal Médico</h1>
-            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>
+          <div style={{ marginBottom: 28 }}>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain', display: 'block', marginBottom: 16 }} />
+            <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
               {forgotMode !== 'off' ? 'Recuperar contraseña' : registerMode ? 'Completar registro' : 'Acceso para profesionales'}
             </p>
           </div>
