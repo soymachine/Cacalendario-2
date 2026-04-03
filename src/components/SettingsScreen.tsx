@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { asset } from '../lib/config';
 import { registerPushSubscription, unregisterPushSubscription } from '../lib/push';
+import { APP_VERSION } from '../lib/version';
 
 interface SettingsScreenProps {
   onClose: () => void;
@@ -116,8 +117,8 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center" style={{ backgroundColor: theme.main }}>
-      <div className="w-full max-w-md flex flex-col h-screen relative">
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
+      <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
         {/* Close button */}
         <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -265,6 +266,9 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
             </p>
             <p className="text-[10px] mt-4" style={{ color: `${theme.text}60` }}>
               Hecho con ❤️ en España.
+            </p>
+            <p className="text-[10px] mt-2" style={{ color: `${theme.text}40` }}>
+              {APP_VERSION}
             </p>
           </div>
         </div>

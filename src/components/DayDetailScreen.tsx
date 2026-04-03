@@ -28,8 +28,8 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center" style={{ backgroundColor: theme.main }}>
-      <div className="w-full max-w-md flex flex-col h-screen relative">
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
+      <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
         {/* Close button */}
         <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
