@@ -389,7 +389,7 @@ export default function AdminPanel() {
       <aside style={s.sidebar}>
         {/* Logo */}
         <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 6 }}>
-          <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 40, objectFit: 'contain' }} />
+          <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain' }} />
           <div style={{ fontSize: 11, fontWeight: 700, color: '#dd8273', letterSpacing: 0.5 }}>Panel admin</div>
         </div>
 
@@ -1180,7 +1180,7 @@ const s: Record<string, React.CSSProperties> = {
     overflowY: 'auto' as const,
   },
   sidebarLogo: {
-    display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', height: 70,
+    display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', minHeight: 100,
     borderBottom: '1px solid #2d1a18',
   },
   sidebarNav: {
