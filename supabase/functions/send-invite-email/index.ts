@@ -39,64 +39,64 @@ Deno.serve(async (req) => {
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f0ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#eef4f6;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
-    <div style="background:#1a0e0e;border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#477eb0 0%,#4f98a2 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
       <img src="https://fluxia-health.com/fluxia-logo.png" alt="Fluxia" style="display:block;margin:0 auto 12px;max-width:200px;width:100%;" />
-      <p style="color:#9a7a76;font-size:13px;margin:4px 0 0;">Seguimiento intestinal inteligente</p>
+      <p style="color:#c8e8ec;font-size:13px;margin:4px 0 0;">Seguimiento intestinal inteligente</p>
     </div>
     <div style="background:#ffffff;padding:32px 24px;border-radius:0 0 16px 16px;">
-      <p style="font-size:16px;color:#1a0e0e;margin:0 0 8px;">Hola,</p>
+      <p style="font-size:16px;color:#1a2535;margin:0 0 8px;">Hola,</p>
       <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 24px;">
         <strong>Dr. ${doctor}</strong> del centro <strong>${center}</strong> te invita a usar
         <strong>Fluxia</strong> para hacer seguimiento de tu salud intestinal.
       </p>
-      <div style="background:#f9f5f4;border:2px dashed #dd8273;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
+      <div style="background:#fafef0;border:2px dashed #d8d927;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
         <p style="font-size:12px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tu código de invitación</p>
-        <div style="font-size:32px;font-weight:900;color:#1a0e0e;letter-spacing:6px;font-family:monospace;">${inviteCode}</div>
+        <div style="font-size:32px;font-weight:900;color:#1a2535;letter-spacing:6px;font-family:monospace;">${inviteCode}</div>
       </div>
-      <h2 style="font-size:16px;color:#1a0e0e;margin:0 0 16px;font-weight:800;">¿Cómo empezar?</h2>
+      <h2 style="font-size:16px;color:#1a2535;margin:0 0 16px;font-weight:800;">¿Cómo empezar?</h2>
       <div style="margin:0 0 16px;">
         <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#dd8273;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">1</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">1</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a0e0e;font-size:14px;">Abre la aplicación</strong>
+            <strong style="color:#1a2535;font-size:14px;">Abre la aplicación</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
-              Entra en <a href="${APP_URL}" style="color:#dd8273;font-weight:600;">${APP_URL}</a>
+              Entra en <a href="${APP_URL}" style="color:#477eb0;font-weight:600;">${APP_URL}</a>
             </p>
           </div>
         </div>
         <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#dd8273;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">2</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">2</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a0e0e;font-size:14px;">Crea tu cuenta</strong>
+            <strong style="color:#1a2535;font-size:14px;">Crea tu cuenta</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
               Regístrate con tu email y contraseña. Es rápido y gratuito.
             </p>
           </div>
         </div>
         <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#dd8273;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">3</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">3</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a0e0e;font-size:14px;">Ve a Ajustes</strong>
+            <strong style="color:#1a2535;font-size:14px;">Ve a Ajustes</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
               Una vez dentro, pulsa el icono de ajustes ⚙️ en la barra inferior.
             </p>
           </div>
         </div>
         <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#dd8273;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">4</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">4</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a0e0e;font-size:14px;">Vincúlate con tu médico</strong>
+            <strong style="color:#1a2535;font-size:14px;">Vincúlate con tu médico</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
               Pulsa en <strong>"Vincular con mi médico"</strong> e introduce el código de arriba.
             </p>
           </div>
         </div>
         <div style="display:flex;margin-bottom:0;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#dd8273;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">5</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">5</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a0e0e;font-size:14px;">¡Empieza a registrar!</strong>
+            <strong style="color:#1a2535;font-size:14px;">¡Empieza a registrar!</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
               Cada día, registra tus deposiciones. Tu médico podrá hacer seguimiento de forma segura.
             </p>
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         </div>
       </div>
       <div style="text-align:center;margin:28px 0 8px;">
-        <a href="${APP_URL}" style="display:inline-block;background:#1a0e0e;color:#ffffff;font-size:15px;font-weight:700;padding:14px 40px;border-radius:999px;text-decoration:none;">
+        <a href="${APP_URL}" style="display:inline-block;background:#477eb0;color:#ffffff;font-size:15px;font-weight:700;padding:14px 40px;border-radius:999px;text-decoration:none;">
           Abrir Fluxia
         </a>
       </div>
