@@ -284,8 +284,8 @@ export default function AdminPanel() {
     return (
       <div style={s.loginContainer}>
         <div style={s.loginCard}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 56, maxWidth: '100%', objectFit: 'contain' }} />
+          <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', marginBottom: 32 }}>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 56, maxWidth: '100%', objectFit: 'contain', display: 'block' }} />
             <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>Panel de administración</p>
           </div>
           <label style={s.label}>Email</label>
@@ -388,8 +388,8 @@ export default function AdminPanel() {
       {/* ── SIDEBAR ── */}
       <aside style={s.sidebar}>
         {/* Logo */}
-        <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 4 }}>
-          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 32, maxWidth: 140, objectFit: 'contain' }} />
+        <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 6 }}>
+          <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 40, objectFit: 'contain' }} />
           <div style={{ fontSize: 11, fontWeight: 700, color: '#dd8273', letterSpacing: 0.5 }}>Panel admin</div>
         </div>
 
