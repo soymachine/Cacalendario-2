@@ -489,7 +489,7 @@ export default function MedicsPanel() {
     setError('');
     if (!email.trim()) { setError('Introduce tu email'); return; }
     setLoading(true);
-    const siteUrl = window.location.origin + '/Cacalendario-2/medics';
+    const siteUrl = window.location.origin + '/medics';
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: siteUrl,
     });

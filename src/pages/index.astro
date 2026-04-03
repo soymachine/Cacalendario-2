@@ -31,7 +31,7 @@ import { asset } from '../lib/config';
           var params = new URLSearchParams(qs);
           var path = params.get('p') || '';
           var hash = params.get('h') || '';
-          window.history.replaceState(null, '', '/Cacalendario-2' + path + hash);
+          window.history.replaceState(null, '', path + hash || '/');
         }
       })();
     </script>

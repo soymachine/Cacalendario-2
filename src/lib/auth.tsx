@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: 'https://soymachine.github.io/Cacalendario-2/',
+        emailRedirectTo: window.location.origin + '/',
       },
     });
     if (error) return { error: translateAuthError(error.message) };
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const siteUrl = window.location.origin + '/Cacalendario-2/';
+    const siteUrl = window.location.origin + '/';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: siteUrl,
     });
