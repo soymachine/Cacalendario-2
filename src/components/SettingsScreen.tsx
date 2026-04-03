@@ -219,9 +219,24 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
             <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: theme.glass }}>
               <p className="text-sm font-black mb-1" style={{ color: theme.text }}>🔔 NOTIFICACIONES</p>
               {pushPermission === 'denied' ? (
-                <p className="text-xs mt-2" style={{ color: `${theme.text}80` }}>
-                  Las notificaciones están bloqueadas en tu navegador. Para activarlas, ve a los ajustes del navegador y permite las notificaciones para este sitio.
-                </p>
+                <>
+                  <p className="text-xs mt-2 mb-3" style={{ color: `${theme.text}80` }}>
+                    Las notificaciones están bloqueadas. Para activarlas:
+                  </p>
+                  <p className="text-xs mb-1" style={{ color: `${theme.text}80` }}>
+                    <strong>Chrome/Android:</strong> toca el candado 🔒 en la barra de dirección → Permisos → Notificaciones → Permitir
+                  </p>
+                  <p className="text-xs mb-3" style={{ color: `${theme.text}80` }}>
+                    <strong>Safari/iOS:</strong> Ajustes del iPhone → Safari → Configuración de sitios web → Notificaciones → Permitir para este sitio
+                  </p>
+                  <button
+                    onClick={() => setPushPermission(Notification.permission)}
+                    className="w-full rounded-full py-2 text-xs font-bold active:scale-95 transition-transform border-2"
+                    style={{ borderColor: theme.text, color: theme.text }}
+                  >
+                    Ya lo he permitido — volver a verificar
+                  </button>
+                </>
               ) : pushSubscribed ? (
                 <>
                   <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
