@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: 'Fluxia <onboarding@resend.dev>',
+        from: 'Fluxia <noreply@fluxia-health.com>',
         to: [patientEmail],
         subject: `Dr. ${doctor} te invita a Fluxia`,
         html,
