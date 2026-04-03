@@ -388,9 +388,9 @@ export default function AdminPanel() {
       {/* ── SIDEBAR ── */}
       <aside style={s.sidebar}>
         {/* Logo */}
-        <div style={s.sidebarLogo}>
-          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 36, maxWidth: 120, objectFit: 'contain' }} />
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#dd8273' }}>Panel admin</div>
+        <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 4 }}>
+          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 32, maxWidth: 140, objectFit: 'contain' }} />
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#dd8273', letterSpacing: 0.5 }}>Panel admin</div>
         </div>
 
         {/* Nav */}
