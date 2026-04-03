@@ -98,20 +98,17 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
     <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
-      {/* Close button */}
-      <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="12" fill={theme.text}/>
-          <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round"/>
-        </svg>
-      </button>
-
-      {/* Logo */}
-      <div className="flex justify-center pt-10 pb-2 shrink-0">
-        <img src={asset('/logo.svg')} alt="Cacalendario" className="w-14 h-[50px]" />
-      </div>
-
       <div className="flex-1 px-8 flex flex-col min-h-0 overflow-auto pb-4">
+        {/* Header: logo + close */}
+        <div className="relative flex justify-center pt-10 pb-2">
+          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-14 h-[50px]" />
+          <button onClick={onClose} className="absolute top-3 right-0 w-10 h-10 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="12" fill={theme.text}/>
+              <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
 
         {/* Day */}
         <p className="text-sm font-black shrink-0" style={{ color: theme.text }}>DÍA</p>

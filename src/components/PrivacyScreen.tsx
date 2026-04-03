@@ -12,20 +12,18 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
       <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
-        {/* Close button */}
-        <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="12" fill={theme.text} />
-            <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round" />
-          </svg>
-        </button>
-
-        {/* Logo */}
-        <div className="flex justify-center pt-12 pb-4 shrink-0">
-          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-16 h-[57px]" />
-        </div>
-
         <div className="flex-1 min-h-0 px-6 overflow-y-auto pb-10">
+          {/* Header: logo + close */}
+          <div className="relative flex justify-center pt-12 pb-4">
+            <img src={asset('/logo.svg')} alt="Cacalendario" className="w-16 h-[57px]" />
+            <button onClick={onClose} className="absolute top-5 right-0 w-10 h-10 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill={theme.text} />
+                <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
           <h1 className="text-xl font-black mb-4" style={{ color: theme.text }}>
             POLÍTICA DE PRIVACIDAD
           </h1>
