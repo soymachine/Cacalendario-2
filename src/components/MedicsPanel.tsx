@@ -32,6 +32,7 @@ interface PatientLink {
   hidden_fields?: string[];
   push_min_hours?: number;
   push_frequency?: number;
+  hasPushSub?: boolean | null;
 }
 
 interface DoctorInfo {
@@ -320,7 +321,17 @@ export default function MedicsPanel() {
         }
       }
 
-      return { ...p, display_name, patient_email, lastEntryDate, daysSinceLast };
+      let hasPushSub: boolean | null = null;
+      if (p.patient_id) {
+        const { data: pushSub, error: pushErr } = await supabase
+          .from('push_subscriptions')
+          .select('id')
+          .eq('user_id', p.patient_id)
+          .maybeSingle();
+        if (!pushErr) hasPushSub = !!pushSub;
+      }
+
+      return { ...p, display_name, patient_email, lastEntryDate, daysSinceLast, hasPushSub };
     }));
     setPatients(enriched);
   };
@@ -925,7 +936,8 @@ export default function MedicsPanel() {
               <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
                 <span style={{ width: 40 }}></span>
                 <span style={{ flex: 2 }}>Paciente</span>
-                {!isMobile && <span style={{ flex: 1 }}>Último registro</span>}
+                {!isMobile && <span style={{ flex: 1 }}>Último registro / Código</span>}
+                {!isMobile && <span style={{ width: 44, textAlign: 'center' as const }}>🔔</span>}
                 <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
               {patients.length === 0 ? (
@@ -968,7 +980,7 @@ export default function MedicsPanel() {
                           )}
                         </div>
                       </div>
-                      {/* Last entry — hidden on mobile */}
+                      {/* Last entry / invite code — hidden on mobile */}
                       {!isMobile && <div style={{ flex: 1 }}>
                         {isAccepted && patient.lastEntryDate ? (
                           <div>
@@ -980,8 +992,20 @@ export default function MedicsPanel() {
                         ) : isAccepted ? (
                           <span style={{ fontSize: 12, color: '#aaa' }}>Sin registros</span>
                         ) : (
-                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                          <span
+                            title="Clic para copiar"
+                            onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(patient.invite_code); }}
+                            style={{ fontSize: 12, fontWeight: 700, color: th.primary, letterSpacing: 1, cursor: 'pointer', padding: '2px 6px', borderRadius: 6, backgroundColor: `${th.primary}15` }}
+                          >
+                            {patient.invite_code}
+                          </span>
                         )}
+                      </div>}
+                      {/* Push notification status — hidden on mobile */}
+                      {!isMobile && <div style={{ width: 44, textAlign: 'center' as const, fontSize: 16 }}>
+                        {isAccepted && patient.hasPushSub === true && <span title="Notificaciones activas">🔔</span>}
+                        {isAccepted && patient.hasPushSub === false && <span title="Sin notificaciones" style={{ opacity: 0.3 }}>🔕</span>}
+                        {isAccepted && patient.hasPushSub === null && <span title="Sin datos" style={{ opacity: 0.2, fontSize: 12 }}>—</span>}
                       </div>}
                       {/* Status badge + actions */}
                       <div style={{ width: isMobile ? 90 : 140, display: 'flex', alignItems: 'center', gap: 6 }}>
