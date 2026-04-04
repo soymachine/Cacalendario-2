@@ -4,7 +4,7 @@ import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  site: 'https://soymachine.github.io',
-  base: '/Cacalendario-2',
+  site: 'https://fluxia-health.com',
+  base: '/',
   integrations: [react(), tailwind()],
 });

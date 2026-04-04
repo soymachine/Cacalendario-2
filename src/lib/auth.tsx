@@ -58,7 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + '/',
+      },
+    });
     if (error) return { error: translateAuthError(error.message) };
     return { error: null };
   };
@@ -74,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const siteUrl = window.location.origin + '/Cacalendario-2/';
+    const siteUrl = window.location.origin + '/';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: siteUrl,
     });

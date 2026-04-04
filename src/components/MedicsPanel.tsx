@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
+import Switch from 'rc-switch';
+import 'rc-switch/assets/index.css';
+import { Slider } from '@base-ui/react/slider';
+import { PALETTES } from '../lib/palettes';
+import type { MedicsTheme } from '../lib/palettes';
+
+const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
+const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
+const SYMPTOM_LABEL: Record<string, string> = {
+  abdominal_pain: 'Dolor abdominal', bloating: 'Hinchazón', heartburn: 'Ardor', cramp: 'Calambre',
+  rectal_pain: 'Dolor rectal', blood: 'Sangre', mucus: 'Moco', smelly: 'Maloliente',
+  sticky: 'Pegajoso', stringy: 'Filamentoso', undigested: 'No digerido',
+};
 
 interface PatientLink {
   id: string;
@@ -16,6 +29,9 @@ interface PatientLink {
   semaforo_override?: boolean;
   semaforo_green_override?: number | null;
   semaforo_red_override?: number | null;
+  hidden_fields?: string[];
+  push_min_hours?: number;
+  push_frequency?: number;
 }
 
 interface DoctorInfo {
@@ -27,6 +43,7 @@ interface DoctorInfo {
   center_image_url?: string | null;
   semaforo_green: number;
   semaforo_red: number;
+  palette?: string;
 }
 
 interface PatientEntry {
@@ -35,7 +52,11 @@ interface PatientEntry {
   time: string;
   notes: string;
   bristol: number | null;
-  floats: boolean | null;
+  floats: 'floats' | 'sinks' | 'both' | null;
+  color: string | null;
+  quantity: number | null;
+  duration: 'short' | 'medium' | 'long' | null;
+  symptoms: string[];
   entry_id: string;
   created_at: string;
 }
@@ -55,6 +76,23 @@ const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
   { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
 ];
+
+function SemaforoSlider({ value, min, max, color, onChange }: {
+  value: number; min: number; max: number; color: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <Slider.Root value={value} min={min} max={max} onValueChange={(v) => onChange(v as number)}
+      style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: 28, userSelect: 'none', touchAction: 'none' }}>
+      <Slider.Control style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+        <Slider.Track style={{ position: 'relative', flexGrow: 1, borderRadius: 4, height: 6, backgroundColor: '#e0e0e0' }}>
+          <Slider.Indicator style={{ position: 'absolute', borderRadius: 4, height: '100%', backgroundColor: color, opacity: 0.7 }} />
+          <Slider.Thumb style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none' }} />
+        </Slider.Track>
+      </Slider.Control>
+    </Slider.Root>
+  );
+}
 
 export default function MedicsPanel() {
   const [initialLoading, setInitialLoading] = useState(true);
@@ -93,6 +131,19 @@ export default function MedicsPanel() {
   const [entryPage, setEntryPage] = useState(0);
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
+  const [configPalette, setConfigPalette] = useState('terracotta');
+  const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
+  const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
+  const [patientPushMinHours, setPatientPushMinHours] = useState(24);
+  const [patientPushFrequency, setPatientPushFrequency] = useState(2);
+  const [patientPushSaved, setPatientPushSaved] = useState(false);
+
+  const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
+  const ts = {
+    loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
+    btnPrimary: { ...s.btnPrimary, backgroundColor: th.dark },
+    linkBtn: { ...s.linkBtn, color: th.primary },
+  };
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -113,6 +164,7 @@ export default function MedicsPanel() {
     center_image_url: (d.centers as { name: string; image_url?: string } | null)?.image_url || null,
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
+    palette: d.palette || 'terracotta',
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -121,6 +173,7 @@ export default function MedicsPanel() {
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
     setCenterImageUrl(info.center_image_url || null);
+    setConfigPalette(info.palette || 'terracotta');
   };
 
   // ── Recover session on mount ──
@@ -367,8 +420,12 @@ export default function MedicsPanel() {
       date: e.date,
       time: e.time || '',
       notes: e.notes || '',
-      bristol: e.bristol,
-      floats: e.floats,
+      bristol: e.bristol ?? null,
+      floats: e.floats === true ? 'floats' : e.floats === false ? 'sinks' : (e.floats ?? null),
+      color: e.color ?? null,
+      quantity: e.quantity ?? null,
+      duration: e.duration ?? null,
+      symptoms: e.symptoms ?? [],
       entry_id: e.entry_id || '',
       created_at: e.created_at,
     }));
@@ -387,6 +444,11 @@ export default function MedicsPanel() {
     setPatientSemaforoGreen(patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1);
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientSemaforoSaved(false);
+    setPatientHiddenFields(patient.hidden_fields || []);
+    setPatientFieldsSaved(false);
+    setPatientPushMinHours(patient.push_min_hours ?? 24);
+    setPatientPushFrequency(patient.push_frequency ?? 2);
+    setPatientPushSaved(false);
     setEntryPage(0);
     setEntryFilterFrom('');
     setEntryFilterTo('');
@@ -435,7 +497,7 @@ export default function MedicsPanel() {
     setError('');
     if (!email.trim()) { setError('Introduce tu email'); return; }
     setLoading(true);
-    const siteUrl = window.location.origin + '/Cacalendario-2/medics';
+    const siteUrl = window.location.origin + '/medics';
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: siteUrl,
     });
@@ -490,11 +552,11 @@ export default function MedicsPanel() {
     const trimmedName = configName.trim() || doctorInfo.name;
     const { error: updateErr } = await supabase
       .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed })
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette })
       .eq('id', doctorInfo.id);
     setLoading(false);
     if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed };
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
@@ -521,6 +583,36 @@ export default function MedicsPanel() {
       });
       setPatientSemaforoSaved(true);
       setTimeout(() => setPatientSemaforoSaved(false), 3000);
+    }
+  };
+
+  // ── Save per-patient hidden fields ──
+  const handleSavePatientFields = async () => {
+    if (!selectedPatient) return;
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ hidden_fields: patientHiddenFields })
+      .eq('id', selectedPatient.id);
+    if (!error) {
+      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields });
+      setPatientFieldsSaved(true);
+      setTimeout(() => setPatientFieldsSaved(false), 3000);
+    }
+  };
+
+  // ── Save per-patient push notification config ──
+  const handleSavePatientPush = async () => {
+    if (!selectedPatient) return;
+    const freq = Math.max(1, Math.min(8, patientPushFrequency));
+    const mins = Math.max(1, Math.min(168, patientPushMinHours));
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ push_min_hours: mins, push_frequency: freq })
+      .eq('id', selectedPatient.id);
+    if (!error) {
+      setSelectedPatient({ ...selectedPatient, push_min_hours: mins, push_frequency: freq });
+      setPatientPushSaved(true);
+      setTimeout(() => setPatientPushSaved(false), 3000);
     }
   };
 
@@ -586,7 +678,7 @@ export default function MedicsPanel() {
   // ── Initial loading ──
   if (initialLoading) {
     return (
-      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
+      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
         <div style={{ textAlign: 'center', color: '#fff' }}>
           <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
           <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600 }}>Cargando...</p>
@@ -598,12 +690,11 @@ export default function MedicsPanel() {
   // ── Login / Register screen ──
   if (!loggedIn) {
     return (
-      <div style={{ ...s.loginContainer, flexDirection: 'column' as const }}>
+      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
         <div style={s.loginCard}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
-            <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: '#1a0e0e' }}>Portal Médico</h1>
-            <p style={{ color: '#888', fontSize: 13, marginTop: 4 }}>
+          <div style={{ marginBottom: 28 }}>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain', display: 'block', marginBottom: 16 }} />
+            <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
               {forgotMode !== 'off' ? 'Recuperar contraseña' : registerMode ? 'Completar registro' : 'Acceso para profesionales'}
             </p>
           </div>
@@ -616,7 +707,7 @@ export default function MedicsPanel() {
               <label style={s.label}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleForgotPassword} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleForgotPassword} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Enviar enlace'}
               </button>
               <button
@@ -630,14 +721,14 @@ export default function MedicsPanel() {
             <>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: 40 }}>✅</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Email enviado!</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Email enviado!</p>
                 <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
                   Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada (y spam).
                 </p>
               </div>
               <button
                 onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }}
-                style={{ ...s.btnPrimary, marginTop: 20 }}
+                style={{ ...ts.btnPrimary, marginTop: 20 }}
               >
                 Volver al login
               </button>
@@ -649,7 +740,7 @@ export default function MedicsPanel() {
               <label style={s.label}>Contraseña</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Entrar'}
               </button>
               <button
@@ -680,7 +771,7 @@ export default function MedicsPanel() {
                 style={s.input}
               />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Continuar'}
               </button>
               <button
@@ -692,8 +783,8 @@ export default function MedicsPanel() {
             </>
           ) : registerStep === 'password' ? (
             <>
-              <div style={{ backgroundColor: '#dd827320', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#1a0e0e', margin: 0 }}>
+              <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: th.dark, margin: 0 }}>
                   {'\u{1F3E5}'} {pendingCenterName}
                 </p>
                 <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>{registerEmail}</p>
@@ -708,7 +799,7 @@ export default function MedicsPanel() {
                 style={s.input}
               />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
+              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Finalizar registro'}
               </button>
               <button
@@ -722,7 +813,7 @@ export default function MedicsPanel() {
             <>
               <div style={{ textAlign: 'center' }}>
                 <span style={{ fontSize: 40 }}>{'\u{1F4E7}'}</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a0e0e', marginTop: 12 }}>¡Revisa tu email!</p>
+                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Revisa tu email!</p>
                 <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
                   Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>.
                   Confirma tu cuenta y después inicia sesión aquí.
@@ -730,7 +821,7 @@ export default function MedicsPanel() {
               </div>
               <button
                 onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }}
-                style={{ ...s.btnPrimary, marginTop: 20 }}
+                style={{ ...ts.btnPrimary, marginTop: 20 }}
               >
                 Ir a iniciar sesión
               </button>
@@ -745,27 +836,33 @@ export default function MedicsPanel() {
   return (
     <div style={s.shell}>
       {/* ── SIDEBAR (desktop) ── */}
-      <aside style={{ ...s.sidebar, display: isMobile ? 'none' : 'flex' }}>
-        {/* Logo */}
-        <div style={s.sidebarLogo}>
-          <span style={{ fontSize: 26 }}>{'\u{1F3E5}'}</span>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#dd8273' }}>{doctorInfo?.center_name || 'Centro médico'}</div>
-            <div style={{ fontSize: 10, color: '#9a7a76' }}>Dr. {doctorInfo?.name}</div>
+      <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
+        {/* Center image header */}
+        <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
+          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
+            {centerImageUrl ? (
+              <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
+            )}
+          </div>
+          <div style={{ textAlign: 'center' as const }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: th.primary, lineHeight: 1.2 }}>{doctorInfo?.center_name || 'Centro médico'}</div>
+            <div style={{ fontSize: 11, color: th.textMuted, marginTop: 2 }}>Dr. {doctorInfo?.name}</div>
           </div>
         </div>
 
         {/* Nav */}
         <nav style={s.sidebarNav}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
+          <div style={{ fontSize: 9, fontWeight: 900, color: th.menuLabel, marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
               style={{
                 ...s.navItem,
-                backgroundColor: section === item.id ? '#3d1e1a' : 'transparent',
-                color: section === item.id ? '#dd8273' : '#9a7a76',
+                backgroundColor: section === item.id ? th.navActive : 'transparent',
+                color: section === item.id ? th.primary : th.textMuted,
               }}
             >
               <span style={{ fontSize: 16 }}>{item.icon}</span>
@@ -778,29 +875,29 @@ export default function MedicsPanel() {
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px' }}>
+        <div style={{ borderTop: `1px solid ${th.border}`, padding: '12px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: th.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Dr. {doctorInfo?.name}</div>
-              <div style={{ fontSize: 11, color: '#9a7a76' }}>{doctorInfo?.specialty || 'Médico'}</div>
+              <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>
             </div>
           </div>
           <button
             onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
-            style={{ ...s.navItem, color: '#7a5a56', width: '100%' }}
+            style={{ ...s.navItem, color: th.logoutColor, width: '100%' }}
           >
             <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
             <span style={{ fontSize: 13 }}>Cerrar sesión</span>
           </button>
-          <div style={{ fontSize: 10, color: '#3d2a28', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
+          <div style={{ fontSize: 10, color: th.versionColor, marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
         </div>
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ ...s.main, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
+      <main style={{ ...s.main, backgroundColor: th.primary, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
         {/* ── PACIENTES ── */}
@@ -818,7 +915,7 @@ export default function MedicsPanel() {
                 {(['estado', 'nombre'] as const).map(opt => (
                   <button key={opt} onClick={() => setSortBy(opt)} style={{
                     fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                    backgroundColor: sortBy === opt ? '#1a0e0e' : '#00000010',
+                    backgroundColor: sortBy === opt ? th.dark : '#00000010',
                     color: sortBy === opt ? '#fff' : '#666',
                   }}>
                     {opt === 'estado' ? 'Estado' : 'Nombre'}
@@ -859,7 +956,7 @@ export default function MedicsPanel() {
                       </div>
                       {/* Patient name */}
                       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? th.primary : th.dark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                           {patientInitial(patient)}
                         </div>
                         <div style={{ minWidth: 0 }}>
@@ -926,7 +1023,7 @@ export default function MedicsPanel() {
               subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
+                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: th.dark, color: '#fff' }}>
                     📄 Exportar PDF
                   </button>
                   <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
@@ -1012,9 +1109,9 @@ export default function MedicsPanel() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: hasEntry ? '#dd8273' : isToday ? '#dd827320' : 'transparent',
+                            backgroundColor: hasEntry ? th.primary : isToday ? `${th.primary}20` : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? '1px solid #dd8273' : '1px solid #00000008',
+                            border: isToday ? `1px solid ${th.primary}` : '1px solid #00000008',
                           }}>
                             <span style={{ fontSize: isMobile ? 12 : 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
@@ -1028,21 +1125,20 @@ export default function MedicsPanel() {
 
               {/* Per-patient semáforo override */}
               <div style={{ ...s.card, padding: '14px 16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: patientSemaforoOverride ? 14 : 0 }}>
-                  <input
-                    type="checkbox"
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                  <Switch
                     checked={patientSemaforoOverride}
-                    onChange={(e) => {
-                      setPatientSemaforoOverride(e.target.checked);
+                    onChange={(checked) => {
+                      setPatientSemaforoOverride(checked);
                       setPatientSemaforoSaved(false);
                     }}
-                    style={{ width: 16, height: 16, accentColor: '#dd8273', cursor: 'pointer' }}
+                    style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
                   />
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
                   {!patientSemaforoOverride && (
                     <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
                   )}
-                </label>
+                </div>
 
                 {patientSemaforoOverride && (
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
@@ -1065,24 +1161,22 @@ export default function MedicsPanel() {
                     {/* Green slider */}
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''}</div>
-                      <input type="range" min={0} max={Math.max(patientSemaforoRed - 1, 1)} value={patientSemaforoGreen}
-                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }}
-                        style={{ width: '100%', accentColor: '#27ae60' }} />
+                      <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
+                        onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
                     </div>
 
                     {/* Red slider */}
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {patientSemaforoRed} día{patientSemaforoRed !== 1 ? 's' : ''}</div>
-                      <input type="range" min={Math.max(patientSemaforoGreen + 1, 1)} max={30} value={patientSemaforoRed}
-                        onChange={(e) => { const v = Number(e.target.value); setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }}
-                        style={{ width: '100%', accentColor: '#e74c3c' }} />
+                      <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
+                        onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
                     </div>
 
                     {patientSemaforoSaved && (
                       <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
                     )}
 
-                    <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
+                    <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
                       Guardar
                     </button>
                   </div>
@@ -1093,10 +1187,98 @@ export default function MedicsPanel() {
                 )}
 
                 {!patientSemaforoOverride && (
-                  <button onClick={handleSavePatientSemaforo} style={{ ...s.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
+                  <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
                     Guardar
                   </button>
                 )}
+              </div>
+
+              {/* Per-patient visible fields */}
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                  📋 Campos del formulario
+                </div>
+                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                  <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                    Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
+                  </p>
+                  {[
+                    { id: 'bristol', label: '🪷 Escala de Bristol' },
+                    { id: 'color', label: '🎨 Color' },
+                    { id: 'floats', label: '🫧 Flotación' },
+                    { id: 'quantity', label: '⚖️ Cantidad' },
+                    { id: 'duration', label: '⏱️ Duración' },
+                    { id: 'symptoms', label: '🤒 Síntomas' },
+                  ].map((field, i, arr) => {
+                    const isVisible = !patientHiddenFields.includes(field.id);
+                    return (
+                      <div key={field.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
+                        <Switch
+                          checked={isVisible}
+                          onChange={(checked) =>
+                            setPatientHiddenFields(prev =>
+                              checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
+                            )
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                  {patientFieldsSaved && (
+                    <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                  )}
+                  <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+                    Guardar
+                  </button>
+                </div>
+              </div>
+              {/* Per-patient push notification config */}
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                  🔔 Notificaciones push
+                </div>
+                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                  <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
+                    Recordatorio automático cuando el paciente lleva X horas sin registrar.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                        Horas sin registrar antes de notificar
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={168}
+                        value={patientPushMinHours}
+                        onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                      />
+                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                        Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={8}
+                        value={patientPushFrequency}
+                        onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                      />
+                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
+                    </div>
+                  </div>
+                  {patientPushSaved && (
+                    <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                  )}
+                  <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+                    Guardar
+                  </button>
+                </div>
               </div>
               </div>{/* end left column */}
 
@@ -1145,61 +1327,64 @@ export default function MedicsPanel() {
                       <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                         {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
                       </div>
-                    ) : isMobile ? (
+                    ) : (
                       <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'center', padding: '7px 16px', backgroundColor: '#00000008', borderBottom: '1px solid #00000010' }}>
+                          <span style={{ width: 130, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Fecha / Hora</span>
+                          <span style={{ width: 62, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Bristol</span>
+                          <span style={{ width: 90, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Flotación</span>
+                          <span style={{ width: 50, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
+                          <span style={{ width: 68, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Cantidad</span>
+                          <span style={{ width: 76, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Duración</span>
+                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Síntomas</span>
+                        </div>
                         {pagedEntries.map((entry, i) => {
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                          const chip = (label: string, bg: string, color: string) => (
+                            <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
+                          );
                           return (
-                            <div key={entry.entry_id || i} style={{ padding: '12px 16px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  {entry.bristol != null && (
-                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: `${bristolColor}20`, color: bristolColor!, fontWeight: 700 }}>T{entry.bristol}</span>
-                                  )}
-                                  {entry.floats != null && (
-                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 700 }}>{entry.floats ? 'Flota' : 'Hunde'}</span>
-                                  )}
-                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa' }}>{entry.time}</span>}
+                            <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
+                              {/* Main row — all fields in one line */}
+                              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px' }}>
+                                <div style={{ width: 130 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
+                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span>}
+                                </div>
+                                <div style={{ width: 62 }}>
+                                  {entry.bristol != null ? chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!) : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 90 }}>
+                                  {entry.floats != null ? chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 50 }}>
+                                  {entry.color
+                                    ? <span style={{ display: 'inline-block', width: 18, height: 18, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020' }} />
+                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 68 }}>
+                                  {entry.quantity != null ? chip(`${entry.quantity}`, '#9b59b615', '#8e44ad') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ width: 76 }}>
+                                  {entry.duration != null ? chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+                                  {entry.symptoms.length > 0
+                                    ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
+                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
                                 </div>
                               </div>
-                              {entry.notes && <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>}
+                              {/* Notes row — only if present */}
+                              {entry.notes && (
+                                <div style={{ padding: '0 16px 10px' }}>
+                                  <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
-                    ) : (
-                      <>
-                        <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                          <span style={{ width: 110 }}>Fecha</span>
-                          <span style={{ width: 60 }}>Hora</span>
-                          <span style={{ width: 80 }}>Bristol</span>
-                          <span style={{ width: 80 }}>Flota</span>
-                          <span style={{ flex: 1 }}>Comentarios</span>
-                        </div>
-                        {pagedEntries.map((entry, i) => (
-                          <div key={entry.entry_id || i} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                            <span style={{ width: 110, fontSize: 13, fontWeight: 600, color: '#111' }}>{shortDate(entry.date)}</span>
-                            <span style={{ width: 60, fontSize: 13, color: '#555' }}>{entry.time || '—'}</span>
-                            <span style={{ width: 80 }}>
-                              {entry.bristol != null ? (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, fontWeight: 600,
-                                  backgroundColor: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae6020' : entry.bristol < 3 ? '#f39c1220' : '#e74c3c20',
-                                  color: entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c',
-                                }}>Tipo {entry.bristol}</span>
-                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
-                            </span>
-                            <span style={{ width: 80 }}>
-                              {entry.floats != null ? (
-                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#3498db20', color: '#3498db', fontWeight: 600 }}>{entry.floats ? 'Sí' : 'No'}</span>
-                              ) : <span style={{ fontSize: 12, color: '#ccc' }}>—</span>}
-                            </span>
-                            <span style={{ flex: 1, fontSize: 13, color: entry.notes ? '#555' : '#ccc', fontStyle: entry.notes ? 'normal' : 'italic' }}>
-                              {entry.notes || 'Sin comentarios'}
-                            </span>
-                          </div>
-                        ))}
-                      </>
                     )}
 
                     {/* Pagination */}
@@ -1255,7 +1440,7 @@ export default function MedicsPanel() {
                       disabled={loading || !inviteEmail}
                       style={{
                         ...s.headerBtn,
-                        backgroundColor: '#1a0e0e',
+                        backgroundColor: th.dark,
                         color: '#fff',
                         height: 44,
                         opacity: loading || !inviteEmail ? 0.5 : 1,
@@ -1280,7 +1465,7 @@ export default function MedicsPanel() {
                     disabled={loading}
                     style={{
                       ...s.headerBtn,
-                      backgroundColor: '#dd8273',
+                      backgroundColor: th.primary,
                       color: '#fff',
                       opacity: loading ? 0.5 : 1,
                     }}
@@ -1298,7 +1483,7 @@ export default function MedicsPanel() {
                     borderRadius: 16,
                     padding: 32,
                     textAlign: 'center',
-                    border: '2px dashed #dd8273',
+                    border: `2px dashed ${th.primary}`,
                   }}>
                     {emailSent && (
                       <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -1318,7 +1503,7 @@ export default function MedicsPanel() {
                     <div style={{
                       fontSize: 36,
                       fontWeight: 900,
-                      color: '#1a0e0e',
+                      color: th.dark,
                       letterSpacing: 6,
                       fontFamily: 'monospace',
                       marginBottom: 16,
@@ -1329,7 +1514,7 @@ export default function MedicsPanel() {
                       onClick={handleCopyCode}
                       style={{
                         ...s.headerBtn,
-                        backgroundColor: '#1a0e0e',
+                        backgroundColor: th.dark,
                         color: '#fff',
                         padding: '10px 24px',
                       }}
@@ -1405,7 +1590,7 @@ export default function MedicsPanel() {
                 <button
                   onClick={handleSaveConfig}
                   disabled={loading}
-                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
                 >
                   {loading ? '...' : 'Guardar cambios'}
                 </button>
@@ -1430,7 +1615,7 @@ export default function MedicsPanel() {
                   <p style={{ fontSize: 14, color: '#555', margin: '0 0 12px', lineHeight: 1.6 }}>
                     Sube el logo o imagen de tu centro. Esta imagen aparecerá en la app para los pacientes vinculados contigo.
                   </p>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...s.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
                     {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
                     <input
                       type="file"
@@ -1444,6 +1629,45 @@ export default function MedicsPanel() {
                     />
                   </label>
                   <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>PNG, JPG o WEBP. Máx 2 MB.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Paleta de colores ── */}
+            <div style={s.card}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+              </div>
+              <div style={{ padding: 24 }}>
+                <p style={{ fontSize: 14, color: '#555', margin: '0 0 16px', lineHeight: 1.6 }}>
+                  Elige la paleta de colores para todo el portal. El cambio se aplica al instante y se guarda con la configuración.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
+                  {PALETTES.map(p => {
+                    const isActive = configPalette === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setConfigPalette(p.id)}
+                        title={p.name}
+                        style={{
+                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6,
+                          padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                          backgroundColor: isActive ? '#00000012' : 'transparent',
+                          outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
+                          boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
+                          transition: 'box-shadow 0.15s',
+                        }} />
+                        <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1482,19 +1706,9 @@ export default function MedicsPanel() {
                   <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
                     <span>🟢 Umbral verde: ≤ <strong>{configGreen}</strong> día{configGreen !== 1 ? 's' : ''}</span>
                   </label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(configRed - 1, 1)}
-                    value={configGreen}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setConfigGreen(val);
-                      if (val >= configRed) setConfigRed(val + 1);
-                    }}
-                    style={{ width: '100%', accentColor: '#27ae60' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                  <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
+                    onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
                     <span>0 días</span>
                     <span>{Math.max(configRed - 1, 1)} días</span>
                   </div>
@@ -1505,19 +1719,9 @@ export default function MedicsPanel() {
                   <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
                     <span>🔴 Umbral rojo: &gt; <strong>{configRed}</strong> día{configRed !== 1 ? 's' : ''}</span>
                   </label>
-                  <input
-                    type="range"
-                    min={Math.max(configGreen + 1, 1)}
-                    max={30}
-                    value={configRed}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setConfigRed(val);
-                      if (val <= configGreen) setConfigGreen(val - 1);
-                    }}
-                    style={{ width: '100%', accentColor: '#e74c3c' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+                  <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
+                    onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
                     <span>{Math.max(configGreen + 1, 1)} días</span>
                     <span>30 días</span>
                   </div>
@@ -1532,7 +1736,7 @@ export default function MedicsPanel() {
                 <button
                   onClick={handleSaveConfig}
                   disabled={loading}
-                  style={{ ...s.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
+                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
                 >
                   {loading ? '...' : 'Guardar configuración'}
                 </button>
@@ -1547,7 +1751,7 @@ export default function MedicsPanel() {
 
       {/* ── BOTTOM NAV (mobile) ── */}
       {isMobile && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1a0e0e', display: 'flex', zIndex: 20, borderTop: '1px solid #2d1a18' }}>
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: th.dark, display: 'flex', zIndex: 20, borderTop: `1px solid ${th.border}` }}>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
@@ -1555,11 +1759,11 @@ export default function MedicsPanel() {
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
                 gap: 3, padding: '10px 0', border: 'none', cursor: 'pointer', background: 'transparent',
-                borderTop: section === item.id ? '2px solid #dd8273' : '2px solid transparent',
+                borderTop: section === item.id ? `2px solid ${th.primary}` : '2px solid transparent',
               }}
             >
               <span style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? '#dd8273' : '#9a7a76' }}>{item.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? th.primary : th.textMuted }}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -1588,7 +1792,7 @@ export default function MedicsPanel() {
                   <img
                     src={imageModal.url}
                     alt="Imagen del centro"
-                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: '3px solid #dd8273' }}
+                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: `3px solid ${th.primary}` }}
                   />
                 </div>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
@@ -1606,7 +1810,7 @@ export default function MedicsPanel() {
 
             <button
               onClick={() => setImageModal(null)}
-              style={{ ...s.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
+              style={{ ...ts.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
             >
               Cerrar
             </button>
@@ -1740,7 +1944,7 @@ function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: 
     <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
       <div>
         <h1 style={{ fontSize: mobile ? 22 : 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>{subtitle}</p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: '4px 0 0' }}>{subtitle}</p>
       </div>
       {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>{actions}</div>}
     </div>

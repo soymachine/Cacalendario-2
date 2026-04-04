@@ -16,6 +16,9 @@ import FeedbackScreen from './FeedbackScreen';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
+import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
+import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
+import { registerPushSubscription } from '../lib/push';
 import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 
@@ -28,7 +31,7 @@ function AppContent() {
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
-  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: boolean | null } | null>(null);
+  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: 'floats' | 'sinks' | 'both' | null } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [prevScreen, setPrevScreen] = useState<Screen>('home');
@@ -38,7 +41,7 @@ function AppContent() {
     if (isRecovery) setScreen('auth');
   }, [isRecovery]);
 
-  // Sync when user logs in
+  // Sync and apply doctor palette when user logs in; clear on logout
   useEffect(() => {
     if (user) {
       setSyncing(true);
@@ -47,6 +50,15 @@ function AppContent() {
           window.dispatchEvent(new Event('cacalendario-updated'));
         })
         .finally(() => setSyncing(false));
+      fetchDoctorConfig(user.id).then(config => {
+        if (config.palette) setDoctorColor(getPaletteTheme(config.palette).primary);
+        else clearDoctorColor();
+        setDoctorHiddenFields(config.hiddenFields);
+      });
+      registerPushSubscription(user.id);
+    } else {
+      clearDoctorColor();
+      clearDoctorHiddenFields();
     }
   }, [user]);
 
@@ -69,7 +81,7 @@ function AppContent() {
     setScreen('stats');
   };
 
-  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: boolean | null) => {
+  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: 'floats' | 'sinks' | 'both' | null) => {
     setCongratsData({ date, time, bristol, floats });
     setRegisterDate(null);
     setScreen('congrats');

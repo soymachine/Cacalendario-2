@@ -7,7 +7,7 @@ interface CongratsScreenProps {
   date: string;
   time: string;
   bristol: number | null;
-  floats: boolean | null;
+  floats: 'floats' | 'sinks' | 'both' | null;
   onClose: () => void;
 }
 
@@ -18,8 +18,8 @@ export default function CongratsScreen({ date, time, bristol, floats, onClose }:
   const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center" style={{ backgroundColor: theme.main }}>
-    <div className="w-full max-w-md flex flex-col min-h-screen relative">
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
+    <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
       {/* Close button */}
       <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -81,14 +81,11 @@ export default function CongratsScreen({ date, time, bristol, floats, onClose }:
           )}
 
           {/* Floats */}
-          {floats !== null && floats !== undefined && (
-            <div
-              className="rounded-xl p-3 flex items-center gap-3"
-              style={{ backgroundColor: theme.glass }}
-            >
-              <span className="text-2xl">{floats ? '🫧' : '⬇️'}</span>
+          {floats != null && (
+            <div className="rounded-xl p-3 flex items-center gap-3" style={{ backgroundColor: theme.glass }}>
+              <span className="text-2xl">{floats === 'floats' ? '🫧' : floats === 'sinks' ? '⬇️' : '🫧⬇️'}</span>
               <p className="text-sm font-bold" style={{ color: theme.text }}>
-                {floats ? 'Flota en el agua' : 'Se hunde'}
+                {floats === 'floats' ? 'Flota en el agua' : floats === 'sinks' ? 'Se hunde' : 'Flota y se hunde'}
               </p>
             </div>
           )}

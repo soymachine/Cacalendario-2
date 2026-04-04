@@ -1,0 +1,21 @@
+#!/bin/bash
+# Auto-increment patch version on every commit
+
+VERSION_FILE="src/lib/version.ts"
+
+if [ ! -f "$VERSION_FILE" ]; then
+  exit 0
+fi
+
+current=$(grep -oP "(?<=APP_VERSION = 'v)[0-9]+\.[0-9]+\.[0-9]+" "$VERSION_FILE")
+if [ -z "$current" ]; then
+  exit 0
+fi
+
+IFS='.' read -r major minor patch <<< "$current"
+patch=$((patch + 1))
+new_version="$major.$minor.$patch"
+
+sed -i "s/APP_VERSION = 'v$current'/APP_VERSION = 'v$new_version'/" "$VERSION_FILE"
+git add "$VERSION_FILE"
+echo "🔢 Version bumped: v$current → v$new_version"

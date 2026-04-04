@@ -9,11 +9,18 @@ import type { PoopEntry } from './storage';
  */
 
 export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
-  // 1. Get cloud entries (source of truth)
-  const { data: cloudRows } = await supabase
+  // 1. Get cloud entries
+  const { data: cloudRows, error } = await supabase
     .from('entries')
-    .select('entry_id, date, time, notes, timestamp, bristol, floats')
+    .select('entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms')
     .eq('user_id', userId);
+
+  if (error) {
+    console.error('[sync] Error fetching cloud entries:', error.message);
+    // Return whatever is in localStorage unchanged
+    const local = JSON.parse(localStorage.getItem('cacalendario_entries') || '[]');
+    return local;
+  }
 
   const cloudEntries: PoopEntry[] = (cloudRows || []).map((r) => ({
     id: r.entry_id || `${r.timestamp}_cloud`,
@@ -23,18 +30,33 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     timestamp: Number(r.timestamp),
     bristol: r.bristol ?? null,
     floats: r.floats ?? null,
+    color: r.color ?? null,
+    quantity: r.quantity ?? null,
+    duration: r.duration ?? null,
+    symptoms: r.symptoms ?? [],
   }));
 
-  cloudEntries.sort((a, b) => a.timestamp - b.timestamp);
+  const cloudIds = new Set(cloudEntries.map(e => e.id));
 
-  // 2. Replace localStorage with cloud data
-  localStorage.setItem('cacalendario_entries', JSON.stringify(cloudEntries));
+  // 2. Keep any local entries not yet in the cloud (failed to sync)
+  const localEntries: PoopEntry[] = JSON.parse(localStorage.getItem('cacalendario_entries') || '[]');
+  const localOnly = localEntries.filter(e => e.id && !cloudIds.has(e.id));
 
-  return cloudEntries;
+  // Upload local-only entries to cloud so they're not lost
+  for (const entry of localOnly) {
+    saveEntryToCloud(userId, entry).catch(e => console.error('[sync] Failed to upload local entry:', e));
+  }
+
+  // 3. Merge: cloud is authoritative for shared entries, local-only entries are appended
+  const merged = [...cloudEntries, ...localOnly];
+  merged.sort((a, b) => a.timestamp - b.timestamp);
+
+  localStorage.setItem('cacalendario_entries', JSON.stringify(merged));
+  return merged;
 }
 
 export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promise<void> {
-  await supabase.from('entries').upsert(
+  const { error } = await supabase.from('entries').upsert(
     {
       user_id: userId,
       entry_id: entry.id,
@@ -44,9 +66,14 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       timestamp: entry.timestamp,
       bristol: entry.bristol ?? null,
       floats: entry.floats ?? null,
+      color: entry.color ?? null,
+      quantity: entry.quantity ?? null,
+      duration: entry.duration ?? null,
+      symptoms: entry.symptoms ?? [],
     },
     { onConflict: 'user_id,entry_id' }
   );
+  if (error) console.error('[sync] saveEntryToCloud error:', error.message);
 }
 
 export async function deleteEntryFromCloud(userId: string, entryId: string): Promise<void> {

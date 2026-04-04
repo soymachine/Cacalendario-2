@@ -1,6 +1,7 @@
 // User preferences: emoji style, theme, stored in localStorage
 
 const PREFS_KEY = 'cacalendario_prefs';
+const DOCTOR_COLOR_KEY = 'cacalendario_doctor_color';
 
 export interface PoopEmoji {
   id: string;
@@ -63,9 +64,52 @@ export function getSelectedEmoji(): PoopEmoji {
   return POOP_EMOJIS.find((e) => e.id === prefs.emojiId) || POOP_EMOJIS[0];
 }
 
+/** Returns the base theme, overriding main/bg with the doctor's color if set. */
 export function getSelectedTheme(): Theme {
   const prefs = getPreferences();
-  return THEMES.find((t) => t.id === prefs.themeId) || THEMES[0];
+  const base = THEMES.find((t) => t.id === prefs.themeId) || THEMES[0];
+  const doctorColor = getDoctorColor();
+  if (!doctorColor) return base;
+  return { ...base, main: doctorColor, bg: doctorColor };
+}
+
+// ── Doctor palette override ──
+
+export function getDoctorColor(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(DOCTOR_COLOR_KEY);
+}
+
+export function setDoctorColor(primary: string): void {
+  localStorage.setItem(DOCTOR_COLOR_KEY, primary);
+  applyTheme();
+  window.dispatchEvent(new Event('cacalendario-prefs-changed'));
+}
+
+export function clearDoctorColor(): void {
+  localStorage.removeItem(DOCTOR_COLOR_KEY);
+  applyTheme();
+  window.dispatchEvent(new Event('cacalendario-prefs-changed'));
+}
+
+// ── Doctor hidden fields ──
+
+const DOCTOR_FIELDS_KEY = 'cacalendario_hidden_fields';
+
+export function getDoctorHiddenFields(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(DOCTOR_FIELDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function setDoctorHiddenFields(fields: string[]): void {
+  localStorage.setItem(DOCTOR_FIELDS_KEY, JSON.stringify(fields));
+}
+
+export function clearDoctorHiddenFields(): void {
+  localStorage.removeItem(DOCTOR_FIELDS_KEY);
 }
 
 // Apply theme to DOM
@@ -82,3 +126,4 @@ export function applyTheme(theme?: Theme): void {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', t.main);
 }
+
