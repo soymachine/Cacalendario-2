@@ -23,6 +23,8 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [pushLoading, setPushLoading] = useState(false);
+  const isStandalone = typeof window !== 'undefined' &&
+    ((navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
 
   // Check push notification status
   useEffect(() => {
@@ -218,29 +220,35 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
           {user && pushPermission !== 'unsupported' && (
             <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: theme.glass }}>
               <p className="text-sm font-black mb-1" style={{ color: theme.text }}>🔔 NOTIFICACIONES</p>
-              {pushPermission === 'denied' ? (
+
+              {!isStandalone ? (
+                /* iOS Safari: must be installed as PWA first */
                 <>
                   <p className="text-xs mt-2 mb-3" style={{ color: `${theme.text}80` }}>
-                    Las notificaciones están bloqueadas. Para activarlas:
+                    Para activar notificaciones en iOS, primero instala la app en tu pantalla de inicio:
                   </p>
-                  <p className="text-xs mb-1" style={{ color: `${theme.text}80` }}>
-                    <strong>Chrome/Android:</strong> toca el candado 🔒 en la barra de dirección → Permisos → Notificaciones → Permitir
-                  </p>
-                  <p className="text-xs mb-3" style={{ color: `${theme.text}80` }}>
-                    <strong>Safari/iOS:</strong> Ajustes del iPhone → Safari → Configuración de sitios web → Notificaciones → Permitir para este sitio
+                  <p className="text-xs mb-1" style={{ color: `${theme.text}80` }}>1. Toca el botón compartir <strong>⎋</strong> en Safari</p>
+                  <p className="text-xs mb-1" style={{ color: `${theme.text}80` }}>2. Selecciona <strong>"Añadir a pantalla de inicio"</strong></p>
+                  <p className="text-xs mb-3" style={{ color: `${theme.text}80` }}>3. Abre la app desde el icono y vuelve a Ajustes</p>
+                  <p className="text-[10px]" style={{ color: `${theme.text}50` }}>Requiere iOS 16.4 o superior</p>
+                </>
+              ) : pushPermission === 'denied' ? (
+                <>
+                  <p className="text-xs mt-2 mb-3" style={{ color: `${theme.text}80` }}>
+                    Las notificaciones están bloqueadas. En iOS, elimina la app de la pantalla de inicio, reinstálala desde Safari y acepta el permiso cuando aparezca.
                   </p>
                   <button
                     onClick={() => setPushPermission(Notification.permission)}
                     className="w-full rounded-full py-2 text-xs font-bold active:scale-95 transition-transform border-2"
                     style={{ borderColor: theme.text, color: theme.text }}
                   >
-                    Ya lo he permitido — volver a verificar
+                    Volver a verificar
                   </button>
                 </>
               ) : pushSubscribed ? (
                 <>
                   <p className="text-xs mt-1 mb-3" style={{ color: `${theme.text}80` }}>
-                    Recibirás un recordatorio si llevas un tiempo sin registrar.
+                    ✅ Activadas. Recibirás un recordatorio si llevas un tiempo sin registrar.
                   </p>
                   <button
                     onClick={handleTogglePush}
