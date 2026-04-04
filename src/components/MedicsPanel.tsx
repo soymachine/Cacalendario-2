@@ -1043,7 +1043,17 @@ export default function MedicsPanel() {
         {section === 'pacientes' && selectedPatient && patientDetail && (
           <>
             <SectionHeader
-              title={patientLabel(selectedPatient)}
+              title={
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                  {patientLabel(selectedPatient)}
+                  {selectedPatient.hasPushSub === true && (
+                    <span title="Notificaciones activas" style={{ fontSize: 18, lineHeight: 1 }}>🔔</span>
+                  )}
+                  {selectedPatient.hasPushSub === false && (
+                    <span title="Sin notificaciones" style={{ fontSize: 18, lineHeight: 1, opacity: 0.35 }}>🔕</span>
+                  )}
+                </span>
+              }
               subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1962,7 +1972,7 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 }
 
 // ── Section Header ──
-function SectionHeader({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) {
+function SectionHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle: string; actions?: React.ReactNode }) {
   const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
   return (
     <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
