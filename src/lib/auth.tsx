@@ -45,6 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'PASSWORD_RECOVERY') {
         setIsRecovery(true);
       }
+      // Clean up auth tokens from the URL (PKCE ?code= or implicit #access_token=)
+      // so the PWA is never installed with a token-laden URL as its start_url
+      if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') &&
+          (window.location.search || window.location.hash)) {
+        window.history.replaceState({}, '', '/');
+      }
       // Ensure user_profiles row exists on sign-in/sign-up
       if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
         supabase.from('user_profiles').upsert(
