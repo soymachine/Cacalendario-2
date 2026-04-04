@@ -29,7 +29,7 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
   const handleExportData = () => {
     const entries = getEntries();
     const exportData = {
-      app: 'Cacalendario',
+      app: 'Fluxia',
       exportDate: new Date().toISOString(),
       user: user.email,
       totalEntries: entries.length,
@@ -39,7 +39,7 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `cacalendario-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `fluxia-export-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -76,7 +76,7 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
       localStorage.removeItem('cacalendario_entries');
       localStorage.removeItem('cacalendario_prefs');
 
-      window.dispatchEvent(new Event('cacalendario-updated'));
+      window.dispatchEvent(new Event('fluxia-updated'));
       onClose();
     } catch (err) {
       console.error('Error deleting account:', err);
@@ -91,7 +91,7 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
         <div className="flex-1 min-h-0 px-10 flex flex-col overflow-y-auto pb-8">
           {/* Header: logo + close */}
           <div className="relative flex justify-center pt-12 pb-6">
-            <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
+            <img src={asset('/logo.svg')} alt="Fluxia" className="w-20 h-[71px]" />
             <button onClick={onClose} className="absolute top-5 right-0 w-10 h-10 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="12" fill={theme.text} />

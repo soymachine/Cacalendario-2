@@ -89,7 +89,7 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
       duration,
       symptoms,
     });
-    window.dispatchEvent(new Event('cacalendario-updated'));
+    window.dispatchEvent(new Event('fluxia-updated'));
     onSuccess(targetDate, timeText, bristol, floats);
   };
 
@@ -101,7 +101,7 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
       <div className="flex-1 px-8 flex flex-col min-h-0 overflow-auto pb-4">
         {/* Header: logo + close */}
         <div className="relative flex justify-center pt-10 pb-2">
-          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-14 h-[50px]" />
+          <img src={asset('/logo.svg')} alt="Fluxia" className="w-14 h-[50px]" />
           <button onClick={onClose} className="absolute top-3 right-0 w-10 h-10 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="12" fill={theme.text}/>

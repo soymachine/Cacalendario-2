@@ -1956,7 +1956,7 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 </table>
 
 <div class="footer">
-  Generado por Cacalendario · ${today} · Este informe es orientativo y no sustituye el diagnóstico médico.
+  Generado por Fluxia · ${today} · Este informe es orientativo y no sustituye el diagnóstico médico.
 </div>
 </body>
 </html>`;

@@ -88,13 +88,13 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
       duration,
       symptoms,
     });
-    window.dispatchEvent(new Event('cacalendario-updated'));
+    window.dispatchEvent(new Event('fluxia-updated'));
     onClose();
   };
 
   const handleDelete = () => {
     deleteEntry(entry.id);
-    window.dispatchEvent(new Event('cacalendario-updated'));
+    window.dispatchEvent(new Event('fluxia-updated'));
     onClose();
   };
 
@@ -111,7 +111,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
 
       {/* Logo */}
       <div className="flex justify-center pt-10 pb-2 shrink-0">
-        <img src={asset('/logo.svg')} alt="Cacalendario" className="w-14 h-[50px]" />
+        <img src={asset('/logo.svg')} alt="Fluxia" className="w-14 h-[50px]" />
       </div>
 
       <div className="flex-1 px-8 flex flex-col min-h-0 overflow-auto pb-4">

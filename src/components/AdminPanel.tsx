@@ -325,7 +325,7 @@ export default function AdminPanel() {
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const filename = `cacalendario_backup_${new Date().toISOString().slice(0, 16).replace('T', '_')}.json`;
+      const filename = `fluxia_backup_${new Date().toISOString().slice(0, 16).replace('T', '_')}.json`;
       a.href = url; a.download = filename; a.click();
       URL.revokeObjectURL(url);
       const summary = `${backup.entries.length} registros · ${backup.centers.length} centros · ${backup.doctors.length} médicos`;

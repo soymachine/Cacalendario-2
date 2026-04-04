@@ -20,8 +20,8 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
 
   useEffect(() => {
     refresh();
-    window.addEventListener('cacalendario-updated', refresh);
-    return () => window.removeEventListener('cacalendario-updated', refresh);
+    window.addEventListener('fluxia-updated', refresh);
+    return () => window.removeEventListener('fluxia-updated', refresh);
   }, [date]);
 
   const dayText = formatDateForDisplay(date);
@@ -40,7 +40,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
 
         {/* Logo */}
         <div className="flex justify-center pt-12 pb-3 shrink-0">
-          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-14 h-[50px]" />
+          <img src={asset('/logo.svg')} alt="Fluxia" className="w-14 h-[50px]" />
         </div>
 
         {/* Day header */}

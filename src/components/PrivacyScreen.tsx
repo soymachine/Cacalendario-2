@@ -15,7 +15,7 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
         <div className="flex-1 min-h-0 px-6 overflow-y-auto pb-10">
           {/* Header: logo + close */}
           <div className="relative flex justify-center pt-12 pb-4">
-            <img src={asset('/logo.svg')} alt="Cacalendario" className="w-16 h-[57px]" />
+            <img src={asset('/logo.svg')} alt="Fluxia" className="w-16 h-[57px]" />
             <button onClick={onClose} className="absolute top-5 right-0 w-10 h-10 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="12" fill={theme.text} />
@@ -32,8 +32,8 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
           </p>
 
           <Section title="1. Responsable del tratamiento" theme={theme}>
-            El responsable del tratamiento de tus datos es el desarrollador de Cacalendario.
-            Puedes contactarnos en: <strong>cacalendario@proton.me</strong>
+            El responsable del tratamiento de tus datos es el desarrollador de Fluxia.
+            Puedes contactarnos en: <strong>hola@fluxia-health.com</strong>
           </Section>
 
           <Section title="2. Qué datos recogemos" theme={theme}>
@@ -79,7 +79,7 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
             </ul>
             <p className="mt-2">
               Puedes ejercer estos derechos desde la sección "Mi Cuenta" de la app, o contactándonos
-              en <strong>cacalendario@proton.me</strong>.
+              en <strong>hola@fluxia-health.com</strong>.
             </p>
           </Section>
 
@@ -98,13 +98,13 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
           </Section>
 
           <Section title="9. Cookies y tracking" theme={theme}>
-            Cacalendario <strong>no utiliza cookies de terceros ni herramientas de tracking</strong>.
+            Fluxia <strong>no utiliza cookies de terceros ni herramientas de tracking</strong>.
             Solo almacenamos datos funcionales en localStorage para el funcionamiento de la app.
           </Section>
 
           <Section title="10. Cambios en esta política" theme={theme}>
             Si realizamos cambios significativos en esta política, te notificaremos
-            a través de la aplicación. El uso continuado de Cacalendario tras dichos cambios
+            a través de la aplicación. El uso continuado de Fluxia tras dichos cambios
             implica la aceptación de la política actualizada.
           </Section>
         </div>

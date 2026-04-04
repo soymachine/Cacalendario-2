@@ -42,7 +42,7 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
         >
           <img
             src={asset('/logo.svg')}
-            alt="Cacalendario"
+            alt="Fluxia"
             className="w-28 h-[100px]"
           />
         </div>
@@ -56,7 +56,7 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
             opacity: phase === 'animate' ? 0 : 1,
           }}
         >
-          cacalendario
+          fluxia
         </p>
       </div>
     </div>

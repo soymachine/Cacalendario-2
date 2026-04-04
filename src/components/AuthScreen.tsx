@@ -93,7 +93,7 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
 
         {/* Logo */}
         <div className="flex justify-center pt-12 pb-6 shrink-0">
-          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
+          <img src={asset('/logo.svg')} alt="Fluxia" className="w-20 h-[71px]" />
         </div>
 
         <div className="flex-1 px-10 flex flex-col min-h-0">

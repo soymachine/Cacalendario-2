@@ -25,8 +25,8 @@ export function usePreferences() {
       setTheme(newTheme);
     };
 
-    window.addEventListener('cacalendario-prefs-changed', handler);
-    return () => window.removeEventListener('cacalendario-prefs-changed', handler);
+    window.addEventListener('fluxia-prefs-changed', handler);
+    return () => window.removeEventListener('fluxia-prefs-changed', handler);
   }, []);
 
   return { prefs, emoji, theme };

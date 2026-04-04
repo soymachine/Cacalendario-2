@@ -47,7 +47,7 @@ function AppContent() {
       setSyncing(true);
       syncOnLogin(user.id)
         .then(() => {
-          window.dispatchEvent(new Event('cacalendario-updated'));
+          window.dispatchEvent(new Event('fluxia-updated'));
         })
         .finally(() => setSyncing(false));
       fetchDoctorConfig(user.id).then(config => {
@@ -124,7 +124,7 @@ function AppContent() {
 
         {/* Logo */}
         <div className="flex justify-center pt-4 pb-4">
-          <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
+          <img src={asset('/logo.svg')} alt="Fluxia" className="w-20 h-[71px]" />
         </div>
 
         {/* Sync indicator */}

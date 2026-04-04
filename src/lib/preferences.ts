@@ -55,7 +55,7 @@ export function savePreferences(prefs: Partial<Preferences>): Preferences {
   const current = getPreferences();
   const updated = { ...current, ...prefs };
   localStorage.setItem(PREFS_KEY, JSON.stringify(updated));
-  window.dispatchEvent(new Event('cacalendario-prefs-changed'));
+  window.dispatchEvent(new Event('fluxia-prefs-changed'));
   return updated;
 }
 
@@ -83,13 +83,13 @@ export function getDoctorColor(): string | null {
 export function setDoctorColor(primary: string): void {
   localStorage.setItem(DOCTOR_COLOR_KEY, primary);
   applyTheme();
-  window.dispatchEvent(new Event('cacalendario-prefs-changed'));
+  window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
 
 export function clearDoctorColor(): void {
   localStorage.removeItem(DOCTOR_COLOR_KEY);
   applyTheme();
-  window.dispatchEvent(new Event('cacalendario-prefs-changed'));
+  window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
 
 // ── Doctor hidden fields ──
@@ -120,7 +120,7 @@ export function applyTheme(theme?: Theme): void {
   document.documentElement.style.setProperty('--theme-text', t.text);
   document.documentElement.style.setProperty('--theme-glass', t.glass);
   document.body.style.backgroundColor = t.main;
-  document.documentElement.style.setProperty('--cacalendario-bg', t.main);
+  document.documentElement.style.setProperty('--fluxia-bg', t.main);
 
   // Update meta theme-color for mobile browsers
   const meta = document.querySelector('meta[name="theme-color"]');

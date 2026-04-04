@@ -36,7 +36,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps) {
         <div className="flex-1 min-h-0 overflow-auto px-6 pb-8">
           {/* Header: logo + close */}
           <div className="relative flex justify-center pt-12 pb-4">
-            <img src={asset('/logo.svg')} alt="Cacalendario" className="w-20 h-[71px]" />
+            <img src={asset('/logo.svg')} alt="Fluxia" className="w-20 h-[71px]" />
             <button onClick={onClose} className="absolute top-5 right-0 w-10 h-10 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="12" fill={theme.text} />

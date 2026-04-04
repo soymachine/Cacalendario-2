@@ -25,8 +25,8 @@ export default function Calendar({ onDayClick }: CalendarProps) {
   // Listen for storage changes (when new entry is saved)
   useEffect(() => {
     const handler = () => setEntries(getEntriesForMonth(year, month + 1));
-    window.addEventListener('cacalendario-updated', handler);
-    return () => window.removeEventListener('cacalendario-updated', handler);
+    window.addEventListener('fluxia-updated', handler);
+    return () => window.removeEventListener('fluxia-updated', handler);
   }, [year, month]);
 
   // Group entries by date

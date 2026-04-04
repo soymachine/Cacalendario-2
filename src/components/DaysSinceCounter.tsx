@@ -16,10 +16,10 @@ export default function DaysSinceCounter() {
   useEffect(() => {
     refresh();
     const interval = setInterval(refresh, 1000);
-    window.addEventListener('cacalendario-updated', refresh);
+    window.addEventListener('fluxia-updated', refresh);
     return () => {
       clearInterval(interval);
-      window.removeEventListener('cacalendario-updated', refresh);
+      window.removeEventListener('fluxia-updated', refresh);
     };
   }, []);
 
