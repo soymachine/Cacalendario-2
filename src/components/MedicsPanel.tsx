@@ -138,6 +138,8 @@ export default function MedicsPanel() {
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
   const [patientPushSaved, setPatientPushSaved] = useState(false);
+  const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [pushTestError, setPushTestError] = useState('');
 
   const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
@@ -460,6 +462,8 @@ export default function MedicsPanel() {
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
     setPatientPushSaved(false);
+    setPushTestStatus('idle');
+    setPushTestError('');
     setEntryPage(0);
     setEntryFilterFrom('');
     setEntryFilterTo('');
@@ -624,6 +628,28 @@ export default function MedicsPanel() {
       setSelectedPatient({ ...selectedPatient, push_min_hours: mins, push_frequency: freq });
       setPatientPushSaved(true);
       setTimeout(() => setPatientPushSaved(false), 3000);
+    }
+  };
+
+  // ── Send test push notification to patient ──
+  const handleSendTestPush = async () => {
+    if (!selectedPatient?.patient_id) return;
+    setPushTestStatus('sending');
+    setPushTestError('');
+    const { data, error } = await supabase.functions.invoke('send-push', {
+      body: {
+        patient_id: selectedPatient.patient_id,
+        title: 'Fluxia — Mensaje de prueba',
+        body: 'Tu médico ha enviado una notificación de prueba 👋',
+      },
+    });
+    if (error || !data?.success) {
+      setPushTestStatus('error');
+      setPushTestError(data?.error || error?.message || 'Error desconocido');
+      setTimeout(() => setPushTestStatus('idle'), 5000);
+    } else {
+      setPushTestStatus('ok');
+      setTimeout(() => setPushTestStatus('idle'), 4000);
     }
   };
 
@@ -1312,6 +1338,33 @@ export default function MedicsPanel() {
                   <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
                     Guardar
                   </button>
+
+                  {/* Test push */}
+                  <div style={{ borderTop: '1px solid #00000010', marginTop: 16, paddingTop: 14 }}>
+                    <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                      Envía una notificación ahora para verificar que funciona correctamente.
+                    </p>
+                    <button
+                      onClick={handleSendTestPush}
+                      disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
+                      style={{
+                        width: '100%', padding: '8px 14px', fontSize: 12, fontWeight: 700,
+                        borderRadius: 8, border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
+                        backgroundColor: 'transparent', color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
+                      }}
+                    >
+                      {pushTestStatus === 'sending' ? '⏳ Enviando...' : '🔔 Enviar notificación de prueba'}
+                    </button>
+                    {!selectedPatient?.hasPushSub && (
+                      <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>El paciente no tiene notificaciones activadas.</p>
+                    )}
+                    {pushTestStatus === 'ok' && (
+                      <p style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Notificación enviada</p>
+                    )}
+                    {pushTestStatus === 'error' && (
+                      <p style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {pushTestError}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               </div>{/* end left column */}
