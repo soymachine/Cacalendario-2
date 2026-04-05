@@ -929,7 +929,7 @@ export default function MedicsPanel() {
             <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
             <span style={{ fontSize: 13 }}>Cerrar sesión</span>
           </button>
-          <div style={{ fontSize: 10, color: th.versionColor, marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
+          <div style={{ fontSize: 10, color: '#ffffff', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
         </div>
       </aside>
 

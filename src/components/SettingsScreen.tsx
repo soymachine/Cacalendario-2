@@ -294,7 +294,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
             <p className="text-[10px] mt-4" style={{ color: `${theme.text}60` }}>
               Hecho con ❤️ en España.
             </p>
-            <p className="text-[10px] mt-2" style={{ color: `${theme.text}40` }}>
+            <p className="text-[10px] mt-2" style={{ color: '#ffffff' }}>
               {APP_VERSION}
             </p>
           </div>
