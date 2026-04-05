@@ -618,7 +618,7 @@ export default function MedicsPanel() {
   // ── Save per-patient push notification config ──
   const handleSavePatientPush = async () => {
     if (!selectedPatient) return;
-    const freq = Math.max(1, Math.min(8, patientPushFrequency));
+    const freq = Math.max(1, Math.min(24, patientPushFrequency));
     const mins = Math.max(1, Math.min(168, patientPushMinHours));
     const { error } = await supabase
       .from('patient_links')
@@ -1324,7 +1324,7 @@ export default function MedicsPanel() {
                       <input
                         type="number"
                         min={1}
-                        max={8}
+                        max={24}
                         value={patientPushFrequency}
                         onChange={e => setPatientPushFrequency(Number(e.target.value))}
                         style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
