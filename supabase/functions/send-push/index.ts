@@ -27,18 +27,28 @@ function b64url(buf: ArrayBuffer | Uint8Array): string {
 }
 
 function b64urlDecode(str: string): Uint8Array {
-  // Strip whitespace, PEM headers/footers, and normalise base64url → base64
   const clean = str
     .trim()
-    .replace(/-----[^-]+-----/g, '')  // remove PEM headers if present
-    .replace(/\s+/g, '')              // remove all whitespace/newlines
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+    .replace(/-----[^-]+-----/g, '') // strip PEM headers
+    .replace(/["']/g, '')            // strip quotes
+    .replace(/\s+/g, '')             // strip whitespace
+    .replace(/-/g, '+')              // base64url → base64
+    .replace(/_/g, '/')
+    .replace(/[^A-Za-z0-9+/]/g, ''); // strip any remaining non-base64 chars
   const padded = clean.padEnd(clean.length + ((4 - (clean.length % 4)) % 4), '=');
   const raw = atob(padded);
   const bytes = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
   return bytes;
+}
+
+function safeDecode(label: string, str: string): Uint8Array {
+  try {
+    return b64urlDecode(str);
+  } catch (e) {
+    const preview = str?.substring(0, 12) ?? '(empty)';
+    throw new Error(`b64 decode failed for ${label} (starts: "${preview}"): ${e instanceof Error ? e.message : e}`);
+  }
 }
 
 // ── VAPID JWT (RFC 8292) ──────────────────────────────────────────────────────
@@ -51,12 +61,12 @@ async function buildVapidHeader(endpoint: string, vapidPublicKey: string, vapidP
   const jwtPayload = b64url(new TextEncoder().encode(JSON.stringify({ aud: audience, exp, sub: 'mailto:noreply@fluxia-health.com' })));
   const signingInput = `${jwtHeader}.${jwtPayload}`;
 
-  const pubBytes = b64urlDecode(vapidPublicKey);
-  if (pubBytes[0] !== 0x04 || pubBytes.length !== 65) throw new Error('VAPID_PUBLIC_KEY must be a 65-byte uncompressed P-256 point');
+  const pubBytes = safeDecode('VAPID_PUBLIC_KEY', vapidPublicKey);
+  if (pubBytes[0] !== 0x04 || pubBytes.length !== 65) throw new Error(`VAPID_PUBLIC_KEY decoded to ${pubBytes.length} bytes (expected 65, first byte 0x${pubBytes[0]?.toString(16)})`);
 
   const ecKey = await crypto.subtle.importKey(
     'jwk',
-    { kty: 'EC', crv: 'P-256', x: b64url(pubBytes.slice(1, 33)), y: b64url(pubBytes.slice(33, 65)), d: b64url(b64urlDecode(vapidPrivateKey)) },
+    { kty: 'EC', crv: 'P-256', x: b64url(pubBytes.slice(1, 33)), y: b64url(pubBytes.slice(33, 65)), d: b64url(safeDecode('VAPID_PRIVATE_KEY', vapidPrivateKey)) },
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign'],
@@ -75,8 +85,8 @@ interface PushSubscription {
 
 async function encryptPayload(subscription: PushSubscription, plaintext: string): Promise<Uint8Array> {
   const enc = new TextEncoder();
-  const uaPubBytes = b64urlDecode(subscription.keys.p256dh);
-  const authSecret = b64urlDecode(subscription.keys.auth);
+  const uaPubBytes = safeDecode('p256dh', subscription.keys.p256dh);
+  const authSecret = safeDecode('auth', subscription.keys.auth);
 
   const serverKP = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
   const asPubRaw = new Uint8Array(await crypto.subtle.exportKey('raw', serverKP.publicKey));
