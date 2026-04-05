@@ -27,8 +27,14 @@ function b64url(buf: ArrayBuffer | Uint8Array): string {
 }
 
 function b64urlDecode(str: string): Uint8Array {
-  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=');
+  // Strip whitespace, PEM headers/footers, and normalise base64url → base64
+  const clean = str
+    .trim()
+    .replace(/-----[^-]+-----/g, '')  // remove PEM headers if present
+    .replace(/\s+/g, '')              // remove all whitespace/newlines
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const padded = clean.padEnd(clean.length + ((4 - (clean.length % 4)) % 4), '=');
   const raw = atob(padded);
   const bytes = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
@@ -123,8 +129,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')?.trim();
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')?.trim();
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       return json({ success: false, error: 'VAPID keys not configured' });
