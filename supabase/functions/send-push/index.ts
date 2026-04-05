@@ -2,11 +2,9 @@
 // Two modes:
 //   1. { patient_id, title?, body? }  — doctor sends to a specific patient (auth required)
 //   2. { subscription, title?, body? } — cron job sends directly (service role)
-// Requires secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
-// Always returns HTTP 200 so the caller can read the error message.
 
-import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendWebPush, type PushSubscription } from '../_shared/webpush.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,33 +28,31 @@ Deno.serve(async (req) => {
       return json({ success: false, error: 'VAPID keys not configured' });
     }
 
-    webpush.setVapidDetails('mailto:noreply@fluxia-health.com', vapidPublicKey, vapidPrivateKey);
-
     const payload = await req.json();
-    const title = payload.title || 'Fluxia';
-    const msg = payload.body || 'Recuerda registrar tu actividad de hoy 🩺';
+    const title = payload.title ?? 'Fluxia';
+    const msg = payload.body ?? 'Recuerda registrar tu actividad de hoy 🩺';
 
-    let subscription = payload.subscription;
+    let subscription: PushSubscription | null = payload.subscription ?? null;
 
-    // Mode 1: doctor sends to patient_id — look up subscription server-side
+    // Mode 1: doctor sends to patient_id — verify link and look up subscription
     if (!subscription && payload.patient_id) {
       const authHeader = req.headers.get('Authorization');
       if (!authHeader) return json({ success: false, error: 'Authorization header missing' });
 
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 
-      // Verify the calling user
       const { data: { user }, error: userErr } = await createClient(
         supabaseUrl,
         Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
+        { global: { headers: { Authorization: authHeader } } },
       ).auth.getUser();
 
-      if (userErr || !user) return json({ success: false, error: `Auth error: ${userErr?.message || 'no user'}` });
+      if (userErr || !user) {
+        return json({ success: false, error: `Auth error: ${userErr?.message ?? 'no user'}` });
+      }
 
       const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-      // Check doctor has an accepted link with this patient
       const { data: link, error: linkErr } = await serviceClient
         .from('patient_links')
         .select('id')
@@ -66,9 +62,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (linkErr) return json({ success: false, error: `DB error: ${linkErr.message}` });
-      if (!link) return json({ success: false, error: `Sin acceso: doctor ${user.id} → paciente ${payload.patient_id}` });
+      if (!link) {
+        return json({ success: false, error: `Sin acceso: doctor ${user.id} → paciente ${payload.patient_id}` });
+      }
 
-      // Fetch subscription
       const { data: sub, error: subErr } = await serviceClient
         .from('push_subscriptions')
         .select('subscription')
@@ -83,10 +80,19 @@ Deno.serve(async (req) => {
 
     if (!subscription) return json({ success: false, error: 'Se requiere subscription o patient_id' });
 
-    await webpush.sendNotification(subscription, JSON.stringify({ title, body: msg }));
+    const result = await sendWebPush(
+      subscription,
+      JSON.stringify({ title, body: msg }),
+      vapidPublicKey,
+      vapidPrivateKey,
+    );
+
+    if (result.expired) return json({ success: false, error: 'Subscription expirada', expired: true });
+    if (!result.ok) return json({ success: false, error: `Push service error ${result.status}: ${result.errorText}` });
 
     return json({ success: true });
-  } catch (err: any) {
-    return json({ success: false, error: err.message });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return json({ success: false, error: msg });
   }
 });

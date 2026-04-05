@@ -5,7 +5,7 @@
 // Requires secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import webpush from 'npm:web-push@3.6.7';
+import { sendWebPush } from '../_shared/webpush.ts';
 
 Deno.serve(async () => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -16,8 +16,6 @@ Deno.serve(async () => {
   if (!vapidPublicKey || !vapidPrivateKey) {
     return new Response(JSON.stringify({ error: 'VAPID keys not configured' }), { status: 500 });
   }
-
-  webpush.setVapidDetails('mailto:noreply@fluxia-health.com', vapidPublicKey, vapidPrivateKey);
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -35,15 +33,30 @@ Deno.serve(async () => {
   let sent = 0;
   let failed = 0;
 
-  for (const patient of patients || []) {
+  for (const patient of patients ?? []) {
     try {
-      await webpush.sendNotification(
+      const result = await sendWebPush(
         patient.subscription,
         JSON.stringify({
           title: 'Fluxia',
           body: 'No has registrado nada hoy. Tu médico necesita esta información 🩺',
-        })
+        }),
+        vapidPublicKey,
+        vapidPrivateKey,
       );
+
+      if (result.expired) {
+        // Subscription gone — clean it up
+        await supabase.from('push_subscriptions').delete().eq('user_id', patient.patient_id);
+        failed++;
+        continue;
+      }
+
+      if (!result.ok) {
+        console.error(`Push failed for ${patient.patient_id}: ${result.status} ${result.errorText}`);
+        failed++;
+        continue;
+      }
 
       await supabase
         .from('push_subscriptions')
@@ -51,12 +64,9 @@ Deno.serve(async () => {
         .eq('user_id', patient.patient_id);
 
       sent++;
-    } catch (err: any) {
-      console.error(`Push failed for ${patient.patient_id}:`, err.message);
-      // 410 Gone or 404 = subscription expired, remove it
-      if (err.statusCode === 410 || err.statusCode === 404) {
-        await supabase.from('push_subscriptions').delete().eq('user_id', patient.patient_id);
-      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Push exception for ${patient.patient_id}:`, msg);
       failed++;
     }
   }
