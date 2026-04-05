@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 // ── VAPID Public Key ──
 // Generate keys with: npx web-push generate-vapid-keys
 // Then replace this value AND add VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY to Supabase secrets
-export const VAPID_PUBLIC_KEY = 'BB9UrzepkaFPQTx_2Ugr5zzkHQZqK02BQdFtlS0ndNEMK_yS18FLM_e99RKX15ClWyQq14-x9MTgoemgCytzePs';
+export const VAPID_PUBLIC_KEY = 'BDZoV3wA07ZiDyENF3GoJ7llTPOTji_fPsPqMKFjp7uWfZqE3IkS8WLg9PEBbS9Ykqd_z9gQwMR5NC8NEE7ghAE';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
