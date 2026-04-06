@@ -102,7 +102,9 @@ export default function Calendar({ onDayClick }: CalendarProps) {
             >
               {hasEntry ? (
                 <>
-                  {emoji.char === 'svg' ? (
+                  {dayEntries.every((e: any) => e.entry_type === 'urine') ? (
+                    <span className="text-xl">💧</span>
+                  ) : emoji.char === 'svg' ? (
                     <img src={asset('/poop-small.svg')} alt="poop" className="w-7 h-7" />
                   ) : (
                     <span className="text-xl">{emoji.char}</span>

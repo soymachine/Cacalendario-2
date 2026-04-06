@@ -312,66 +312,74 @@ export default function RegisterScreen({ date, onClose, onSuccess }: RegisterScr
         {/* ── URINE FORM ── */}
         {entryType === 'urine' && <>
           {/* Urine type */}
-          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>TIPO DE MICCIÓN</p>
-          <div className="flex flex-col gap-2 mt-1.5 shrink-0">
-            {URINE_TYPE_OPTIONS.map(opt => (
-              <button key={opt.value} onClick={() => setUrineType(urineType === opt.value ? null : opt.value)}
-                className="rounded-xl py-2.5 px-4 text-left transition-all active:scale-95"
-                style={{
-                  backgroundColor: urineType === opt.value ? theme.text : theme.glass,
-                  color: urineType === opt.value ? invertColor : theme.text,
-                }}>
-                <span className="text-sm font-bold">{opt.label}</span>
-              </button>
-            ))}
-          </div>
+          {show('urine_type') && <>
+            <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>TIPO DE MICCIÓN</p>
+            <div className="flex flex-col gap-2 mt-1.5 shrink-0">
+              {URINE_TYPE_OPTIONS.map(opt => (
+                <button key={opt.value} onClick={() => setUrineType(urineType === opt.value ? null : opt.value)}
+                  className="rounded-xl py-2.5 px-4 text-left transition-all active:scale-95"
+                  style={{
+                    backgroundColor: urineType === opt.value ? theme.text : theme.glass,
+                    color: urineType === opt.value ? invertColor : theme.text,
+                  }}>
+                  <span className="text-sm font-bold">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </>}
 
           {/* Urine quantity */}
-          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>
-            CANTIDAD — <span className="font-normal">{urineQuantity} ml</span>
-          </p>
-          <div className="mt-2 shrink-0 px-1">
-            <input type="range" min={0} max={500} step={10} value={urineQuantity}
-              onChange={e => setUrineQuantity(Number(e.target.value))}
-              className="w-full" style={{ accentColor: theme.text }} />
-            <div className="flex justify-between text-[10px] mt-1" style={{ color: `${theme.text}70` }}>
-              <span>0 ml</span><span>500 ml</span>
+          {show('urine_quantity') && <>
+            <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>
+              CANTIDAD — <span className="font-normal">{urineQuantity} ml</span>
+            </p>
+            <div className="mt-2 shrink-0 px-1">
+              <input type="range" min={0} max={500} step={10} value={urineQuantity}
+                onChange={e => setUrineQuantity(Number(e.target.value))}
+                className="w-full" style={{ accentColor: theme.text }} />
+              <div className="flex justify-between text-[10px] mt-1" style={{ color: `${theme.text}70` }}>
+                <span>0 ml</span><span>500 ml</span>
+              </div>
             </div>
-          </div>
+          </>}
 
           {/* Urine color */}
-          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>COLOR</p>
-          <div className="flex gap-3 mt-2 shrink-0">
-            {URINE_COLOR_OPTIONS.map(opt => (
-              <button key={opt.hex} onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
-                title={opt.label}
-                style={{
-                  width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex, flexShrink: 0,
-                  border: urineColor === opt.hex ? `3px solid ${theme.text}` : '3px solid #00000030',
-                  boxShadow: urineColor === opt.hex ? `0 0 0 2px ${theme.main}` : 'none',
-                  transition: 'transform 0.1s',
-                  transform: urineColor === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                }} />
-            ))}
-          </div>
+          {show('urine_color') && <>
+            <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>COLOR</p>
+            <div className="flex gap-3 mt-2 shrink-0">
+              {URINE_COLOR_OPTIONS.map(opt => (
+                <button key={opt.hex} onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
+                  title={opt.label}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex, flexShrink: 0,
+                    border: urineColor === opt.hex ? `3px solid ${theme.text}` : '3px solid #00000030',
+                    boxShadow: urineColor === opt.hex ? `0 0 0 2px ${theme.main}` : 'none',
+                    transition: 'transform 0.1s',
+                    transform: urineColor === opt.hex ? 'scale(1.15)' : 'scale(1)',
+                  }} />
+              ))}
+            </div>
+          </>}
 
           {/* Urine characteristics */}
-          <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>CARACTERÍSTICAS</p>
-          <div className="flex flex-wrap gap-2 mt-1.5 shrink-0">
-            {URINE_CHARACTERISTICS.map(c => {
-              const active = urineCharacteristics.includes(c.key);
-              return (
-                <button key={c.key} onClick={() => toggleUrineChar(c.key)}
-                  className="rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95"
-                  style={{
-                    backgroundColor: active ? theme.text : theme.glass,
-                    color: active ? invertColor : theme.text,
-                  }}>
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
+          {show('urine_characteristics') && <>
+            <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>CARACTERÍSTICAS</p>
+            <div className="flex flex-wrap gap-2 mt-1.5 shrink-0">
+              {URINE_CHARACTERISTICS.map(c => {
+                const active = urineCharacteristics.includes(c.key);
+                return (
+                  <button key={c.key} onClick={() => toggleUrineChar(c.key)}
+                    className="rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95"
+                    style={{
+                      backgroundColor: active ? theme.text : theme.glass,
+                      color: active ? invertColor : theme.text,
+                    }}>
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </>}
         </>}
 
         {/* Notes */}

@@ -67,7 +67,9 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                   <div className="flex items-start gap-3">
                     {/* Emoji */}
                     <div className="shrink-0 mt-0.5">
-                      {emoji.char === 'svg' ? (
+                      {entry.entry_type === 'urine' ? (
+                        <span className="text-2xl">💧</span>
+                      ) : emoji.char === 'svg' ? (
                         <img src={asset('/poop-small.svg')} alt="poop" className="w-8 h-8" />
                       ) : (
                         <span className="text-2xl">{emoji.char}</span>
@@ -80,19 +82,30 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                         <span className="text-lg font-black" style={{ color: theme.text }}>
                           {entry.time}
                         </span>
-                        {bristolType && (
-                          <span
-                            className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: getBristolHealthColor(entry.bristol!),
-                              color: 'white',
-                            }}
-                          >
-                            {bristolType.emoji} Tipo {entry.bristol}
-                          </span>
-                        )}
-                        {entry.floats === true && (
-                          <span className="text-xs">🫧</span>
+                        {entry.entry_type === 'urine' ? (
+                          <>
+                            {entry.urine_type === 'voluntary' && <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">Voluntaria</span>}
+                            {entry.urine_type === 'involuntary_escape' && <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Escape</span>}
+                            {entry.urine_type === 'involuntary_drip' && <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Goteo</span>}
+                            {entry.urine_quantity != null && entry.urine_quantity > 0 && <span className="text-xs" style={{ color: `${theme.text}80` }}>{entry.urine_quantity} ml</span>}
+                          </>
+                        ) : (
+                          <>
+                            {bristolType && (
+                              <span
+                                className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: getBristolHealthColor(entry.bristol!),
+                                  color: 'white',
+                                }}
+                              >
+                                {bristolType.emoji} Tipo {entry.bristol}
+                              </span>
+                            )}
+                            {entry.floats === true && (
+                              <span className="text-xs">🫧</span>
+                            )}
+                          </>
                         )}
                       </div>
 

@@ -1279,25 +1279,37 @@ export default function MedicsPanel() {
                     Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                   </p>
                   {[
-                    { id: 'bristol', label: '🪷 Escala de Bristol' },
-                    { id: 'color', label: '🎨 Color' },
-                    { id: 'floats', label: '🫧 Flotación' },
-                    { id: 'quantity', label: '⚖️ Cantidad' },
-                    { id: 'duration', label: '⏱️ Duración' },
-                    { id: 'symptoms', label: '🤒 Síntomas' },
+                    { id: 'bristol', label: '🪷 Bristol', group: '💩 Deposición' },
+                    { id: 'color', label: '🎨 Color', group: null },
+                    { id: 'floats', label: '🫧 Flotación', group: null },
+                    { id: 'quantity', label: '⚖️ Cantidad', group: null },
+                    { id: 'duration', label: '⏱️ Duración', group: null },
+                    { id: 'symptoms', label: '🤒 Síntomas', group: null },
+                    { id: 'urine_type', label: 'Tipo de micción', group: '💧 Micción' },
+                    { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
+                    { id: 'urine_color', label: 'Color', group: null },
+                    { id: 'urine_characteristics', label: 'Características', group: null },
                   ].map((field, i, arr) => {
+                    const showGroupHeader = field.group !== null;
                     const isVisible = !patientHiddenFields.includes(field.id);
                     return (
-                      <div key={field.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
-                        <Switch
-                          checked={isVisible}
-                          onChange={(checked) =>
-                            setPatientHiddenFields(prev =>
-                              checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
-                            )
-                          }
-                        />
+                      <div key={field.id}>
+                        {showGroupHeader && (
+                          <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, textTransform: 'uppercase' as const, padding: i === 0 ? '4px 0 6px' : '12px 0 6px', borderTop: i !== 0 ? '1px solid #00000010' : 'none' }}>
+                            {field.group}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
+                          <Switch
+                            checked={isVisible}
+                            onChange={(checked) =>
+                              setPatientHiddenFields(prev =>
+                                checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
+                              )
+                            }
+                          />
+                        </div>
                       </div>
                     );
                   })}
