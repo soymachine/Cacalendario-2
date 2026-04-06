@@ -7,12 +7,19 @@ export interface PoopEntry {
   time: string; // HH:mm
   notes: string;
   timestamp: number; // full timestamp for sorting
+  entry_type?: 'poop' | 'urine'; // default 'poop' if absent
+  // ── Poop fields ──
   bristol?: number | null; // Bristol scale 1-7
   floats?: 'floats' | 'sinks' | 'both' | null; // float behaviour
   color?: string | null; // hex color
   quantity?: number | null; // 0-100
   duration?: 'short' | 'medium' | 'long' | null; // <3min, 3-5min, >5min
   symptoms?: string[]; // list of symptom keys
+  // ── Urine fields ──
+  urine_type?: 'voluntary' | 'involuntary_escape' | 'involuntary_drip' | null;
+  urine_quantity?: number | null; // 0-500 ml
+  urine_color?: string | null; // hex color
+  urine_characteristics?: string[]; // ['blood', 'aspect', 'odor', 'pain']
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
@@ -35,6 +42,8 @@ function migrateEntries(entries: PoopEntry[]): PoopEntry[] {
     // Migrate boolean floats → new string type
     if (entry.floats === true) { migrated = true; entry.floats = 'floats'; }
     if (entry.floats === false) { migrated = true; entry.floats = 'sinks'; }
+    // Default entry_type
+    if (!entry.entry_type) { entry.entry_type = 'poop'; }
     return entry as PoopEntry;
   });
   if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(result));

@@ -12,7 +12,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
   // 1. Get cloud entries
   const { data: cloudRows, error } = await supabase
     .from('entries')
-    .select('entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms')
+    .select('entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics')
     .eq('user_id', userId);
 
   if (error) {
@@ -28,12 +28,17 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     time: r.time,
     notes: r.notes || '',
     timestamp: Number(r.timestamp),
+    entry_type: r.entry_type ?? 'poop',
     bristol: r.bristol ?? null,
     floats: r.floats ?? null,
     color: r.color ?? null,
     quantity: r.quantity ?? null,
     duration: r.duration ?? null,
     symptoms: r.symptoms ?? [],
+    urine_type: r.urine_type ?? null,
+    urine_quantity: r.urine_quantity ?? null,
+    urine_color: r.urine_color ?? null,
+    urine_characteristics: r.urine_characteristics ?? [],
   }));
 
   const cloudIds = new Set(cloudEntries.map(e => e.id));
@@ -64,12 +69,17 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       time: entry.time,
       notes: entry.notes,
       timestamp: entry.timestamp,
+      entry_type: entry.entry_type ?? 'poop',
       bristol: entry.bristol ?? null,
       floats: entry.floats ?? null,
       color: entry.color ?? null,
       quantity: entry.quantity ?? null,
       duration: entry.duration ?? null,
       symptoms: entry.symptoms ?? [],
+      urine_type: entry.urine_type ?? null,
+      urine_quantity: entry.urine_quantity ?? null,
+      urine_color: entry.urine_color ?? null,
+      urine_characteristics: entry.urine_characteristics ?? [],
     },
     { onConflict: 'user_id,entry_id' }
   );

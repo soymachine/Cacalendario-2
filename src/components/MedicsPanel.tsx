@@ -14,6 +14,12 @@ const SYMPTOM_LABEL: Record<string, string> = {
   rectal_pain: 'Dolor rectal', blood: 'Sangre', mucus: 'Moco', smelly: 'Maloliente',
   sticky: 'Pegajoso', stringy: 'Filamentoso', undigested: 'No digerido',
 };
+const URINE_TYPE_LABEL: Record<string, string> = {
+  voluntary: 'Voluntaria', involuntary_escape: 'Escape', involuntary_drip: 'Goteo',
+};
+const URINE_CHAR_LABEL: Record<string, string> = {
+  blood: 'Sangre', aspect: 'Aspecto', odor: 'Olor', pain: 'Dolor',
+};
 
 interface PatientLink {
   id: string;
@@ -52,12 +58,17 @@ interface PatientEntry {
   date: string;
   time: string;
   notes: string;
+  entry_type: 'poop' | 'urine';
   bristol: number | null;
   floats: 'floats' | 'sinks' | 'both' | null;
   color: string | null;
   quantity: number | null;
   duration: 'short' | 'medium' | 'long' | null;
   symptoms: string[];
+  urine_type: 'voluntary' | 'involuntary_escape' | 'involuntary_drip' | null;
+  urine_quantity: number | null;
+  urine_color: string | null;
+  urine_characteristics: string[];
   entry_id: string;
   created_at: string;
 }
@@ -433,12 +444,17 @@ export default function MedicsPanel() {
       date: e.date,
       time: e.time || '',
       notes: e.notes || '',
+      entry_type: e.entry_type ?? 'poop',
       bristol: e.bristol ?? null,
       floats: e.floats === true ? 'floats' : e.floats === false ? 'sinks' : (e.floats ?? null),
       color: e.color ?? null,
       quantity: e.quantity ?? null,
       duration: e.duration ?? null,
       symptoms: e.symptoms ?? [],
+      urine_type: e.urine_type ?? null,
+      urine_quantity: e.urine_quantity ?? null,
+      urine_color: e.urine_color ?? null,
+      urine_characteristics: e.urine_characteristics ?? [],
       entry_id: e.entry_id || '',
       created_at: e.created_at,
     }));
@@ -1418,53 +1434,58 @@ export default function MedicsPanel() {
                       <div style={{ display: 'flex', flexDirection: 'column' as const }}>
                         {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'center', padding: '7px 16px', backgroundColor: '#00000008', borderBottom: '1px solid #00000010' }}>
+                          <span style={{ width: 32, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}></span>
                           <span style={{ width: 130, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Fecha / Hora</span>
-                          <span style={{ width: 62, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Bristol</span>
-                          <span style={{ width: 90, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Flotación</span>
-                          <span style={{ width: 50, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Color</span>
-                          <span style={{ width: 68, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Cantidad</span>
-                          <span style={{ width: 76, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Duración</span>
-                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Síntomas</span>
+                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Datos</span>
                         </div>
                         {pagedEntries.map((entry, i) => {
+                          const isUrine = entry.entry_type === 'urine';
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
                           const chip = (label: string, bg: string, color: string) => (
                             <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
                           );
                           return (
                             <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              {/* Main row — all fields in one line */}
-                              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 16px', gap: 0 }}>
+                                {/* Type icon */}
+                                <div style={{ width: 32, paddingTop: 2 }}>
+                                  <span style={{ fontSize: 16 }}>{isUrine ? '💧' : '💩'}</span>
+                                </div>
+                                {/* Date / time */}
                                 <div style={{ width: 130 }}>
                                   <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
                                   {entry.time && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span>}
                                 </div>
-                                <div style={{ width: 62 }}>
-                                  {entry.bristol != null ? chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!) : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
-                                </div>
-                                <div style={{ width: 90 }}>
-                                  {entry.floats != null ? chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
-                                </div>
-                                <div style={{ width: 50 }}>
-                                  {entry.color
-                                    ? <span style={{ display: 'inline-block', width: 18, height: 18, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020' }} />
-                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
-                                </div>
-                                <div style={{ width: 68 }}>
-                                  {entry.quantity != null ? chip(`${entry.quantity}`, '#9b59b615', '#8e44ad') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
-                                </div>
-                                <div style={{ width: 76 }}>
-                                  {entry.duration != null ? chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22') : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
-                                  {entry.symptoms.length > 0
-                                    ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
-                                    : <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                {/* Type-specific data */}
+                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4, alignItems: 'center' }}>
+                                  {isUrine ? (
+                                    <>
+                                      {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, '#3498db15', '#2980b9')}
+                                      {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, '#9b59b615', '#8e44ad')}
+                                      {entry.urine_color && <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', backgroundColor: entry.urine_color, border: '1px solid #00000020', verticalAlign: 'middle' }} />}
+                                      {entry.urine_characteristics.length > 0
+                                        ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, '#e74c3c12', '#c0392b'))
+                                        : null}
+                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {entry.bristol != null && chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!)}
+                                      {entry.floats != null && chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9')}
+                                      {entry.color && <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020', verticalAlign: 'middle' }} />}
+                                      {entry.quantity != null && chip(`${entry.quantity}`, '#9b59b615', '#8e44ad')}
+                                      {entry.duration != null && chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22')}
+                                      {entry.symptoms.length > 0
+                                        ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
+                                        : null}
+                                      {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                    </>
+                                  )}
                                 </div>
                               </div>
                               {/* Notes row — only if present */}
                               {entry.notes && (
-                                <div style={{ padding: '0 16px 10px' }}>
+                                <div style={{ padding: '0 16px 10px 178px' }}>
                                   <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
                                 </div>
                               )}
