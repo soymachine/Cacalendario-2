@@ -85,9 +85,9 @@ const URINE_CHARACTERISTICS = [
 ];
 
 const DURATION_OPTIONS = [
-  { label: '< 3 min', value: 'short' as const },
-  { label: '3 – 5 min', value: 'medium' as const },
-  { label: '> 5 min', value: 'long' as const },
+  { label: '<3 min', value: 'short' as const },
+  { label: '3-5 min', value: 'medium' as const },
+  { label: '>5 min', value: 'long' as const },
 ];
 
 const SYMPTOMS = [
@@ -103,6 +103,17 @@ const SYMPTOMS = [
   { key: 'stringy', label: 'Filamentoso' },
   { key: 'undigested', label: 'No digerido' },
 ];
+
+// Edit icon for date/time row and notes
+function EditIcon() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="18" fill={D.chip} />
+      <path d="M13 23L14.5 19L22 11.5L24.5 14L17 21.5L13 23Z" stroke={D.text} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <path d="M20.5 13L23 15.5" stroke={D.text} strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+}
 
 export default function RegisterScreen({ date, isTab, onClose, onSuccess }: RegisterScreenProps) {
   const { emoji } = usePreferences();
@@ -168,41 +179,84 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const sectionCard: React.CSSProperties = {
     backgroundColor: D.card,
     borderRadius: 14,
-    padding: 14,
+    padding: '14px 16px',
     marginBottom: 10,
   };
 
+  // Figma-aligned section label: larger, dark, bold
   const sectionLabel: React.CSSProperties = {
-    fontSize: 11, fontWeight: 900, color: D.textMuted,
-    letterSpacing: 0.5, display: 'block', marginBottom: 8,
+    fontSize: 15,
+    fontWeight: 700,
+    color: D.text,
+    display: 'block',
+    marginBottom: 12,
   };
 
   const chipActive: React.CSSProperties = { backgroundColor: D.primary, color: D.primaryText };
   const chipInactive: React.CSSProperties = { backgroundColor: D.chip, color: D.chipText };
 
   const content = (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: isTab ? '24px 16px 32px' : '60px 16px 16px' }}>
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: isTab ? '16px 16px 32px' : '60px 16px 16px' }}>
+
+      {/* Logo (only in tab mode) */}
+      {isTab && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 }}>
+          <img src={asset('/fluxia-mark.svg')} alt="" style={{ width: 28, height: 28 }} />
+          <img src={asset('/logo.svg')} alt="Fluxia" style={{ height: 22 }} />
+        </div>
+      )}
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>
-          {isTab ? 'Registrar' : dayText}
+          Registro
         </h1>
         {!isTab && onClose && (
           <button
             onClick={onClose}
             style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="12" fill={D.primary} />
-              <path d="M8 8L16 16M16 8L8 16" stroke={D.primaryText} strokeWidth="2.5" strokeLinecap="round" />
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="18" fill={D.primary} />
+              <path d="M12 12L24 24M24 12L12 24" stroke={D.primaryText} strokeWidth="2.5" strokeLinecap="round" />
             </svg>
           </button>
         )}
       </div>
 
+      {/* Date + time row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        {editingTime ? (
+          <input
+            type="time"
+            value={timeText}
+            onChange={(e) => {
+              const [newH, newM] = e.target.value.split(':').map(Number);
+              setHours(newH); setMinutes(newM);
+            }}
+            onBlur={() => setEditingTime(false)}
+            autoFocus
+            style={{
+              fontSize: 16, background: 'transparent', border: 'none',
+              borderBottom: `2px solid ${D.primary}`, outline: 'none',
+              color: D.text, fontFamily: 'inherit', fontWeight: 700,
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: 16, fontWeight: 700, color: D.text }}>
+            {dayText} {timeText}
+          </span>
+        )}
+        <button
+          onClick={() => setEditingTime(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          <EditIcon />
+        </button>
+      </div>
+
       {/* Entry type toggle — diagonal split */}
-      <div style={{ ...sectionCard, padding: 0, overflow: 'hidden', height: 70 }}>
+      <div style={{ ...sectionCard, padding: 0, overflow: 'hidden', height: 70, marginBottom: 10 }}>
         <div style={{ position: 'relative', height: '100%' }}>
           {/* Poop half (left) */}
           <button
@@ -217,7 +271,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
               transition: 'background-color 0.2s',
             }}
           >
-            {/* Toilet icon */}
             <svg width="22" height="26" viewBox="0 0 24 27" fill="none"
               stroke={entryType === 'poop' ? D.primaryText : D.text}
               strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -248,7 +301,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
               transition: 'background-color 0.2s',
             }}
           >
-            {/* Water drop icon */}
             <svg width="20" height="26" viewBox="0 0 20 26" fill={entryType === 'urine' ? D.primaryText : D.text}>
               <path d="M10 1 C10 1 2 10 2 16 A8 8 0 0 0 18 16 C18 10 10 1 10 1Z"/>
             </svg>
@@ -262,86 +314,18 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         </div>
       </div>
 
-      {/* Date (only in modal mode) */}
-      {!isTab && (
-        <div style={sectionCard}>
-          <span style={sectionLabel}>DÍA</span>
-          <p style={{ fontSize: 18, fontWeight: 700, color: D.text, margin: 0 }}>{dayText}</p>
-        </div>
-      )}
-
-      {/* Time */}
-      <div style={sectionCard}>
-        <span style={sectionLabel}>HORA</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {editingTime ? (
-            <input
-              type="time"
-              value={timeText}
-              onChange={(e) => {
-                const [newH, newM] = e.target.value.split(':').map(Number);
-                setHours(newH); setMinutes(newM);
-              }}
-              onBlur={() => setEditingTime(false)}
-              autoFocus
-              style={{
-                fontSize: 20, background: 'transparent', border: 'none',
-                borderBottom: `2px solid ${D.primary}`, outline: 'none',
-                color: D.text, width: 96,
-              }}
-            />
-          ) : (
-            <span style={{ fontSize: 20, fontWeight: 700, color: D.text }}>{timeText}</span>
-          )}
-          <button
-            onClick={() => setEditingTime(true)}
-            style={{
-              padding: '6px 14px', borderRadius: 50, border: 'none', cursor: 'pointer',
-              backgroundColor: D.primary, color: D.primaryText, fontSize: 13, fontWeight: 700,
-            }}
-          >
-            cambiar
-          </button>
-        </div>
-      </div>
-
       {/* ── POOP FORM ── */}
       {!isUrine && <>
         {show('bristol') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>¿QUÉ FORMA TENÍA?</span>
-            <p style={{ fontSize: 11, color: D.textMuted, marginBottom: 10, marginTop: -4 }}>
-              Escala de Bristol — selecciona el tipo más parecido
-            </p>
+            <span style={sectionLabel}>Forma</span>
             <BristolPicker value={bristol} onChange={setBristol} />
-          </div>
-        )}
-
-        {show('color') && (
-          <div style={sectionCard}>
-            <span style={sectionLabel}>COLOR</span>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {COLOR_OPTIONS.map(opt => (
-                <button
-                  key={opt.hex}
-                  onClick={() => setColor(color === opt.hex ? null : opt.hex)}
-                  title={opt.label}
-                  style={{
-                    width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex,
-                    border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                    boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
-                    transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                    transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
-                  }}
-                />
-              ))}
-            </div>
           </div>
         )}
 
         {show('floats') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>¿FLOTA?</span>
+            <span style={sectionLabel}>Flotación</span>
             <div style={{ display: 'flex', gap: 8 }}>
               {FLOAT_OPTIONS.map(opt => {
                 const isActive = floats === opt.value;
@@ -366,31 +350,65 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           </div>
         )}
 
+        {show('color') && (
+          <div style={sectionCard}>
+            <span style={sectionLabel}>Color</span>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {COLOR_OPTIONS.map(opt => (
+                <button
+                  key={opt.hex}
+                  onClick={() => setColor(color === opt.hex ? null : opt.hex)}
+                  title={opt.label}
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%', backgroundColor: opt.hex,
+                    border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
+                    boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
+                    transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {show('quantity') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>CANTIDAD — <span style={{ fontWeight: 400 }}>{quantityLabel} ({quantity})</span></span>
-            <input
-              type="range" min={0} max={100} value={quantity}
-              onChange={e => setQuantity(Number(e.target.value))}
-              style={{ width: '100%', accentColor: D.primary }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: D.textMuted, marginTop: 4 }}>
-              <span>Ligero</span><span>Pesado</span>
+            <span style={sectionLabel}>Cantidad</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Pencil icon */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M3 17L4.5 13L12 5.5L14.5 8L7 15.5L3 17Z" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M10.5 7L13 9.5" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+              <input
+                type="range" min={0} max={100} value={quantity}
+                onChange={e => setQuantity(Number(e.target.value))}
+                style={{ flex: 1, accentColor: D.primary }}
+              />
+              {/* Scale/weight icon */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M4 16h12M10 4a2 2 0 100-4 2 2 0 000 4z" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+                <path d="M10 4L6 12h8L10 4z" stroke={D.textMuted} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
+              <span>Ligero</span><span style={{ fontWeight: 600, color: D.text }}>{quantityLabel}</span><span>Pesado</span>
             </div>
           </div>
         )}
 
         {show('duration') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>DURACIÓN</span>
+            <span style={sectionLabel}>Duración</span>
             <div style={{ display: 'flex', gap: 8 }}>
               {DURATION_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setDuration(duration === opt.value ? null : opt.value)}
                   style={{
-                    flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
+                    flex: 1, padding: '10px 4px', borderRadius: 99, border: 'none', cursor: 'pointer',
+                    fontSize: 13, fontWeight: 700, transition: 'all 0.1s',
                     ...(duration === opt.value ? chipActive : chipInactive),
                   }}
                 >
@@ -403,7 +421,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
         {show('symptoms') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>SÍNTOMAS</span>
+            <span style={sectionLabel}>Síntomas</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {SYMPTOMS.map(s => {
                 const active = symptoms.includes(s.key);
@@ -412,8 +430,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                     key={s.key}
                     onClick={() => toggleSymptom(s.key)}
                     style={{
-                      padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer',
-                      fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
+                      padding: '7px 14px', borderRadius: 99, border: 'none', cursor: 'pointer',
+                      fontSize: 13, fontWeight: 600, transition: 'all 0.1s',
                       ...(active ? chipActive : chipInactive),
                     }}
                   >
@@ -430,7 +448,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       {isUrine && <>
         {show('urine_type') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>TIPO DE MICCIÓN</span>
+            <span style={sectionLabel}>Tipo de micción</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {URINE_TYPE_OPTIONS.map(opt => (
                 <button
@@ -451,13 +469,13 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
         {show('urine_quantity') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>CANTIDAD — <span style={{ fontWeight: 400 }}>{urineQuantity} ml</span></span>
+            <span style={sectionLabel}>Cantidad — <span style={{ fontWeight: 400, fontSize: 13, color: D.textMuted }}>{urineQuantity} ml</span></span>
             <input
               type="range" min={0} max={500} step={10} value={urineQuantity}
               onChange={e => setUrineQuantity(Number(e.target.value))}
               style={{ width: '100%', accentColor: D.primary }}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: D.textMuted, marginTop: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
               <span>0 ml</span><span>500 ml</span>
             </div>
           </div>
@@ -465,7 +483,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
         {show('urine_color') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>COLOR</span>
+            <span style={sectionLabel}>Color</span>
             <div style={{ display: 'flex', gap: 10 }}>
               {URINE_COLOR_OPTIONS.map(opt => (
                 <button
@@ -473,7 +491,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                   onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                   title={opt.label}
                   style={{
-                    width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex,
+                    width: 40, height: 40, borderRadius: '50%', backgroundColor: opt.hex,
                     border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000030',
                     boxShadow: urineColor === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
                     transform: urineColor === opt.hex ? 'scale(1.15)' : 'scale(1)',
@@ -487,7 +505,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
         {show('urine_characteristics') && (
           <div style={sectionCard}>
-            <span style={sectionLabel}>CARACTERÍSTICAS</span>
+            <span style={sectionLabel}>Características</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {URINE_CHARACTERISTICS.map(c => {
                 const active = urineCharacteristics.includes(c.key);
@@ -496,8 +514,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                     key={c.key}
                     onClick={() => toggleUrineChar(c.key)}
                     style={{
-                      padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer',
-                      fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
+                      padding: '7px 14px', borderRadius: 99, border: 'none', cursor: 'pointer',
+                      fontSize: 13, fontWeight: 600, transition: 'all 0.1s',
                       ...(active ? chipActive : chipInactive),
                     }}
                   >
@@ -511,40 +529,48 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       </>}
 
       {/* Notes */}
-      <div style={sectionCard}>
-        <span style={sectionLabel}>NOTAS</span>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Escribe tus notas aquí..."
-          rows={3}
-          style={{
-            width: '100%', borderRadius: 10, padding: '10px 12px',
-            fontSize: 14, color: D.text, backgroundColor: D.bg,
-            border: `1px solid ${D.border}`, outline: 'none', resize: 'none',
-            fontFamily: 'inherit', boxSizing: 'border-box',
+      <div style={{ ...sectionCard, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ ...sectionLabel, marginBottom: 0, flex: 1 }}>Notas</span>
+        <button
+          onClick={() => {
+            const el = document.getElementById('fluxia-notes-area');
+            if (el) el.focus();
           }}
-        />
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+        >
+          <EditIcon />
+        </button>
       </div>
+      {/* Expandable notes area */}
+      {notes !== '' || true ? (
+        <div style={{ marginBottom: 10, marginTop: -8 }}>
+          <textarea
+            id="fluxia-notes-area"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Escribe tus notas aquí..."
+            rows={3}
+            style={{
+              width: '100%', borderRadius: '0 0 14px 14px', padding: '10px 16px',
+              fontSize: 14, color: D.text, backgroundColor: D.card,
+              border: 'none', borderTop: `1px solid ${D.border}`,
+              outline: 'none', resize: 'none',
+              fontFamily: 'inherit', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+      ) : null}
 
       {/* Save button */}
       <button
         onClick={handleSave}
         style={{
-          width: '100%', padding: '15px 0', borderRadius: 50, border: 'none',
+          width: '100%', padding: '17px 0', borderRadius: 99, border: 'none',
           cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText,
-          fontSize: 17, fontWeight: 700, marginTop: 4,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontSize: 18, fontWeight: 800, marginTop: 6,
         }}
       >
-        <span>Guardar registro</span>
-        {isUrine ? (
-          <span style={{ fontSize: 20 }}>💧</span>
-        ) : emoji.char === 'svg' ? (
-          <img src={asset('/poop-button.svg')} alt="" style={{ width: 24, height: 24 }} />
-        ) : (
-          <span style={{ fontSize: 20 }}>{emoji.char}</span>
-        )}
+        Registrar
       </button>
     </div>
   );
