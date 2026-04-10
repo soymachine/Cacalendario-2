@@ -7,136 +7,107 @@ interface BottomNavProps {
   onChange: (tab: Tab) => void;
 }
 
-function CalendarIcon({ active }: { active: boolean }) {
+// Bar chart icon — Historial
+function HistorialIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer rounded rect */}
-      <rect x="3" y="5" width="18" height="16" rx="3"
-        fill={active ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth={active ? 0 : 2}
-        opacity={active ? 0.15 : 1}
-      />
-      <rect x="3" y="5" width="18" height="16" rx="3"
-        fill="none"
-        stroke={active ? 'currentColor' : 'none'}
-        strokeWidth="2"
-      />
-      {/* Top bar */}
-      <rect x="3" y="5" width="18" height="5" rx="2"
-        fill={active ? 'currentColor' : 'none'}
-        stroke="none"
-      />
-      {/* Calendar pins */}
-      <line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      {/* Grid dots */}
-      <circle cx="8" cy="14" r="1.2" fill="currentColor" opacity={active ? 1 : 0.6}/>
-      <circle cx="12" cy="14" r="1.2" fill="currentColor" opacity={active ? 1 : 0.6}/>
-      <circle cx="16" cy="14" r="1.2" fill="currentColor" opacity={active ? 1 : 0.6}/>
-      <circle cx="8" cy="18" r="1.2" fill="currentColor" opacity={active ? 1 : 0.4}/>
-      <circle cx="12" cy="18" r="1.2" fill="currentColor" opacity={active ? 1 : 0.4}/>
+    <svg width="24" height="21" viewBox="0 0 24 21" fill="currentColor">
+      <rect x="0" y="12" width="6.5" height="9" rx="2"/>
+      <rect x="8.75" y="6" width="6.5" height="15" rx="2"/>
+      <rect x="17.5" y="0" width="6.5" height="21" rx="2"/>
+      <rect x="0" y="19.5" width="24" height="1.5" rx="0.75" opacity="0.4"/>
     </svg>
   );
 }
 
-function RegisterIcon({ active }: { active: boolean }) {
+// Toilet icon — Registrar
+function RegisterIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Droplet shape */}
-      <path
-        d="M12 3 C12 3 5 10.5 5 15 A7 7 0 0 0 19 15 C19 10.5 12 3 12 3Z"
-        fill={active ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth={active ? 0 : 2}
-        strokeLinejoin="round"
-        opacity={active ? 0.2 : 1}
-      />
-      <path
-        d="M12 3 C12 3 5 10.5 5 15 A7 7 0 0 0 19 15 C19 10.5 12 3 12 3Z"
-        fill="none"
-        stroke={active ? 'currentColor' : 'none'}
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      {/* Plus inside the drop */}
-      <line x1="12" y1="11" x2="12" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="8.5" y1="14.5" x2="15.5" y2="14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <svg width="24" height="27" viewBox="0 0 24 27" fill="none"
+      stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      {/* Tank */}
+      <path d="M7.5 2H16.5C17.6 2 18.5 2.9 18.5 4V9.5H5.5V4C5.5 2.9 6.4 2 7.5 2Z"/>
+      {/* Seat ellipse */}
+      <ellipse cx="12" cy="9.5" rx="8.5" ry="2.5"/>
+      {/* Bowl */}
+      <path d="M3.5 9.5H20.5C20.5 9.5 21.5 18.5 12 18.5C2.5 18.5 3.5 9.5 3.5 9.5Z"/>
+      {/* Base */}
+      <path d="M8 18.5H16C16 18.5 16 21.5 14.5 21.5H9.5C8 21.5 8 18.5 8 18.5Z" strokeLinejoin="round"/>
+      {/* Foot */}
+      <path d="M7.5 21.5H16.5" strokeLinecap="round"/>
     </svg>
   );
 }
 
-function AccountIcon({ active }: { active: boolean }) {
+// Person in squircle — Cuenta
+function AccountIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      {/* Squircle background */}
+      <rect x="0" y="0" width="24" height="24" rx="7.5" fill="currentColor"/>
       {/* Head */}
-      <circle
-        cx="12" cy="8" r="4"
-        fill={active ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth={active ? 0 : 2}
-        opacity={active ? 0.9 : 1}
-      />
-      {/* Body / shoulders */}
-      <path
-        d="M4 20 C4 16 7.6 13 12 13 C16.4 13 20 16 20 20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <circle cx="12" cy="9.5" r="4" fill="white"/>
+      {/* Body */}
+      <path d="M2.5 24C2.5 18 21.5 18 21.5 24H2.5Z" fill="white"/>
     </svg>
   );
 }
 
-const TABS: { id: Tab; label: string; Icon: (p: { active: boolean }) => JSX.Element }[] = [
-  { id: 'calendar', label: 'Historial', Icon: CalendarIcon },
-  { id: 'register', label: 'Registrar', Icon: RegisterIcon },
-  { id: 'account', label: 'Cuenta', Icon: AccountIcon },
+const TABS: { id: Tab; Icon: () => JSX.Element }[] = [
+  { id: 'calendar', Icon: HistorialIcon },
+  { id: 'register', Icon: RegisterIcon },
+  { id: 'account', Icon: AccountIcon },
 ];
 
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav style={{
-      display: 'flex', alignItems: 'stretch',
-      backgroundColor: D.card,
-      borderTop: `1px solid ${D.border}`,
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       flexShrink: 0,
+      backgroundColor: D.bg,
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
-      {TABS.map(({ id, label, Icon }) => {
-        const isActive = active === id;
-        return (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: 3, padding: '10px 0 12px',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: isActive ? D.primary : D.textMuted,
-              transition: 'color 0.15s',
-              position: 'relative',
-            }}
-          >
-            <Icon active={isActive} />
-            <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: 0.2 }}>
-              {label}
-            </span>
-            {isActive && (
-              <span style={{
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 28, height: 3, borderRadius: '0 0 4px 4px',
-                backgroundColor: D.primary,
-                display: 'block',
-              }} />
-            )}
-          </button>
-        );
-      })}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        margin: '6px 14px 8px',
+        backgroundColor: D.chip,
+        borderRadius: 999,
+        overflow: 'hidden',
+      }}>
+        {TABS.map(({ id, Icon }) => {
+          const isActive = active === id;
+          return (
+            <button
+              key={id}
+              onClick={() => onChange(id)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 0',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: 52,
+                height: 52,
+                borderRadius: 999,
+                backgroundColor: isActive ? D.card : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s',
+                color: isActive ? D.text : D.textMuted,
+                boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              }}>
+                <Icon />
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }
