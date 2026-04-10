@@ -7,55 +7,62 @@ interface BottomNavProps {
   onChange: (tab: Tab) => void;
 }
 
-// Bar chart icon — Historial
-function HistorialIcon() {
+// icono-Estadisticas — 3 pill bars + curved bracket (Figma)
+function HistorialIcon({ color }: { color: string }) {
   return (
-    <svg width="24" height="21" viewBox="0 0 24 21" fill="currentColor">
-      <rect x="0" y="12" width="6.5" height="9" rx="2"/>
-      <rect x="8.75" y="6" width="6.5" height="15" rx="2"/>
-      <rect x="17.5" y="0" width="6.5" height="21" rx="2"/>
-      <rect x="0" y="19.5" width="24" height="1.5" rx="0.75" opacity="0.4"/>
+    <svg width="26" height="24" viewBox="0 0 26 24" fill="none">
+      {/* Bar 1 — short (pill shape: rx = half width) */}
+      <rect x="0" y="14" width="7" height="10" rx="3.5" fill={color}/>
+      {/* Bar 2 — medium */}
+      <rect x="9.5" y="7" width="7" height="17" rx="3.5" fill={color}/>
+      {/* Bar 3 — tall */}
+      <rect x="19" y="0" width="7" height="24" rx="3.5" fill={color}/>
+      {/* Curved bracket at bottom-left (Figma detail) */}
+      <path
+        d="M0 18 C0 22.5 1.5 24 5.5 24 L13 24"
+        stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"
+      />
     </svg>
   );
 }
 
-// Toilet icon — Registrar
-function RegisterIcon() {
+// icono-Registro — toilet icon (Figma)
+function RegisterIcon({ color }: { color: string }) {
   return (
-    <svg width="24" height="27" viewBox="0 0 24 27" fill="none"
-      stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="26" height="30" viewBox="0 0 26 30" fill="none"
+      stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       {/* Tank */}
-      <path d="M7.5 2H16.5C17.6 2 18.5 2.9 18.5 4V9.5H5.5V4C5.5 2.9 6.4 2 7.5 2Z"/>
-      {/* Seat ellipse */}
-      <ellipse cx="12" cy="9.5" rx="8.5" ry="2.5"/>
+      <rect x="6" y="2" width="14" height="8" rx="3"/>
+      {/* Seat rim */}
+      <ellipse cx="13" cy="10" rx="9.5" ry="2.8"/>
       {/* Bowl */}
-      <path d="M3.5 9.5H20.5C20.5 9.5 21.5 18.5 12 18.5C2.5 18.5 3.5 9.5 3.5 9.5Z"/>
-      {/* Base */}
-      <path d="M8 18.5H16C16 18.5 16 21.5 14.5 21.5H9.5C8 21.5 8 18.5 8 18.5Z" strokeLinejoin="round"/>
+      <path d="M3.5 10 C3.5 10 3 22 13 22 C23 22 22.5 10 22.5 10"/>
+      {/* Pedestal */}
+      <path d="M9 22 L9 25 Q9 27 13 27 Q17 27 17 25 L17 22"/>
       {/* Foot */}
-      <path d="M7.5 21.5H16.5" strokeLinecap="round"/>
+      <line x1="7.5" y1="27" x2="18.5" y2="27"/>
     </svg>
   );
 }
 
-// Person in squircle — Cuenta
-function AccountIcon() {
+// icono-User — person in rounded square (Figma)
+function AccountIcon({ color }: { color: string }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24">
-      {/* Squircle background */}
-      <rect x="0" y="0" width="24" height="24" rx="7.5" fill="currentColor"/>
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      {/* Rounded square */}
+      <rect x="0" y="0" width="26" height="26" rx="8" fill={color}/>
       {/* Head */}
-      <circle cx="12" cy="9.5" r="4" fill="white"/>
-      {/* Body */}
-      <path d="M2.5 24C2.5 18 21.5 18 21.5 24H2.5Z" fill="white"/>
+      <circle cx="13" cy="10" r="4.5" fill="white"/>
+      {/* Body / shoulders */}
+      <path d="M3 26 C3 19.5 23 19.5 23 26 Z" fill="white"/>
     </svg>
   );
 }
 
-const TABS: { id: Tab; Icon: () => JSX.Element }[] = [
+const TABS: { id: Tab; Icon: (p: { color: string }) => JSX.Element }[] = [
   { id: 'calendar', Icon: HistorialIcon },
   { id: 'register', Icon: RegisterIcon },
-  { id: 'account', Icon: AccountIcon },
+  { id: 'account',  Icon: AccountIcon },
 ];
 
 export default function BottomNav({ active, onChange }: BottomNavProps) {
@@ -99,10 +106,9 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'background-color 0.2s',
-                color: isActive ? D.text : D.textMuted,
                 boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
-                <Icon />
+                <Icon color={isActive ? D.text : D.textMuted} />
               </div>
             </button>
           );

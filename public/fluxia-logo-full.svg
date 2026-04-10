@@ -1,0 +1,26 @@
+<svg viewBox="0 0 220 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fl-g1" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#5BBF6A"/>
+      <stop offset="60%" stop-color="#8EC63F"/>
+      <stop offset="100%" stop-color="#C5DC42"/>
+    </linearGradient>
+    <linearGradient id="fl-g2" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#2DB5E8"/>
+      <stop offset="50%" stop-color="#4CB87A"/>
+      <stop offset="100%" stop-color="#5BBF6A"/>
+    </linearGradient>
+    <linearGradient id="fl-g3" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#8BB8D8"/>
+      <stop offset="100%" stop-color="#2DB5E8"/>
+    </linearGradient>
+  </defs>
+  <!-- Top pill (green-yellow) -->
+  <rect x="4" y="6" width="44" height="17" rx="8.5" fill="url(#fl-g1)"/>
+  <!-- Middle pill (teal-green) -->
+  <rect x="12" y="21" width="44" height="17" rx="8.5" fill="url(#fl-g2)"/>
+  <!-- Bottom pill (blue-gray) -->
+  <rect x="20" y="36" width="36" height="14" rx="7" fill="url(#fl-g3)" opacity="0.7"/>
+  <!-- Fluxia wordmark -->
+  <text x="70" y="40" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#353435" letter-spacing="-0.5">Fluxia</text>
+</svg>
