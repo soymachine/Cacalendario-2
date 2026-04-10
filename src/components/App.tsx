@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import Calendar from './Calendar';
 import DaysSinceCounter from './DaysSinceCounter';
+import InlineStats from './InlineStats';
 import RegisterScreen from './RegisterScreen';
 import EditScreen from './EditScreen';
 import DayDetailScreen from './DayDetailScreen';
 import CongratsScreen from './CongratsScreen';
-import StatsScreen from './StatsScreen';
 import AccountScreen from './AccountScreen';
 import AuthScreen from './AuthScreen';
 import PrivacyScreen from './PrivacyScreen';
@@ -17,10 +17,10 @@ import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
 import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
-import { getEntriesForDate, type PoopEntry } from '../lib/storage';
+import { type PoopEntry } from '../lib/storage';
 import { D } from '../lib/design';
 
-type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'stats' | 'registerDate';
+type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
 
 function AppContent() {
   const { user, isRecovery } = useAuth();
@@ -91,9 +91,10 @@ function AppContent() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: D.bg, overflow: 'hidden' }}>
       {/* ── MAIN CONTENT (tabs) ── */}
       <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+
         {/* Historial tab */}
         <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'calendar' ? 'block' : 'none' }}>
-          <div style={{ padding: '24px 16px 16px', maxWidth: 480, margin: '0 auto' }}>
+          <div style={{ padding: '24px 16px 32px', maxWidth: 480, margin: '0 auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>Historial</h1>
@@ -105,18 +106,8 @@ function AppContent() {
             <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden', marginTop: 12 }}>
               <Calendar onDayClick={handleDayClick} />
             </div>
-            {/* Stats button */}
-            <button
-              onClick={() => setOverlay('stats')}
-              style={{
-                marginTop: 12, width: '100%', padding: '12px 0', borderRadius: 50,
-                backgroundColor: D.card, border: `1px solid ${D.border}`,
-                fontSize: 14, fontWeight: 700, color: D.text, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              <span>📊</span> Ver estadísticas
-            </button>
+            {/* Inline stats */}
+            <InlineStats />
           </div>
         </div>
 
@@ -142,7 +133,6 @@ function AppContent() {
 
       {/* ── OVERLAYS ── */}
 
-      {/* Register for a specific past date */}
       {overlay === 'registerDate' && (
         <RegisterScreen
           date={registerDate}
@@ -179,10 +169,6 @@ function AppContent() {
         />
       )}
 
-      {overlay === 'stats' && (
-        <StatsScreen onClose={() => setOverlay('none')} />
-      )}
-
       {overlay === 'auth' && (
         <AuthScreen
           onClose={() => setOverlay('none')}
@@ -195,7 +181,6 @@ function AppContent() {
         <PrivacyScreen onClose={() => setOverlay('none')} />
       )}
 
-      {/* Splash */}
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
     </div>
   );

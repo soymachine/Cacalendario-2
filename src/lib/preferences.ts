@@ -82,14 +82,30 @@ export function getDoctorColor(): string | null {
 
 export function setDoctorColor(primary: string): void {
   localStorage.setItem(DOCTOR_COLOR_KEY, primary);
-  applyTheme();
+  applyDoctorColor(primary);
   window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
 
 export function clearDoctorColor(): void {
   localStorage.removeItem(DOCTOR_COLOR_KEY);
-  applyTheme();
+  applyDoctorColor(null);
   window.dispatchEvent(new Event('fluxia-prefs-changed'));
+}
+
+function applyDoctorColor(color: string | null): void {
+  if (typeof document === 'undefined') return;
+  if (color) {
+    document.documentElement.style.setProperty('--fluxia-primary', color);
+    document.documentElement.style.setProperty('--fluxia-primary-text', '#FFFFFF');
+    // Update meta theme-color
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', '#F0F2F4');
+  } else {
+    document.documentElement.style.setProperty('--fluxia-primary', '#353435');
+    document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', '#F0F2F4');
+  }
 }
 
 // ── Doctor hidden fields ──
@@ -112,18 +128,13 @@ export function clearDoctorHiddenFields(): void {
   localStorage.removeItem(DOCTOR_FIELDS_KEY);
 }
 
-// Apply theme to DOM
-export function applyTheme(theme?: Theme): void {
-  const t = theme || getSelectedTheme();
-  document.documentElement.style.setProperty('--theme-bg', t.bg);
-  document.documentElement.style.setProperty('--theme-main', t.main);
-  document.documentElement.style.setProperty('--theme-text', t.text);
-  document.documentElement.style.setProperty('--theme-glass', t.glass);
-  document.body.style.backgroundColor = t.main;
-  document.documentElement.style.setProperty('--fluxia-bg', t.main);
-
-  // Update meta theme-color for mobile browsers
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', t.main);
+// Apply theme to DOM — keeps body in Figma gray, only CSS vars for legacy compat
+export function applyTheme(_theme?: Theme): void {
+  if (typeof document === 'undefined') return;
+  // Apply doctor color CSS variable if stored
+  const doctorColor = getDoctorColor();
+  applyDoctorColor(doctorColor);
+  // Body always uses the Figma gray background
+  document.body.style.backgroundColor = '#F0F2F4';
 }
 
