@@ -39,7 +39,7 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
             transform: phase === 'animate' ? 'translateY(-42vh) scale(0.7)' : 'translateY(0) scale(1)',
           }}
         >
-          <img src={asset('/logo.svg')} alt="Fluxia" style={{ width: 112, height: 100 }} />
+          <img src={asset('/fluxia-mark.svg')} alt="Fluxia" style={{ width: 96, height: 96 }} />
         </div>
 
         {/* Text - fades out */}

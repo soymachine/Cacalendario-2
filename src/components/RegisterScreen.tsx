@@ -14,10 +14,44 @@ interface RegisterScreenProps {
   onSuccess: (date: string, time: string, entryType: 'poop' | 'urine') => void;
 }
 
+// SVG icons for float options (matching Figma arrows)
+function FloatsIcon({ color }: { color: string }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <ellipse cx="14" cy="10" rx="9" ry="6" fill={color} opacity="0.9"/>
+      <line x1="14" y1="16" x2="14" y2="24" stroke={color} strokeWidth="2.5" strokeLinecap="round"/>
+      <polyline points="9,20 14,25 19,20" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function SinksIcon({ color }: { color: string }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <line x1="14" y1="4" x2="14" y2="14" stroke={color} strokeWidth="2.5" strokeLinecap="round"/>
+      <polyline points="9,9 14,4 19,9" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <ellipse cx="14" cy="20" rx="9" ry="6" fill={color} opacity="0.9"/>
+    </svg>
+  );
+}
+
+function BothIcon({ color }: { color: string }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <ellipse cx="9" cy="8" rx="7" ry="5" fill={color} opacity="0.9"/>
+      <line x1="9" y1="13" x2="9" y2="20" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <polyline points="5.5,17 9,21 12.5,17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="20" y1="8" x2="20" y2="15" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <polyline points="16.5,11 20,7 23.5,11" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <ellipse cx="20" cy="21" rx="7" ry="5" fill={color} opacity="0.9"/>
+    </svg>
+  );
+}
+
 const FLOAT_OPTIONS = [
-  { label: '🫧 Flota', value: 'floats' as const },
-  { label: '⬇️ No flota', value: 'sinks' as const },
-  { label: '🫧⬇️ Ambos', value: 'both' as const },
+  { label: 'Flota', value: 'floats' as const, Icon: FloatsIcon },
+  { label: 'No flota', value: 'sinks' as const, Icon: SinksIcon },
+  { label: 'Ambos', value: 'both' as const, Icon: BothIcon },
 ];
 
 const COLOR_OPTIONS = [
@@ -146,8 +180,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const chipActive: React.CSSProperties = { backgroundColor: D.primary, color: D.primaryText };
   const chipInactive: React.CSSProperties = { backgroundColor: D.chip, color: D.chipText };
 
-  const fakeTheme = { text: D.text, glass: D.chip, main: D.bg, id: 'light' } as any;
-
   const content = (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: isTab ? '24px 16px 32px' : '60px 16px 16px' }}>
 
@@ -169,32 +201,63 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         )}
       </div>
 
-      {/* Entry type toggle */}
-      <div style={{ ...sectionCard, padding: '6px' }}>
-        <div style={{ display: 'flex', gap: 4 }}>
+      {/* Entry type toggle — diagonal split */}
+      <div style={{ ...sectionCard, padding: 0, overflow: 'hidden', height: 70 }}>
+        <div style={{ position: 'relative', height: '100%' }}>
+          {/* Poop half (left) */}
           <button
             onClick={() => setEntryType('poop')}
             style={{
-              flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              ...(entryType === 'poop' ? chipActive : { backgroundColor: 'transparent', color: D.textMuted }),
+              position: 'absolute', inset: 0,
+              clipPath: 'polygon(0 0, 60% 0, 40% 100%, 0 100%)',
+              backgroundColor: entryType === 'poop' ? D.primary : D.chip,
+              border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              paddingRight: '18%',
+              transition: 'background-color 0.2s',
             }}
           >
-            {emoji.char === 'svg'
-              ? <img src={asset('/poop-small.svg')} alt="" style={{ width: 20, height: 20 }} />
-              : <span>{emoji.char}</span>}
-            Deposición
+            {/* Toilet icon */}
+            <svg width="22" height="26" viewBox="0 0 24 27" fill="none"
+              stroke={entryType === 'poop' ? D.primaryText : D.text}
+              strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7.5 2H16.5C17.6 2 18.5 2.9 18.5 4V9.5H5.5V4C5.5 2.9 6.4 2 7.5 2Z"/>
+              <ellipse cx="12" cy="9.5" rx="8.5" ry="2.5"/>
+              <path d="M3.5 9.5H20.5C20.5 9.5 21.5 18.5 12 18.5C2.5 18.5 3.5 9.5 3.5 9.5Z"/>
+              <path d="M8 18.5H16C16 18.5 16 21.5 14.5 21.5H9.5C8 21.5 8 18.5 8 18.5Z"/>
+              <path d="M7.5 21.5H16.5"/>
+            </svg>
+            <span style={{
+              fontSize: 11, fontWeight: 800, marginTop: 4,
+              color: entryType === 'poop' ? D.primaryText : D.textMuted,
+            }}>
+              Deposición
+            </span>
           </button>
+
+          {/* Urine half (right) */}
           <button
             onClick={() => setEntryType('urine')}
             style={{
-              flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              ...(entryType === 'urine' ? chipActive : { backgroundColor: 'transparent', color: D.textMuted }),
+              position: 'absolute', inset: 0,
+              clipPath: 'polygon(60% 0, 100% 0, 100% 100%, 40% 100%)',
+              backgroundColor: entryType === 'urine' ? D.primary : D.chip,
+              border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              paddingLeft: '18%',
+              transition: 'background-color 0.2s',
             }}
           >
-            <span>💧</span>
-            Micción
+            {/* Water drop icon */}
+            <svg width="20" height="26" viewBox="0 0 20 26" fill={entryType === 'urine' ? D.primaryText : D.text}>
+              <path d="M10 1 C10 1 2 10 2 16 A8 8 0 0 0 18 16 C18 10 10 1 10 1Z"/>
+            </svg>
+            <span style={{
+              fontSize: 11, fontWeight: 800, marginTop: 4,
+              color: entryType === 'urine' ? D.primaryText : D.textMuted,
+            }}>
+              Micción
+            </span>
           </button>
         </div>
       </div>
@@ -250,7 +313,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             <p style={{ fontSize: 11, color: D.textMuted, marginBottom: 10, marginTop: -4 }}>
               Escala de Bristol — selecciona el tipo más parecido
             </p>
-            <BristolPicker value={bristol} onChange={setBristol} theme={fakeTheme} />
+            <BristolPicker value={bristol} onChange={setBristol} />
           </div>
         )}
 
@@ -280,19 +343,25 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           <div style={sectionCard}>
             <span style={sectionLabel}>¿FLOTA?</span>
             <div style={{ display: 'flex', gap: 8 }}>
-              {FLOAT_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setFloats(floats === opt.value ? null : opt.value)}
-                  style={{
-                    flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
-                    ...(floats === opt.value ? chipActive : chipInactive),
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              {FLOAT_OPTIONS.map(opt => {
+                const isActive = floats === opt.value;
+                const iconColor = isActive ? D.primaryText : D.text;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setFloats(floats === opt.value ? null : opt.value)}
+                    style={{
+                      flex: 1, padding: '10px 4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      transition: 'all 0.1s',
+                      ...(isActive ? chipActive : chipInactive),
+                    }}
+                  >
+                    <opt.Icon color={iconColor} />
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>{opt.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
