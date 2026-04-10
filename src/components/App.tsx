@@ -6,49 +6,47 @@ import EditScreen from './EditScreen';
 import DayDetailScreen from './DayDetailScreen';
 import CongratsScreen from './CongratsScreen';
 import StatsScreen from './StatsScreen';
-import SettingsScreen from './SettingsScreen';
+import AccountScreen from './AccountScreen';
 import AuthScreen from './AuthScreen';
-import ProfileScreen from './ProfileScreen';
-import ProfileButton from './ProfileButton';
-import SplashScreen from './SplashScreen';
 import PrivacyScreen from './PrivacyScreen';
-import FeedbackScreen from './FeedbackScreen';
+import SplashScreen from './SplashScreen';
+import BottomNav, { type Tab } from './BottomNav';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
 import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
-import { getEntries, getEntriesForDate, type PoopEntry } from '../lib/storage';
-import { asset } from '../lib/config';
+import { getEntriesForDate, type PoopEntry } from '../lib/storage';
+import { D } from '../lib/design';
 
-type Screen = 'home' | 'register' | 'edit' | 'dayDetail' | 'congrats' | 'stats' | 'settings' | 'auth' | 'profile' | 'privacy' | 'feedback';
+type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'stats' | 'registerDate';
 
 function AppContent() {
   const { user, isRecovery } = useAuth();
-  const { emoji, theme } = usePreferences();
-  const [screen, setScreen] = useState<Screen>('home');
+  const { emoji } = usePreferences();
+  const [activeTab, setActiveTab] = useState<Tab>('register');
+  const [overlay, setOverlay] = useState<Overlay>('none');
   const [editEntry, setEditEntry] = useState<PoopEntry | null>(null);
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
-  const [congratsData, setCongratsData] = useState<{ date: string; time: string; bristol: number | null; floats: 'floats' | 'sinks' | 'both' | null } | null>(null);
+  const [congratsData, setCongratsData] = useState<{
+    date: string; time: string; entryType: 'poop' | 'urine';
+  } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [prevScreen, setPrevScreen] = useState<Screen>('home');
 
-  // Show auth screen when recovery link is clicked
+  // Show auth overlay when recovery link is clicked
   useEffect(() => {
-    if (isRecovery) setScreen('auth');
+    if (isRecovery) setOverlay('auth');
   }, [isRecovery]);
 
-  // Sync and apply doctor palette when user logs in; clear on logout
+  // Sync and apply doctor palette on login/logout
   useEffect(() => {
     if (user) {
       setSyncing(true);
       syncOnLogin(user.id)
-        .then(() => {
-          window.dispatchEvent(new Event('fluxia-updated'));
-        })
+        .then(() => window.dispatchEvent(new Event('fluxia-updated')))
         .finally(() => setSyncing(false));
       fetchDoctorConfig(user.id).then(config => {
         if (config.palette) setDoctorColor(getPaletteTheme(config.palette).primary);
@@ -65,198 +63,139 @@ function AppContent() {
   const handleDayClick = (date: string, entries: PoopEntry[]) => {
     if (entries.length === 0) {
       setRegisterDate(date);
-      setScreen('register');
+      setOverlay('registerDate');
     } else {
       setDetailDate(date);
-      setScreen('dayDetail');
+      setOverlay('dayDetail');
     }
   };
 
-  const handleRegisterClick = () => {
-    setRegisterDate(null);
-    setScreen('register');
+  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine') => {
+    setCongratsData({ date, time, entryType });
+    setOverlay('congrats');
   };
 
-  const handleStatsClick = () => {
-    setScreen('stats');
-  };
-
-  const handleRegisterSuccess = (date: string, time: string, bristol: number | null, floats: 'floats' | 'sinks' | 'both' | null) => {
-    setCongratsData({ date, time, bristol, floats });
-    setRegisterDate(null);
-    setScreen('congrats');
-  };
-
-  const handleAuthSuccess = () => {
-    setScreen('home');
+  const handleCongratsClose = () => {
+    setCongratsData(null);
+    if (detailDate) {
+      setOverlay('dayDetail');
+    } else if (registerDate) {
+      setRegisterDate(null);
+      setOverlay('none');
+    } else {
+      setOverlay('none');
+    }
   };
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundColor: theme.main }}>
-      {/* Home screen */}
-      <div className="flex flex-col min-h-screen">
-        {/* Top bar: settings + profile */}
-        <div className="flex items-center justify-between px-4 pt-4 shrink-0">
-          <div className="flex items-center gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: D.bg, overflow: 'hidden' }}>
+      {/* ── MAIN CONTENT (tabs) ── */}
+      <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Historial tab */}
+        <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'calendar' ? 'block' : 'none' }}>
+          <div style={{ padding: '24px 16px 16px', maxWidth: 480, margin: '0 auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>Historial</h1>
+              {syncing && <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>}
+            </div>
+            {/* Days since counter */}
+            <DaysSinceCounter />
+            {/* Calendar */}
+            <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden', marginTop: 12 }}>
+              <Calendar onDayClick={handleDayClick} />
+            </div>
+            {/* Stats button */}
             <button
-              onClick={() => setScreen('settings')}
-              className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
-              style={{ backgroundColor: theme.glass }}
+              onClick={() => setOverlay('stats')}
+              style={{
+                marginTop: 12, width: '100%', padding: '12px 0', borderRadius: 50,
+                backgroundColor: D.card, border: `1px solid ${D.border}`,
+                fontSize: 14, fontWeight: 700, color: D.text, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
             >
-              <span className="text-lg">⚙️</span>
-            </button>
-            <button
-              onClick={() => setScreen('feedback')}
-              className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform"
-              style={{ backgroundColor: theme.glass }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H8l-4 4V6c0-1.1.9-2 2-2z" stroke={theme.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M12 11v.01M8 11v.01M16 11v.01" stroke={theme.text} strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <span>📊</span> Ver estadísticas
             </button>
           </div>
-          <ProfileButton
-            onLoginClick={() => setScreen('auth')}
-            onProfileClick={() => setScreen('profile')}
+        </div>
+
+        {/* Register tab */}
+        <div style={{ height: '100%', display: activeTab === 'register' ? 'block' : 'none' }}>
+          <RegisterScreen
+            isTab
+            onSuccess={handleRegisterSuccess}
           />
         </div>
 
-        {/* Logo */}
-        <div className="flex justify-center pt-4 pb-4">
-          <img src={asset('/logo.svg')} alt="Fluxia" className="w-20 h-[71px]" />
+        {/* Account tab */}
+        <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'account' ? 'block' : 'none' }}>
+          <AccountScreen
+            onShowAuth={() => setOverlay('auth')}
+            onShowPrivacy={() => setOverlay('privacy')}
+          />
         </div>
+      </main>
 
-        {/* Sync indicator */}
-        {syncing && (
-          <div className="flex justify-center">
-            <span className="text-xs" style={{ color: `${theme.text}80` }}>Sincronizando...</span>
-          </div>
-        )}
+      {/* ── BOTTOM NAV ── */}
+      <BottomNav active={activeTab} onChange={setActiveTab} />
 
-        {/* Calendar */}
-        <Calendar onDayClick={handleDayClick} />
+      {/* ── OVERLAYS ── */}
 
-        {/* Days since counter */}
-        <DaysSinceCounter />
-
-        {/* Stats button */}
-        <div className="px-10 mb-2">
-          <button
-            onClick={handleStatsClick}
-            className="w-full rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-            style={{ backgroundColor: theme.glass }}
-          >
-            <span className="text-base font-bold" style={{ color: theme.text }}>
-              📊 ver estadísticas
-            </span>
-          </button>
-        </div>
-
-        {/* Register button */}
-        <div className="px-10 pb-10 mt-auto">
-          <button
-            onClick={handleRegisterClick}
-            className="w-full rounded-full py-3 flex items-center justify-center gap-3 active:scale-95 transition-transform"
-            style={{ backgroundColor: theme.text }}
-          >
-            <span className="text-xl" style={{ color: theme.id === 'night' ? '#1a1a2e' : 'white' }}>registrar</span>
-            {emoji.char === 'svg' ? (
-              <img src={asset('/poop-button.svg')} alt="" className="w-10 h-10" />
-            ) : (
-              <span className="text-3xl">{emoji.char}</span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Overlays */}
-      {screen === 'register' && (
+      {/* Register for a specific past date */}
+      {overlay === 'registerDate' && (
         <RegisterScreen
           date={registerDate}
-          onClose={() => { setRegisterDate(null); setScreen('home'); }}
+          onClose={() => { setRegisterDate(null); setOverlay('none'); }}
           onSuccess={handleRegisterSuccess}
         />
       )}
 
-      {screen === 'edit' && editEntry && (
+      {overlay === 'edit' && editEntry && (
         <EditScreen
           entry={editEntry}
           onClose={() => {
             setEditEntry(null);
-            if (detailDate) {
-              setScreen('dayDetail');
-            } else {
-              setScreen('home');
-            }
+            setOverlay(detailDate ? 'dayDetail' : 'none');
           }}
         />
       )}
 
-      {screen === 'dayDetail' && detailDate && (
+      {overlay === 'dayDetail' && detailDate && (
         <DayDetailScreen
           date={detailDate}
-          onClose={() => { setDetailDate(null); setScreen('home'); }}
-          onAddEntry={(date) => {
-            setRegisterDate(date);
-            setScreen('register');
-          }}
-          onEditEntry={(entry) => {
-            setEditEntry(entry);
-            setScreen('edit');
-          }}
+          onClose={() => { setDetailDate(null); setOverlay('none'); }}
+          onAddEntry={(date) => { setRegisterDate(date); setOverlay('registerDate'); }}
+          onEditEntry={(entry) => { setEditEntry(entry); setOverlay('edit'); }}
         />
       )}
 
-      {screen === 'congrats' && congratsData && (
+      {overlay === 'congrats' && congratsData && (
         <CongratsScreen
           date={congratsData.date}
           time={congratsData.time}
-          bristol={congratsData.bristol}
-          floats={congratsData.floats}
-          onClose={() => {
-            setCongratsData(null);
-            if (detailDate) {
-              setScreen('dayDetail');
-            } else {
-              setScreen('home');
-            }
-          }}
+          entryType={congratsData.entryType}
+          onClose={handleCongratsClose}
         />
       )}
 
-      {screen === 'stats' && (
-        <StatsScreen onClose={() => setScreen('home')} />
+      {overlay === 'stats' && (
+        <StatsScreen onClose={() => setOverlay('none')} />
       )}
 
-      {screen === 'settings' && (
-        <SettingsScreen onClose={() => setScreen('home')} />
-      )}
-
-      {screen === 'auth' && (
+      {overlay === 'auth' && (
         <AuthScreen
-          onClose={() => setScreen('home')}
-          onSuccess={handleAuthSuccess}
-          onShowPrivacy={() => { setPrevScreen('auth'); setScreen('privacy'); }}
+          onClose={() => setOverlay('none')}
+          onSuccess={() => setOverlay('none')}
+          onShowPrivacy={() => setOverlay('privacy')}
         />
       )}
 
-      {screen === 'profile' && (
-        <ProfileScreen
-          onClose={() => setScreen('home')}
-          onShowPrivacy={() => { setPrevScreen('profile'); setScreen('privacy'); }}
-        />
+      {overlay === 'privacy' && (
+        <PrivacyScreen onClose={() => setOverlay('none')} />
       )}
 
-      {screen === 'privacy' && (
-        <PrivacyScreen onClose={() => setScreen(prevScreen)} />
-      )}
-
-      {screen === 'feedback' && (
-        <FeedbackScreen onClose={() => setScreen('home')} />
-      )}
-
-      {/* Splash intro animation */}
+      {/* Splash */}
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
     </div>
   );
