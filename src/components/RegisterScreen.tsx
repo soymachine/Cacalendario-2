@@ -281,9 +281,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           }}
         >
           <img
-            src={asset('/poop-small.svg')}
-            width={28}
-            height={28}
+            src={asset('/Switch-Caca-Icono.png')}
+            width={38}
+            height={38}
             alt="Deposición"
             style={{
               display: 'block',
@@ -310,23 +310,17 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             transition: 'background-color 0.2s, box-shadow 0.2s',
           }}
         >
-          {/* Water-drop icon — exact same SVG geometry used in the poop/urine split */}
-          <svg width="22" height="30" viewBox="0 0 22 30" fill="none">
-            <path
-              d="M11 1C11 1 1 13 1 20C1 25.5228 5.47715 30 11 30C16.5228 30 21 25.5228 21 20C21 13 11 1 11 1Z"
-              fill={entryType === 'urine' ? D.text : D.textMuted}
-              opacity={entryType === 'urine' ? 1 : 0.35}
-              style={{ transition: 'fill 0.2s, opacity 0.2s' } as React.CSSProperties}
-            />
-            <path
-              d="M7 22C7 22 7 26 11 26"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              opacity={entryType === 'urine' ? 0.5 : 0}
-              style={{ transition: 'opacity 0.2s' } as React.CSSProperties}
-            />
-          </svg>
+          <img
+            src={asset('/Switch-Miccion-Icono.png')}
+            width={38}
+            height={38}
+            alt="Micción"
+            style={{
+              display: 'block',
+              opacity: entryType === 'urine' ? 1 : 0.35,
+              transition: 'opacity 0.2s',
+            }}
+          />
         </button>
       </div>
 
