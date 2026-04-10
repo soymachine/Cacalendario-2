@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getDaysSinceLastEntry } from '../lib/storage';
 import { formatSinceDate } from '../lib/dates';
-import { usePreferences } from '../lib/usePreferences';
+import { D } from '../lib/design';
 
 export default function DaysSinceCounter() {
-  const { theme } = usePreferences();
   const [data, setData] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, sinceText: '' });
 
   const refresh = () => {
@@ -27,27 +26,27 @@ export default function DaysSinceCounter() {
 
   if (!data.sinceText) {
     return (
-      <div className="px-7 py-4">
-        <p className="text-sm font-black" style={{ color: theme.text }}>TIEMPO SIN OBRAR</p>
-        <p className="text-2xl font-normal mt-1" style={{ color: theme.text }}>Sin registros aún</p>
+      <div style={{ padding: '12px 4px' }}>
+        <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, letterSpacing: 0.5, margin: '0 0 4px' }}>TIEMPO SIN OBRAR</p>
+        <p style={{ fontSize: 24, color: D.text, margin: 0 }}>Sin registros aún</p>
       </div>
     );
   }
 
   return (
-    <div className="px-7 py-3">
-      <p className="text-sm font-black" style={{ color: theme.text }}>TIEMPO SIN OBRAR</p>
-      <div className="flex items-baseline gap-0 mt-1">
-        <span className="text-[48px] font-black leading-none" style={{ color: theme.text }}>{data.days}</span>
-        <span className="text-lg font-normal" style={{ color: theme.text }}>d</span>
-        <span className="text-[48px] font-black leading-none ml-1" style={{ color: theme.text }}>{pad(data.hours)}</span>
-        <span className="text-lg font-normal" style={{ color: theme.text }}>h</span>
-        <span className="text-[48px] font-black leading-none ml-1" style={{ color: theme.text }}>{pad(data.minutes)}</span>
-        <span className="text-lg font-normal" style={{ color: theme.text }}>m</span>
-        <span className="text-[48px] font-black leading-none ml-1" style={{ color: theme.text }}>{pad(data.seconds)}</span>
-        <span className="text-lg font-normal" style={{ color: theme.text }}>s</span>
+    <div style={{ padding: '12px 4px' }}>
+      <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, letterSpacing: 0.5, margin: '0 0 4px' }}>TIEMPO SIN OBRAR</p>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
+        <span style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: D.text }}>{data.days}</span>
+        <span style={{ fontSize: 18, color: D.text }}>d</span>
+        <span style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.hours)}</span>
+        <span style={{ fontSize: 18, color: D.text }}>h</span>
+        <span style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.minutes)}</span>
+        <span style={{ fontSize: 18, color: D.text }}>m</span>
+        <span style={{ fontSize: 48, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.seconds)}</span>
+        <span style={{ fontSize: 18, color: D.text }}>s</span>
       </div>
-      <p className="text-xs mt-1" style={{ color: theme.text }}>{data.sinceText}</p>
+      <p style={{ fontSize: 12, marginTop: 4, color: D.textMuted }}>{data.sinceText}</p>
     </div>
   );
 }

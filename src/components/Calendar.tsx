@@ -3,6 +3,7 @@ import { getMonthName, getDaysInMonth, getFirstDayOfMonth, toDateKey } from '../
 import { getEntriesForMonth, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
+import { D } from '../lib/design';
 
 interface CalendarProps {
   onDayClick: (date: string, entries: PoopEntry[]) => void;
@@ -11,7 +12,7 @@ interface CalendarProps {
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 export default function Calendar({ onDayClick }: CalendarProps) {
-  const { emoji, theme } = usePreferences();
+  const { emoji } = usePreferences();
   const now = new Date();
   const todayKey = toDateKey(now);
   const [year, setYear] = useState(now.getFullYear());
@@ -22,14 +23,12 @@ export default function Calendar({ onDayClick }: CalendarProps) {
     setEntries(getEntriesForMonth(year, month + 1));
   }, [year, month]);
 
-  // Listen for storage changes (when new entry is saved)
   useEffect(() => {
     const handler = () => setEntries(getEntriesForMonth(year, month + 1));
     window.addEventListener('fluxia-updated', handler);
     return () => window.removeEventListener('fluxia-updated', handler);
   }, [year, month]);
 
-  // Group entries by date
   const entriesByDate = new Map<string, PoopEntry[]>();
   entries.forEach((e) => {
     const existing = entriesByDate.get(e.date) || [];
@@ -55,31 +54,45 @@ export default function Calendar({ onDayClick }: CalendarProps) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <div className="w-full px-4">
+    <div style={{ width: '100%', padding: '16px 12px' }}>
       {/* Month nav */}
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-70" style={{ backgroundColor: `${theme.text}15` }}>
-          <svg width="12" height="20" viewBox="0 0 12 20" fill="none">
-            <path d="M10 2L2 10L10 18" stroke={theme.text} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <button
+          onClick={prevMonth}
+          style={{
+            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: D.bg,
+          }}
+        >
+          <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+            <path d="M8 2L2 9L8 16" stroke={D.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h2 className="text-2xl font-black tracking-wide" style={{ color: theme.text }}>{getMonthName(month)}</h2>
-        <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center rounded-full active:opacity-70" style={{ backgroundColor: `${theme.text}15` }}>
-          <svg width="12" height="20" viewBox="0 0 12 20" fill="none">
-            <path d="M2 2L10 10L2 18" stroke={theme.text} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        <h2 style={{ fontSize: 20, fontWeight: 900, color: D.text, margin: 0, letterSpacing: 0.3 }}>
+          {getMonthName(month)} {year}
+        </h2>
+        <button
+          onClick={nextMonth}
+          style={{
+            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: D.bg,
+          }}
+        >
+          <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+            <path d="M2 2L8 9L2 16" stroke={D.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
         {WEEKDAYS.map((d) => (
-          <div key={d} className="text-center text-sm font-black" style={{ color: theme.text }}>{d}</div>
+          <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 900, color: D.textMuted }}>{d}</div>
         ))}
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 gap-1">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
           if (day === null) return <div key={`empty-${i}`} />;
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -91,34 +104,43 @@ export default function Calendar({ onDayClick }: CalendarProps) {
           return (
             <button
               key={dateKey}
-              onClick={() => {
-                if (isFuture) return;
-                onDayClick(dateKey, dayEntries);
+              onClick={() => { if (isFuture) return; onDayClick(dateKey, dayEntries); }}
+              style={{
+                aspectRatio: '1',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                border: 'none',
+                cursor: isFuture ? 'default' : 'pointer',
+                opacity: isFuture ? 0.4 : 1,
+                backgroundColor: hasEntry ? D.chip : D.bg,
               }}
-              className={`aspect-square rounded-full flex items-center justify-center text-sm relative ${
-                isFuture ? 'cursor-default opacity-40' : 'cursor-pointer active:scale-95'
-              }`}
-              style={{ backgroundColor: theme.glass }}
             >
               {hasEntry ? (
                 <>
-                  {emoji.char === 'svg' ? (
-                    <img src={asset('/poop-small.svg')} alt="poop" className="w-7 h-7" />
+                  {dayEntries.every((e: any) => e.entry_type === 'urine') ? (
+                    <span style={{ fontSize: 18 }}>💧</span>
+                  ) : emoji.char === 'svg' ? (
+                    <img src={asset('/poop-small.svg')} alt="poop" style={{ width: 26, height: 26 }} />
                   ) : (
-                    <span className="text-xl">{emoji.char}</span>
+                    <span style={{ fontSize: 18 }}>{emoji.char}</span>
                   )}
-                  {/* Badge for multiple entries */}
                   {count > 1 && (
-                    <span
-                      className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
-                      style={{ backgroundColor: theme.text, color: invertColorFor(theme) }}
-                    >
+                    <span style={{
+                      position: 'absolute', top: -2, right: -2,
+                      width: 16, height: 16, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 900,
+                      backgroundColor: D.primary, color: D.primaryText,
+                    }}>
                       {count}
                     </span>
                   )}
                 </>
               ) : (
-                <span className="text-xs font-medium" style={{ color: `${theme.text}66` }}>{day}</span>
+                <span style={{ fontSize: 12, color: `${D.text}66` }}>{day}</span>
               )}
             </button>
           );
@@ -126,8 +148,4 @@ export default function Calendar({ onDayClick }: CalendarProps) {
       </div>
     </div>
   );
-}
-
-function invertColorFor(theme: { id: string }): string {
-  return theme.id === 'night' ? '#1a1a2e' : 'white';
 }
