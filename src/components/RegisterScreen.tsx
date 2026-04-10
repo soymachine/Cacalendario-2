@@ -254,63 +254,80 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         </button>
       </div>
 
-      {/* Entry type toggle — diagonal split */}
-      <div style={{ ...sectionCard, padding: 0, overflow: 'hidden', height: 70, marginBottom: 10 }}>
-        <div style={{ position: 'relative', height: '100%' }}>
-          {/* Poop half (left) */}
-          <button
-            onClick={() => setEntryType('poop')}
+      {/* Entry type toggle — pill segmented control */}
+      <div style={{
+        display: 'flex',
+        backgroundColor: D.chip,
+        borderRadius: 999,
+        padding: 4,
+        marginBottom: 10,
+        gap: 4,
+      }}>
+        {/* Poop */}
+        <button
+          onClick={() => setEntryType('poop')}
+          style={{
+            flex: 1,
+            height: 52,
+            borderRadius: 999,
+            backgroundColor: entryType === 'poop' ? D.card : 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: entryType === 'poop' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+            transition: 'background-color 0.2s, box-shadow 0.2s',
+          }}
+        >
+          <img
+            src={asset('/poop-small.svg')}
+            width={28}
+            height={28}
+            alt="Deposición"
             style={{
-              position: 'absolute', inset: 0,
-              clipPath: 'polygon(0 0, 60% 0, 40% 100%, 0 100%)',
-              backgroundColor: entryType === 'poop' ? D.primary : D.chip,
-              border: 'none', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              paddingRight: '18%',
-              transition: 'background-color 0.2s',
+              display: 'block',
+              opacity: entryType === 'poop' ? 1 : 0.35,
+              transition: 'opacity 0.2s',
             }}
-          >
-            <svg width="22" height="26" viewBox="0 0 24 27" fill="none"
-              stroke={entryType === 'poop' ? D.primaryText : D.text}
-              strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7.5 2H16.5C17.6 2 18.5 2.9 18.5 4V9.5H5.5V4C5.5 2.9 6.4 2 7.5 2Z"/>
-              <ellipse cx="12" cy="9.5" rx="8.5" ry="2.5"/>
-              <path d="M3.5 9.5H20.5C20.5 9.5 21.5 18.5 12 18.5C2.5 18.5 3.5 9.5 3.5 9.5Z"/>
-              <path d="M8 18.5H16C16 18.5 16 21.5 14.5 21.5H9.5C8 21.5 8 18.5 8 18.5Z"/>
-              <path d="M7.5 21.5H16.5"/>
-            </svg>
-            <span style={{
-              fontSize: 11, fontWeight: 800, marginTop: 4,
-              color: entryType === 'poop' ? D.primaryText : D.textMuted,
-            }}>
-              Deposición
-            </span>
-          </button>
+          />
+        </button>
 
-          {/* Urine half (right) */}
-          <button
-            onClick={() => setEntryType('urine')}
-            style={{
-              position: 'absolute', inset: 0,
-              clipPath: 'polygon(60% 0, 100% 0, 100% 100%, 40% 100%)',
-              backgroundColor: entryType === 'urine' ? D.primary : D.chip,
-              border: 'none', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              paddingLeft: '18%',
-              transition: 'background-color 0.2s',
-            }}
-          >
-            <svg width="20" height="26" viewBox="0 0 20 26" fill={entryType === 'urine' ? D.primaryText : D.text}>
-              <path d="M10 1 C10 1 2 10 2 16 A8 8 0 0 0 18 16 C18 10 10 1 10 1Z"/>
-            </svg>
-            <span style={{
-              fontSize: 11, fontWeight: 800, marginTop: 4,
-              color: entryType === 'urine' ? D.primaryText : D.textMuted,
-            }}>
-              Micción
-            </span>
-          </button>
-        </div>
+        {/* Urine */}
+        <button
+          onClick={() => setEntryType('urine')}
+          style={{
+            flex: 1,
+            height: 52,
+            borderRadius: 999,
+            backgroundColor: entryType === 'urine' ? D.card : 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: entryType === 'urine' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+            transition: 'background-color 0.2s, box-shadow 0.2s',
+          }}
+        >
+          {/* Water-drop icon — exact same SVG geometry used in the poop/urine split */}
+          <svg width="22" height="30" viewBox="0 0 22 30" fill="none">
+            <path
+              d="M11 1C11 1 1 13 1 20C1 25.5228 5.47715 30 11 30C16.5228 30 21 25.5228 21 20C21 13 11 1 11 1Z"
+              fill={entryType === 'urine' ? D.text : D.textMuted}
+              opacity={entryType === 'urine' ? 1 : 0.35}
+              style={{ transition: 'fill 0.2s, opacity 0.2s' } as React.CSSProperties}
+            />
+            <path
+              d="M7 22C7 22 7 26 11 26"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              opacity={entryType === 'urine' ? 0.5 : 0}
+              style={{ transition: 'opacity 0.2s' } as React.CSSProperties}
+            />
+          </svg>
+        </button>
       </div>
 
       {/* ── POOP FORM ── */}
