@@ -92,18 +92,33 @@ export function clearDoctorColor(): void {
   window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = hex.replace('#', '').match(/.{2}/g);
+  if (!m || m.length < 3) return null;
+  return { r: parseInt(m[0], 16), g: parseInt(m[1], 16), b: parseInt(m[2], 16) };
+}
+
 function applyDoctorColor(color: string | null): void {
   if (typeof document === 'undefined') return;
+  const meta = document.querySelector('meta[name="theme-color"]');
   if (color) {
     document.documentElement.style.setProperty('--fluxia-primary', color);
     document.documentElement.style.setProperty('--fluxia-primary-text', '#FFFFFF');
-    // Update meta theme-color
-    const meta = document.querySelector('meta[name="theme-color"]');
+    // Derive a light tint for chip backgrounds (15% primary + 85% white)
+    const rgb = hexToRgb(color);
+    if (rgb) {
+      const r = Math.round(rgb.r * 0.15 + 255 * 0.85);
+      const g = Math.round(rgb.g * 0.15 + 255 * 0.85);
+      const b = Math.round(rgb.b * 0.15 + 255 * 0.85);
+      document.documentElement.style.setProperty('--fluxia-chip', `rgb(${r},${g},${b})`);
+      document.documentElement.style.setProperty('--fluxia-chip-text', color);
+    }
     if (meta) meta.setAttribute('content', '#F0F2F4');
   } else {
     document.documentElement.style.setProperty('--fluxia-primary', '#353435');
     document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
-    const meta = document.querySelector('meta[name="theme-color"]');
+    document.documentElement.style.removeProperty('--fluxia-chip');
+    document.documentElement.style.removeProperty('--fluxia-chip-text');
     if (meta) meta.setAttribute('content', '#F0F2F4');
   }
 }

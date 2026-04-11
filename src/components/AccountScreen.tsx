@@ -329,6 +329,22 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
               </div>
             </div>
 
+            {/* Sign out — right below user card */}
+            {confirmLogout ? (
+              <div style={{ ...card, marginBottom: 12 }}>
+                <p style={{ fontSize: 14, color: D.text, textAlign: 'center', marginBottom: 4 }}>¿Seguro que quieres cerrar sesión?</p>
+                <p style={{ fontSize: 12, color: D.textMuted, textAlign: 'center', marginBottom: 12 }}>Tus datos locales se mantendrán en este dispositivo.</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setConfirmLogout(false)} style={{ ...outlineBtn, flex: 1 }}>Cancelar</button>
+                  <button onClick={handleSignOut} style={{ ...dangerBtn, flex: 1, backgroundColor: D.danger, color: 'white' }}>Salir</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmLogout(true)} style={{ ...outlineBtn, marginBottom: 12 }}>
+                Cerrar sesión
+              </button>
+            )}
+
             {/* Display name */}
             <div style={card}>
               <span style={label}>👤 TU NOMBRE</span>
@@ -578,50 +594,25 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
           </div>
         )}
 
-        {/* ── ACCOUNT ACTIONS (logged in) ── */}
-        {user && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-            {/* Sign out */}
-            {confirmLogout ? (
-              <div style={{ ...card, marginBottom: 0 }}>
-                <p style={{ fontSize: 14, color: D.text, textAlign: 'center', marginBottom: 4 }}>¿Seguro que quieres cerrar sesión?</p>
-                <p style={{ fontSize: 12, color: D.textMuted, textAlign: 'center', marginBottom: 12 }}>Tus datos locales se mantendrán en este dispositivo.</p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setConfirmLogout(false)} style={{ ...outlineBtn, flex: 1 }}>Cancelar</button>
-                  <button onClick={handleSignOut} style={{ ...dangerBtn, flex: 1, backgroundColor: D.danger, color: 'white' }}>Salir</button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmLogout(true)} style={outlineBtn}>
-                Cerrar sesión
+        {/* ── DELETE ACCOUNT (subtle, at the bottom) ── */}
+        {user && confirmDelete ? (
+          <div style={{ ...card, marginBottom: 12, border: `2px solid ${D.danger}`, backgroundColor: D.dangerBg }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: D.danger, textAlign: 'center', marginBottom: 6 }}>⚠️ ¿Estás seguro?</p>
+            <p style={{ fontSize: 12, color: D.danger, textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>
+              Esta acción es <strong>irreversible</strong>. Se borrarán todos tus registros de la nube y del dispositivo.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDelete(false)} style={{ ...outlineBtn, flex: 1 }}>Cancelar</button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{ flex: 1, padding: '12px 0', borderRadius: 50, border: 'none', cursor: 'pointer', backgroundColor: D.danger, color: 'white', fontSize: 14, fontWeight: 700, opacity: deleting ? 0.5 : 1 }}
+              >
+                {deleting ? 'Eliminando...' : 'Sí, eliminar todo'}
               </button>
-            )}
-
-            {/* Delete account */}
-            {confirmDelete ? (
-              <div style={{ ...card, marginBottom: 0, border: `2px solid ${D.danger}`, backgroundColor: D.dangerBg }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: D.danger, textAlign: 'center', marginBottom: 6 }}>⚠️ ¿Estás seguro?</p>
-                <p style={{ fontSize: 12, color: D.danger, textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>
-                  Esta acción es <strong>irreversible</strong>. Se borrarán todos tus registros de la nube y del dispositivo.
-                </p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setConfirmDelete(false)} style={{ ...outlineBtn, flex: 1 }}>Cancelar</button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    style={{ flex: 1, padding: '12px 0', borderRadius: 50, border: 'none', cursor: 'pointer', backgroundColor: D.danger, color: 'white', fontSize: 14, fontWeight: 700, opacity: deleting ? 0.5 : 1 }}
-                  >
-                    {deleting ? 'Eliminando...' : 'Sí, eliminar todo'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmDelete(true)} style={dangerBtn}>
-                Eliminar mi cuenta
-              </button>
-            )}
+            </div>
           </div>
-        )}
+        ) : null}
 
         {/* ── FOOTER ── */}
         <div style={{ textAlign: 'center', paddingTop: 8 }}>
@@ -631,6 +622,14 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
           <p style={{ fontSize: 11, color: D.textMuted }}>
             Hecho con ❤️ en España · {APP_VERSION}
           </p>
+          {user && !confirmDelete && (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 16, fontSize: 12, color: D.danger, opacity: 0.6 }}
+            >
+              Eliminar mi cuenta
+            </button>
+          )}
         </div>
       </div>
     </div>
