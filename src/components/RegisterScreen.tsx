@@ -310,10 +310,13 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                     key={opt.value}
                     onClick={() => setFloats(floats === opt.value ? null : opt.value)}
                     style={{
-                      flex: 1, padding: '10px 4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      flex: 1, padding: '10px 4px 8px', borderRadius: 12,
+                      border: isActive ? `2px solid ${D.primary}` : '2px solid transparent',
+                      cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       transition: 'all 0.1s',
-                      ...(isActive ? chipActive : chipInactive),
+                      backgroundColor: isActive ? D.primary : D.card,
+                      color: isActive ? D.primaryText : D.text,
                     }}
                   >
                     <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
@@ -328,16 +331,16 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         {show('color') && (
           <div style={sectionCard}>
             <span style={sectionLabel}>Color</span>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
               {COLOR_OPTIONS.map(opt => (
                 <button
                   key={opt.hex}
                   onClick={() => setColor(color === opt.hex ? null : opt.hex)}
                   title={opt.label}
                   style={{
-                    flex: 1, height: 48, borderRadius: 10, backgroundColor: opt.hex,
+                    flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
                     border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                    boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
+                    boxShadow: color === opt.hex ? `0 0 0 2px white` : 'none',
                     transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
@@ -450,16 +453,16 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         {show('urine_color') && (
           <div style={sectionCard}>
             <span style={sectionLabel}>Color</span>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
               {URINE_COLOR_OPTIONS.map(opt => (
                 <button
                   key={opt.hex}
                   onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                   title={opt.label}
                   style={{
-                    flex: 1, height: 48, borderRadius: 10, backgroundColor: opt.hex,
+                    flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
                     border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000020',
-                    boxShadow: urineColor === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
+                    boxShadow: urineColor === opt.hex ? `0 0 0 2px white` : 'none',
                     transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
@@ -494,37 +497,22 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       </>}
 
       {/* Notes */}
-      <div style={{ ...sectionCard, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ ...sectionLabel, marginBottom: 0, flex: 1 }}>Notas</span>
-        <button
-          onClick={() => {
-            const el = document.getElementById('fluxia-notes-area');
-            if (el) el.focus();
+      <div style={sectionCard}>
+        <span style={sectionLabel}>Notas</span>
+        <textarea
+          id="fluxia-notes-area"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Escribe tus notas aquí..."
+          rows={3}
+          style={{
+            width: '100%', borderRadius: 8, padding: '8px 10px',
+            fontSize: 14, color: D.text, backgroundColor: D.bg,
+            border: 'none', outline: 'none', resize: 'none',
+            fontFamily: 'inherit', boxSizing: 'border-box',
           }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-        >
-          <EditIcon />
-        </button>
+        />
       </div>
-      {/* Expandable notes area */}
-      {notes !== '' || true ? (
-        <div style={{ marginBottom: 10, marginTop: -8 }}>
-          <textarea
-            id="fluxia-notes-area"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Escribe tus notas aquí..."
-            rows={3}
-            style={{
-              width: '100%', borderRadius: '0 0 14px 14px', padding: '10px 16px',
-              fontSize: 14, color: D.text, backgroundColor: D.card,
-              border: 'none', borderTop: `1px solid ${D.border}`,
-              outline: 'none', resize: 'none',
-              fontFamily: 'inherit', boxSizing: 'border-box',
-            }}
-          />
-        </div>
-      ) : null}
 
       {/* Save button */}
       <button

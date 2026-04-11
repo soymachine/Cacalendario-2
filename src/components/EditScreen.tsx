@@ -230,16 +230,16 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
             {show('color') && (
               <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
                 <span style={sectionLabel}>COLOR</span>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
                   {COLOR_OPTIONS.map(opt => (
                     <button
                       key={opt.hex}
                       onClick={() => setColor(color === opt.hex ? null : opt.hex)}
                       title={opt.label}
                       style={{
-                        flex: 1, height: 48, borderRadius: 10, backgroundColor: opt.hex,
+                        flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
                         border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                        boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
+                        boxShadow: color === opt.hex ? `0 0 0 2px white` : 'none',
                         transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />
@@ -257,10 +257,13 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       key={opt.value}
                       onClick={() => setFloats(floats === opt.value ? null : opt.value)}
                       style={{
-                        flex: 1, padding: '10px 4px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                        flex: 1, padding: '10px 4px 8px', borderRadius: 10,
+                        border: floats === opt.value ? `2px solid ${D.primary}` : '2px solid transparent',
+                        cursor: 'pointer',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                         fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
-                        ...(floats === opt.value ? chipActive : chipInactive),
+                        backgroundColor: floats === opt.value ? D.primary : D.card,
+                        color: floats === opt.value ? D.primaryText : D.text,
                       }}
                     >
                       <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
@@ -373,16 +376,16 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
             {show('urine_color') && (
               <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
                 <span style={sectionLabel}>COLOR</span>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
                   {URINE_COLOR_OPTIONS.map(opt => (
                     <button
                       key={opt.hex}
                       onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                       title={opt.label}
                       style={{
-                        flex: 1, height: 48, borderRadius: 10, backgroundColor: opt.hex,
+                        flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
                         border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000020',
-                        boxShadow: urineColor === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
+                        boxShadow: urineColor === opt.hex ? `0 0 0 2px white` : 'none',
                         transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />

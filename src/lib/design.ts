@@ -1,7 +1,7 @@
 // Fluxia v2 design tokens
-// primary/primaryText/chip/chipText use CSS variables so doctor palette overrides work globally
+// primary/primaryText/chip/chipText/bg use CSS variables so doctor palette overrides work globally
 export const D = {
-  bg: '#F0F2F4',
+  bg: 'var(--fluxia-bg, #F0F2F4)',
   card: '#FFFFFF',
   text: '#353435',
   textMuted: '#9A9A9A',

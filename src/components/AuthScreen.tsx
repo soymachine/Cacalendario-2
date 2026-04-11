@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { asset } from '../lib/config';
-import { usePreferences } from '../lib/usePreferences';
+import { D } from '../lib/design';
 
 interface AuthScreenProps {
   onClose: () => void;
@@ -13,7 +13,6 @@ type Mode = 'login' | 'signup' | 'forgot' | 'forgot-sent' | 'reset';
 
 export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthScreenProps) {
   const { signIn, signUp, resetPassword, updatePassword, isRecovery, clearRecovery } = useAuth();
-  const { theme } = usePreferences();
   const [mode, setMode] = useState<Mode>(isRecovery ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +21,6 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const invertColor = theme.id === 'night' ? '#1a1a2e' : 'white';
 
   const handleForgot = async () => {
     setError('');
@@ -49,246 +47,130 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
   const handleSubmit = async () => {
     setError('');
     setLoading(true);
-
-    if (!email || !password) {
-      setError('Rellena todos los campos');
-      setLoading(false);
-      return;
-    }
-
-    if (mode === 'signup' && !acceptedPrivacy) {
-      setError('Debes aceptar la política de privacidad');
-      setLoading(false);
-      return;
-    }
-
+    if (!email || !password) { setError('Rellena todos los campos'); setLoading(false); return; }
+    if (mode === 'signup' && !acceptedPrivacy) { setError('Debes aceptar la política de privacidad'); setLoading(false); return; }
     if (mode === 'signup') {
       const { error } = await signUp(email, password);
-      if (error) {
-        setError(error);
-      } else {
-        setSignupSuccess(true);
-      }
+      if (error) { setError(error); } else { setSignupSuccess(true); }
     } else {
       const { error } = await signIn(email, password);
-      if (error) {
-        setError(error);
-      } else {
-        onSuccess();
-      }
+      if (error) { setError(error); } else { onSuccess(); }
     }
     setLoading(false);
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    backgroundColor: D.chip,
+    border: 'none',
+    borderRadius: 12,
+    padding: '14px 16px',
+    fontSize: 16,
+    color: D.text,
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    marginTop: 8,
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 900, color: D.textMuted,
+    letterSpacing: 0.5, marginTop: 16, display: 'block',
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: theme.main }}>
-      <div className="w-full max-w-md h-full mx-auto flex flex-col relative">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, overflow: 'hidden', backgroundColor: D.bg }}>
+      <div style={{ width: '100%', maxWidth: 480, height: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-5 right-4 z-10 w-10 h-10 flex items-center justify-center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="12" fill={theme.text} />
-            <path d="M8 8L16 16M16 8L8 16" stroke={invertColor} strokeWidth="2.5" strokeLinecap="round" />
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 20, right: 16, zIndex: 10, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="18" fill={D.primary} />
+            <path d="M12 12L24 24M24 12L12 24" stroke={D.primaryText} strokeWidth="2.5" strokeLinecap="round" />
           </svg>
         </button>
 
         {/* Logo */}
-        <div className="flex justify-center pt-12 pb-6 shrink-0">
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 48, paddingBottom: 24, flexShrink: 0 }}>
           <img src={asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 56, objectFit: 'contain' }} />
         </div>
 
-        <div className="flex-1 px-10 flex flex-col min-h-0">
+        <div style={{ flex: 1, padding: '0 24px', display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
           {mode === 'reset' ? (
-            /* ── Reset password (after clicking recovery link) ── */
-            <div className="flex-1 flex flex-col justify-center">
-              <p className="text-3xl mb-2 text-center">🔐</p>
-              <p className="text-2xl font-black shrink-0 text-center" style={{ color: theme.text }}>
-                NUEVA CONTRASEÑA
-              </p>
-              <p className="text-sm mt-1 shrink-0 text-center" style={{ color: `${theme.text}99` }}>
-                Introduce tu nueva contraseña
-              </p>
-
-              <p className="text-sm font-black mt-6 shrink-0" style={{ color: theme.text }}>NUEVA CONTRASEÑA</p>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                autoComplete="new-password"
-                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
-                style={{ backgroundColor: theme.glass, color: theme.text }}
-              />
-
-              <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>CONFIRMAR CONTRASEÑA</p>
-              <input
-                type="password"
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                placeholder="Repite la contraseña"
-                autoComplete="new-password"
-                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
-                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
-                style={{ backgroundColor: theme.glass, color: theme.text }}
-              />
-
-              {error && (
-                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
-              )}
-
-              <button
-                onClick={handleResetPassword}
-                disabled={loading}
-                className="w-full mt-6 rounded-full py-3 active:scale-95 transition-transform disabled:opacity-50"
-                style={{ backgroundColor: theme.text }}
-              >
-                <span className="text-lg" style={{ color: invertColor }}>
-                  {loading ? '...' : 'Cambiar contraseña'}
-                </span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontSize: 32, textAlign: 'center', marginBottom: 4 }}>🔐</p>
+              <p style={{ fontSize: 22, fontWeight: 900, color: D.text, textAlign: 'center' }}>Nueva contraseña</p>
+              <p style={{ fontSize: 13, color: D.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 8 }}>Introduce tu nueva contraseña</p>
+              <span style={labelStyle}>NUEVA CONTRASEÑA</span>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" style={inputStyle} />
+              <span style={labelStyle}>CONFIRMAR CONTRASEÑA</span>
+              <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" autoComplete="new-password" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} style={inputStyle} />
+              {error && <p style={{ fontSize: 13, color: D.danger, marginTop: 8 }}>{error}</p>}
+              <button onClick={handleResetPassword} disabled={loading} style={{ width: '100%', marginTop: 20, padding: '14px 0', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 16, fontWeight: 700, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Cambiar contraseña'}
               </button>
             </div>
           ) : mode === 'forgot' ? (
-            /* ── Forgot password: enter email ── */
-            <div className="flex-1 flex flex-col justify-center">
-              <p className="text-3xl mb-2 text-center">📧</p>
-              <p className="text-2xl font-black shrink-0 text-center" style={{ color: theme.text }}>
-                RECUPERAR CONTRASEÑA
-              </p>
-              <p className="text-sm mt-1 shrink-0 text-center" style={{ color: `${theme.text}99` }}>
-                Te enviaremos un enlace para restablecer tu contraseña
-              </p>
-
-              <p className="text-sm font-black mt-6 shrink-0" style={{ color: theme.text }}>EMAIL</p>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                autoComplete="email"
-                onKeyDown={(e) => e.key === 'Enter' && handleForgot()}
-                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
-                style={{ backgroundColor: theme.glass, color: theme.text }}
-              />
-
-              {error && (
-                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
-              )}
-
-              <button
-                onClick={handleForgot}
-                disabled={loading}
-                className="w-full mt-6 rounded-full py-3 active:scale-95 transition-transform disabled:opacity-50"
-                style={{ backgroundColor: theme.text }}
-              >
-                <span className="text-lg" style={{ color: invertColor }}>
-                  {loading ? '...' : 'Enviar enlace'}
-                </span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <p style={{ fontSize: 32, textAlign: 'center', marginBottom: 4 }}>📧</p>
+              <p style={{ fontSize: 22, fontWeight: 900, color: D.text, textAlign: 'center' }}>Recuperar contraseña</p>
+              <p style={{ fontSize: 13, color: D.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 8 }}>Te enviaremos un enlace para restablecer tu contraseña</p>
+              <span style={labelStyle}>EMAIL</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" autoComplete="email" onKeyDown={(e) => e.key === 'Enter' && handleForgot()} style={inputStyle} />
+              {error && <p style={{ fontSize: 13, color: D.danger, marginTop: 8 }}>{error}</p>}
+              <button onClick={handleForgot} disabled={loading} style={{ width: '100%', marginTop: 20, padding: '14px 0', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 16, fontWeight: 700, opacity: loading ? 0.5 : 1 }}>
+                {loading ? '...' : 'Enviar enlace'}
               </button>
-
-              <button
-                onClick={() => { setMode('login'); setError(''); }}
-                className="text-sm underline mt-4 shrink-0 text-center"
-                style={{ color: `${theme.text}99` }}
-              >
+              <button onClick={() => { setMode('login'); setError(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 12, fontSize: 13, color: D.textMuted, textDecoration: 'underline' }}>
                 Volver al inicio de sesión
               </button>
             </div>
           ) : mode === 'forgot-sent' ? (
-            /* ── Forgot password: email sent confirmation ── */
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <p className="text-3xl mb-4">✅</p>
-              <p className="text-xl font-black" style={{ color: theme.text }}>¡Email enviado!</p>
-              <p className="text-base mt-3" style={{ color: theme.text }}>
-                Hemos enviado un enlace de recuperación a <strong>{email}</strong>
-              </p>
-              <p className="text-sm mt-4" style={{ color: `${theme.text}99` }}>
-                Revisa tu bandeja de entrada (y spam). Haz clic en el enlace para crear una nueva contraseña.
-              </p>
-              <button
-                onClick={() => { setMode('login'); setError(''); setPassword(''); }}
-                className="mt-8 rounded-full px-10 py-3 active:scale-95 transition-transform"
-                style={{ backgroundColor: theme.text }}
-              >
-                <span className="text-lg" style={{ color: invertColor }}>Volver al login</span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <p style={{ fontSize: 36, marginBottom: 12 }}>✅</p>
+              <p style={{ fontSize: 20, fontWeight: 900, color: D.text }}>¡Email enviado!</p>
+              <p style={{ fontSize: 14, color: D.text, marginTop: 10 }}>Hemos enviado un enlace de recuperación a <strong>{email}</strong></p>
+              <p style={{ fontSize: 13, color: D.textMuted, marginTop: 10 }}>Revisa tu bandeja de entrada (y spam). Haz clic en el enlace para crear una nueva contraseña.</p>
+              <button onClick={() => { setMode('login'); setError(''); setPassword(''); }} style={{ marginTop: 24, padding: '12px 32px', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 16, fontWeight: 700 }}>
+                Volver al login
               </button>
             </div>
           ) : signupSuccess ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <p className="text-3xl mb-4">📧</p>
-              <p className="text-xl font-black" style={{ color: theme.text }}>¡Revisa tu email!</p>
-              <p className="text-base mt-3" style={{ color: theme.text }}>
-                Te hemos enviado un enlace de confirmación a <strong>{email}</strong>
-              </p>
-              <p className="text-sm mt-4" style={{ color: `${theme.text}99` }}>
-                Después de confirmar, vuelve aquí e inicia sesión.
-              </p>
-              <button
-                onClick={() => { setSignupSuccess(false); setMode('login'); setPassword(''); }}
-                className="mt-8 rounded-full px-10 py-3 active:scale-95 transition-transform"
-                style={{ backgroundColor: theme.text }}
-              >
-                <span className="text-lg" style={{ color: invertColor }}>iniciar sesión</span>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <p style={{ fontSize: 36, marginBottom: 12 }}>📧</p>
+              <p style={{ fontSize: 20, fontWeight: 900, color: D.text }}>¡Revisa tu email!</p>
+              <p style={{ fontSize: 14, color: D.text, marginTop: 10 }}>Te hemos enviado un enlace de confirmación a <strong>{email}</strong></p>
+              <p style={{ fontSize: 13, color: D.textMuted, marginTop: 10 }}>Después de confirmar, vuelve aquí e inicia sesión.</p>
+              <button onClick={() => { setSignupSuccess(false); setMode('login'); setPassword(''); }} style={{ marginTop: 24, padding: '12px 32px', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 16, fontWeight: 700 }}>
+                Iniciar sesión
               </button>
             </div>
           ) : (
             <>
-              {/* Title */}
-              <p className="text-2xl font-black shrink-0" style={{ color: theme.text }}>
-                {mode === 'login' ? 'INICIAR SESIÓN' : 'CREAR CUENTA'}
+              <p style={{ fontSize: 24, fontWeight: 900, color: D.text, marginBottom: 2 }}>
+                {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
               </p>
-              <p className="text-sm mt-1 shrink-0" style={{ color: `${theme.text}99` }}>
-                {mode === 'login'
-                  ? 'Sincroniza tus datos entre dispositivos'
-                  : 'Crea una cuenta para no perder tus registros'}
+              <p style={{ fontSize: 13, color: D.textMuted, marginBottom: 4 }}>
+                {mode === 'login' ? 'Sincroniza tus datos entre dispositivos' : 'Crea una cuenta para no perder tus registros'}
               </p>
 
-              {/* Email */}
-              <p className="text-sm font-black mt-6 shrink-0" style={{ color: theme.text }}>EMAIL</p>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                autoComplete="email"
-                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
-                style={{ backgroundColor: theme.glass, color: theme.text }}
-              />
+              <span style={labelStyle}>EMAIL</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" autoComplete="email" style={inputStyle} />
 
-              {/* Password */}
-              <p className="text-sm font-black mt-4 shrink-0" style={{ color: theme.text }}>CONTRASEÑA</p>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                className="w-full mt-2 rounded-lg p-4 text-base outline-none placeholder-white/60"
-                style={{ backgroundColor: theme.glass, color: theme.text }}
-              />
+              <span style={labelStyle}>CONTRASEÑA</span>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} style={inputStyle} />
 
-              {/* Error message */}
-              {error && (
-                <p className="text-sm text-red-800 bg-red-100/50 rounded-lg p-3 mt-3 shrink-0">{error}</p>
-              )}
+              {error && <p style={{ fontSize: 13, color: D.danger, marginTop: 8 }}>{error}</p>}
 
-              {/* Privacy consent (only on signup) */}
               {mode === 'signup' && (
-                <label className="flex items-start gap-3 mt-4 shrink-0 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={acceptedPrivacy}
-                    onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                    className="mt-1 w-5 h-5 shrink-0 accent-current rounded"
-                    style={{ accentColor: theme.text }}
-                  />
-                  <span className="text-sm leading-snug" style={{ color: `${theme.text}cc` }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={acceptedPrivacy} onChange={(e) => setAcceptedPrivacy(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18, flexShrink: 0, accentColor: D.primary as string }} />
+                  <span style={{ fontSize: 13, color: D.textMuted, lineHeight: 1.4 }}>
                     He leído y acepto la{' '}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); onShowPrivacy(); }}
-                      className="underline font-bold"
-                      style={{ color: theme.text }}
-                    >
+                    <button type="button" onClick={(e) => { e.preventDefault(); onShowPrivacy(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13, fontWeight: 700, color: D.text, textDecoration: 'underline' }}>
                       política de privacidad
                     </button>
                     . Consiento el tratamiento de mis datos de salud.
@@ -296,23 +178,13 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
                 </label>
               )}
 
-              {/* Forgot password (only on login) */}
               {mode === 'login' && (
-                <button
-                  onClick={() => { setMode('forgot'); setError(''); }}
-                  className="text-sm underline mt-3 shrink-0 text-left"
-                  style={{ color: `${theme.text}99` }}
-                >
+                <button onClick={() => { setMode('forgot'); setError(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 10, fontSize: 13, color: D.textMuted, textDecoration: 'underline', textAlign: 'left', padding: 0 }}>
                   ¿Olvidaste tu contraseña?
                 </button>
               )}
 
-              {/* Toggle mode */}
-              <button
-                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setAcceptedPrivacy(false); }}
-                className="text-sm underline mt-2 shrink-0 text-left"
-                style={{ color: `${theme.text}99` }}
-              >
+              <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setAcceptedPrivacy(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, fontSize: 13, color: D.textMuted, textDecoration: 'underline', textAlign: 'left', padding: 0 }}>
                 {mode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
               </button>
             </>
@@ -321,16 +193,9 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
 
         {/* Submit button */}
         {(mode === 'login' || mode === 'signup') && !signupSuccess && (
-          <div className="shrink-0 flex justify-center px-10 py-6">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full max-w-sm rounded-full py-2.5 flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
-              style={{ backgroundColor: theme.text }}
-            >
-              <span className="text-lg" style={{ color: invertColor }}>
-                {loading ? '...' : mode === 'login' ? 'entrar' : 'crear cuenta'}
-              </span>
+          <div style={{ flexShrink: 0, padding: '16px 24px 24px' }}>
+            <button onClick={handleSubmit} disabled={loading} style={{ width: '100%', padding: '16px 0', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 17, fontWeight: 800, opacity: loading ? 0.5 : 1 }}>
+              {loading ? '...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
             </button>
           </div>
         )}

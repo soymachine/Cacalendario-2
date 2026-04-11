@@ -107,11 +107,17 @@ function applyDoctorColor(color: string | null): void {
     // Derive a light tint for chip backgrounds (15% primary + 85% white)
     const rgb = hexToRgb(color);
     if (rgb) {
-      const r = Math.round(rgb.r * 0.15 + 255 * 0.85);
-      const g = Math.round(rgb.g * 0.15 + 255 * 0.85);
-      const b = Math.round(rgb.b * 0.15 + 255 * 0.85);
-      document.documentElement.style.setProperty('--fluxia-chip', `rgb(${r},${g},${b})`);
+      // chip: 15% primary + 85% white
+      const cr = Math.round(rgb.r * 0.15 + 255 * 0.85);
+      const cg = Math.round(rgb.g * 0.15 + 255 * 0.85);
+      const cb = Math.round(rgb.b * 0.15 + 255 * 0.85);
+      document.documentElement.style.setProperty('--fluxia-chip', `rgb(${cr},${cg},${cb})`);
       document.documentElement.style.setProperty('--fluxia-chip-text', color);
+      // bg: 6% primary + 94% #F0F2F4 base
+      const br = Math.round(rgb.r * 0.06 + 240 * 0.94);
+      const bg_ = Math.round(rgb.g * 0.06 + 242 * 0.94);
+      const bb = Math.round(rgb.b * 0.06 + 244 * 0.94);
+      document.documentElement.style.setProperty('--fluxia-bg', `rgb(${br},${bg_},${bb})`);
     }
     if (meta) meta.setAttribute('content', '#F0F2F4');
   } else {
@@ -119,6 +125,7 @@ function applyDoctorColor(color: string | null): void {
     document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
     document.documentElement.style.removeProperty('--fluxia-chip');
     document.documentElement.style.removeProperty('--fluxia-chip-text');
+    document.documentElement.style.removeProperty('--fluxia-bg');
     if (meta) meta.setAttribute('content', '#F0F2F4');
   }
 }
