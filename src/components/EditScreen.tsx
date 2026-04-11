@@ -262,8 +262,8 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                         cursor: 'pointer',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                         fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
-                        backgroundColor: floats === opt.value ? D.primary : D.card,
-                        color: floats === opt.value ? D.primaryText : D.text,
+                        backgroundColor: D.chip,
+                        color: D.text,
                       }}
                     >
                       <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />

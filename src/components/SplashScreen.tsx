@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { asset } from '../lib/config';
+import { getDoctorImage } from '../lib/preferences';
 import { D } from '../lib/design';
 
 interface SplashScreenProps {
@@ -34,7 +35,7 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
       }}
     >
       <img
-        src={asset('/fluxia-logo.png')}
+        src={getDoctorImage() || asset('/fluxia-logo.png')}
         alt="Fluxia"
         style={{ width: 180, objectFit: 'contain' }}
       />

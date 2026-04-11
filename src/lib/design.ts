@@ -6,6 +6,7 @@ export const D = {
   text: '#353435',
   textMuted: '#9A9A9A',
   chip: 'var(--fluxia-chip, #D7D9D8)',
+  chipDark: 'var(--fluxia-chip-dark, #B8BABC)',
   chipText: 'var(--fluxia-chip-text, #353435)',
   border: '#E8EAED',
   primary: 'var(--fluxia-primary, #353435)',

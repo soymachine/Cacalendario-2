@@ -3,7 +3,7 @@ import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
-import { getDoctorHiddenFields } from '../lib/preferences';
+import { getDoctorHiddenFields, getDoctorImage } from '../lib/preferences';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
 
@@ -167,7 +167,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       {/* Logo (only in tab mode) */}
       {isTab && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          <img src={asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 52, objectFit: 'contain' }} />
+          <img src={getDoctorImage() || asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 52, objectFit: 'contain' }} />
         </div>
       )}
 
@@ -315,8 +315,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       transition: 'all 0.1s',
-                      backgroundColor: isActive ? D.primary : D.card,
-                      color: isActive ? D.primaryText : D.text,
+                      backgroundColor: D.chip,
+                      color: D.text,
                     }}
                   >
                     <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />

@@ -113,6 +113,11 @@ function applyDoctorColor(color: string | null): void {
       const cb = Math.round(rgb.b * 0.15 + 255 * 0.85);
       document.documentElement.style.setProperty('--fluxia-chip', `rgb(${cr},${cg},${cb})`);
       document.documentElement.style.setProperty('--fluxia-chip-text', color);
+      // chipDark: 30% primary + 70% white (for nav bar)
+      const dr = Math.round(rgb.r * 0.30 + 255 * 0.70);
+      const dg = Math.round(rgb.g * 0.30 + 255 * 0.70);
+      const db = Math.round(rgb.b * 0.30 + 255 * 0.70);
+      document.documentElement.style.setProperty('--fluxia-chip-dark', `rgb(${dr},${dg},${db})`);
       // bg: 6% primary + 94% #F0F2F4 base
       const br = Math.round(rgb.r * 0.06 + 240 * 0.94);
       const bg_ = Math.round(rgb.g * 0.06 + 242 * 0.94);
@@ -125,9 +130,27 @@ function applyDoctorColor(color: string | null): void {
     document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
     document.documentElement.style.removeProperty('--fluxia-chip');
     document.documentElement.style.removeProperty('--fluxia-chip-text');
+    document.documentElement.style.removeProperty('--fluxia-chip-dark');
     document.documentElement.style.removeProperty('--fluxia-bg');
     if (meta) meta.setAttribute('content', '#F0F2F4');
   }
+}
+
+// ── Doctor center image ──
+
+const DOCTOR_IMAGE_KEY = 'cacalendario_doctor_image';
+
+export function getDoctorImage(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(DOCTOR_IMAGE_KEY);
+}
+
+export function setDoctorImage(url: string): void {
+  localStorage.setItem(DOCTOR_IMAGE_KEY, url);
+}
+
+export function clearDoctorImage(): void {
+  localStorage.removeItem(DOCTOR_IMAGE_KEY);
 }
 
 // ── Doctor hidden fields ──
