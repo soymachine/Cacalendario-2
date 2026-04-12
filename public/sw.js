@@ -1,5 +1,5 @@
 // 🔄 CHANGE THIS VERSION on every deploy to trigger an update
-const CACHE_VERSION = 7;
+const CACHE_VERSION = 8;
 const CACHE_NAME = `fluxia-v${CACHE_VERSION}`;
 const BASE = '';
 
@@ -81,9 +81,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy: try network, update cache, fall back to cache if offline
+  // Network-first strategy: bypass HTTP cache so we always get truly fresh content
+  // Falls back to SW cache only when offline
+  const freshRequest = new Request(request, { cache: 'no-cache' });
   event.respondWith(
-    fetch(request)
+    fetch(freshRequest)
       .then((response) => {
         // Got a fresh response — cache it for offline use
         if (response.ok) {
@@ -93,7 +95,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Offline — serve from cache
+        // Offline — serve from SW cache
         return caches.match(request);
       })
   );
