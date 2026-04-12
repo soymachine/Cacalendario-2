@@ -113,14 +113,14 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 border: 'none',
                 cursor: isFuture ? 'default' : 'pointer',
                 opacity: isFuture ? 0.4 : 1,
-                backgroundColor: hasEntry ? D.chip : D.bg,
+                backgroundColor: hasEntry ? '#9e9e9e' : D.bg,
               }}
             >
               {hasEntry ? (
                 <>
                   {(() => {
                     const hasPoop = dayEntries.some((e: any) => e.entry_type !== 'urine');
-                    const imgStyle = { filter: 'brightness(0) opacity(0.55)' as const };
+                    const imgStyle = { filter: 'brightness(0) invert(1)' as const };
                     if (hasPoop) return <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
                     return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
                   })()}
@@ -130,7 +130,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                       width: 16, height: 16, borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 900,
-                      backgroundColor: D.primary, color: D.primaryText,
+                      backgroundColor: 'white', color: '#333',
                     }}>
                       {count}
                     </span>
