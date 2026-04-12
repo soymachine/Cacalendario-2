@@ -283,9 +283,6 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
     <div style={{ height: '100%', overflowY: 'auto', backgroundColor: D.bg }}>
       <div style={{ padding: '24px 16px 32px', maxWidth: 480, margin: '0 auto' }}>
 
-        {/* ── HEADER ── */}
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: '0 0 20px' }}>Cuenta</h1>
-
         {/* ── NOT LOGGED IN ── */}
         {!user && (
           <>
@@ -340,7 +337,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
                 </div>
               </div>
             ) : (
-              <button onClick={() => setConfirmLogout(true)} style={{ ...outlineBtn, marginBottom: 12 }}>
+              <button onClick={() => setConfirmLogout(true)} style={{ ...dangerBtn, marginBottom: 12 }}>
                 Cerrar sesión
               </button>
             )}
@@ -375,12 +372,9 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
                   <p style={{ fontSize: 14, color: D.text, marginBottom: 4 }}>
                     Vinculado con: <strong>{linkedCenter}</strong>
                   </p>
-                  <p style={{ fontSize: 12, color: D.textMuted, marginBottom: 12 }}>
+                  <p style={{ fontSize: 12, color: D.textMuted }}>
                     Tu médico puede ver tus registros para ayudarte mejor.
                   </p>
-                  <button onClick={handleUnlink} style={{ ...dangerBtn, width: 'auto', padding: '8px 20px' }}>
-                    Desvincular
-                  </button>
                 </>
               ) : (
                 <>

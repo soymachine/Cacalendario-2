@@ -238,9 +238,9 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       title={opt.label}
                       style={{
                         flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
-                        border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                        boxShadow: color === opt.hex ? `0 0 0 2px white` : 'none',
-                        transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
+                        border: 'none',
+                        boxShadow: color === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'none',
+                        transition: 'box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />
                   ))}
@@ -384,9 +384,9 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       title={opt.label}
                       style={{
                         flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
-                        border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000020',
-                        boxShadow: urineColor === opt.hex ? `0 0 0 2px white` : 'none',
-                        transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
+                        border: 'none',
+                        boxShadow: urineColor === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'inset 0 0 0 1px rgba(0,0,0,0.12)',
+                        transition: 'box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />
                   ))}

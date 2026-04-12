@@ -339,9 +339,10 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                   title={opt.label}
                   style={{
                     flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
-                    border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                    boxShadow: color === opt.hex ? `0 0 0 2px white` : 'none',
-                    transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
+                    border: 'none',
+                    boxShadow: color === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'none',
+                    outline: color === opt.hex ? 'none' : 'none',
+                    transition: 'box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
               ))}
@@ -361,8 +362,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
               />
               <img src={asset('/Pesado-icon.svg')} alt="Pesado" style={{ width: 24, height: 24, objectFit: 'contain', opacity: 0.6 }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
-              <span>Ligero</span><span style={{ fontWeight: 600, color: D.text }}>{quantityLabel}</span><span>Pesado</span>
+            <div style={{ textAlign: 'center', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
+              <span style={{ fontWeight: 600, color: D.text }}>{quantityLabel}</span>
             </div>
           </div>
         )}
@@ -461,9 +462,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                   title={opt.label}
                   style={{
                     flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
-                    border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000020',
-                    boxShadow: urineColor === opt.hex ? `0 0 0 2px white` : 'none',
-                    transition: 'border 0.1s, box-shadow 0.1s', cursor: 'pointer',
+                    border: 'none',
+                    boxShadow: urineColor === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'inset 0 0 0 1px rgba(0,0,0,0.12)',
+                    transition: 'box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
               ))}

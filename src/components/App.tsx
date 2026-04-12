@@ -99,10 +99,11 @@ function AppContent() {
         <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'calendar' ? 'block' : 'none' }}>
           <div style={{ padding: '16px 16px 32px', maxWidth: 480, margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>Estadísticas</h1>
-              {syncing && <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>}
-            </div>
+            {syncing && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>
+              </div>
+            )}
             {/* Calendar */}
             <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden' }}>
               <Calendar onDayClick={handleDayClick} />

@@ -1,15 +1,43 @@
 import { useState, useEffect } from 'react';
 import { computeStats, type Stats } from '../lib/stats';
+import { getEntries } from '../lib/storage';
 import { asset } from '../lib/config';
-import { usePreferences } from '../lib/usePreferences';
 import { D } from '../lib/design';
 
+function EntryIcons({ hasPoop, hasUrine, size = 32 }: { hasPoop: boolean; hasUrine: boolean; size?: number }) {
+  const imgStyle: React.CSSProperties = { width: size, height: size, filter: 'brightness(0) opacity(0.55)', display: 'block' };
+  if (hasPoop && hasUrine) {
+    const s = Math.round(size * 0.72);
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <img src={asset('/Switch-Caca-Icono.svg')} alt="" style={{ ...imgStyle, width: s, height: s }} />
+        <span style={{ fontSize: Math.round(size * 0.38), fontWeight: 900, color: D.textMuted, lineHeight: 1 }}>+</span>
+        <img src={asset('/Switch-Miccion-Icono.svg')} alt="" style={{ ...imgStyle, width: s, height: s }} />
+      </div>
+    );
+  }
+  if (hasUrine) return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" style={imgStyle} />;
+  return <img src={asset('/Switch-Caca-Icono.svg')} alt="" style={imgStyle} />;
+}
+
 export default function InlineStats() {
-  const { emoji } = usePreferences();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [totalPoop, setTotalPoop] = useState(0);
+  const [totalUrine, setTotalUrine] = useState(0);
+  const [lastWeekPoop, setLastWeekPoop] = useState(0);
+  const [lastWeekUrine, setLastWeekUrine] = useState(0);
 
   const refresh = () => {
     setStats(computeStats(Infinity));
+    const entries = getEntries();
+    setTotalPoop(entries.filter(e => e.entry_type !== 'urine').length);
+    setTotalUrine(entries.filter(e => e.entry_type === 'urine').length);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+    const lastWeek = entries.filter(e => e.date >= cutoffStr);
+    setLastWeekPoop(lastWeek.filter(e => e.entry_type !== 'urine').length);
+    setLastWeekUrine(lastWeek.filter(e => e.entry_type === 'urine').length);
   };
 
   useEffect(() => {
@@ -43,11 +71,7 @@ export default function InlineStats() {
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Total</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.text, lineHeight: 1 }}>{stats.total}</span>
-            {emoji.char === 'svg' ? (
-              <img src={asset('/poop-small.svg')} alt="" style={{ width: 36, height: 36 }} />
-            ) : (
-              <span style={{ fontSize: 32 }}>{emoji.char}</span>
-            )}
+            <EntryIcons hasPoop={totalPoop > 0} hasUrine={totalUrine > 0} size={32} />
           </div>
         </div>
 
@@ -56,11 +80,7 @@ export default function InlineStats() {
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Última sem.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.text, lineHeight: 1 }}>{lastWeekCount}</span>
-            {emoji.char === 'svg' ? (
-              <img src={asset('/poop-small.svg')} alt="" style={{ width: 36, height: 36 }} />
-            ) : (
-              <span style={{ fontSize: 32 }}>{emoji.char}</span>
-            )}
+            <EntryIcons hasPoop={lastWeekPoop > 0} hasUrine={lastWeekUrine > 0} size={32} />
           </div>
         </div>
       </div>

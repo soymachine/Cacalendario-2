@@ -12,7 +12,7 @@ interface BristolPickerProps {
 export default function BristolPicker({ value, onChange, restrictedTypes }: BristolPickerProps) {
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
         {[1, 2, 3, 4, 5, 6, 7].map((type) => {
           const isSelected = value === type;
           const isLocked = restrictedTypes ? !restrictedTypes.includes(type) : false;

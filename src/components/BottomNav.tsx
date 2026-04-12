@@ -45,11 +45,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
     <nav style={{
       flexShrink: 0,
       backgroundColor: D.bg,
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingBottom: '10px',
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
+        height: 70,
         margin: '6px 14px 8px',
         backgroundColor: D.chipDark,
         borderRadius: 999,
@@ -83,7 +84,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: D.bg,
+                  backgroundColor: 'var(--fluxia-chip-dark, #B8BABC)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
