@@ -1,5 +1,5 @@
 // 🔄 CHANGE THIS VERSION on every deploy to trigger an update
-const CACHE_VERSION = 8;
+const CACHE_VERSION = 9;
 const CACHE_NAME = `fluxia-v${CACHE_VERSION}`;
 const BASE = '';
 
