@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { formatDateForDisplay } from '../lib/dates';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
@@ -8,45 +7,14 @@ interface CongratsScreenProps {
   date: string;
   time: string;
   entryType: 'poop' | 'urine';
-  entryId: string;
-  onUpdateDateTime: (newDate: string, newTime: string) => void;
+  onEdit: () => void;
   onClose: () => void;
 }
 
-function EditIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" fill={D.chip} />
-      <path d="M13 23L14.5 19L22 11.5L24.5 14L17 21.5L13 23Z" stroke={D.text} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M20.5 13L23 15.5" stroke={D.text} strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-export default function CongratsScreen({ date, time, entryType, entryId: _entryId, onUpdateDateTime, onClose }: CongratsScreenProps) {
+export default function CongratsScreen({ date, time, entryType, onEdit, onClose }: CongratsScreenProps) {
   const { emoji } = usePreferences();
+  const dayText = formatDateForDisplay(date);
   const isPoop = entryType === 'poop';
-
-  const [currentDate, setCurrentDate] = useState(date);
-  const [currentTime, setCurrentTime] = useState(time);
-  const [editingDate, setEditingDate] = useState(false);
-  const [editingTime, setEditingTime] = useState(false);
-
-  const dayText = formatDateForDisplay(currentDate);
-
-  const handleDateChange = (val: string) => {
-    if (!val) return;
-    setCurrentDate(val);
-    setEditingDate(false);
-    onUpdateDateTime(val, currentTime);
-  };
-
-  const handleTimeChange = (val: string) => {
-    if (!val) return;
-    setCurrentTime(val);
-    setEditingTime(false);
-    onUpdateDateTime(currentDate, val);
-  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: D.bg, overflow: 'hidden' }}>
@@ -92,63 +60,13 @@ export default function CongratsScreen({ date, time, entryType, entryId: _entryI
           <div style={{ backgroundColor: D.card, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Date & Time */}
             <div style={{ display: 'flex', gap: 24 }}>
-              {/* Day */}
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 4px', letterSpacing: 0.5 }}>DÍA</p>
-                {editingDate ? (
-                  <input
-                    type="date"
-                    defaultValue={currentDate}
-                    max={new Date().toISOString().slice(0, 10)}
-                    autoFocus
-                    onBlur={(e) => handleDateChange(e.target.value || currentDate)}
-                    onChange={(e) => { if (e.target.value) handleDateChange(e.target.value); }}
-                    style={{
-                      fontSize: 16, background: 'transparent', border: 'none',
-                      borderBottom: `2px solid ${D.primary}`, outline: 'none',
-                      color: D.text, fontFamily: 'inherit', fontWeight: 700, width: '100%',
-                    }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: D.text, margin: 0 }}>{dayText}</p>
-                    <button
-                      onClick={() => setEditingDate(true)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-                    >
-                      <EditIcon />
-                    </button>
-                  </div>
-                )}
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>DÍA</p>
+                <p style={{ fontSize: 18, color: D.text, margin: 0 }}>{dayText}</p>
               </div>
-
-              {/* Time */}
-              <div style={{ flexShrink: 0 }}>
-                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 4px', letterSpacing: 0.5 }}>HORA</p>
-                {editingTime ? (
-                  <input
-                    type="time"
-                    defaultValue={currentTime}
-                    autoFocus
-                    onBlur={(e) => handleTimeChange(e.target.value || currentTime)}
-                    onChange={(e) => { if (e.target.value) handleTimeChange(e.target.value); }}
-                    style={{
-                      fontSize: 16, background: 'transparent', border: 'none',
-                      borderBottom: `2px solid ${D.primary}`, outline: 'none',
-                      color: D.text, fontFamily: 'inherit', fontWeight: 700,
-                    }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: D.text, margin: 0 }}>{currentTime}</p>
-                    <button
-                      onClick={() => setEditingTime(true)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-                    >
-                      <EditIcon />
-                    </button>
-                  </div>
-                )}
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>HORA</p>
+                <p style={{ fontSize: 18, color: D.text, margin: 0 }}>{time}</p>
               </div>
             </div>
 
@@ -159,6 +77,18 @@ export default function CongratsScreen({ date, time, entryType, entryId: _entryI
                 {isPoop ? 'Deposición registrada' : 'Micción registrada'}
               </span>
             </div>
+
+            {/* Edit button */}
+            <button
+              onClick={onEdit}
+              style={{
+                width: '100%', padding: '13px 0', borderRadius: 99, border: `2px solid ${D.primary}`,
+                backgroundColor: 'transparent', color: D.primary,
+                fontSize: 15, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              Editar registro
+            </button>
           </div>
         </div>
       </div>

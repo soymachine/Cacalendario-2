@@ -73,9 +73,11 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const hiddenFields = getDoctorHiddenFields();
   const show = (field: string) => !hiddenFields.includes(field);
   const [h, m] = entry.time.split(':').map(Number);
+  const [currentDate, setCurrentDate] = useState(entry.date);
   const [hours, setHours] = useState(h);
   const [minutes, setMinutes] = useState(m);
   const [notes, setNotes] = useState(entry.notes);
+  const [editingDate, setEditingDate] = useState(false);
   const [editingTime, setEditingTime] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -97,7 +99,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const [urineColor, setUrineColor] = useState<string | null>(entry.urine_color ?? null);
   const [urineCharacteristics, setUrineCharacteristics] = useState<string[]>(entry.urine_characteristics ?? []);
 
-  const dayText = formatDateForDisplay(entry.date);
+  const dayText = formatDateForDisplay(currentDate);
   const timeText = formatTime(hours, minutes);
 
   const toggleSymptom = (key: string) =>
@@ -109,10 +111,10 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const quantityLabel = quantity <= 25 ? 'Ligero' : quantity <= 50 ? 'Moderado' : quantity <= 75 ? 'Abundante' : 'Pesado';
 
   const handleSave = () => {
-    const [y, mo, d] = entry.date.split('-').map(Number);
+    const [y, mo, d] = currentDate.split('-').map(Number);
     saveEntry({
       id: entry.id,
-      date: entry.date,
+      date: currentDate,
       time: timeText,
       notes,
       timestamp: new Date(y, mo - 1, d, hours, minutes).getTime(),
@@ -171,7 +173,34 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           {/* Day */}
           <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
             <span style={sectionLabel}>DÍA</span>
-            <p style={{ fontSize: 18, fontWeight: 700, color: D.text, margin: '0 0 6px' }}>{dayText}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              {editingDate ? (
+                <input
+                  type="date"
+                  defaultValue={currentDate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  autoFocus
+                  onBlur={(e) => { if (e.target.value) setCurrentDate(e.target.value); setEditingDate(false); }}
+                  onChange={(e) => { if (e.target.value) { setCurrentDate(e.target.value); setEditingDate(false); } }}
+                  style={{
+                    fontSize: 18, background: 'transparent', border: 'none',
+                    borderBottom: `2px solid ${D.primary}`, outline: 'none',
+                    color: D.text, fontFamily: 'inherit', fontWeight: 700,
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: 18, fontWeight: 700, color: D.text }}>{dayText}</span>
+              )}
+              <button
+                onClick={() => setEditingDate(true)}
+                style={{
+                  padding: '5px 12px', borderRadius: 50, border: 'none', cursor: 'pointer',
+                  backgroundColor: D.primary, color: D.primaryText, fontSize: 12, fontWeight: 700,
+                }}
+              >
+                cambiar
+              </button>
+            </div>
             <span style={{
               fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99,
               backgroundColor: D.chip, color: D.chipText,
