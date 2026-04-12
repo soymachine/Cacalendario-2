@@ -3,6 +3,7 @@ import { formatDateForDisplay, formatTime } from '../lib/dates';
 import { saveEntry, deleteEntry, type PoopEntry } from '../lib/storage';
 import { usePreferences } from '../lib/usePreferences';
 import { getDoctorHiddenFields } from '../lib/preferences';
+import { asset } from '../lib/config';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
 
@@ -12,9 +13,9 @@ interface EditScreenProps {
 }
 
 const FLOAT_OPTIONS = [
-  { label: '🫧 Flota', value: 'floats' as const },
-  { label: '⬇️ No flota', value: 'sinks' as const },
-  { label: '🫧⬇️ Ambos', value: 'both' as const },
+  { label: 'Flota', value: 'floats' as const, img: '/Flota_2.png' },
+  { label: 'No flota', value: 'sinks' as const, img: '/Flota_1.png' },
+  { label: 'Ambos', value: 'both' as const, img: '/Flota_3.png' },
 ];
 
 const COLOR_OPTIONS = [
@@ -145,8 +146,6 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const chipActive: React.CSSProperties = { backgroundColor: D.primary, color: D.primaryText };
   const chipInactive: React.CSSProperties = { backgroundColor: D.chip, color: D.chipText };
 
-  const fakeTheme = { text: D.text, glass: D.chip, main: D.bg, id: 'light' } as any;
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: D.bg, overflow: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: 480, height: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -224,25 +223,24 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                 <p style={{ fontSize: 11, color: D.textMuted, marginBottom: 10, marginTop: -4 }}>
                   Escala de Bristol — selecciona el tipo más parecido
                 </p>
-                <BristolPicker value={bristol} onChange={setBristol} theme={fakeTheme} />
+                <BristolPicker value={bristol} onChange={setBristol} />
               </div>
             )}
 
             {show('color') && (
               <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
                 <span style={sectionLabel}>COLOR</span>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
                   {COLOR_OPTIONS.map(opt => (
                     <button
                       key={opt.hex}
                       onClick={() => setColor(color === opt.hex ? null : opt.hex)}
                       title={opt.label}
                       style={{
-                        width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex,
-                        border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                        boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
-                        transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                        transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
+                        flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
+                        border: 'none',
+                        boxShadow: color === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'none',
+                        transition: 'box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />
                   ))}
@@ -259,11 +257,16 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       key={opt.value}
                       onClick={() => setFloats(floats === opt.value ? null : opt.value)}
                       style={{
-                        flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                        flex: 1, padding: '10px 4px 8px', borderRadius: 10,
+                        border: floats === opt.value ? `2px solid ${D.primary}` : '2px solid transparent',
+                        cursor: 'pointer',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                         fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
-                        ...(floats === opt.value ? chipActive : chipInactive),
+                        backgroundColor: D.chip,
+                        color: D.text,
                       }}
                     >
+                      <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
                       {opt.label}
                     </button>
                   ))}
@@ -279,8 +282,10 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                   onChange={e => setQuantity(Number(e.target.value))}
                   style={{ width: '100%', accentColor: D.primary }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: D.textMuted, marginTop: 4 }}>
-                  <span>Ligero</span><span>Pesado</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, gap: 8 }}>
+                  <img src={asset('/Ligero-icon.svg')} alt="Ligero" style={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.5 }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: D.text }}>{quantityLabel}</span>
+                  <img src={asset('/Pesado-icon.svg')} alt="Pesado" style={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.5 }} />
                 </div>
               </div>
             )}
@@ -371,18 +376,17 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
             {show('urine_color') && (
               <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
                 <span style={sectionLabel}>COLOR</span>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
                   {URINE_COLOR_OPTIONS.map(opt => (
                     <button
                       key={opt.hex}
                       onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                       title={opt.label}
                       style={{
-                        width: 36, height: 36, borderRadius: '50%', backgroundColor: opt.hex,
-                        border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000030',
-                        boxShadow: urineColor === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
-                        transform: urineColor === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                        transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
+                        flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
+                        border: 'none',
+                        boxShadow: urineColor === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'inset 0 0 0 1px rgba(0,0,0,0.12)',
+                        transition: 'box-shadow 0.1s', cursor: 'pointer',
                       }}
                     />
                   ))}

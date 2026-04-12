@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
-import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
+import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
 import { type PoopEntry } from '../lib/storage';
 import { D } from '../lib/design';
@@ -52,11 +52,14 @@ function AppContent() {
         if (config.palette) setDoctorColor(getPaletteTheme(config.palette).primary);
         else clearDoctorColor();
         setDoctorHiddenFields(config.hiddenFields);
+        if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
+        else clearDoctorImage();
       });
       registerPushSubscription(user.id);
     } else {
       clearDoctorColor();
       clearDoctorHiddenFields();
+      clearDoctorImage();
     }
   }, [user]);
 
@@ -96,10 +99,11 @@ function AppContent() {
         <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'calendar' ? 'block' : 'none' }}>
           <div style={{ padding: '16px 16px 32px', maxWidth: 480, margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>Estadísticas</h1>
-              {syncing && <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>}
-            </div>
+            {syncing && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>
+              </div>
+            )}
             {/* Calendar */}
             <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden' }}>
               <Calendar onDayClick={handleDayClick} />

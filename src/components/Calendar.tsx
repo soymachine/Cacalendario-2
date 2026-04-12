@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { getMonthName, getDaysInMonth, getFirstDayOfMonth, toDateKey } from '../lib/dates';
 import { getEntriesForMonth, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
-import { usePreferences } from '../lib/usePreferences';
 import { D } from '../lib/design';
 
 interface CalendarProps {
@@ -12,7 +11,6 @@ interface CalendarProps {
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 export default function Calendar({ onDayClick }: CalendarProps) {
-  const { emoji } = usePreferences();
   const now = new Date();
   const todayKey = toDateKey(now);
   const [year, setYear] = useState(now.getFullYear());
@@ -120,13 +118,22 @@ export default function Calendar({ onDayClick }: CalendarProps) {
             >
               {hasEntry ? (
                 <>
-                  {dayEntries.every((e: any) => e.entry_type === 'urine') ? (
-                    <span style={{ fontSize: 18 }}>💧</span>
-                  ) : emoji.char === 'svg' ? (
-                    <img src={asset('/poop-small.svg')} alt="poop" style={{ width: 26, height: 26 }} />
-                  ) : (
-                    <span style={{ fontSize: 18 }}>{emoji.char}</span>
-                  )}
+                  {(() => {
+                    const hasPoop = dayEntries.some((e: any) => e.entry_type !== 'urine');
+                    const hasUrine = dayEntries.some((e: any) => e.entry_type === 'urine');
+                    const imgStyle = { filter: 'brightness(0) opacity(0.55)' as const };
+                    if (hasPoop && hasUrine) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={14} height={14} style={imgStyle} />
+                          <span style={{ fontSize: 9, fontWeight: 900, color: D.text, lineHeight: 1 }}>+</span>
+                          <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={14} height={14} style={imgStyle} />
+                        </div>
+                      );
+                    }
+                    if (hasUrine) return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                    return <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                  })()}
                   {count > 1 && (
                     <span style={{
                       position: 'absolute', top: -2, right: -2,

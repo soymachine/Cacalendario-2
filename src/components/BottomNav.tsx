@@ -22,7 +22,7 @@ function HistorialIcon({ color }: { color: string }) {
 // icono-Registro — exact Figma export (node 1:270)
 function RegisterIcon({ color }: { color: string }) {
   return (
-    <svg width="20" height="28" viewBox="0 0 124 176" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="34" height="47" viewBox="0 0 124 176" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M61.61 96.7651C44.66 96.7651 26.42 100.895 26.42 109.965C26.42 119.035 44.66 123.165 61.61 123.165C78.56 123.165 96.8 119.035 96.8 109.965C96.8 100.895 78.56 96.7651 61.61 96.7651ZM61.61 117.295C42.25 117.295 32.28 112.155 32.28 109.965C32.28 107.775 42.25 102.635 61.61 102.635C80.97 102.635 90.94 107.775 90.94 109.965C90.94 112.155 80.97 117.295 61.61 117.295Z" fill={color}/>
       <path d="M14.69 93.8348H19.83C11.15 98.4748 5.89001 104.605 5.89001 111.435C5.89001 127.795 15.9 142.205 31.01 150.605L30.06 163.355C29.82 166.605 30.94 169.815 33.16 172.205C35.38 174.595 38.49 175.955 41.75 175.955H81.46C84.72 175.955 87.83 174.595 90.05 172.205C92.2701 169.815 93.39 166.615 93.15 163.365L92.2 150.615C107.32 142.215 117.32 127.805 117.32 111.445C117.32 104.615 112.06 98.4851 103.38 93.8451H108.52C116.61 93.8451 123.17 87.2749 123.18 79.1849V23.4652C123.18 15.3752 116.61 8.81503 108.52 8.80503H89.4301C81.3501 2.94503 71.58 -0.14477 61.59 0.00523029C51.6 -0.14477 41.84 2.93503 33.75 8.80503H14.66C6.57003 8.80503 0.01 15.3752 0 23.4652V79.1849C0 87.2749 6.57003 93.8351 14.66 93.8451L14.69 93.8348ZM87.31 163.785C87.43 165.405 86.87 167.015 85.76 168.205C84.65 169.395 83.1 170.075 81.47 170.075H41.76C40.13 170.075 38.58 169.395 37.47 168.205C36.36 167.015 35.8 165.415 35.92 163.785L36.69 153.335C52.64 160.025 70.6001 160.025 86.55 153.335L87.32 163.785H87.31ZM61.61 152.485C40.43 152.485 22.34 141.535 15.13 126.165C25.02 133.245 41.98 137.825 61.61 137.825C81.24 137.825 98.2 133.245 108.09 126.165C100.88 141.535 82.79 152.485 61.61 152.485ZM111.47 111.425C111.47 121.335 91.44 131.955 61.61 131.955C31.78 131.955 11.75 121.335 11.75 111.425C11.75 101.515 31.78 90.8949 61.61 90.8949C76.87 90.8949 111.47 96.3952 111.47 111.425ZM102.67 58.7552C102.71 66.3752 101.4 73.9448 98.8 81.1048C97.65 84.2048 96.24 87.1948 94.57 90.0448C83.93 86.5948 72.8 84.905 61.61 85.035C50.43 84.905 39.3 86.5948 28.66 90.0448C26.98 87.1948 25.56 84.1951 24.42 81.0951C21.82 73.9351 20.51 66.375 20.55 58.765C20.55 25.145 35.51 5.85484 61.61 5.85484C87.71 5.85484 102.67 25.135 102.67 58.765V58.7552Z" fill={color}/>
       <path d="M29.35 61.6953C30.97 61.6953 32.28 60.3851 32.28 58.7651C32.28 31.4451 42.15 17.5952 61.61 17.5952C63.23 17.5952 64.54 16.285 64.54 14.665C64.54 13.045 63.23 11.7354 61.61 11.7354C38.92 11.7354 26.42 28.4549 26.42 58.7749C26.42 60.3949 27.73 61.7051 29.35 61.7051V61.6953Z" fill={color}/>
@@ -40,29 +40,77 @@ function AccountIcon({ color }: { color: string }) {
   );
 }
 
-const TABS: { id: Tab; Icon: (p: { color: string }) => JSX.Element }[] = [
-  { id: 'calendar', Icon: HistorialIcon },
-  { id: 'register', Icon: RegisterIcon },
-  { id: 'account',  Icon: AccountIcon },
-];
-
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav style={{
       flexShrink: 0,
       backgroundColor: D.bg,
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingBottom: '10px',
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
+        height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: D.chip,
+        backgroundColor: D.chipDark,
         borderRadius: 999,
-        overflow: 'hidden',
+        position: 'relative',
       }}>
-        {TABS.map(({ id, Icon }) => {
+        {(['calendar', 'register', 'account'] as const).map((id) => {
           const isActive = active === id;
+          const isRegister = id === 'register';
+
+          if (isRegister) {
+            return (
+              <button
+                key={id}
+                onClick={() => onChange(id)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 1,
+                  padding: 0,
+                  height: 88,
+                }}
+              >
+                {/* Elevated circle backdrop */}
+                <div style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: 999,
+                  backgroundColor: 'var(--fluxia-chip-dark, #B8BABC)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+                  border: `3px solid ${D.chipDark}`,
+                  position: 'relative',
+                }}>
+                  <div style={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: 999,
+                    backgroundColor: isActive ? D.card : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background-color 0.2s',
+                    boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  }}>
+                    <RegisterIcon color={isActive ? D.text : D.textMuted} />
+                  </div>
+                </div>
+              </button>
+            );
+          }
+
+          const Icon = id === 'calendar' ? HistorialIcon : AccountIcon;
           return (
             <button
               key={id}

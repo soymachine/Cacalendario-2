@@ -3,7 +3,7 @@ import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
-import { getDoctorHiddenFields } from '../lib/preferences';
+import { getDoctorHiddenFields, getDoctorImage } from '../lib/preferences';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
 
@@ -14,44 +14,10 @@ interface RegisterScreenProps {
   onSuccess: (date: string, time: string, entryType: 'poop' | 'urine') => void;
 }
 
-// SVG icons for float options (matching Figma arrows)
-function FloatsIcon({ color }: { color: string }) {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <ellipse cx="14" cy="10" rx="9" ry="6" fill={color} opacity="0.9"/>
-      <line x1="14" y1="16" x2="14" y2="24" stroke={color} strokeWidth="2.5" strokeLinecap="round"/>
-      <polyline points="9,20 14,25 19,20" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
-function SinksIcon({ color }: { color: string }) {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <line x1="14" y1="4" x2="14" y2="14" stroke={color} strokeWidth="2.5" strokeLinecap="round"/>
-      <polyline points="9,9 14,4 19,9" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <ellipse cx="14" cy="20" rx="9" ry="6" fill={color} opacity="0.9"/>
-    </svg>
-  );
-}
-
-function BothIcon({ color }: { color: string }) {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <ellipse cx="9" cy="8" rx="7" ry="5" fill={color} opacity="0.9"/>
-      <line x1="9" y1="13" x2="9" y2="20" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-      <polyline points="5.5,17 9,21 12.5,17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <line x1="20" y1="8" x2="20" y2="15" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-      <polyline points="16.5,11 20,7 23.5,11" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <ellipse cx="20" cy="21" rx="7" ry="5" fill={color} opacity="0.9"/>
-    </svg>
-  );
-}
-
 const FLOAT_OPTIONS = [
-  { label: 'Flota', value: 'floats' as const, Icon: FloatsIcon },
-  { label: 'No flota', value: 'sinks' as const, Icon: SinksIcon },
-  { label: 'Ambos', value: 'both' as const, Icon: BothIcon },
+  { label: 'Flota', value: 'floats' as const, img: '/Flota_2.png' },
+  { label: 'No flota', value: 'sinks' as const, img: '/Flota_1.png' },
+  { label: 'Ambos', value: 'both' as const, img: '/Flota_3.png' },
 ];
 
 const COLOR_OPTIONS = [
@@ -201,7 +167,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       {/* Logo (only in tab mode) */}
       {isTab && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          <img src={asset('/fluxia-logo-full.svg')} alt="Fluxia" style={{ height: 32 }} />
+          <img src={getDoctorImage() || asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 52, objectFit: 'contain' }} />
         </div>
       )}
 
@@ -281,14 +247,14 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           }}
         >
           <img
-            src={asset('/Switch-Caca-Icono.png')}
+            src={asset('/Switch-Caca-Icono.svg')}
             width={38}
             height={38}
             alt="Deposición"
             style={{
               display: 'block',
-              opacity: entryType === 'poop' ? 1 : 0.35,
-              transition: 'opacity 0.2s',
+              filter: entryType === 'poop' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
+              transition: 'filter 0.2s',
             }}
           />
         </button>
@@ -311,14 +277,14 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           }}
         >
           <img
-            src={asset('/Switch-Miccion-Icono.png')}
+            src={asset('/Switch-Miccion-Icono.svg')}
             width={38}
             height={38}
             alt="Micción"
             style={{
               display: 'block',
-              opacity: entryType === 'urine' ? 1 : 0.35,
-              transition: 'opacity 0.2s',
+              filter: entryType === 'urine' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
+              transition: 'filter 0.2s',
             }}
           />
         </button>
@@ -339,19 +305,21 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             <div style={{ display: 'flex', gap: 8 }}>
               {FLOAT_OPTIONS.map(opt => {
                 const isActive = floats === opt.value;
-                const iconColor = isActive ? D.primaryText : D.text;
                 return (
                   <button
                     key={opt.value}
                     onClick={() => setFloats(floats === opt.value ? null : opt.value)}
                     style={{
-                      flex: 1, padding: '10px 4px 8px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      flex: 1, padding: '10px 4px 8px', borderRadius: 12,
+                      border: isActive ? `2px solid ${D.primary}` : '2px solid transparent',
+                      cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       transition: 'all 0.1s',
-                      ...(isActive ? chipActive : chipInactive),
+                      backgroundColor: D.chip,
+                      color: D.text,
                     }}
                   >
-                    <opt.Icon color={iconColor} />
+                    <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
                     <span style={{ fontSize: 11, fontWeight: 700 }}>{opt.label}</span>
                   </button>
                 );
@@ -363,18 +331,18 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         {show('color') && (
           <div style={sectionCard}>
             <span style={sectionLabel}>Color</span>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
               {COLOR_OPTIONS.map(opt => (
                 <button
                   key={opt.hex}
                   onClick={() => setColor(color === opt.hex ? null : opt.hex)}
                   title={opt.label}
                   style={{
-                    width: 40, height: 40, borderRadius: '50%', backgroundColor: opt.hex,
-                    border: color === opt.hex ? `3px solid ${D.primary}` : '3px solid transparent',
-                    boxShadow: color === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
-                    transform: color === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                    transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
+                    flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
+                    border: 'none',
+                    boxShadow: color === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'none',
+                    outline: color === opt.hex ? 'none' : 'none',
+                    transition: 'box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
               ))}
@@ -386,24 +354,16 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           <div style={sectionCard}>
             <span style={sectionLabel}>Cantidad</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* Pencil icon */}
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M3 17L4.5 13L12 5.5L14.5 8L7 15.5L3 17Z" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M10.5 7L13 9.5" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
+              <img src={asset('/Ligero-icon.svg')} alt="Ligero" style={{ width: 24, height: 24, objectFit: 'contain', opacity: 0.6 }} />
               <input
                 type="range" min={0} max={100} value={quantity}
                 onChange={e => setQuantity(Number(e.target.value))}
                 style={{ flex: 1, accentColor: D.primary }}
               />
-              {/* Scale/weight icon */}
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M4 16h12M10 4a2 2 0 100-4 2 2 0 000 4z" stroke={D.textMuted} strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-                <path d="M10 4L6 12h8L10 4z" stroke={D.textMuted} strokeWidth="1.4" strokeLinejoin="round" fill="none"/>
-              </svg>
+              <img src={asset('/Pesado-icon.svg')} alt="Pesado" style={{ width: 24, height: 24, objectFit: 'contain', opacity: 0.6 }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
-              <span>Ligero</span><span style={{ fontWeight: 600, color: D.text }}>{quantityLabel}</span><span>Pesado</span>
+            <div style={{ textAlign: 'center', fontSize: 11, color: D.textMuted, marginTop: 4 }}>
+              <span style={{ fontWeight: 600, color: D.text }}>{quantityLabel}</span>
             </div>
           </div>
         )}
@@ -494,18 +454,17 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         {show('urine_color') && (
           <div style={sectionCard}>
             <span style={sectionLabel}>Color</span>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
               {URINE_COLOR_OPTIONS.map(opt => (
                 <button
                   key={opt.hex}
                   onClick={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                   title={opt.label}
                   style={{
-                    width: 40, height: 40, borderRadius: '50%', backgroundColor: opt.hex,
-                    border: urineColor === opt.hex ? `3px solid ${D.primary}` : '3px solid #00000030',
-                    boxShadow: urineColor === opt.hex ? `0 0 0 2px ${D.bg}` : 'none',
-                    transform: urineColor === opt.hex ? 'scale(1.15)' : 'scale(1)',
-                    transition: 'transform 0.1s', cursor: 'pointer', flexShrink: 0,
+                    flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
+                    border: 'none',
+                    boxShadow: urineColor === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'inset 0 0 0 1px rgba(0,0,0,0.12)',
+                    transition: 'box-shadow 0.1s', cursor: 'pointer',
                   }}
                 />
               ))}
@@ -539,37 +498,22 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       </>}
 
       {/* Notes */}
-      <div style={{ ...sectionCard, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ ...sectionLabel, marginBottom: 0, flex: 1 }}>Notas</span>
-        <button
-          onClick={() => {
-            const el = document.getElementById('fluxia-notes-area');
-            if (el) el.focus();
+      <div style={sectionCard}>
+        <span style={sectionLabel}>Notas</span>
+        <textarea
+          id="fluxia-notes-area"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Escribe tus notas aquí..."
+          rows={3}
+          style={{
+            width: '100%', borderRadius: 8, padding: '8px 10px',
+            fontSize: 14, color: D.text, backgroundColor: D.bg,
+            border: 'none', outline: 'none', resize: 'none',
+            fontFamily: 'inherit', boxSizing: 'border-box',
           }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-        >
-          <EditIcon />
-        </button>
+        />
       </div>
-      {/* Expandable notes area */}
-      {notes !== '' || true ? (
-        <div style={{ marginBottom: 10, marginTop: -8 }}>
-          <textarea
-            id="fluxia-notes-area"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Escribe tus notas aquí..."
-            rows={3}
-            style={{
-              width: '100%', borderRadius: '0 0 14px 14px', padding: '10px 16px',
-              fontSize: 14, color: D.text, backgroundColor: D.card,
-              border: 'none', borderTop: `1px solid ${D.border}`,
-              outline: 'none', resize: 'none',
-              fontFamily: 'inherit', boxSizing: 'border-box',
-            }}
-          />
-        </div>
-      ) : null}
 
       {/* Save button */}
       <button

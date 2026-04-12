@@ -27,9 +27,10 @@ export function getPaletteTheme(paletteId: string): MedicsTheme {
 export interface DoctorConfig {
   palette: string | null;
   hiddenFields: string[];
+  centerImageUrl: string | null;
 }
 
-/** Fetch the doctor config (palette + hidden fields) for the patient's linked doctor. */
+/** Fetch the doctor config (palette + hidden fields + center image) for the patient's linked doctor. */
 export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
   try {
     const { data: link } = await supabase
@@ -40,20 +41,19 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       .limit(1)
       .single();
 
-    if (!link?.center_id) return { palette: null, hiddenFields: [] };
+    if (!link?.center_id) return { palette: null, hiddenFields: [], centerImageUrl: null };
 
-    const { data: doctor } = await supabase
-      .from('doctors')
-      .select('palette')
-      .eq('center_id', link.center_id)
-      .limit(1)
-      .single();
+    const [{ data: doctor }, { data: center }] = await Promise.all([
+      supabase.from('doctors').select('palette').eq('center_id', link.center_id).limit(1).single(),
+      supabase.from('centers').select('image_url').eq('id', link.center_id).single(),
+    ]);
 
     return {
       palette: doctor?.palette || null,
       hiddenFields: link?.hidden_fields || [],
+      centerImageUrl: center?.image_url || null,
     };
   } catch {
-    return { palette: null, hiddenFields: [] };
+    return { palette: null, hiddenFields: [], centerImageUrl: null };
   }
 }
