@@ -120,19 +120,9 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 <>
                   {(() => {
                     const hasPoop = dayEntries.some((e: any) => e.entry_type !== 'urine');
-                    const hasUrine = dayEntries.some((e: any) => e.entry_type === 'urine');
                     const imgStyle = { filter: 'brightness(0) opacity(0.55)' as const };
-                    if (hasPoop && hasUrine) {
-                      return (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={14} height={14} style={imgStyle} />
-                          <span style={{ fontSize: 9, fontWeight: 900, color: D.text, lineHeight: 1 }}>+</span>
-                          <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={14} height={14} style={imgStyle} />
-                        </div>
-                      );
-                    }
-                    if (hasUrine) return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
-                    return <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                    if (hasPoop) return <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                    return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
                   })()}
                   {count > 1 && (
                     <span style={{
