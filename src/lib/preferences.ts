@@ -173,7 +173,24 @@ export function clearDoctorHiddenFields(): void {
   localStorage.removeItem(DOCTOR_FIELDS_KEY);
 }
 
-// Apply theme to DOM — keeps body in Figma gray, only CSS vars for legacy compat
+// ── Doctor entry type mode ──
+
+const DOCTOR_ENTRY_TYPE_MODE_KEY = 'cacalendario_entry_type_mode';
+export type EntryTypeMode = 'both' | 'poop_only' | 'urine_only';
+
+export function getDoctorEntryTypeMode(): EntryTypeMode {
+  if (typeof window === 'undefined') return 'both';
+  return (localStorage.getItem(DOCTOR_ENTRY_TYPE_MODE_KEY) as EntryTypeMode) || 'both';
+}
+
+export function setDoctorEntryTypeMode(mode: EntryTypeMode): void {
+  localStorage.setItem(DOCTOR_ENTRY_TYPE_MODE_KEY, mode);
+}
+
+export function clearDoctorEntryTypeMode(): void {
+  localStorage.removeItem(DOCTOR_ENTRY_TYPE_MODE_KEY);
+}
+
 export function applyTheme(_theme?: Theme): void {
   if (typeof document === 'undefined') return;
   // Apply doctor color CSS variable if stored

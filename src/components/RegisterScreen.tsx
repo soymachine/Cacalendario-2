@@ -3,7 +3,7 @@ import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
-import { getDoctorHiddenFields, getDoctorImage } from '../lib/preferences';
+import { getDoctorHiddenFields, getDoctorImage, getDoctorEntryTypeMode } from '../lib/preferences';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
 
@@ -85,9 +85,12 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const { emoji } = usePreferences();
   const hiddenFields = getDoctorHiddenFields();
   const show = (field: string) => !hiddenFields.includes(field);
+  const entryTypeMode = getDoctorEntryTypeMode();
 
   const now = new Date();
-  const [entryType, setEntryType] = useState<'poop' | 'urine'>('poop');
+  const [entryType, setEntryType] = useState<'poop' | 'urine'>(
+    entryTypeMode === 'urine_only' ? 'urine' : 'poop'
+  );
   const [hours, setHours] = useState(now.getHours());
   const [minutes, setMinutes] = useState(now.getMinutes());
   const [editingTime, setEditingTime] = useState(false);
@@ -220,75 +223,77 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         </button>
       </div>
 
-      {/* Entry type toggle — pill segmented control */}
-      <div style={{
-        display: 'flex',
-        backgroundColor: D.chip,
-        borderRadius: 999,
-        padding: 4,
-        marginBottom: 10,
-        gap: 4,
-      }}>
-        {/* Poop */}
-        <button
-          onClick={() => setEntryType('poop')}
-          style={{
-            flex: 1,
-            height: 52,
-            borderRadius: 999,
-            backgroundColor: entryType === 'poop' ? D.card : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: entryType === 'poop' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-            transition: 'background-color 0.2s, box-shadow 0.2s',
-          }}
-        >
-          <img
-            src={asset('/Switch-Caca-Icono.svg')}
-            width={38}
-            height={38}
-            alt="Deposición"
+      {/* Entry type toggle — only shown when both types are allowed */}
+      {entryTypeMode === 'both' && (
+        <div style={{
+          display: 'flex',
+          backgroundColor: D.chip,
+          borderRadius: 999,
+          padding: 4,
+          marginBottom: 10,
+          gap: 4,
+        }}>
+          {/* Poop */}
+          <button
+            onClick={() => setEntryType('poop')}
             style={{
-              display: 'block',
-              filter: entryType === 'poop' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
-              transition: 'filter 0.2s',
+              flex: 1,
+              height: 52,
+              borderRadius: 999,
+              backgroundColor: entryType === 'poop' ? D.card : 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: entryType === 'poop' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+              transition: 'background-color 0.2s, box-shadow 0.2s',
             }}
-          />
-        </button>
+          >
+            <img
+              src={asset('/Switch-Caca-Icono.svg')}
+              width={38}
+              height={38}
+              alt="Deposición"
+              style={{
+                display: 'block',
+                filter: entryType === 'poop' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
+                transition: 'filter 0.2s',
+              }}
+            />
+          </button>
 
-        {/* Urine */}
-        <button
-          onClick={() => setEntryType('urine')}
-          style={{
-            flex: 1,
-            height: 52,
-            borderRadius: 999,
-            backgroundColor: entryType === 'urine' ? D.card : 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: entryType === 'urine' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-            transition: 'background-color 0.2s, box-shadow 0.2s',
-          }}
-        >
-          <img
-            src={asset('/Switch-Miccion-Icono.svg')}
-            width={38}
-            height={38}
-            alt="Micción"
+          {/* Urine */}
+          <button
+            onClick={() => setEntryType('urine')}
             style={{
-              display: 'block',
-              filter: entryType === 'urine' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
-              transition: 'filter 0.2s',
+              flex: 1,
+              height: 52,
+              borderRadius: 999,
+              backgroundColor: entryType === 'urine' ? D.card : 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: entryType === 'urine' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+              transition: 'background-color 0.2s, box-shadow 0.2s',
             }}
-          />
-        </button>
-      </div>
+          >
+            <img
+              src={asset('/Switch-Miccion-Icono.svg')}
+              width={38}
+              height={38}
+              alt="Micción"
+              style={{
+                display: 'block',
+                filter: entryType === 'urine' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
+                transition: 'filter 0.2s',
+              }}
+            />
+          </button>
+        </div>
+      )}
 
       {/* ── POOP FORM ── */}
       {!isUrine && <>

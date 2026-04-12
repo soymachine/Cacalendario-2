@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
-import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage } from '../lib/preferences';
+import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage, setDoctorEntryTypeMode, clearDoctorEntryTypeMode } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
 import { type PoopEntry } from '../lib/storage';
 import { D } from '../lib/design';
@@ -54,12 +54,14 @@ function AppContent() {
         setDoctorHiddenFields(config.hiddenFields);
         if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
         else clearDoctorImage();
+        setDoctorEntryTypeMode(config.entryTypeMode);
       });
       registerPushSubscription(user.id);
     } else {
       clearDoctorColor();
       clearDoctorHiddenFields();
       clearDoctorImage();
+      clearDoctorEntryTypeMode();
     }
   }, [user]);
 

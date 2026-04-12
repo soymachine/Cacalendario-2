@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { type EntryTypeMode } from './preferences';
 
 export interface MedicsTheme {
   primary: string;
@@ -28,6 +29,7 @@ export interface DoctorConfig {
   palette: string | null;
   hiddenFields: string[];
   centerImageUrl: string | null;
+  entryTypeMode: EntryTypeMode;
 }
 
 /** Fetch the doctor config (palette + hidden fields + center image) for the patient's linked doctor. */
@@ -35,13 +37,13 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
   try {
     const { data: link } = await supabase
       .from('patient_links')
-      .select('center_id, hidden_fields')
+      .select('center_id, hidden_fields, entry_type_mode')
       .eq('patient_id', userId)
       .eq('status', 'accepted')
       .limit(1)
       .single();
 
-    if (!link?.center_id) return { palette: null, hiddenFields: [], centerImageUrl: null };
+    if (!link?.center_id) return { palette: null, hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both' };
 
     const [{ data: doctor }, { data: center }] = await Promise.all([
       supabase.from('doctors').select('palette').eq('center_id', link.center_id).limit(1).single(),
@@ -52,8 +54,9 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       palette: doctor?.palette || null,
       hiddenFields: link?.hidden_fields || [],
       centerImageUrl: center?.image_url || null,
+      entryTypeMode: (link?.entry_type_mode as EntryTypeMode) || 'both',
     };
   } catch {
-    return { palette: null, hiddenFields: [], centerImageUrl: null };
+    return { palette: null, hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both' };
   }
 }

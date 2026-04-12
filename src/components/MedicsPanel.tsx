@@ -36,6 +36,7 @@ interface PatientLink {
   semaforo_green_override?: number | null;
   semaforo_red_override?: number | null;
   hidden_fields?: string[];
+  entry_type_mode?: string;
   push_min_hours?: number;
   push_frequency?: number;
   hasPushSub?: boolean | null;
@@ -145,6 +146,7 @@ export default function MedicsPanel() {
   const [entryFilterTo, setEntryFilterTo] = useState('');
   const [configPalette, setConfigPalette] = useState('terracotta');
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
+  const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
   const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
@@ -474,6 +476,7 @@ export default function MedicsPanel() {
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientSemaforoSaved(false);
     setPatientHiddenFields(patient.hidden_fields || []);
+    setPatientEntryTypeMode(patient.entry_type_mode || 'both');
     setPatientFieldsSaved(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
@@ -622,10 +625,10 @@ export default function MedicsPanel() {
     if (!selectedPatient) return;
     const { error } = await supabase
       .from('patient_links')
-      .update({ hidden_fields: patientHiddenFields })
+      .update({ hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode })
       .eq('id', selectedPatient.id);
     if (!error) {
-      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields });
+      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode });
       setPatientFieldsSaved(true);
       setTimeout(() => setPatientFieldsSaved(false), 3000);
     }
@@ -1275,6 +1278,31 @@ export default function MedicsPanel() {
                   📋 Campos del formulario
                 </div>
                 <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                  {/* Entry type mode selector */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Tipo de registro permitido</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {[
+                        { value: 'both', label: 'Ambas opciones' },
+                        { value: 'poop_only', label: 'Solo deposición' },
+                        { value: 'urine_only', label: 'Solo micción' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setPatientEntryTypeMode(opt.value)}
+                          style={{
+                            flex: 1, padding: '7px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                            fontSize: 11, fontWeight: 700, lineHeight: 1.3,
+                            backgroundColor: patientEntryTypeMode === opt.value ? th.primary : '#f0f0f0',
+                            color: patientEntryTypeMode === opt.value ? '#fff' : '#555',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
                     Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                   </p>
