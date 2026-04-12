@@ -17,7 +17,7 @@ import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
 import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage, setDoctorEntryTypeMode, clearDoctorEntryTypeMode } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
-import { type PoopEntry } from '../lib/storage';
+import { type PoopEntry, updateEntryDateTime } from '../lib/storage';
 import { D } from '../lib/design';
 
 type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
@@ -31,7 +31,7 @@ function AppContent() {
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{
-    date: string; time: string; entryType: 'poop' | 'urine';
+    date: string; time: string; entryType: 'poop' | 'urine'; entryId: string;
   } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -75,8 +75,8 @@ function AppContent() {
     }
   };
 
-  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine') => {
-    setCongratsData({ date, time, entryType });
+  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine', entryId: string) => {
+    setCongratsData({ date, time, entryType, entryId });
     setOverlay('congrats');
   };
 
@@ -171,6 +171,12 @@ function AppContent() {
           date={congratsData.date}
           time={congratsData.time}
           entryType={congratsData.entryType}
+          entryId={congratsData.entryId}
+          onUpdateDateTime={(newDate, newTime) => {
+            updateEntryDateTime(congratsData.entryId, newDate, newTime);
+            setCongratsData({ ...congratsData, date: newDate, time: newTime });
+            window.dispatchEvent(new Event('fluxia-updated'));
+          }}
           onClose={handleCongratsClose}
         />
       )}

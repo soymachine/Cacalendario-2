@@ -11,7 +11,7 @@ interface RegisterScreenProps {
   date?: string | null;
   isTab?: boolean;
   onClose?: () => void;
-  onSuccess: (date: string, time: string, entryType: 'poop' | 'urine') => void;
+  onSuccess: (date: string, time: string, entryType: 'poop' | 'urine', entryId: string) => void;
 }
 
 const FLOAT_OPTIONS = [
@@ -123,8 +123,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
   const handleSave = () => {
     const [y, mo, d] = targetDate.split('-').map(Number);
+    const entryId = generateEntryId();
     saveEntry({
-      id: generateEntryId(),
+      id: entryId,
       date: targetDate,
       time: timeText,
       notes,
@@ -142,7 +143,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       urine_characteristics: isUrine ? urineCharacteristics : [],
     });
     window.dispatchEvent(new Event('fluxia-updated'));
-    onSuccess(targetDate, timeText, entryType);
+    onSuccess(targetDate, timeText, entryType, entryId);
   };
 
   const sectionCard: React.CSSProperties = {
