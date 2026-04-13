@@ -5,6 +5,10 @@ import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
 import { PALETTES } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
+import { initSentry } from '../lib/sentry';
+
+// Initialize Sentry once at module load (no-op in dev)
+initSentry();
 
 const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
 const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
