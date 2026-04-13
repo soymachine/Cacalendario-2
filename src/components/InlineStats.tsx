@@ -87,7 +87,7 @@ export default function InlineStats() {
 
       {/* Hora — vertical bar chart */}
       <div style={sectionCard}>
-        <p style={{ fontSize: 15, fontWeight: 700, color: D.text, margin: '0 0 14px' }}>Hora</p>
+        <p style={{ fontSize: 15, fontWeight: 700, color: D.secondary, margin: '0 0 14px' }}>Hora</p>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 90 }}>
           {stats.timeOfDay.map((slot, i) => {
             const barHeight = timeMax > 0 ? Math.max((slot.count / timeMax) * 60, slot.count > 0 ? 8 : 4) : 4;

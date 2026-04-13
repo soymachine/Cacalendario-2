@@ -66,7 +66,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
             <path d="M8 2L2 9L8 16" stroke={D.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h2 style={{ fontSize: 20, fontWeight: 900, color: D.text, margin: 0, letterSpacing: 0.3 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 900, color: D.secondary, margin: 0, letterSpacing: 0.3 }}>
           {getMonthName(month)} {year}
         </h2>
         <button

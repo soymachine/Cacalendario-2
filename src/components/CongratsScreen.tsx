@@ -38,7 +38,7 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '64px 32px 48px' }}>
           {/* Title */}
           <div>
-            <p style={{ fontSize: 32, fontWeight: 900, color: D.text, lineHeight: 1.2, margin: 0 }}>
+            <p style={{ fontSize: 32, fontWeight: 900, color: D.primary, lineHeight: 1.2, margin: 0 }}>
               {isPoop ? <>¡Enhorabuena,<br />has obrado!</> : <>¡Registro<br />guardado!</>}
             </p>
           </div>
@@ -62,18 +62,18 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
             <div style={{ display: 'flex', gap: 24 }}>
               <div>
                 <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>DÍA</p>
-                <p style={{ fontSize: 18, color: D.text, margin: 0 }}>{dayText}</p>
+                <p style={{ fontSize: 18, color: D.secondary, margin: 0 }}>{dayText}</p>
               </div>
               <div>
                 <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>HORA</p>
-                <p style={{ fontSize: 18, color: D.text, margin: 0 }}>{time}</p>
+                <p style={{ fontSize: 18, color: D.secondary, margin: 0 }}>{time}</p>
               </div>
             </div>
 
             {/* Type badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: D.bg, borderRadius: 10, padding: '8px 12px' }}>
               <span style={{ fontSize: 20 }}>{isPoop ? '💩' : '💧'}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: D.text }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: D.secondary }}>
                 {isPoop ? 'Deposición registrada' : 'Micción registrada'}
               </span>
             </div>

@@ -49,7 +49,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
         {/* Day header */}
         <div style={{ padding: '60px 24px 12px', flexShrink: 0 }}>
           <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, letterSpacing: 0.5, margin: '0 0 4px' }}>DÍA</p>
-          <p style={{ fontSize: 22, fontWeight: 700, color: D.text, margin: '0 0 4px' }}>{dayText}</p>
+          <p style={{ fontSize: 22, fontWeight: 700, color: D.secondary, margin: '0 0 4px' }}>{dayText}</p>
           <p style={{ fontSize: 13, color: D.textMuted, margin: 0 }}>
             {entries.length} {entries.length === 1 ? 'registro' : 'registros'}
           </p>
@@ -84,7 +84,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 18, fontWeight: 900, color: D.text }}>{entry.time}</span>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: D.primary }}>{entry.time}</span>
                         {entry.entry_type === 'urine' ? (
                           <>
                             {entry.urine_type === 'voluntary' && (

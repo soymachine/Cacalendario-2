@@ -157,7 +157,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const sectionLabel: React.CSSProperties = {
     fontSize: 15,
     fontWeight: 700,
-    color: D.text,
+    color: D.secondary,
     display: 'block',
     marginBottom: 12,
   };
@@ -177,7 +177,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: D.secondary, margin: 0 }}>
           Registro
         </h1>
         {!isTab && onClose && (
