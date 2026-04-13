@@ -12,7 +12,10 @@ const DSN = 'https://aa047b3bd9201b7100a67a4cc4fcea0c@o4511213717553152.ingest.d
  */
 export function initSentry(): void {
   if (typeof window === 'undefined') return;
-  if (import.meta.env.DEV) return;
+  // Use MODE string comparison — more reliable than DEV bool across build tools
+  if (import.meta.env.MODE === 'development') return;
+
+  console.log('[Sentry] Initializing…', APP_VERSION);
 
   Sentry.init({
     dsn: DSN,
@@ -44,6 +47,12 @@ export function initSentry(): void {
       return event;
     },
   });
+
+  console.log('[Sentry] Initialized. isInitialized:', Sentry.isInitialized());
+}
+
+export function sendTestError(): void {
+  Sentry.captureException(new Error('[Fluxia] Sentry test event — puedes eliminar este botón'));
 }
 
 // Re-export ErrorBoundary and captureException for use in components
