@@ -22,6 +22,12 @@ export const PALETTES: { id: string; name: string; swatch: string; theme: Medics
 ];
 
 export function getPaletteTheme(paletteId: string): MedicsTheme {
+  if (paletteId.startsWith('custom:')) {
+    const parts = paletteId.split(':');
+    const c1 = `#${parts[1] || 'dd8273'}`;
+    const c2 = `#${parts[2] || 'a05060'}`;
+    return { primary: c1, dark: c2, navActive: c2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' };
+  }
   return (PALETTES.find(p => p.id === paletteId) || PALETTES[0]).theme;
 }
 
