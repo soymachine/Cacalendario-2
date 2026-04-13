@@ -1769,11 +1769,15 @@ export default function MedicsPanel() {
               subtitle="Ajusta tu perfil y los parámetros del semáforo"
             />
 
-            {/* ── 3-column row: Datos del médico · Imagen del centro · Semáforo ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16, alignItems: 'start' }}>
+            {/* ── Config grid layout ── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: 16,
+            }}>
 
-              {/* Datos del médico */}
-              <div style={s.card}>
+              {/* Col 1 Row 1 — Datos del médico */}
+              <div style={{ ...s.card, gridColumn: 1, gridRow: 1 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
                 </div>
@@ -1811,8 +1815,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Imagen del centro */}
-              <div style={s.card}>
+              {/* Col 2 Rows 1–2 — Imagen del centro */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : '1 / span 2' }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
                 </div>
@@ -1836,8 +1840,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Semáforo */}
-              <div style={s.card}>
+              {/* Col 1 Row 2 — Semáforo */}
+              <div style={{ ...s.card, gridColumn: 1, gridRow: isMobile ? 'auto' : 2 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🚦 Semáforo</span>
                 </div>
@@ -1877,114 +1881,129 @@ export default function MedicsPanel() {
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* ── Paleta de colores ── */}
-            <div style={s.card}>
-              <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
-              </div>
-              <div style={{ padding: 18 }}>
-                <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px', lineHeight: 1.6 }}>
-                  Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, marginBottom: 14 }}>
-                  {PALETTES.map(p => {
-                    const isActive = configPalette === p.id;
-                    return (
-                      <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
-                        style={{
-                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
-                          padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                          backgroundColor: isActive ? '#00000012' : 'transparent',
-                          outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
-                          transition: 'all 0.15s',
-                        }}>
-                        <div style={{
-                          width: 32, height: 32, borderRadius: '50%',
-                          background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
-                          boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
-                        }} />
-                        <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
-                      </button>
-                    );
-                  })}
-
-                  {/* Custom palette option */}
-                  <button onClick={() => setConfigPalette('custom')} title="Personalizable"
-                    style={{
-                      display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
-                      padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                      backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
-                      outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
-                      transition: 'all 0.15s',
-                    }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: configPalette === 'custom'
-                        ? `linear-gradient(135deg, ${customColor1} 50%, ${customColor2} 50%)`
-                        : 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)',
-                      boxShadow: configPalette === 'custom' ? `0 0 0 3px ${customColor1}50` : 'none',
-                    }} />
-                    <span style={{ fontSize: 10, fontWeight: configPalette === 'custom' ? 700 : 400, color: '#444' }}>Personalizable</span>
-                  </button>
+              {/* Cols 1–2 Row 3 — Paleta de colores */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 3 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
                 </div>
+                <div style={{ padding: 18 }}>
+                  <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px', lineHeight: 1.6 }}>
+                    Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, marginBottom: 14 }}>
+                    {PALETTES.map(p => {
+                      const isActive = configPalette === p.id;
+                      return (
+                        <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
+                          style={{
+                            display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                            padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                            backgroundColor: isActive ? '#00000012' : 'transparent',
+                            outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
+                            transition: 'all 0.15s',
+                          }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
+                            boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
+                          }} />
+                          <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                        </button>
+                      );
+                    })}
 
-                {/* Custom color pickers — only when 'custom' is selected */}
-                {configPalette === 'custom' && (
-                  <div style={{ backgroundColor: '#f7f7f7', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
-                      <div style={{ flex: 1, minWidth: 140 }}>
-                        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
-                          Color primario
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <input type="color" value={customColor1} onChange={e => setCustomColor1(e.target.value)}
-                            style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor1}</span>
-                        </div>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 140 }}>
-                        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
-                          Color oscuro / fondo
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <input type="color" value={customColor2} onChange={e => setCustomColor2(e.target.value)}
-                            style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor2}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Preview strip */}
-                    <div style={{ borderRadius: 8, overflow: 'hidden', display: 'flex', height: 36 }}>
-                      <div style={{ flex: 1, backgroundColor: customColor1 }} />
-                      <div style={{ flex: 1, background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
-                      <div style={{ flex: 1, backgroundColor: customColor2 }} />
-                    </div>
-
-                    {/* Extract from image button */}
-                    <button
-                      onClick={handleExtractColors}
-                      disabled={!centerImageUrl || extractingColors}
+                    {/* Custom palette option */}
+                    <button onClick={() => setConfigPalette('custom')} title="Personalizable"
                       style={{
-                        padding: '9px 16px', borderRadius: 8, border: `2px solid ${customColor1}`,
-                        backgroundColor: 'transparent', color: customColor1,
-                        fontSize: 13, fontWeight: 700, cursor: centerImageUrl ? 'pointer' : 'not-allowed',
-                        opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
+                        display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                        padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                        backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
+                        outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
                         transition: 'all 0.15s',
-                      }}
-                    >
-                      {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
+                      }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: configPalette === 'custom'
+                          ? `linear-gradient(135deg, ${customColor1} 50%, ${customColor2} 50%)`
+                          : 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)',
+                        boxShadow: configPalette === 'custom' ? `0 0 0 3px ${customColor1}50` : 'none',
+                      }} />
+                      <span style={{ fontSize: 10, fontWeight: configPalette === 'custom' ? 700 : 400, color: '#444' }}>Personalizable</span>
                     </button>
-                    {!centerImageUrl && (
-                      <p style={{ fontSize: 11, color: '#aaa', margin: '-8px 0 0' }}>
-                        Sube una imagen del centro para usar esta opción.
-                      </p>
+                  </div>
+
+                  {/* Custom color pickers */}
+                  {configPalette === 'custom' && (
+                    <div style={{ backgroundColor: '#f7f7f7', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
+                        <div style={{ flex: 1, minWidth: 140 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                            Color primario
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <input type="color" value={customColor1} onChange={e => setCustomColor1(e.target.value)}
+                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor1}</span>
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 140 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                            Color oscuro / fondo
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <input type="color" value={customColor2} onChange={e => setCustomColor2(e.target.value)}
+                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor2}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview strip */}
+                      <div style={{ borderRadius: 8, overflow: 'hidden', display: 'flex', height: 36 }}>
+                        <div style={{ flex: 1, backgroundColor: customColor1 }} />
+                        <div style={{ flex: 1, background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
+                        <div style={{ flex: 1, backgroundColor: customColor2 }} />
+                      </div>
+
+                      {/* Extract from image button */}
+                      <button
+                        onClick={handleExtractColors}
+                        disabled={!centerImageUrl || extractingColors}
+                        style={{
+                          padding: '9px 16px', borderRadius: 8, border: `2px solid ${customColor1}`,
+                          backgroundColor: 'transparent', color: customColor1,
+                          fontSize: 13, fontWeight: 700, cursor: centerImageUrl ? 'pointer' : 'not-allowed',
+                          opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
+                      </button>
+                      {!centerImageUrl && (
+                        <p style={{ fontSize: 11, color: '#aaa', margin: '-8px 0 0' }}>
+                          Sube una imagen del centro para usar esta opción.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Save button always visible in palette section */}
+                  <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button onClick={handleSaveConfig} disabled={loading}
+                      style={{ ...ts.btnPrimary, width: 'auto', padding: '9px 24px', opacity: loading ? 0.5 : 1 }}>
+                      {loading ? '...' : 'Guardar paleta'}
+                    </button>
+                    {configSaved && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>✅</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
+
             </div>
             {isMobile && (
               <div style={{ textAlign: 'center', padding: '16px 0 4px', color: '#00000030', fontSize: 11 }}>{APP_VERSION}</div>
