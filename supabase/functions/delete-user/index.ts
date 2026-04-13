@@ -44,22 +44,26 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // 4. Delete all user entries from the database
-    const { error: deleteEntriesError } = await supabaseAdmin
-      .from('entries')
-      .delete()
-      .eq('user_id', user.id)
-
-    if (deleteEntriesError) {
-      console.error('Error deleting entries:', deleteEntriesError)
+    // 4. Delete all user data first (must succeed before touching auth)
+    const tables = ['entries', 'push_subscriptions', 'patient_links', 'user_profiles'] as const;
+    for (const table of tables) {
+      const { error } = await supabaseAdmin.from(table).delete().eq('user_id', user.id);
+      if (error) {
+        // Log and abort — do NOT delete the auth user if data cleanup failed
+        console.error(`Error deleting ${table}:`, error);
+        return new Response(
+          JSON.stringify({ error: `Failed to delete user data (${table}): ${error.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // 5. Delete the auth user completely
+    // 5. Only delete the auth user after all data is confirmed deleted
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
 
     if (deleteUserError) {
       return new Response(
-        JSON.stringify({ error: 'Failed to delete user: ' + deleteUserError.message }),
+        JSON.stringify({ error: 'Failed to delete auth account: ' + deleteUserError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

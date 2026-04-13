@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
-import { Slider } from '@base-ui/react/slider';
 import { PALETTES } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
 
@@ -94,16 +93,20 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
   value: number; min: number; max: number; color: string;
   onChange: (v: number) => void;
 }) {
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  const colorClass = color === '#e74c3c' ? 'semaforo-range-red' : 'semaforo-range-green';
   return (
-    <Slider.Root value={value} min={min} max={max} onValueChange={(v) => onChange(v as number)}
-      style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: 18, userSelect: 'none', touchAction: 'none' }}>
-      <Slider.Control style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
-        <Slider.Track style={{ position: 'relative', flexGrow: 1, borderRadius: 3, height: 4, backgroundColor: '#e0e0e0' }}>
-          <Slider.Indicator style={{ position: 'absolute', borderRadius: 3, height: '100%', backgroundColor: color, opacity: 0.7 }} />
-          <Slider.Thumb style={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 3px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none' }} />
-        </Slider.Track>
-      </Slider.Control>
-    </Slider.Root>
+    <input
+      type="range"
+      className={`semaforo-range ${colorClass}`}
+      min={min}
+      max={max}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{
+        background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #e0e0e0 ${pct}%, #e0e0e0 100%)`,
+      }}
+    />
   );
 }
 
