@@ -197,7 +197,20 @@ export default function MedicsPanel() {
     setConfigName(info.name);
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
-    setCenterImageUrl(info.center_image_url || null);
+
+    const imageUrl = info.center_image_url || null;
+    setCenterImageUrl(imageUrl);
+
+    // Silent migration: if the stored image is still base64, move it to Storage
+    if (imageUrl?.startsWith('data:') && info.center_id) {
+      migrateBase64ToStorage(info.center_id, imageUrl).then(newUrl => {
+        if (newUrl) {
+          setCenterImageUrl(newUrl + `?t=${Date.now()}`);
+          setDoctorInfo(prev => prev ? { ...prev, center_image_url: newUrl } : prev);
+        }
+      });
+    }
+
     const palette = info.palette || 'terracotta';
     if (palette.startsWith('custom:')) {
       const parts = palette.split(':');
@@ -710,7 +723,7 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Upload center image (stored as base64 in DB) ──
+  // ── Upload center image to Supabase Storage ──
   const handleImageUpload = async (file: File) => {
     if (!doctorInfo) return;
 
@@ -721,16 +734,26 @@ export default function MedicsPanel() {
 
     setUploadingImage(true);
 
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `${doctorInfo.center_id}/logo.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from('center-images')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadErr) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: uploadErr.message });
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('center-images')
+      .getPublicUrl(path);
 
     const { error: dbErr } = await supabase
       .from('centers')
-      .update({ image_url: base64 })
+      .update({ image_url: publicUrl })
       .eq('id', doctorInfo.center_id);
 
     if (dbErr) {
@@ -739,10 +762,12 @@ export default function MedicsPanel() {
       return;
     }
 
-    setCenterImageUrl(base64);
-    setDoctorInfo({ ...doctorInfo, center_image_url: base64 });
+    // Cache-bust so the browser reloads the image even if the path is the same
+    const displayUrl = `${publicUrl}?t=${Date.now()}`;
+    setCenterImageUrl(displayUrl);
+    setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
     setUploadingImage(false);
-    setImageModal({ type: 'success', url: base64 });
+    setImageModal({ type: 'success', url: displayUrl });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
@@ -935,7 +960,7 @@ export default function MedicsPanel() {
         <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
           <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
             {centerImageUrl ? (
-              <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
+              <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
             ) : (
               <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
             )}
@@ -1827,7 +1852,7 @@ export default function MedicsPanel() {
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14, alignItems: 'center' }}>
                   <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
                     {centerImageUrl ? (
-                      <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
+                      <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
                     ) : (
                       <span style={{ fontSize: 32 }}>🏥</span>
                     )}
@@ -2086,6 +2111,37 @@ export default function MedicsPanel() {
       )}
     </div>
   );
+}
+
+// ── Storage migration utilities ──
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const binary = atob(base64);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function mimeToExt(mime: string): string {
+  return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as Record<string, string>)[mime] || 'jpg';
+}
+
+async function migrateBase64ToStorage(centerId: string, base64Url: string): Promise<string | null> {
+  try {
+    const blob = dataUrlToBlob(base64Url);
+    const path = `${centerId}/logo.${mimeToExt(blob.type)}`;
+    const { error } = await supabase.storage
+      .from('center-images')
+      .upload(path, blob, { upsert: true, contentType: blob.type });
+    if (error) return null;
+    const { data: { publicUrl } } = supabase.storage.from('center-images').getPublicUrl(path);
+    await supabase.from('centers').update({ image_url: publicUrl }).eq('id', centerId);
+    return publicUrl;
+  } catch {
+    return null;
+  }
 }
 
 // ── Color utilities ──
