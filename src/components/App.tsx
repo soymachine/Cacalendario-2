@@ -19,7 +19,7 @@ import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHid
 import { registerPushSubscription } from '../lib/push';
 import { type PoopEntry, getEntryById } from '../lib/storage';
 import { D } from '../lib/design';
-import { initSentry, ErrorBoundary } from '../lib/sentry';
+import { initSentry, ErrorBoundary, sendTestError } from '../lib/sentry';
 
 // Initialize Sentry once at module load (no-op in dev)
 initSentry();
@@ -196,6 +196,14 @@ function AppContent() {
       )}
 
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+
+      {/* ── SENTRY TEST BUTTON (TEMP) ── */}
+      <button
+        onClick={() => sendTestError()}
+        style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 9999, padding: '8px 14px', backgroundColor: '#e53e3e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: 0.85 }}
+      >
+        Test Sentry
+      </button>
     </div>
   );
 }

@@ -3,50 +3,48 @@ import { APP_VERSION } from './version';
 
 const DSN = 'https://aa047b3bd9201b7100a67a4cc4fcea0c@o4511213717553152.ingest.de.sentry.io/4511213723975760';
 
-/**
- * Initialize Sentry error tracking.
- * - Only active in production (no-op in dev)
- * - EU data region (ingest.de.sentry.io) for GDPR compliance
- * - Privacy-first: all text and inputs masked in session replays
- * - PII stripped from error events before sending
- */
 export function initSentry(): void {
   if (typeof window === 'undefined') return;
-  if (import.meta.env.MODE === 'development') return;
 
-  Sentry.init({
-    dsn: DSN,
-    release: APP_VERSION,
-    environment: 'production',
+  console.log('[Sentry] mode:', import.meta.env.MODE, '| prod:', import.meta.env.PROD);
 
-    // Performance: sample 5% of page loads (low overhead)
-    tracesSampleRate: 0.05,
+  if (import.meta.env.MODE === 'development') {
+    console.log('[Sentry] Skipped (dev mode)');
+    return;
+  }
 
-    // Session Replay: never record normal sessions,
-    // but always capture a replay when an error occurs
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 1.0,
-
-    integrations: [
-      Sentry.replayIntegration({
-        maskAllText: true,    // Never expose medical data in replays
-        maskAllInputs: true,
-        blockAllMedia: true,
-      }),
-    ],
-
-    // Strip any PII before the event leaves the browser
-    beforeSend(event) {
-      if (event.user) {
-        // Keep only the anonymous user ID, never email or IP
-        event.user = { id: event.user.id };
-      }
-      return event;
-    },
-  });
-
+  try {
+    Sentry.init({
+      dsn: DSN,
+      release: APP_VERSION,
+      environment: 'production',
+      tracesSampleRate: 0.05,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 1.0,
+      integrations: [
+        Sentry.replayIntegration({
+          maskAllText: true,
+          maskAllInputs: true,
+          blockAllMedia: true,
+        }),
+      ],
+      beforeSend(event) {
+        if (event.user) {
+          event.user = { id: event.user.id };
+        }
+        return event;
+      },
+    });
+    console.log('[Sentry] Init OK. isInitialized:', Sentry.isInitialized());
+  } catch (e) {
+    console.error('[Sentry] Init FAILED:', e);
+  }
 }
 
-// Re-export ErrorBoundary and captureException for use in components
+export function sendTestError(): void {
+  console.log('[Sentry] Sending test error. isInitialized:', Sentry.isInitialized());
+  Sentry.captureException(new Error('[Fluxia] Sentry test event'));
+}
+
 export const ErrorBoundary = Sentry.ErrorBoundary;
 export const captureException = Sentry.captureException;
