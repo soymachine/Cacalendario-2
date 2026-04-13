@@ -1774,6 +1774,7 @@ export default function MedicsPanel() {
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
               gap: 16,
+              maxWidth: 1550,
             }}>
 
               {/* Col 1 Row 1 — Datos del médico */}
@@ -1815,8 +1816,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Col 2 Row 1 — Imagen del centro */}
-              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : 1 }}>
+              {/* Col 2 Rows 1–2 — Imagen del centro */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : '1 / span 2' }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
                 </div>
@@ -1882,8 +1883,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Col 2 Row 2 — Paleta de colores */}
-              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : 2 }}>
+              {/* Cols 1–2 Row 3 — Paleta de colores */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 3 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
                 </div>
