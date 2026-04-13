@@ -205,7 +205,7 @@ export default function MedicsPanel() {
     if (imageUrl?.startsWith('data:') && info.center_id) {
       migrateBase64ToStorage(info.center_id, imageUrl).then(newUrl => {
         if (newUrl) {
-          setCenterImageUrl(newUrl + `?t=${Date.now()}`);
+          setCenterImageUrl(newUrl);
           setDoctorInfo(prev => prev ? { ...prev, center_image_url: newUrl } : prev);
         }
       });
@@ -751,9 +751,12 @@ export default function MedicsPanel() {
       .from('center-images')
       .getPublicUrl(path);
 
+    // Include cache-buster in the URL saved to DB so reloads always fetch fresh
+    const versionedUrl = `${publicUrl}?t=${Date.now()}`;
+
     const { error: dbErr } = await supabase
       .from('centers')
-      .update({ image_url: publicUrl })
+      .update({ image_url: versionedUrl })
       .eq('id', doctorInfo.center_id);
 
     if (dbErr) {
@@ -762,12 +765,10 @@ export default function MedicsPanel() {
       return;
     }
 
-    // Cache-bust so the browser reloads the image even if the path is the same
-    const displayUrl = `${publicUrl}?t=${Date.now()}`;
-    setCenterImageUrl(displayUrl);
-    setDoctorInfo({ ...doctorInfo, center_image_url: publicUrl });
+    setCenterImageUrl(versionedUrl);
+    setDoctorInfo({ ...doctorInfo, center_image_url: versionedUrl });
     setUploadingImage(false);
-    setImageModal({ type: 'success', url: displayUrl });
+    setImageModal({ type: 'success', url: versionedUrl });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
@@ -2137,8 +2138,9 @@ async function migrateBase64ToStorage(centerId: string, base64Url: string): Prom
       .upload(path, blob, { upsert: true, contentType: blob.type });
     if (error) return null;
     const { data: { publicUrl } } = supabase.storage.from('center-images').getPublicUrl(path);
-    await supabase.from('centers').update({ image_url: publicUrl }).eq('id', centerId);
-    return publicUrl;
+    const versionedUrl = `${publicUrl}?t=${Date.now()}`;
+    await supabase.from('centers').update({ image_url: versionedUrl }).eq('id', centerId);
+    return versionedUrl;
   } catch {
     return null;
   }
