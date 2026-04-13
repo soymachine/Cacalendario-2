@@ -1817,7 +1817,7 @@ export default function MedicsPanel() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14, alignItems: 'center' }}>
-                  <div style={{ width: 110, height: 110, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
+                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
                     {centerImageUrl ? (
                       <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
