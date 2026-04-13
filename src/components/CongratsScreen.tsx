@@ -1,17 +1,17 @@
 import { formatDateForDisplay } from '../lib/dates';
 import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
-import { getBristolType, getBristolHealthLabel, getBristolHealthColor } from '../lib/bristol';
 import { D } from '../lib/design';
 
 interface CongratsScreenProps {
   date: string;
   time: string;
   entryType: 'poop' | 'urine';
+  onEdit: () => void;
   onClose: () => void;
 }
 
-export default function CongratsScreen({ date, time, entryType, onClose }: CongratsScreenProps) {
+export default function CongratsScreen({ date, time, entryType, onEdit, onClose }: CongratsScreenProps) {
   const { emoji } = usePreferences();
   const dayText = formatDateForDisplay(date);
   const isPoop = entryType === 'poop';
@@ -77,6 +77,18 @@ export default function CongratsScreen({ date, time, entryType, onClose }: Congr
                 {isPoop ? 'Deposición registrada' : 'Micción registrada'}
               </span>
             </div>
+
+            {/* Edit button */}
+            <button
+              onClick={onEdit}
+              style={{
+                width: '100%', padding: '13px 0', borderRadius: 99, border: `2px solid ${D.primary}`,
+                backgroundColor: 'transparent', color: D.primary,
+                fontSize: 15, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              Editar registro
+            </button>
           </div>
         </div>
       </div>

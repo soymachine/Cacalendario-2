@@ -3,9 +3,12 @@ import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
-import { Slider } from '@base-ui/react/slider';
 import { PALETTES } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
+import { initSentry } from '../lib/sentry';
+
+// Initialize Sentry once at module load (no-op in dev)
+initSentry();
 
 const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
 const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
@@ -36,6 +39,7 @@ interface PatientLink {
   semaforo_green_override?: number | null;
   semaforo_red_override?: number | null;
   hidden_fields?: string[];
+  entry_type_mode?: string;
   push_min_hours?: number;
   push_frequency?: number;
   hasPushSub?: boolean | null;
@@ -93,16 +97,20 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
   value: number; min: number; max: number; color: string;
   onChange: (v: number) => void;
 }) {
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  const colorClass = color === '#e74c3c' ? 'semaforo-range-red' : 'semaforo-range-green';
   return (
-    <Slider.Root value={value} min={min} max={max} onValueChange={(v) => onChange(v as number)}
-      style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: 28, userSelect: 'none', touchAction: 'none' }}>
-      <Slider.Control style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
-        <Slider.Track style={{ position: 'relative', flexGrow: 1, borderRadius: 4, height: 6, backgroundColor: '#e0e0e0' }}>
-          <Slider.Indicator style={{ position: 'absolute', borderRadius: 4, height: '100%', backgroundColor: color, opacity: 0.7 }} />
-          <Slider.Thumb style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', border: `2px solid ${color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', cursor: 'pointer', outline: 'none' }} />
-        </Slider.Track>
-      </Slider.Control>
-    </Slider.Root>
+    <input
+      type="range"
+      className={`semaforo-range ${colorClass}`}
+      min={min}
+      max={max}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{
+        background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #e0e0e0 ${pct}%, #e0e0e0 100%)`,
+      }}
+    />
   );
 }
 
@@ -144,15 +152,22 @@ export default function MedicsPanel() {
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
   const [configPalette, setConfigPalette] = useState('terracotta');
+  const [customColor1, setCustomColor1] = useState('#dd8273');
+  const [customColor2, setCustomColor2] = useState('#1a0e0e');
+  const [extractingColors, setExtractingColors] = useState(false);
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
+  const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
   const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
+  const [patientConfigOpen, setPatientConfigOpen] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
   const [patientPushSaved, setPatientPushSaved] = useState(false);
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
 
-  const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
+  const th: MedicsTheme = configPalette === 'custom'
+    ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
+    : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
     loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
     btnPrimary: { ...s.btnPrimary, backgroundColor: th.dark },
@@ -186,8 +201,29 @@ export default function MedicsPanel() {
     setConfigName(info.name);
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
-    setCenterImageUrl(info.center_image_url || null);
-    setConfigPalette(info.palette || 'terracotta');
+
+    const imageUrl = info.center_image_url || null;
+    setCenterImageUrl(imageUrl);
+
+    // Silent migration: if the stored image is still base64, move it to Storage
+    if (imageUrl?.startsWith('data:') && info.center_id) {
+      migrateBase64ToStorage(info.center_id, imageUrl).then(newUrl => {
+        if (newUrl) {
+          setCenterImageUrl(newUrl);
+          setDoctorInfo(prev => prev ? { ...prev, center_image_url: newUrl } : prev);
+        }
+      });
+    }
+
+    const palette = info.palette || 'terracotta';
+    if (palette.startsWith('custom:')) {
+      const parts = palette.split(':');
+      setCustomColor1('#' + (parts[1] || 'dd8273'));
+      setCustomColor2('#' + (parts[2] || '1a0e0e'));
+      setConfigPalette('custom');
+    } else {
+      setConfigPalette(palette);
+    }
   };
 
   // ── Recover session on mount ──
@@ -474,7 +510,9 @@ export default function MedicsPanel() {
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientSemaforoSaved(false);
     setPatientHiddenFields(patient.hidden_fields || []);
+    setPatientEntryTypeMode(patient.entry_type_mode || 'both');
     setPatientFieldsSaved(false);
+    setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
     setPatientPushSaved(false);
@@ -581,16 +619,36 @@ export default function MedicsPanel() {
     if (!doctorInfo) return;
     setLoading(true);
     const trimmedName = configName.trim() || doctorInfo.name;
+    const paletteToSave = configPalette === 'custom'
+      ? `custom:${customColor1.replace('#', '')}:${customColor2.replace('#', '')}`
+      : configPalette;
     const { error: updateErr } = await supabase
       .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette })
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
       .eq('id', doctorInfo.id);
     setLoading(false);
     if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette };
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
+    }
+  };
+
+  // ── Extract dominant colors from center image ──
+  const handleExtractColors = async () => {
+    if (!centerImageUrl || extractingColors) return;
+    setExtractingColors(true);
+    try {
+      const colors = await extractDominantColors(centerImageUrl);
+      if (colors[0]) setCustomColor1(colors[0]);
+      if (colors[1]) setCustomColor2(colors[1]);
+      else if (colors[0]) setCustomColor2(darkenColor(colors[0]));
+      setConfigPalette('custom');
+    } catch {
+      // CORS/canvas error — silently ignore
+    } finally {
+      setExtractingColors(false);
     }
   };
 
@@ -622,10 +680,10 @@ export default function MedicsPanel() {
     if (!selectedPatient) return;
     const { error } = await supabase
       .from('patient_links')
-      .update({ hidden_fields: patientHiddenFields })
+      .update({ hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode })
       .eq('id', selectedPatient.id);
     if (!error) {
-      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields });
+      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode });
       setPatientFieldsSaved(true);
       setTimeout(() => setPatientFieldsSaved(false), 3000);
     }
@@ -669,7 +727,7 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Upload center image (stored as base64 in DB) ──
+  // ── Upload center image to Supabase Storage ──
   const handleImageUpload = async (file: File) => {
     if (!doctorInfo) return;
 
@@ -680,16 +738,29 @@ export default function MedicsPanel() {
 
     setUploadingImage(true);
 
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `${doctorInfo.center_id}/logo.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from('center-images')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadErr) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: uploadErr.message });
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('center-images')
+      .getPublicUrl(path);
+
+    // Include cache-buster in the URL saved to DB so reloads always fetch fresh
+    const versionedUrl = `${publicUrl}?t=${Date.now()}`;
 
     const { error: dbErr } = await supabase
       .from('centers')
-      .update({ image_url: base64 })
+      .update({ image_url: versionedUrl })
       .eq('id', doctorInfo.center_id);
 
     if (dbErr) {
@@ -698,10 +769,10 @@ export default function MedicsPanel() {
       return;
     }
 
-    setCenterImageUrl(base64);
-    setDoctorInfo({ ...doctorInfo, center_image_url: base64 });
+    setCenterImageUrl(versionedUrl);
+    setDoctorInfo({ ...doctorInfo, center_image_url: versionedUrl });
     setUploadingImage(false);
-    setImageModal({ type: 'success', url: base64 });
+    setImageModal({ type: 'success', url: versionedUrl });
   };
 
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
@@ -894,7 +965,7 @@ export default function MedicsPanel() {
         <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
           <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
             {centerImageUrl ? (
-              <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
             ) : (
               <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
             )}
@@ -1102,6 +1173,9 @@ export default function MedicsPanel() {
                   <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: th.dark, color: '#fff' }}>
                     📄 Exportar PDF
                   </button>
+                  <button onClick={() => setPatientConfigOpen(true)} style={{ ...s.headerBtn, backgroundColor: th.navActive, color: '#fff' }}>
+                    ⚙️ Configuración
+                  </button>
                   <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
                     ← Volver
                   </button>
@@ -1199,202 +1273,6 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Per-patient semáforo override */}
-              <div style={{ ...s.card, padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
-                  <Switch
-                    checked={patientSemaforoOverride}
-                    onChange={(checked) => {
-                      setPatientSemaforoOverride(checked);
-                      setPatientSemaforoSaved(false);
-                    }}
-                    style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
-                  />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
-                  {!patientSemaforoOverride && (
-                    <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
-                  )}
-                </div>
-
-                {patientSemaforoOverride && (
-                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                    {/* Preview */}
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #27ae60' }}>
-                        <div style={{ fontSize: 14 }}>🟢</div>
-                        <div style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</div>
-                      </div>
-                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #f39c12' }}>
-                        <div style={{ fontSize: 14 }}>🟠</div>
-                        <div style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</div>
-                      </div>
-                      <div style={{ flex: 1, textAlign: 'center', backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 4px', borderLeft: '3px solid #e74c3c' }}>
-                        <div style={{ fontSize: 14 }}>🔴</div>
-                        <div style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</div>
-                      </div>
-                    </div>
-
-                    {/* Green slider */}
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''}</div>
-                      <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
-                        onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
-                    </div>
-
-                    {/* Red slider */}
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {patientSemaforoRed} día{patientSemaforoRed !== 1 ? 's' : ''}</div>
-                      <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
-                        onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
-                    </div>
-
-                    {patientSemaforoSaved && (
-                      <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
-                    )}
-
-                    <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
-                      Guardar
-                    </button>
-                  </div>
-                )}
-
-                {!patientSemaforoOverride && patientSemaforoSaved && (
-                  <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                )}
-
-                {!patientSemaforoOverride && (
-                  <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
-                    Guardar
-                  </button>
-                )}
-              </div>
-
-              {/* Per-patient visible fields */}
-              <div style={{ ...s.card }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
-                  📋 Campos del formulario
-                </div>
-                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
-                  <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
-                    Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
-                  </p>
-                  {[
-                    { id: 'bristol', label: '🪷 Bristol', group: '💩 Deposición' },
-                    { id: 'color', label: '🎨 Color', group: null },
-                    { id: 'floats', label: '🫧 Flotación', group: null },
-                    { id: 'quantity', label: '⚖️ Cantidad', group: null },
-                    { id: 'duration', label: '⏱️ Duración', group: null },
-                    { id: 'symptoms', label: '🤒 Síntomas', group: null },
-                    { id: 'urine_type', label: 'Tipo de micción', group: '💧 Micción' },
-                    { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
-                    { id: 'urine_color', label: 'Color', group: null },
-                    { id: 'urine_characteristics', label: 'Características', group: null },
-                  ].map((field, i, arr) => {
-                    const showGroupHeader = field.group !== null;
-                    const isVisible = !patientHiddenFields.includes(field.id);
-                    return (
-                      <div key={field.id}>
-                        {showGroupHeader && (
-                          <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, textTransform: 'uppercase' as const, padding: i === 0 ? '4px 0 6px' : '12px 0 6px', borderTop: i !== 0 ? '1px solid #00000010' : 'none' }}>
-                            {field.group}
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
-                          <Switch
-                            checked={isVisible}
-                            onChange={(checked) =>
-                              setPatientHiddenFields(prev =>
-                                checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {patientFieldsSaved && (
-                    <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                  )}
-                  <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
-                    Guardar
-                  </button>
-                </div>
-              </div>
-              {/* Per-patient push notification config */}
-              <div style={{ ...s.card }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
-                  🔔 Notificaciones push
-                </div>
-                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
-                  <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
-                    Recordatorio automático cuando el paciente lleva X horas sin registrar.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
-                        Horas sin registrar antes de notificar
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={168}
-                        value={patientPushMinHours}
-                        onChange={e => setPatientPushMinHours(Number(e.target.value))}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
-                      />
-                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
-                        Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={24}
-                        value={patientPushFrequency}
-                        onChange={e => setPatientPushFrequency(Number(e.target.value))}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
-                      />
-                      <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
-                    </div>
-                  </div>
-                  {patientPushSaved && (
-                    <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                  )}
-                  <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
-                    Guardar
-                  </button>
-
-                  {/* Test push */}
-                  <div style={{ borderTop: '1px solid #00000010', marginTop: 16, paddingTop: 14 }}>
-                    <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
-                      Envía una notificación ahora para verificar que funciona correctamente.
-                    </p>
-                    <button
-                      onClick={handleSendTestPush}
-                      disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
-                      style={{
-                        width: '100%', padding: '8px 14px', fontSize: 12, fontWeight: 700,
-                        borderRadius: 8, border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
-                        backgroundColor: 'transparent', color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
-                      }}
-                    >
-                      {pushTestStatus === 'sending' ? '⏳ Enviando...' : '🔔 Enviar notificación de prueba'}
-                    </button>
-                    {!selectedPatient?.hasPushSub && (
-                      <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>El paciente no tiene notificaciones activadas.</p>
-                    )}
-                    {pushTestStatus === 'ok' && (
-                      <p style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Notificación enviada</p>
-                    )}
-                    {pushTestStatus === 'error' && (
-                      <p style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {pushTestError}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
               </div>{/* end left column */}
 
               {/* Right column: entry list */}
@@ -1528,6 +1406,255 @@ export default function MedicsPanel() {
                 );
               })()}
             </div>
+
+            {/* ── Config modal ── */}
+            {patientConfigOpen && (
+              <div
+                onClick={() => setPatientConfigOpen(false)}
+                style={{
+                  position: 'fixed', inset: 0, zIndex: 200,
+                  backgroundColor: 'rgba(0,0,0,0.45)',
+                  display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+                }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    width: '100%', maxWidth: 420, height: '100%',
+                    backgroundColor: '#F5F5F5', overflowY: 'auto',
+                    boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
+                    display: 'flex', flexDirection: 'column' as const,
+                  }}
+                >
+                  {/* Modal header */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '16px 20px', backgroundColor: th.dark, color: '#fff', flexShrink: 0,
+                  }}>
+                    <span style={{ fontSize: 16, fontWeight: 700 }}>
+                      ⚙️ Configuración — {selectedPatient.display_name || selectedPatient.patient_email}
+                    </span>
+                    <button
+                      onClick={() => setPatientConfigOpen(false)}
+                      style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Modal content */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+
+                    {/* Semáforo personalizado */}
+                    <div style={{ ...s.card, padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                        <Switch
+                          checked={patientSemaforoOverride}
+                          onChange={(checked) => {
+                            setPatientSemaforoOverride(checked);
+                            setPatientSemaforoSaved(false);
+                          }}
+                          style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
+                        {!patientSemaforoOverride && (
+                          <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
+                        )}
+                      </div>
+
+                      {patientSemaforoOverride && (
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <span style={{ fontSize: 12 }}>🟢</span>
+                                <span style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</span>
+                              </div>
+                              <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
+                                onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
+                            </div>
+                            <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <span style={{ fontSize: 12 }}>🟠</span>
+                                <span style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
+                              </div>
+                            </div>
+                            <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <span style={{ fontSize: 12 }}>🔴</span>
+                                <span style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</span>
+                              </div>
+                              <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
+                                onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
+                            </div>
+                          </div>
+                          {patientSemaforoSaved && (
+                            <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
+                          )}
+                          <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
+                            Guardar
+                          </button>
+                        </div>
+                      )}
+
+                      {!patientSemaforoOverride && patientSemaforoSaved && (
+                        <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                      )}
+                      {!patientSemaforoOverride && (
+                        <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
+                          Guardar
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Campos del formulario */}
+                    <div style={{ ...s.card }}>
+                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                        📋 Campos del formulario
+                      </div>
+                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                        <div style={{ marginBottom: 14 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Tipo de registro permitido</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {[
+                              { value: 'both', label: 'Ambas opciones' },
+                              { value: 'poop_only', label: 'Solo deposición' },
+                              { value: 'urine_only', label: 'Solo micción' },
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                onClick={() => setPatientEntryTypeMode(opt.value)}
+                                style={{
+                                  flex: 1, padding: '7px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                                  fontSize: 11, fontWeight: 700, lineHeight: 1.3,
+                                  backgroundColor: patientEntryTypeMode === opt.value ? th.primary : '#f0f0f0',
+                                  color: patientEntryTypeMode === opt.value ? '#fff' : '#555',
+                                  transition: 'all 0.15s',
+                                }}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                          Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
+                        </p>
+                        {[
+                          { id: 'bristol', label: '🪷 Bristol', group: '💩 Deposición' },
+                          { id: 'color', label: '🎨 Color', group: null },
+                          { id: 'floats', label: '🫧 Flotación', group: null },
+                          { id: 'quantity', label: '⚖️ Cantidad', group: null },
+                          { id: 'duration', label: '⏱️ Duración', group: null },
+                          { id: 'symptoms', label: '🤒 Síntomas', group: null },
+                          { id: 'urine_type', label: 'Tipo de micción', group: '💧 Micción' },
+                          { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
+                          { id: 'urine_color', label: 'Color', group: null },
+                          { id: 'urine_characteristics', label: 'Características', group: null },
+                        ].map((field, i, arr) => {
+                          const showGroupHeader = field.group !== null;
+                          const isVisible = !patientHiddenFields.includes(field.id);
+                          return (
+                            <div key={field.id}>
+                              {showGroupHeader && (
+                                <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, textTransform: 'uppercase' as const, padding: i === 0 ? '4px 0 6px' : '12px 0 6px', borderTop: i !== 0 ? '1px solid #00000010' : 'none' }}>
+                                  {field.group}
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
+                                <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
+                                <Switch
+                                  checked={isVisible}
+                                  onChange={(checked) =>
+                                    setPatientHiddenFields(prev =>
+                                      checked ? prev.filter(id => id !== field.id) : [...prev, field.id]
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {patientFieldsSaved && (
+                          <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                        )}
+                        <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+                          Guardar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Notificaciones push */}
+                    <div style={{ ...s.card }}>
+                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                        🔔 Notificaciones push
+                      </div>
+                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+                        <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
+                          Recordatorio automático cuando el paciente lleva X horas sin registrar.
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                          <div>
+                            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                              Horas sin registrar antes de notificar
+                            </label>
+                            <input
+                              type="number" min={1} max={168} value={patientPushMinHours}
+                              onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                            />
+                            <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                              Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
+                            </label>
+                            <input
+                              type="number" min={1} max={24} value={patientPushFrequency}
+                              onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                            />
+                            <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
+                          </div>
+                        </div>
+                        {patientPushSaved && (
+                          <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                        )}
+                        <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+                          Guardar
+                        </button>
+                        <div style={{ borderTop: '1px solid #00000010', marginTop: 16, paddingTop: 14 }}>
+                          <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                            Envía una notificación ahora para verificar que funciona correctamente.
+                          </p>
+                          <button
+                            onClick={handleSendTestPush}
+                            disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
+                            style={{
+                              width: '100%', padding: '8px 14px', fontSize: 12, fontWeight: 700,
+                              borderRadius: 8, border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
+                              backgroundColor: 'transparent', color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
+                            }}
+                          >
+                            {pushTestStatus === 'sending' ? '⏳ Enviando...' : '🔔 Enviar notificación de prueba'}
+                          </button>
+                          {!selectedPatient?.hasPushSub && (
+                            <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>El paciente no tiene notificaciones activadas.</p>
+                          )}
+                          {pushTestStatus === 'ok' && (
+                            <p style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Notificación enviada</p>
+                          )}
+                          {pushTestStatus === 'error' && (
+                            <p style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {pushTestError}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -1675,192 +1802,242 @@ export default function MedicsPanel() {
               subtitle="Ajusta tu perfil y los parámetros del semáforo"
             />
 
-            {/* ── Datos del médico ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
-              </div>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-                <div>
-                  <label style={s.label}>Nombre</label>
-                  <input
-                    type="text"
-                    value={configName}
-                    onChange={(e) => setConfigName(e.target.value)}
-                    style={{ ...s.input, marginBottom: 0 }}
-                    placeholder="Dr. Nombre Apellido"
-                  />
-                </div>
-                <div>
-                  <label style={s.label}>Centro médico</label>
-                  <input
-                    type="text"
-                    value={doctorInfo?.center_name || ''}
-                    disabled
-                    style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
-                  />
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>El nombre del centro lo gestiona el administrador.</p>
-                </div>
-                {configSaved && (
-                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>✅</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Cambios guardados correctamente</span>
-                  </div>
-                )}
-                <button
-                  onClick={handleSaveConfig}
-                  disabled={loading}
-                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
-                >
-                  {loading ? '...' : 'Guardar cambios'}
-                </button>
-              </div>
-            </div>
+            {/* ── Config grid layout ── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: 16,
+              maxWidth: 1550,
+            }}>
 
-            {/* ── Imagen del centro ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
-              </div>
-              <div style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
-                {/* Preview */}
-                <div style={{ width: 120, height: 120, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
-                  {centerImageUrl ? (
-                    <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: 36 }}>🏥</span>
-                  )}
+              {/* Col 1 Row 1 — Datos del médico */}
+              <div style={{ ...s.card, gridColumn: 1, gridRow: 1 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, color: '#555', margin: '0 0 12px', lineHeight: 1.6 }}>
-                    Sube el logo o imagen de tu centro. Esta imagen aparecerá en la app para los pacientes vinculados contigo.
-                  </p>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
-                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                  <div>
+                    <label style={s.label}>Nombre</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      disabled={uploadingImage}
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
-                      }}
+                      type="text"
+                      value={configName}
+                      onChange={(e) => setConfigName(e.target.value)}
+                      style={{ ...s.input, marginBottom: 0 }}
+                      placeholder="Dr. Nombre Apellido"
                     />
-                  </label>
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>PNG, JPG o WEBP. Máx 2 MB.</p>
+                  </div>
+                  <div>
+                    <label style={s.label}>Centro médico</label>
+                    <input
+                      type="text"
+                      value={doctorInfo?.center_name || ''}
+                      disabled
+                      style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
+                    />
+                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Gestionado por el administrador.</p>
+                  </div>
+                  {configSaved && (
+                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>✅</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                    </div>
+                  )}
+                  <button onClick={handleSaveConfig} disabled={loading}
+                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    {loading ? '...' : 'Guardar'}
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* ── Paleta de colores ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+              {/* Col 2 Rows 1–2 — Imagen del centro */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : '1 / span 2' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
+                </div>
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14, alignItems: 'center' }}>
+                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
+                    {centerImageUrl ? (
+                      <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
+                    ) : (
+                      <span style={{ fontSize: 32 }}>🏥</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12, color: '#888', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+                    Aparecerá en la app de los pacientes vinculados.
+                  </p>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, padding: '9px 18px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                    <input type="file" accept="image/*" disabled={uploadingImage} style={{ display: 'none' }}
+                      onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
+                  </label>
+                  <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>PNG, JPG o WEBP · Máx 2 MB</p>
+                </div>
               </div>
-              <div style={{ padding: 24 }}>
-                <p style={{ fontSize: 14, color: '#555', margin: '0 0 16px', lineHeight: 1.6 }}>
-                  Elige la paleta de colores para todo el portal. El cambio se aplica al instante y se guarda con la configuración.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
-                  {PALETTES.map(p => {
-                    const isActive = configPalette === p.id;
-                    return (
+
+              {/* Col 1 Row 2 — Semáforo */}
+              <div style={{ ...s.card, gridColumn: 1, gridRow: isMobile ? 'auto' : 2 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🚦 Semáforo</span>
+                </div>
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 14 }}>🟢</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#27ae60' }}>≤ {configGreen}d</span>
+                      </div>
+                      <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
+                        onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
+                    </div>
+                    <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 14 }}>🟠</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>{configGreen + 1}–{configRed}d</span>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 14 }}>🔴</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#e74c3c' }}>&gt;{configRed}d</span>
+                      </div>
+                      <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
+                        onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
+                    </div>
+                  </div>
+                  {configSaved && (
+                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>✅</span><span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                    </div>
+                  )}
+                  <button onClick={handleSaveConfig} disabled={loading}
+                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    {loading ? '...' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Cols 1–2 Row 3 — Paleta de colores */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 3 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+                </div>
+                <div style={{ padding: 18 }}>
+                  <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px', lineHeight: 1.6 }}>
+                    Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, marginBottom: 14 }}>
+                    {PALETTES.map(p => {
+                      const isActive = configPalette === p.id;
+                      return (
+                        <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
+                          style={{
+                            display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                            padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                            backgroundColor: isActive ? '#00000012' : 'transparent',
+                            outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
+                            transition: 'all 0.15s',
+                          }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
+                            boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
+                          }} />
+                          <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                        </button>
+                      );
+                    })}
+
+                    {/* Custom palette option */}
+                    <button onClick={() => setConfigPalette('custom')} title="Personalizable"
+                      style={{
+                        display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                        padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                        backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
+                        outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
+                        transition: 'all 0.15s',
+                      }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: configPalette === 'custom'
+                          ? `linear-gradient(135deg, ${customColor1} 50%, ${customColor2} 50%)`
+                          : 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)',
+                        boxShadow: configPalette === 'custom' ? `0 0 0 3px ${customColor1}50` : 'none',
+                      }} />
+                      <span style={{ fontSize: 10, fontWeight: configPalette === 'custom' ? 700 : 400, color: '#444' }}>Personalizable</span>
+                    </button>
+                  </div>
+
+                  {/* Custom color pickers */}
+                  {configPalette === 'custom' && (
+                    <div style={{ backgroundColor: '#f7f7f7', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
+                        <div style={{ flex: 1, minWidth: 140 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                            Color primario
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <input type="color" value={customColor1} onChange={e => setCustomColor1(e.target.value)}
+                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor1}</span>
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 140 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                            Color oscuro / fondo
+                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <input type="color" value={customColor2} onChange={e => setCustomColor2(e.target.value)}
+                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor2}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview strip */}
+                      <div style={{ borderRadius: 8, overflow: 'hidden', display: 'flex', height: 36 }}>
+                        <div style={{ flex: 1, backgroundColor: customColor1 }} />
+                        <div style={{ flex: 1, background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
+                        <div style={{ flex: 1, backgroundColor: customColor2 }} />
+                      </div>
+
+                      {/* Extract from image button */}
                       <button
-                        key={p.id}
-                        onClick={() => setConfigPalette(p.id)}
-                        title={p.name}
+                        onClick={handleExtractColors}
+                        disabled={!centerImageUrl || extractingColors}
                         style={{
-                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6,
-                          padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                          backgroundColor: isActive ? '#00000012' : 'transparent',
-                          outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
+                          padding: '9px 16px', borderRadius: 8, border: `2px solid ${customColor1}`,
+                          backgroundColor: 'transparent', color: customColor1,
+                          fontSize: 13, fontWeight: 700, cursor: centerImageUrl ? 'pointer' : 'not-allowed',
+                          opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
                           transition: 'all 0.15s',
                         }}
                       >
-                        <div style={{
-                          width: 36, height: 36, borderRadius: '50%',
-                          background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
-                          boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
-                          transition: 'box-shadow 0.15s',
-                        }} />
-                        <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                        {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
                       </button>
-                    );
-                  })}
+                      {!centerImageUrl && (
+                        <p style={{ fontSize: 11, color: '#aaa', margin: '-8px 0 0' }}>
+                          Sube una imagen del centro para usar esta opción.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Save button always visible in palette section */}
+                  <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button onClick={handleSaveConfig} disabled={loading}
+                      style={{ ...ts.btnPrimary, width: 'auto', padding: '9px 24px', opacity: loading ? 0.5 : 1 }}>
+                      {loading ? '...' : 'Guardar paleta'}
+                    </button>
+                    {configSaved && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>✅</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* ── Semáforo ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🚦 Configuración del semáforo</span>
-              </div>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 20 }}>
-                <p style={{ fontSize: 14, color: '#555', margin: 0, lineHeight: 1.6 }}>
-                  Define cuántos días sin registrar corresponden a cada color del semáforo.
-                </p>
-
-                {/* Visual preview */}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #27ae60' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟢</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#27ae60' }}>Verde</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>≤ {configGreen} día{configGreen !== 1 ? 's' : ''}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #f39c12' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟠</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e67e22' }}>Naranja</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>{configGreen + 1}–{configRed} día{configRed !== 1 ? 's' : ''}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #e74c3c' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🔴</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e74c3c' }}>Rojo</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>&gt; {configRed} días</div>
-                  </div>
-                </div>
-
-                {/* Green threshold */}
-                <div>
-                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>🟢 Umbral verde: ≤ <strong>{configGreen}</strong> día{configGreen !== 1 ? 's' : ''}</span>
-                  </label>
-                  <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
-                    onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    <span>0 días</span>
-                    <span>{Math.max(configRed - 1, 1)} días</span>
-                  </div>
-                </div>
-
-                {/* Red threshold */}
-                <div>
-                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>🔴 Umbral rojo: &gt; <strong>{configRed}</strong> día{configRed !== 1 ? 's' : ''}</span>
-                  </label>
-                  <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
-                    onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    <span>{Math.max(configGreen + 1, 1)} días</span>
-                    <span>30 días</span>
-                  </div>
-                </div>
-
-                {configSaved && (
-                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>✅</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Configuración guardada</span>
-                  </div>
-                )}
-                <button
-                  onClick={handleSaveConfig}
-                  disabled={loading}
-                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
-                >
-                  {loading ? '...' : 'Guardar configuración'}
-                </button>
-              </div>
             </div>
             {isMobile && (
               <div style={{ textAlign: 'center', padding: '16px 0 4px', color: '#00000030', fontSize: 11 }}>{APP_VERSION}</div>
@@ -1908,7 +2085,7 @@ export default function MedicsPanel() {
 
             {imageModal.type === 'success' ? (
               <>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
                   <img
                     src={imageModal.url}
                     alt="Imagen del centro"
@@ -1939,6 +2116,95 @@ export default function MedicsPanel() {
       )}
     </div>
   );
+}
+
+// ── Storage migration utilities ──
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const binary = atob(base64);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function mimeToExt(mime: string): string {
+  return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as Record<string, string>)[mime] || 'jpg';
+}
+
+async function migrateBase64ToStorage(centerId: string, base64Url: string): Promise<string | null> {
+  try {
+    const blob = dataUrlToBlob(base64Url);
+    const path = `${centerId}/logo.${mimeToExt(blob.type)}`;
+    const { error } = await supabase.storage
+      .from('center-images')
+      .upload(path, blob, { upsert: true, contentType: blob.type });
+    if (error) return null;
+    const { data: { publicUrl } } = supabase.storage.from('center-images').getPublicUrl(path);
+    const versionedUrl = `${publicUrl}?t=${Date.now()}`;
+    await supabase.from('centers').update({ image_url: versionedUrl }).eq('id', centerId);
+    return versionedUrl;
+  } catch {
+    return null;
+  }
+}
+
+// ── Color utilities ──
+
+function extractDominantColors(imageUrl: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const W = 120, H = 120;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, W, H);
+        const { data } = ctx.getImageData(0, 0, W, H);
+        const step = 32; // quantize each channel → 8 buckets
+        const counts: Record<string, number> = {};
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue; // skip transparent
+          const r = Math.round(data[i] / step) * step;
+          const g = Math.round(data[i + 1] / step) * step;
+          const b = Math.round(data[i + 2] / step) * step;
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (lum < 20 || lum > 235) continue; // skip near-black / near-white
+          const key = `${r},${g},${b}`;
+          counts[key] = (counts[key] || 0) + 1;
+        }
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        // Pick top 2, ensuring they're visually distinct (min distance 60)
+        const chosen: string[] = [];
+        for (const [key] of sorted) {
+          if (chosen.length >= 2) break;
+          const [r, g, b] = key.split(',').map(Number);
+          const isDup = chosen.some(c => {
+            const [cr, cg, cb] = c.split(',').map(Number);
+            return Math.abs(r - cr) + Math.abs(g - cg) + Math.abs(b - cb) < 60;
+          });
+          if (!isDup) chosen.push(key);
+        }
+        resolve(chosen.map(key => {
+          const [r, g, b] = key.split(',').map(Number);
+          return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+        }));
+      } catch (e) { reject(e); }
+    };
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+}
+
+function darkenColor(hex: string, amount = 0.5): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return '#' + [Math.round(r * (1 - amount)), Math.round(g * (1 - amount)), Math.round(b * (1 - amount))]
+    .map(v => Math.max(0, v).toString(16).padStart(2, '0')).join('');
 }
 
 // ── Helpers ──

@@ -5,12 +5,14 @@ interface BristolPickerProps {
   value: number | null;
   onChange: (type: number | null) => void;
   restrictedTypes?: number[];
+  // legacy prop – accepted but ignored
+  theme?: unknown;
 }
 
 export default function BristolPicker({ value, onChange, restrictedTypes }: BristolPickerProps) {
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
         {[1, 2, 3, 4, 5, 6, 7].map((type) => {
           const isSelected = value === type;
           const isLocked = restrictedTypes ? !restrictedTypes.includes(type) : false;
@@ -22,8 +24,9 @@ export default function BristolPicker({ value, onChange, restrictedTypes }: Bris
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', gap: 4,
                 borderRadius: 12, padding: '10px 8px 8px',
-                border: 'none', cursor: isLocked ? 'default' : 'pointer',
-                backgroundColor: isSelected ? D.primary : D.chip,
+                border: isSelected ? `2px solid var(--fluxia-primary, #353435)` : '2px solid transparent',
+                cursor: isLocked ? 'default' : 'pointer',
+                backgroundColor: isSelected ? 'var(--fluxia-chip, #D7D9D8)' : D.chip,
                 opacity: isLocked ? 0.3 : 1,
                 transition: 'all 0.15s',
               }}
@@ -31,14 +34,8 @@ export default function BristolPicker({ value, onChange, restrictedTypes }: Bris
               <img
                 src={`/fluxia_${type}.svg`}
                 alt={`Tipo ${type}`}
-                style={{ width: 56, height: 56, objectFit: 'contain' }}
+                style={{ width: 68, height: 68, objectFit: 'contain' }}
               />
-              <span style={{
-                fontSize: 9, fontWeight: 900, lineHeight: 1,
-                color: isSelected ? D.primaryText : D.textMuted,
-              }}>
-                {type}
-              </span>
             </button>
           );
         })}

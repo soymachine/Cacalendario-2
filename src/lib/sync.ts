@@ -13,7 +13,8 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
   const { data: cloudRows, error } = await supabase
     .from('entries')
     .select('entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .order('timestamp', { ascending: true });
 
   if (error) {
     console.error('[sync] Error fetching cloud entries:', error.message);

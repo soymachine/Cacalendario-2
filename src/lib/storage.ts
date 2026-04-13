@@ -98,6 +98,14 @@ export function saveEntry(entry: PoopEntry): void {
   });
 }
 
+export function updateEntryDateTime(id: string, newDate: string, newTime: string): void {
+  const entry = getEntryById(id);
+  if (!entry) return;
+  const [y, mo, d] = newDate.split('-').map(Number);
+  const [h, m] = newTime.split(':').map(Number);
+  saveEntry({ ...entry, date: newDate, time: newTime, timestamp: new Date(y, mo - 1, d, h, m).getTime() });
+}
+
 export function deleteEntry(id: string): void {
   const entry = getEntries().find((e) => e.id === id);
   const entries = getEntries().filter((e) => e.id !== id);

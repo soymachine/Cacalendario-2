@@ -15,10 +15,14 @@ import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
 import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
-import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields } from '../lib/preferences';
+import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage, setDoctorEntryTypeMode, clearDoctorEntryTypeMode } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
-import { type PoopEntry } from '../lib/storage';
+import { type PoopEntry, getEntryById } from '../lib/storage';
 import { D } from '../lib/design';
+import { initSentry, ErrorBoundary } from '../lib/sentry';
+
+// Initialize Sentry once at module load (no-op in dev)
+initSentry();
 
 type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
 
@@ -31,7 +35,7 @@ function AppContent() {
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{
-    date: string; time: string; entryType: 'poop' | 'urine';
+    date: string; time: string; entryType: 'poop' | 'urine'; entryId: string;
   } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -52,11 +56,16 @@ function AppContent() {
         if (config.palette) setDoctorColor(getPaletteTheme(config.palette).primary);
         else clearDoctorColor();
         setDoctorHiddenFields(config.hiddenFields);
+        if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
+        else clearDoctorImage();
+        setDoctorEntryTypeMode(config.entryTypeMode);
       });
       registerPushSubscription(user.id);
     } else {
       clearDoctorColor();
       clearDoctorHiddenFields();
+      clearDoctorImage();
+      clearDoctorEntryTypeMode();
     }
   }, [user]);
 
@@ -70,8 +79,8 @@ function AppContent() {
     }
   };
 
-  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine') => {
-    setCongratsData({ date, time, entryType });
+  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine', entryId: string) => {
+    setCongratsData({ date, time, entryType, entryId });
     setOverlay('congrats');
   };
 
@@ -96,10 +105,11 @@ function AppContent() {
         <div style={{ height: '100%', overflowY: 'auto', display: activeTab === 'calendar' ? 'block' : 'none' }}>
           <div style={{ padding: '16px 16px 32px', maxWidth: 480, margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: D.text, margin: 0 }}>Estadísticas</h1>
-              {syncing && <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>}
-            </div>
+            {syncing && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: D.textMuted }}>Sincronizando…</span>
+              </div>
+            )}
             {/* Calendar */}
             <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden' }}>
               <Calendar onDayClick={handleDayClick} />
@@ -165,6 +175,10 @@ function AppContent() {
           date={congratsData.date}
           time={congratsData.time}
           entryType={congratsData.entryType}
+          onEdit={() => {
+            const entry = getEntryById(congratsData.entryId);
+            if (entry) { setEditEntry(entry); setOverlay('edit'); }
+          }}
           onClose={handleCongratsClose}
         />
       )}
@@ -188,8 +202,26 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary fallback={<AppCrash />}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
+
+function AppCrash() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', padding: 32, textAlign: 'center', backgroundColor: '#F0F2F4' }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+      <p style={{ fontSize: 18, fontWeight: 700, color: '#353435', margin: '0 0 8px' }}>Algo ha ido mal</p>
+      <p style={{ fontSize: 14, color: '#9A9A9A', margin: '0 0 24px' }}>El error ha sido reportado automáticamente.</p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{ padding: '12px 28px', borderRadius: 99, backgroundColor: '#353435', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Recargar la app
+      </button>
+    </div>
   );
 }

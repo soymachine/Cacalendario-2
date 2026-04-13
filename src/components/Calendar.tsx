@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { getMonthName, getDaysInMonth, getFirstDayOfMonth, toDateKey } from '../lib/dates';
 import { getEntriesForMonth, type PoopEntry } from '../lib/storage';
 import { asset } from '../lib/config';
-import { usePreferences } from '../lib/usePreferences';
 import { D } from '../lib/design';
 
 interface CalendarProps {
@@ -12,7 +11,6 @@ interface CalendarProps {
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 export default function Calendar({ onDayClick }: CalendarProps) {
-  const { emoji } = usePreferences();
   const now = new Date();
   const todayKey = toDateKey(now);
   const [year, setYear] = useState(now.getFullYear());
@@ -115,25 +113,24 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 border: 'none',
                 cursor: isFuture ? 'default' : 'pointer',
                 opacity: isFuture ? 0.4 : 1,
-                backgroundColor: hasEntry ? D.chip : D.bg,
+                backgroundColor: hasEntry ? '#9e9e9e' : D.bg,
               }}
             >
               {hasEntry ? (
                 <>
-                  {dayEntries.every((e: any) => e.entry_type === 'urine') ? (
-                    <span style={{ fontSize: 18 }}>💧</span>
-                  ) : emoji.char === 'svg' ? (
-                    <img src={asset('/poop-small.svg')} alt="poop" style={{ width: 26, height: 26 }} />
-                  ) : (
-                    <span style={{ fontSize: 18 }}>{emoji.char}</span>
-                  )}
+                  {(() => {
+                    const hasPoop = dayEntries.some((e: any) => e.entry_type !== 'urine');
+                    const imgStyle = { filter: 'brightness(0) invert(1)' as const };
+                    if (hasPoop) return <img src={asset('/Switch-Caca-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                    return <img src={asset('/Switch-Miccion-Icono.svg')} alt="" width={22} height={22} style={imgStyle} />;
+                  })()}
                   {count > 1 && (
                     <span style={{
                       position: 'absolute', top: -2, right: -2,
                       width: 16, height: 16, borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 900,
-                      backgroundColor: D.primary, color: D.primaryText,
+                      backgroundColor: 'white', color: '#333',
                     }}>
                       {count}
                     </span>
