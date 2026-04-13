@@ -2,6 +2,7 @@
 
 const PREFS_KEY = 'cacalendario_prefs';
 const DOCTOR_COLOR_KEY = 'cacalendario_doctor_color';
+const DOCTOR_SECONDARY_KEY = 'cacalendario_doctor_secondary';
 
 export interface PoopEmoji {
   id: string;
@@ -80,14 +81,17 @@ export function getDoctorColor(): string | null {
   return localStorage.getItem(DOCTOR_COLOR_KEY);
 }
 
-export function setDoctorColor(primary: string): void {
+export function setDoctorColor(primary: string, secondary?: string): void {
   localStorage.setItem(DOCTOR_COLOR_KEY, primary);
-  applyDoctorColor(primary);
+  if (secondary) localStorage.setItem(DOCTOR_SECONDARY_KEY, secondary);
+  else localStorage.removeItem(DOCTOR_SECONDARY_KEY);
+  applyDoctorColor(primary, secondary);
   window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
 
 export function clearDoctorColor(): void {
   localStorage.removeItem(DOCTOR_COLOR_KEY);
+  localStorage.removeItem(DOCTOR_SECONDARY_KEY);
   applyDoctorColor(null);
   window.dispatchEvent(new Event('fluxia-prefs-changed'));
 }
@@ -98,12 +102,13 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   return { r: parseInt(m[0], 16), g: parseInt(m[1], 16), b: parseInt(m[2], 16) };
 }
 
-function applyDoctorColor(color: string | null): void {
+function applyDoctorColor(color: string | null, secondary?: string | null): void {
   if (typeof document === 'undefined') return;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (color) {
     document.documentElement.style.setProperty('--fluxia-primary', color);
     document.documentElement.style.setProperty('--fluxia-primary-text', '#FFFFFF');
+    document.documentElement.style.setProperty('--fluxia-secondary', secondary || color);
     // Derive a light tint for chip backgrounds (15% primary + 85% white)
     const rgb = hexToRgb(color);
     if (rgb) {
@@ -128,6 +133,7 @@ function applyDoctorColor(color: string | null): void {
   } else {
     document.documentElement.style.setProperty('--fluxia-primary', '#353435');
     document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
+    document.documentElement.style.removeProperty('--fluxia-secondary');
     document.documentElement.style.removeProperty('--fluxia-chip');
     document.documentElement.style.removeProperty('--fluxia-chip-text');
     document.documentElement.style.removeProperty('--fluxia-chip-dark');
@@ -193,10 +199,9 @@ export function clearDoctorEntryTypeMode(): void {
 
 export function applyTheme(_theme?: Theme): void {
   if (typeof document === 'undefined') return;
-  // Apply doctor color CSS variable if stored
   const doctorColor = getDoctorColor();
-  applyDoctorColor(doctorColor);
-  // Body always uses the Figma gray background
+  const doctorSecondary = typeof window !== 'undefined' ? localStorage.getItem(DOCTOR_SECONDARY_KEY) : null;
+  applyDoctorColor(doctorColor, doctorSecondary);
   document.body.style.backgroundColor = '#F0F2F4';
 }
 

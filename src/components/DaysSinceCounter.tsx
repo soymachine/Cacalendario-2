@@ -45,14 +45,14 @@ export default function DaysSinceCounter() {
         Desde la última vez
       </p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 0, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.text }}>{data.days}</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: D.text }}>d</span>
-        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.hours)}</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: D.text }}>h</span>
-        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.minutes)}</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: D.text }}>m</span>
-        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.text, marginLeft: 4 }}>{pad(data.seconds)}</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: D.text }}>s</span>
+        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.primary }}>{data.days}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: D.secondary }}>d</span>
+        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.primary, marginLeft: 4 }}>{pad(data.hours)}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: D.secondary }}>h</span>
+        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.primary, marginLeft: 4 }}>{pad(data.minutes)}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: D.secondary }}>m</span>
+        <span style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: D.primary, marginLeft: 4 }}>{pad(data.seconds)}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: D.secondary }}>s</span>
       </div>
       <p style={{ fontSize: 12, marginTop: 6, color: D.textMuted }}>{data.sinceText}</p>
     </div>

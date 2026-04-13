@@ -70,7 +70,7 @@ export default function InlineStats() {
         <div style={{ backgroundColor: D.card, borderRadius: 16, padding: '14px 16px' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Total</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 36, fontWeight: 900, color: D.text, lineHeight: 1 }}>{stats.total}</span>
+            <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{stats.total}</span>
             <EntryIcons hasPoop={totalPoop > 0} hasUrine={totalUrine > 0} size={32} />
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function InlineStats() {
         <div style={{ backgroundColor: D.card, borderRadius: 16, padding: '14px 16px' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Última sem.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 36, fontWeight: 900, color: D.text, lineHeight: 1 }}>{lastWeekCount}</span>
+            <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{lastWeekCount}</span>
             <EntryIcons hasPoop={lastWeekPoop > 0} hasUrine={lastWeekUrine > 0} size={32} />
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function InlineStats() {
                   width: '100%',
                   height: `${barHeight}px`,
                   borderRadius: '6px 6px 0 0',
-                  backgroundColor: isMax ? D.text : D.chip,
+                  backgroundColor: isMax ? D.secondary : D.chip,
                   transition: 'height 0.3s ease',
                   flexShrink: 0,
                 }} />

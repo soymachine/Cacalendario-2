@@ -103,7 +103,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     transition: 'background-color 0.2s',
                     boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
                   }}>
-                    <RegisterIcon color={isActive ? D.text : 'white'} />
+                    <RegisterIcon color={isActive ? D.primary : 'white'} />
                   </div>
                 </div>
               </button>
@@ -137,7 +137,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 transition: 'background-color 0.2s',
                 boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
-                <Icon color={isActive ? D.text : 'white'} />
+                <Icon color={isActive ? D.primary : 'white'} />
               </div>
             </button>
           );
