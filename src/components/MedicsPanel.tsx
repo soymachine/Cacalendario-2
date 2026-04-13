@@ -2080,7 +2080,7 @@ export default function MedicsPanel() {
 
             {imageModal.type === 'success' ? (
               <>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
                   <img
                     src={imageModal.url}
                     alt="Imagen del centro"
