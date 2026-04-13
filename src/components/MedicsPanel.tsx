@@ -145,6 +145,9 @@ export default function MedicsPanel() {
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
   const [configPalette, setConfigPalette] = useState('terracotta');
+  const [customColor1, setCustomColor1] = useState('#dd8273');
+  const [customColor2, setCustomColor2] = useState('#1a0e0e');
+  const [extractingColors, setExtractingColors] = useState(false);
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
   const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
   const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
@@ -155,7 +158,9 @@ export default function MedicsPanel() {
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
 
-  const th = (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
+  const th: MedicsTheme = configPalette === 'custom'
+    ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
+    : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
   const ts = {
     loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
     btnPrimary: { ...s.btnPrimary, backgroundColor: th.dark },
@@ -190,7 +195,15 @@ export default function MedicsPanel() {
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
     setCenterImageUrl(info.center_image_url || null);
-    setConfigPalette(info.palette || 'terracotta');
+    const palette = info.palette || 'terracotta';
+    if (palette.startsWith('custom:')) {
+      const parts = palette.split(':');
+      setCustomColor1('#' + (parts[1] || 'dd8273'));
+      setCustomColor2('#' + (parts[2] || '1a0e0e'));
+      setConfigPalette('custom');
+    } else {
+      setConfigPalette(palette);
+    }
   };
 
   // ── Recover session on mount ──
@@ -586,16 +599,36 @@ export default function MedicsPanel() {
     if (!doctorInfo) return;
     setLoading(true);
     const trimmedName = configName.trim() || doctorInfo.name;
+    const paletteToSave = configPalette === 'custom'
+      ? `custom:${customColor1.replace('#', '')}:${customColor2.replace('#', '')}`
+      : configPalette;
     const { error: updateErr } = await supabase
       .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette })
+      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
       .eq('id', doctorInfo.id);
     setLoading(false);
     if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: configPalette };
+      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
+    }
+  };
+
+  // ── Extract dominant colors from center image ──
+  const handleExtractColors = async () => {
+    if (!centerImageUrl || extractingColors) return;
+    setExtractingColors(true);
+    try {
+      const colors = await extractDominantColors(centerImageUrl);
+      if (colors[0]) setCustomColor1(colors[0]);
+      if (colors[1]) setCustomColor2(colors[1]);
+      else if (colors[0]) setCustomColor2(darkenColor(colors[0]));
+      setConfigPalette('custom');
+    } catch {
+      // CORS/canvas error — silently ignore
+    } finally {
+      setExtractingColors(false);
     }
   };
 
@@ -1736,191 +1769,221 @@ export default function MedicsPanel() {
               subtitle="Ajusta tu perfil y los parámetros del semáforo"
             />
 
-            {/* ── Datos del médico ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
-              </div>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-                <div>
-                  <label style={s.label}>Nombre</label>
-                  <input
-                    type="text"
-                    value={configName}
-                    onChange={(e) => setConfigName(e.target.value)}
-                    style={{ ...s.input, marginBottom: 0 }}
-                    placeholder="Dr. Nombre Apellido"
-                  />
-                </div>
-                <div>
-                  <label style={s.label}>Centro médico</label>
-                  <input
-                    type="text"
-                    value={doctorInfo?.center_name || ''}
-                    disabled
-                    style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
-                  />
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>El nombre del centro lo gestiona el administrador.</p>
-                </div>
-                {configSaved && (
-                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>✅</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Cambios guardados correctamente</span>
-                  </div>
-                )}
-                <button
-                  onClick={handleSaveConfig}
-                  disabled={loading}
-                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
-                >
-                  {loading ? '...' : 'Guardar cambios'}
-                </button>
-              </div>
-            </div>
+            {/* ── 3-column row: Datos del médico · Imagen del centro · Semáforo ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16, alignItems: 'start' }}>
 
-            {/* ── Imagen del centro ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
-              </div>
-              <div style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
-                {/* Preview */}
-                <div style={{ width: 120, height: 120, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
-                  {centerImageUrl ? (
-                    <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: 36 }}>🏥</span>
-                  )}
+              {/* Datos del médico */}
+              <div style={s.card}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, color: '#555', margin: '0 0 12px', lineHeight: 1.6 }}>
-                    Sube el logo o imagen de tu centro. Esta imagen aparecerá en la app para los pacientes vinculados contigo.
-                  </p>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, width: 'auto', padding: '10px 20px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
-                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                  <div>
+                    <label style={s.label}>Nombre</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      disabled={uploadingImage}
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
-                      }}
+                      type="text"
+                      value={configName}
+                      onChange={(e) => setConfigName(e.target.value)}
+                      style={{ ...s.input, marginBottom: 0 }}
+                      placeholder="Dr. Nombre Apellido"
                     />
+                  </div>
+                  <div>
+                    <label style={s.label}>Centro médico</label>
+                    <input
+                      type="text"
+                      value={doctorInfo?.center_name || ''}
+                      disabled
+                      style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
+                    />
+                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Gestionado por el administrador.</p>
+                  </div>
+                  {configSaved && (
+                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>✅</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                    </div>
+                  )}
+                  <button onClick={handleSaveConfig} disabled={loading}
+                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    {loading ? '...' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Imagen del centro */}
+              <div style={s.card}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
+                </div>
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14, alignItems: 'center' }}>
+                  <div style={{ width: 110, height: 110, borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
+                    {centerImageUrl ? (
+                      <img src={centerImageUrl} alt="Centro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: 32 }}>🏥</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12, color: '#888', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+                    Aparecerá en la app de los pacientes vinculados.
+                  </p>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, padding: '9px 18px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                    <input type="file" accept="image/*" disabled={uploadingImage} style={{ display: 'none' }}
+                      onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
                   </label>
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>PNG, JPG o WEBP. Máx 2 MB.</p>
+                  <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>PNG, JPG o WEBP · Máx 2 MB</p>
+                </div>
+              </div>
+
+              {/* Semáforo */}
+              <div style={s.card}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🚦 Semáforo</span>
+                </div>
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60' }}>
+                      <div style={{ fontSize: 16 }}>🟢</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#27ae60' }}>≤ {configGreen}d</div>
+                    </div>
+                    <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #f39c12' }}>
+                      <div style={{ fontSize: 16 }}>🟠</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>{configGreen + 1}–{configRed}d</div>
+                    </div>
+                    <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #e74c3c' }}>
+                      <div style={{ fontSize: 16 }}>🔴</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#e74c3c' }}>&gt;{configRed}d</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#555', marginBottom: 4 }}>🟢 Verde: ≤ {configGreen} día{configGreen !== 1 ? 's' : ''}</div>
+                    <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
+                      onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#555', marginBottom: 4 }}>🔴 Rojo: &gt; {configRed} día{configRed !== 1 ? 's' : ''}</div>
+                    <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
+                      onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
+                  </div>
+                  {configSaved && (
+                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>✅</span><span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                    </div>
+                  )}
+                  <button onClick={handleSaveConfig} disabled={loading}
+                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    {loading ? '...' : 'Guardar'}
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* ── Paleta de colores ── */}
             <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
               </div>
-              <div style={{ padding: 24 }}>
-                <p style={{ fontSize: 14, color: '#555', margin: '0 0 16px', lineHeight: 1.6 }}>
-                  Elige la paleta de colores para todo el portal. El cambio se aplica al instante y se guarda con la configuración.
+              <div style={{ padding: 18 }}>
+                <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px', lineHeight: 1.6 }}>
+                  Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, marginBottom: 14 }}>
                   {PALETTES.map(p => {
                     const isActive = configPalette === p.id;
                     return (
-                      <button
-                        key={p.id}
-                        onClick={() => setConfigPalette(p.id)}
-                        title={p.name}
+                      <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
                         style={{
-                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 6,
-                          padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                          padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
                           backgroundColor: isActive ? '#00000012' : 'transparent',
                           outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
                           transition: 'all 0.15s',
-                        }}
-                      >
+                        }}>
                         <div style={{
-                          width: 36, height: 36, borderRadius: '50%',
+                          width: 32, height: 32, borderRadius: '50%',
                           background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
                           boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
-                          transition: 'box-shadow 0.15s',
                         }} />
-                        <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                        <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
                       </button>
                     );
                   })}
-                </div>
-              </div>
-            </div>
 
-            {/* ── Semáforo ── */}
-            <div style={s.card}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000010' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>🚦 Configuración del semáforo</span>
-              </div>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 20 }}>
-                <p style={{ fontSize: 14, color: '#555', margin: 0, lineHeight: 1.6 }}>
-                  Define cuántos días sin registrar corresponden a cada color del semáforo.
-                </p>
-
-                {/* Visual preview */}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #27ae60' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟢</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#27ae60' }}>Verde</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>≤ {configGreen} día{configGreen !== 1 ? 's' : ''}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #f39c12' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🟠</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e67e22' }}>Naranja</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>{configGreen + 1}–{configRed} día{configRed !== 1 ? 's' : ''}</div>
-                  </div>
-                  <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 12, padding: '12px 16px', borderLeft: '4px solid #e74c3c' }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🔴</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e74c3c' }}>Rojo</div>
-                    <div style={{ fontSize: 12, color: '#555' }}>&gt; {configRed} días</div>
-                  </div>
+                  {/* Custom palette option */}
+                  <button onClick={() => setConfigPalette('custom')} title="Personalizable"
+                    style={{
+                      display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
+                      padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                      backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
+                      outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
+                      transition: 'all 0.15s',
+                    }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: configPalette === 'custom'
+                        ? `linear-gradient(135deg, ${customColor1} 50%, ${customColor2} 50%)`
+                        : 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)',
+                      boxShadow: configPalette === 'custom' ? `0 0 0 3px ${customColor1}50` : 'none',
+                    }} />
+                    <span style={{ fontSize: 10, fontWeight: configPalette === 'custom' ? 700 : 400, color: '#444' }}>Personalizable</span>
+                  </button>
                 </div>
 
-                {/* Green threshold */}
-                <div>
-                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>🟢 Umbral verde: ≤ <strong>{configGreen}</strong> día{configGreen !== 1 ? 's' : ''}</span>
-                  </label>
-                  <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
-                    onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    <span>0 días</span>
-                    <span>{Math.max(configRed - 1, 1)} días</span>
-                  </div>
-                </div>
+                {/* Custom color pickers — only when 'custom' is selected */}
+                {configPalette === 'custom' && (
+                  <div style={{ backgroundColor: '#f7f7f7', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                          Color primario
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <input type="color" value={customColor1} onChange={e => setCustomColor1(e.target.value)}
+                            style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor1}</span>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                          Color oscuro / fondo
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <input type="color" value={customColor2} onChange={e => setCustomColor2(e.target.value)}
+                            style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor2}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Red threshold */}
-                <div>
-                  <label style={{ ...s.label, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>🔴 Umbral rojo: &gt; <strong>{configRed}</strong> día{configRed !== 1 ? 's' : ''}</span>
-                  </label>
-                  <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
-                    onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    <span>{Math.max(configGreen + 1, 1)} días</span>
-                    <span>30 días</span>
-                  </div>
-                </div>
+                    {/* Preview strip */}
+                    <div style={{ borderRadius: 8, overflow: 'hidden', display: 'flex', height: 36 }}>
+                      <div style={{ flex: 1, backgroundColor: customColor1 }} />
+                      <div style={{ flex: 1, background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
+                      <div style={{ flex: 1, backgroundColor: customColor2 }} />
+                    </div>
 
-                {configSaved && (
-                  <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>✅</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Configuración guardada</span>
+                    {/* Extract from image button */}
+                    <button
+                      onClick={handleExtractColors}
+                      disabled={!centerImageUrl || extractingColors}
+                      style={{
+                        padding: '9px 16px', borderRadius: 8, border: `2px solid ${customColor1}`,
+                        backgroundColor: 'transparent', color: customColor1,
+                        fontSize: 13, fontWeight: 700, cursor: centerImageUrl ? 'pointer' : 'not-allowed',
+                        opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
+                    </button>
+                    {!centerImageUrl && (
+                      <p style={{ fontSize: 11, color: '#aaa', margin: '-8px 0 0' }}>
+                        Sube una imagen del centro para usar esta opción.
+                      </p>
+                    )}
                   </div>
                 )}
-                <button
-                  onClick={handleSaveConfig}
-                  disabled={loading}
-                  style={{ ...ts.btnPrimary, width: 'auto', padding: '10px 28px', alignSelf: 'flex-start', opacity: loading ? 0.5 : 1 }}
-                >
-                  {loading ? '...' : 'Guardar configuración'}
-                </button>
               </div>
             </div>
             {isMobile && (
@@ -2000,6 +2063,63 @@ export default function MedicsPanel() {
       )}
     </div>
   );
+}
+
+// ── Color utilities ──
+
+function extractDominantColors(imageUrl: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const W = 120, H = 120;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, W, H);
+        const { data } = ctx.getImageData(0, 0, W, H);
+        const step = 32; // quantize each channel → 8 buckets
+        const counts: Record<string, number> = {};
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue; // skip transparent
+          const r = Math.round(data[i] / step) * step;
+          const g = Math.round(data[i + 1] / step) * step;
+          const b = Math.round(data[i + 2] / step) * step;
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (lum < 20 || lum > 235) continue; // skip near-black / near-white
+          const key = `${r},${g},${b}`;
+          counts[key] = (counts[key] || 0) + 1;
+        }
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        // Pick top 2, ensuring they're visually distinct (min distance 60)
+        const chosen: string[] = [];
+        for (const [key] of sorted) {
+          if (chosen.length >= 2) break;
+          const [r, g, b] = key.split(',').map(Number);
+          const isDup = chosen.some(c => {
+            const [cr, cg, cb] = c.split(',').map(Number);
+            return Math.abs(r - cr) + Math.abs(g - cg) + Math.abs(b - cb) < 60;
+          });
+          if (!isDup) chosen.push(key);
+        }
+        resolve(chosen.map(key => {
+          const [r, g, b] = key.split(',').map(Number);
+          return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+        }));
+      } catch (e) { reject(e); }
+    };
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+}
+
+function darkenColor(hex: string, amount = 0.5): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return '#' + [Math.round(r * (1 - amount)), Math.round(g * (1 - amount)), Math.round(b * (1 - amount))]
+    .map(v => Math.max(0, v).toString(16).padStart(2, '0')).join('');
 }
 
 // ── Helpers ──
