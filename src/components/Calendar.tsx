@@ -113,7 +113,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 border: 'none',
                 cursor: isFuture ? 'default' : 'pointer',
                 opacity: isFuture ? 0.4 : 1,
-                backgroundColor: hasEntry ? D.primary : D.bg,
+                backgroundColor: hasEntry ? D.secondary : D.bg,
               }}
             >
               {hasEntry ? (

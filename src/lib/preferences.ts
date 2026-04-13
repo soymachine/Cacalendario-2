@@ -108,8 +108,9 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
   if (color) {
     document.documentElement.style.setProperty('--fluxia-primary', color);
     document.documentElement.style.setProperty('--fluxia-primary-text', '#FFFFFF');
-    document.documentElement.style.setProperty('--fluxia-secondary', secondary || color);
-    // Derive a light tint for chip backgrounds (15% primary + 85% white)
+    const sec = secondary || color;
+    document.documentElement.style.setProperty('--fluxia-secondary', sec);
+    // Derive tints from primary (for chips/selections)
     const rgb = hexToRgb(color);
     if (rgb) {
       // chip: 15% primary + 85% white
@@ -118,16 +119,20 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
       const cb = Math.round(rgb.b * 0.15 + 255 * 0.85);
       document.documentElement.style.setProperty('--fluxia-chip', `rgb(${cr},${cg},${cb})`);
       document.documentElement.style.setProperty('--fluxia-chip-text', color);
-      // chipDark: 30% primary + 70% white (for nav bar)
-      const dr = Math.round(rgb.r * 0.30 + 255 * 0.70);
-      const dg = Math.round(rgb.g * 0.30 + 255 * 0.70);
-      const db = Math.round(rgb.b * 0.30 + 255 * 0.70);
-      document.documentElement.style.setProperty('--fluxia-chip-dark', `rgb(${dr},${dg},${db})`);
       // bg: 6% primary + 94% #F0F2F4 base
       const br = Math.round(rgb.r * 0.06 + 240 * 0.94);
       const bg_ = Math.round(rgb.g * 0.06 + 242 * 0.94);
       const bb = Math.round(rgb.b * 0.06 + 244 * 0.94);
       document.documentElement.style.setProperty('--fluxia-bg', `rgb(${br},${bg_},${bb})`);
+    }
+    // Derive tints from secondary (for nav bar)
+    const sRgb = hexToRgb(sec);
+    if (sRgb) {
+      // secondary-chip-dark: 30% secondary + 70% white (nav bar background)
+      const dr = Math.round(sRgb.r * 0.30 + 255 * 0.70);
+      const dg = Math.round(sRgb.g * 0.30 + 255 * 0.70);
+      const db = Math.round(sRgb.b * 0.30 + 255 * 0.70);
+      document.documentElement.style.setProperty('--fluxia-chip-dark', `rgb(${dr},${dg},${db})`);
     }
     if (meta) meta.setAttribute('content', '#F0F2F4');
   } else {
