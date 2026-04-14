@@ -1394,22 +1394,21 @@ export default function MedicsPanel() {
 
             {/* ── Config modal ── */}
             {patientConfigOpen && (
-              <div
-                onClick={() => setPatientConfigOpen(false)}
-                style={{
-                  position: 'fixed', inset: 0, zIndex: 200,
-                  backgroundColor: 'rgba(0,0,0,0.45)',
-                  display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end',
-                }}
-              >
+              <>
+                {/* Backdrop */}
+                <div
+                  onClick={() => setPatientConfigOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: 'rgba(0,0,0,0.45)' }}
+                />
+                {/* Panel */}
                 <div
                   onClick={e => e.stopPropagation()}
                   style={{
+                    position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 201,
                     width: '100%', maxWidth: 420,
                     backgroundColor: '#F5F5F5',
                     boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
                     display: 'flex', flexDirection: 'column' as const,
-                    overflow: 'hidden',
                   }}
                 >
                   {/* Modal header */}
@@ -1618,7 +1617,7 @@ export default function MedicsPanel() {
 
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </>
         )}
@@ -2375,7 +2374,7 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex', gap: 16,
   },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
+    backgroundColor: '#fff', borderRadius: 16,
   },
   headerBtn: {
     padding: '8px 16px', borderRadius: 999, border: 'none',
