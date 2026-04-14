@@ -162,7 +162,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   };
 
   const chipActive: React.CSSProperties = { backgroundColor: D.primary, color: D.primaryText };
-  const chipInactive: React.CSSProperties = { backgroundColor: D.chip, color: D.chipText };
+  const chipInactive: React.CSSProperties = { backgroundColor: D.navBg, color: D.chipText };
 
   const content = (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: isTab ? '16px 16px 32px' : '60px 16px 16px' }}>
@@ -320,7 +320,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       transition: 'all 0.1s',
-                      backgroundColor: D.chip,
+                      backgroundColor: D.navBg,
                       color: D.text,
                     }}
                   >
