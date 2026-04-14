@@ -108,6 +108,7 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       style={{
+        width: '100%',
         background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #e0e0e0 ${pct}%, #e0e0e0 100%)`,
       }}
     />
@@ -1446,7 +1447,7 @@ export default function MedicsPanel() {
 
                       {patientSemaforoOverride && (
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                               <span style={{ fontSize: 12 }}>🟢</span>
                               <span style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</span>
@@ -1454,13 +1455,13 @@ export default function MedicsPanel() {
                             <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
                               onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
                           </div>
-                          <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                               <span style={{ fontSize: 12 }}>🟠</span>
                               <span style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
                             </div>
                           </div>
-                          <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                               <span style={{ fontSize: 12 }}>🔴</span>
                               <span style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</span>
@@ -1845,7 +1846,7 @@ export default function MedicsPanel() {
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 14 }}>🟢</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#27ae60' }}>≤ {configGreen}d</span>
@@ -1853,13 +1854,13 @@ export default function MedicsPanel() {
                       <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
                         onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
                     </div>
-                    <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#f39c1215', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 14 }}>🟠</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>{configGreen + 1}–{configRed}d</span>
                       </div>
                     </div>
-                    <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ fontSize: 14 }}>🔴</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#e74c3c' }}>&gt;{configRed}d</span>
