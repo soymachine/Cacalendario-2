@@ -88,14 +88,9 @@ function AppContent() {
 
   const handleCongratsClose = () => {
     setCongratsData(null);
-    if (detailDate) {
-      setOverlay('dayDetail');
-    } else if (registerDate) {
-      setRegisterDate(null);
-      setOverlay('none');
-    } else {
-      setOverlay('none');
-    }
+    setRegisterDate(null);
+    setOverlay('none');
+    setActiveTab('calendar');
   };
 
   return (

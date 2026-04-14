@@ -59,6 +59,7 @@ export default function InlineStats() {
     borderRadius: 16,
     padding: '14px 16px',
     marginTop: 10,
+    backgroundColor: D.card,
   };
 
   return (
@@ -66,7 +67,7 @@ export default function InlineStats() {
       {/* Total + Última sem. side by side */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
         {/* Total card */}
-        <div style={{ borderRadius: 16, padding: '14px 16px' }}>
+        <div style={{ borderRadius: 16, padding: '14px 16px', backgroundColor: D.card }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Total</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{stats.total}</span>
@@ -75,7 +76,7 @@ export default function InlineStats() {
         </div>
 
         {/* Última sem. card */}
-        <div style={{ borderRadius: 16, padding: '14px 16px' }}>
+        <div style={{ borderRadius: 16, padding: '14px 16px', backgroundColor: D.card }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Última sem.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{lastWeekCount}</span>
@@ -100,7 +101,7 @@ export default function InlineStats() {
                   width: '100%',
                   height: `${barHeight}px`,
                   borderRadius: '6px 6px 0 0',
-                  backgroundColor: isMax ? D.secondary : D.chip,
+                  backgroundColor: isMax ? D.primary : D.secondary,
                   transition: 'height 0.3s ease',
                   flexShrink: 0,
                 }} />
