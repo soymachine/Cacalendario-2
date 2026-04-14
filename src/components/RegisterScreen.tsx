@@ -513,7 +513,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           rows={3}
           style={{
             width: '100%', borderRadius: 8, padding: '8px 10px',
-            fontSize: 14, color: D.text, backgroundColor: D.bg,
+            fontSize: 14, color: D.text, backgroundColor: D.card,
             border: 'none', outline: 'none', resize: 'none',
             fontFamily: 'inherit', boxSizing: 'border-box',
           }}
