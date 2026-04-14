@@ -56,7 +56,6 @@ export default function InlineStats() {
   const timeMax = Math.max(...stats.timeOfDay.map(t => t.count), 1);
 
   const sectionCard: React.CSSProperties = {
-    backgroundColor: D.card,
     borderRadius: 16,
     padding: '14px 16px',
     marginTop: 10,
@@ -67,7 +66,7 @@ export default function InlineStats() {
       {/* Total + Última sem. side by side */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
         {/* Total card */}
-        <div style={{ backgroundColor: D.card, borderRadius: 16, padding: '14px 16px' }}>
+        <div style={{ borderRadius: 16, padding: '14px 16px' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Total</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{stats.total}</span>
@@ -76,7 +75,7 @@ export default function InlineStats() {
         </div>
 
         {/* Última sem. card */}
-        <div style={{ backgroundColor: D.card, borderRadius: 16, padding: '14px 16px' }}>
+        <div style={{ borderRadius: 16, padding: '14px 16px' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Última sem.</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 36, fontWeight: 900, color: D.secondary, lineHeight: 1 }}>{lastWeekCount}</span>

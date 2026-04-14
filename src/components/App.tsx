@@ -113,7 +113,7 @@ function AppContent() {
               </div>
             )}
             {/* Calendar */}
-            <div style={{ backgroundColor: D.card, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ borderRadius: 16, overflow: 'hidden' }}>
               <Calendar onDayClick={handleDayClick} />
             </div>
             {/* Days since counter */}

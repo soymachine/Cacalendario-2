@@ -147,7 +147,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   };
 
   const sectionCard: React.CSSProperties = {
-    backgroundColor: D.card,
     borderRadius: 14,
     padding: '14px 16px',
     marginBottom: 10,

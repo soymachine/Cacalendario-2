@@ -27,7 +27,7 @@ export default function DaysSinceCounter() {
   if (!data.sinceText) {
     return (
       <div style={{
-        backgroundColor: D.card, borderRadius: 16, padding: '16px 18px', marginTop: 10,
+        borderRadius: 16, padding: '16px 18px', marginTop: 10,
       }}>
         <p style={{ fontSize: 15, fontWeight: 700, color: D.text, margin: '0 0 6px' }}>
           Desde la última vez
@@ -39,7 +39,7 @@ export default function DaysSinceCounter() {
 
   return (
     <div style={{
-      backgroundColor: D.card, borderRadius: 16, padding: '16px 18px', marginTop: 10,
+      borderRadius: 16, padding: '16px 18px', marginTop: 10,
     }}>
       <p style={{ fontSize: 15, fontWeight: 700, color: D.text, margin: '0 0 6px' }}>
         Desde la última vez

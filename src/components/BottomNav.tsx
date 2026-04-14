@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         alignItems: 'center',
         height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: D.chipDark,
+        backgroundColor: D.bg,
         borderRadius: 999,
         position: 'relative',
       }}>
@@ -84,12 +84,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: 'var(--fluxia-chip-dark, #B8BABC)',
+                  backgroundColor: D.bg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
-                  border: `3px solid ${D.chipDark}`,
+                  boxShadow: '0 -2px 8px rgba(0,0,0,0.06)',
+                  border: `3px solid ${D.bg}`,
                   position: 'relative',
                 }}>
                   <div style={{
@@ -103,7 +103,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     transition: 'background-color 0.2s',
                     boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
                   }}>
-                    <RegisterIcon color={isActive ? D.primary : 'white'} />
+                    <RegisterIcon color={isActive ? D.primary : D.textMuted} />
                   </div>
                 </div>
               </button>
@@ -137,7 +137,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 transition: 'background-color 0.2s',
                 boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
-                <Icon color={isActive ? D.primary : 'white'} />
+                <Icon color={isActive ? D.primary : D.textMuted} />
               </div>
             </button>
           );

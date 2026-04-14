@@ -119,13 +119,8 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
       const cb = Math.round(rgb.b * 0.15 + 255 * 0.85);
       document.documentElement.style.setProperty('--fluxia-chip', `rgb(${cr},${cg},${cb})`);
       document.documentElement.style.setProperty('--fluxia-chip-text', color);
-      // bg: 6% primary + 94% #F0F2F4 base
-      const br = Math.round(rgb.r * 0.06 + 240 * 0.94);
-      const bg_ = Math.round(rgb.g * 0.06 + 242 * 0.94);
-      const bb = Math.round(rgb.b * 0.06 + 244 * 0.94);
-      document.documentElement.style.setProperty('--fluxia-bg', `rgb(${br},${bg_},${bb})`);
     }
-    // Derive tints from secondary (for nav bar)
+    // Derive tints from secondary (for nav bar and bg)
     const sRgb = hexToRgb(sec);
     if (sRgb) {
       // secondary-chip-dark: 30% secondary + 70% white (nav bar background)
@@ -133,6 +128,11 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
       const dg = Math.round(sRgb.g * 0.30 + 255 * 0.70);
       const db = Math.round(sRgb.b * 0.30 + 255 * 0.70);
       document.documentElement.style.setProperty('--fluxia-chip-dark', `rgb(${dr},${dg},${db})`);
+      // bg: 10% secondary + 90% white
+      const br = Math.round(sRgb.r * 0.10 + 255 * 0.90);
+      const bg_ = Math.round(sRgb.g * 0.10 + 255 * 0.90);
+      const bb = Math.round(sRgb.b * 0.10 + 255 * 0.90);
+      document.documentElement.style.setProperty('--fluxia-bg', `rgb(${br},${bg_},${bb})`);
     }
     if (meta) meta.setAttribute('content', '#F0F2F4');
   } else {
