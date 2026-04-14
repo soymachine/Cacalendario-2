@@ -133,6 +133,11 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
       const bg_ = Math.round(sRgb.g * 0.10 + 255 * 0.90);
       const bb = Math.round(sRgb.b * 0.10 + 255 * 0.90);
       document.documentElement.style.setProperty('--fluxia-bg', `rgb(${br},${bg_},${bb})`);
+      // nav-bg: 20% secondary + 80% white (more visible than bg, less heavy than chip-dark)
+      const nr = Math.round(sRgb.r * 0.20 + 255 * 0.80);
+      const ng = Math.round(sRgb.g * 0.20 + 255 * 0.80);
+      const nb = Math.round(sRgb.b * 0.20 + 255 * 0.80);
+      document.documentElement.style.setProperty('--fluxia-nav-bg', `rgb(${nr},${ng},${nb})`);
     }
     if (meta) meta.setAttribute('content', '#F0F2F4');
   } else {
@@ -143,6 +148,7 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
     document.documentElement.style.removeProperty('--fluxia-chip-text');
     document.documentElement.style.removeProperty('--fluxia-chip-dark');
     document.documentElement.style.removeProperty('--fluxia-bg');
+    document.documentElement.style.removeProperty('--fluxia-nav-bg');
     if (meta) meta.setAttribute('content', '#F0F2F4');
   }
 }

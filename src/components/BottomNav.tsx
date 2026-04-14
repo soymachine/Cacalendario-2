@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         alignItems: 'center',
         height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: D.bg,
+        backgroundColor: D.navBg,
         borderRadius: 999,
         position: 'relative',
       }}>
@@ -84,12 +84,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: D.bg,
+                  backgroundColor: D.navBg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 -2px 8px rgba(0,0,0,0.06)',
-                  border: `3px solid ${D.bg}`,
+                  border: `3px solid ${D.navBg}`,
                   position: 'relative',
                 }}>
                   <div style={{
