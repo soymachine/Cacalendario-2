@@ -158,6 +158,7 @@ export default function MedicsPanel() {
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
   const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
   const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
+  const [patientFieldsError, setPatientFieldsError] = useState<string | null>(null);
   const [patientConfigOpen, setPatientConfigOpen] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
@@ -512,6 +513,7 @@ export default function MedicsPanel() {
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
     setPatientFieldsSaved(false);
+    setPatientFieldsError(null);
     setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
@@ -678,11 +680,15 @@ export default function MedicsPanel() {
   // ── Save per-patient hidden fields ──
   const handleSavePatientFields = async () => {
     if (!selectedPatient) return;
+    setPatientFieldsError(null);
     const { error } = await supabase
       .from('patient_links')
       .update({ hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode })
       .eq('id', selectedPatient.id);
-    if (!error) {
+    if (error) {
+      console.error('[medics] savePatientFields error:', error);
+      setPatientFieldsError(error.message);
+    } else {
       const updated = { ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode };
       setSelectedPatient(updated);
       setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
@@ -1579,6 +1585,9 @@ export default function MedicsPanel() {
                         })}
                         {patientFieldsSaved && (
                           <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
+                        )}
+                        {patientFieldsError && (
+                          <div style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {patientFieldsError}</div>
                         )}
                         <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
                           Guardar
