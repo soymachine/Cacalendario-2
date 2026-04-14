@@ -193,7 +193,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       {/* Logo (only in tab mode) */}
       {isTab && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          <img src={getDoctorImage() || asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 52, objectFit: 'contain' }} />
+          <img src={getDoctorImage() || asset('/fluxia-logo.png')} alt="Fluxia" style={{ height: 90, objectFit: 'contain' }} />
         </div>
       )}
 
