@@ -84,12 +84,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: D.navBg,
+                  backgroundColor: D.secondary,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 -2px 8px rgba(0,0,0,0.06)',
-                  border: `3px solid ${D.navBg}`,
+                  border: `3px solid ${D.secondary}`,
                   position: 'relative',
                 }}>
                   <div style={{

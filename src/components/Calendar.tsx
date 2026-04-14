@@ -113,7 +113,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 border: 'none',
                 cursor: isFuture ? 'default' : 'pointer',
                 opacity: isFuture ? 0.4 : 1,
-                backgroundColor: hasEntry ? D.secondary : D.bg,
+                backgroundColor: hasEntry ? D.secondary : D.card,
               }}
             >
               {hasEntry ? (
@@ -137,7 +137,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                   )}
                 </>
               ) : (
-                <span style={{ fontSize: 12, color: '#ffffff' }}>{day}</span>
+                <span style={{ fontSize: 12, color: D.primary }}>{day}</span>
               )}
             </button>
           );
