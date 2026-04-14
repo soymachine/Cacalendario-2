@@ -250,17 +250,15 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
               transition: 'background-color 0.2s, box-shadow 0.2s',
             }}
           >
-            <img
-              src={asset('/Switch-Caca-Icono.svg')}
-              width={38}
-              height={38}
-              alt="Deposición"
-              style={{
-                display: 'block',
-                filter: entryType === 'poop' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
-                transition: 'filter 0.2s',
-              }}
-            />
+            <div style={{
+              width: 38, height: 38, flexShrink: 0,
+              maskImage: `url(${asset('/Switch-Caca-Icono.svg')})`,
+              WebkitMaskImage: `url(${asset('/Switch-Caca-Icono.svg')})`,
+              maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',
+              WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
+              backgroundColor: entryType === 'poop' ? D.primary : '#ffffff',
+              transition: 'background-color 0.2s',
+            }} />
           </button>
 
           {/* Urine */}
@@ -280,17 +278,15 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
               transition: 'background-color 0.2s, box-shadow 0.2s',
             }}
           >
-            <img
-              src={asset('/Switch-Miccion-Icono.svg')}
-              width={38}
-              height={38}
-              alt="Micción"
-              style={{
-                display: 'block',
-                filter: entryType === 'urine' ? 'brightness(0) opacity(0.45)' : 'brightness(0) invert(1)',
-                transition: 'filter 0.2s',
-              }}
-            />
+            <div style={{
+              width: 38, height: 38, flexShrink: 0,
+              maskImage: `url(${asset('/Switch-Miccion-Icono.svg')})`,
+              WebkitMaskImage: `url(${asset('/Switch-Miccion-Icono.svg')})`,
+              maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',
+              WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
+              backgroundColor: entryType === 'urine' ? D.primary : '#ffffff',
+              transition: 'background-color 0.2s',
+            }} />
           </button>
         </div>
       )}

@@ -137,7 +137,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                   )}
                 </>
               ) : (
-                <span style={{ fontSize: 12, color: `${D.text}66` }}>{day}</span>
+                <span style={{ fontSize: 12, color: '#ffffff' }}>{day}</span>
               )}
             </button>
           );

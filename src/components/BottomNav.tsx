@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         alignItems: 'center',
         height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: D.navBg,
+        backgroundColor: D.secondary,
         borderRadius: 999,
         position: 'relative',
       }}>
