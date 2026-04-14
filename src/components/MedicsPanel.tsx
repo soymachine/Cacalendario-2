@@ -147,7 +147,8 @@ export default function MedicsPanel() {
   const [patientSemaforoOverride, setPatientSemaforoOverride] = useState(false);
   const [patientSemaforoGreen, setPatientSemaforoGreen] = useState(1);
   const [patientSemaforoRed, setPatientSemaforoRed] = useState(3);
-  const [patientSemaforoSaved, setPatientSemaforoSaved] = useState(false);
+  const [patientConfigSaved, setPatientConfigSaved] = useState(false);
+  const [patientConfigError, setPatientConfigError] = useState<string | null>(null);
   const [entryPage, setEntryPage] = useState(0);
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
@@ -157,12 +158,9 @@ export default function MedicsPanel() {
   const [extractingColors, setExtractingColors] = useState(false);
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
   const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
-  const [patientFieldsSaved, setPatientFieldsSaved] = useState(false);
-  const [patientFieldsError, setPatientFieldsError] = useState<string | null>(null);
   const [patientConfigOpen, setPatientConfigOpen] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
-  const [patientPushSaved, setPatientPushSaved] = useState(false);
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
 
@@ -512,12 +510,11 @@ export default function MedicsPanel() {
     setPatientSemaforoSaved(false);
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
-    setPatientFieldsSaved(false);
-    setPatientFieldsError(null);
     setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
-    setPatientPushSaved(false);
+    setPatientConfigSaved(false);
+    setPatientConfigError(null);
     setPushTestStatus('idle');
     setPushTestError('');
     setEntryPage(0);
@@ -655,61 +652,42 @@ export default function MedicsPanel() {
   };
 
   // ── Save per-patient semáforo override ──
-  const handleSavePatientSemaforo = async () => {
+  // ── Save all patient config in one shot ──
+  const handleSavePatientConfig = async () => {
     if (!selectedPatient) return;
+    setPatientConfigError(null);
+    const freq = Math.max(1, Math.min(24, patientPushFrequency));
+    const mins = Math.max(1, Math.min(168, patientPushMinHours));
     const { error } = await supabase
       .from('patient_links')
       .update({
         semaforo_override: patientSemaforoOverride,
         semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
+        hidden_fields: patientHiddenFields,
+        entry_type_mode: patientEntryTypeMode,
+        push_min_hours: mins,
+        push_frequency: freq,
       })
       .eq('id', selectedPatient.id);
-    if (!error) {
-      setSelectedPatient({
+    if (error) {
+      console.error('[medics] savePatientConfig error:', error);
+      setPatientConfigError(error.message);
+    } else {
+      const updated = {
         ...selectedPatient,
         semaforo_override: patientSemaforoOverride,
         semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
-      });
-      setPatientSemaforoSaved(true);
-      setTimeout(() => setPatientSemaforoSaved(false), 3000);
-    }
-  };
-
-  // ── Save per-patient hidden fields ──
-  const handleSavePatientFields = async () => {
-    if (!selectedPatient) return;
-    setPatientFieldsError(null);
-    const { error } = await supabase
-      .from('patient_links')
-      .update({ hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode })
-      .eq('id', selectedPatient.id);
-    if (error) {
-      console.error('[medics] savePatientFields error:', error);
-      setPatientFieldsError(error.message);
-    } else {
-      const updated = { ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode };
+        hidden_fields: patientHiddenFields,
+        entry_type_mode: patientEntryTypeMode,
+        push_min_hours: mins,
+        push_frequency: freq,
+      };
       setSelectedPatient(updated);
       setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
-      setPatientFieldsSaved(true);
-      setTimeout(() => setPatientFieldsSaved(false), 3000);
-    }
-  };
-
-  // ── Save per-patient push notification config ──
-  const handleSavePatientPush = async () => {
-    if (!selectedPatient) return;
-    const freq = Math.max(1, Math.min(24, patientPushFrequency));
-    const mins = Math.max(1, Math.min(168, patientPushMinHours));
-    const { error } = await supabase
-      .from('patient_links')
-      .update({ push_min_hours: mins, push_frequency: freq })
-      .eq('id', selectedPatient.id);
-    if (!error) {
-      setSelectedPatient({ ...selectedPatient, push_min_hours: mins, push_frequency: freq });
-      setPatientPushSaved(true);
-      setTimeout(() => setPatientPushSaved(false), 3000);
+      setPatientConfigSaved(true);
+      setTimeout(() => setPatientConfigSaved(false), 3000);
     }
   };
 
@@ -1458,10 +1436,7 @@ export default function MedicsPanel() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
                         <Switch
                           checked={patientSemaforoOverride}
-                          onChange={(checked) => {
-                            setPatientSemaforoOverride(checked);
-                            setPatientSemaforoSaved(false);
-                          }}
+                          onChange={setPatientSemaforoOverride}
                           style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
                         />
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
@@ -1471,47 +1446,30 @@ export default function MedicsPanel() {
                       </div>
 
                       {patientSemaforoOverride && (
-                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                <span style={{ fontSize: 12 }}>🟢</span>
-                                <span style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</span>
-                              </div>
-                              <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
-                                onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <div style={{ flex: 1, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span style={{ fontSize: 12 }}>🟢</span>
+                              <span style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</span>
                             </div>
-                            <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                <span style={{ fontSize: 12 }}>🟠</span>
-                                <span style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
-                              </div>
-                            </div>
-                            <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                <span style={{ fontSize: 12 }}>🔴</span>
-                                <span style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</span>
-                              </div>
-                              <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
-                                onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
+                            <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
+                              onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
+                          </div>
+                          <div style={{ flex: 1, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span style={{ fontSize: 12 }}>🟠</span>
+                              <span style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
                             </div>
                           </div>
-                          {patientSemaforoSaved && (
-                            <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600 }}>✅ Guardado</div>
-                          )}
-                          <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
-                            Guardar
-                          </button>
+                          <div style={{ flex: 1, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span style={{ fontSize: 12 }}>🔴</span>
+                              <span style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</span>
+                            </div>
+                            <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
+                              onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
+                          </div>
                         </div>
-                      )}
-
-                      {!patientSemaforoOverride && patientSemaforoSaved && (
-                        <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                      )}
-                      {!patientSemaforoOverride && (
-                        <button onClick={handleSavePatientSemaforo} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10, opacity: 0.7 }}>
-                          Guardar
-                        </button>
                       )}
                     </div>
 
@@ -1583,15 +1541,6 @@ export default function MedicsPanel() {
                             </div>
                           );
                         })}
-                        {patientFieldsSaved && (
-                          <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                        )}
-                        {patientFieldsError && (
-                          <div style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {patientFieldsError}</div>
-                        )}
-                        <button onClick={handleSavePatientFields} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
-                          Guardar
-                        </button>
                       </div>
                     </div>
 
@@ -1600,41 +1549,33 @@ export default function MedicsPanel() {
                       <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
                         🔔 Notificaciones push
                       </div>
-                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
-                        <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
+                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                        <p style={{ fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>
                           Recordatorio automático cuando el paciente lleva X horas sin registrar.
                         </p>
-                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                          <div>
-                            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
-                              Horas sin registrar antes de notificar
-                            </label>
-                            <input
-                              type="number" min={1} max={168} value={patientPushMinHours}
-                              onChange={e => setPatientPushMinHours(Number(e.target.value))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
-                            />
-                            <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
-                          </div>
-                          <div>
-                            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
-                              Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
-                            </label>
-                            <input
-                              type="number" min={1} max={24} value={patientPushFrequency}
-                              onChange={e => setPatientPushFrequency(Number(e.target.value))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
-                            />
-                            <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
-                          </div>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                            Horas sin registrar antes de notificar
+                          </label>
+                          <input
+                            type="number" min={1} max={168} value={patientPushMinHours}
+                            onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                          />
+                          <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
                         </div>
-                        {patientPushSaved && (
-                          <div style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Guardado</div>
-                        )}
-                        <button onClick={handleSavePatientPush} style={{ ...ts.btnPrimary, padding: '7px 14px', fontSize: 11, borderRadius: 8, marginTop: 10 }}>
-                          Guardar
-                        </button>
-                        <div style={{ borderTop: '1px solid #00000010', marginTop: 16, paddingTop: 14 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                            Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
+                          </label>
+                          <input
+                            type="number" min={1} max={24} value={patientPushFrequency}
+                            onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                          />
+                          <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
+                        </div>
+                        <div style={{ borderTop: '1px solid #00000010', paddingTop: 12 }}>
                           <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
                             Envía una notificación ahora para verificar que funciona correctamente.
                           </p>
@@ -1660,6 +1601,19 @@ export default function MedicsPanel() {
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Single save button for all sections */}
+                    <div style={{ paddingBottom: 8 }}>
+                      {patientConfigSaved && (
+                        <div style={{ fontSize: 13, color: '#27ae60', fontWeight: 600, marginBottom: 8, textAlign: 'center' as const }}>✅ Configuración guardada</div>
+                      )}
+                      {patientConfigError && (
+                        <div style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginBottom: 8 }}>❌ {patientConfigError}</div>
+                      )}
+                      <button onClick={handleSavePatientConfig} style={{ ...ts.btnPrimary, width: '100%', padding: '13px 0', fontSize: 14, borderRadius: 12 }}>
+                        Guardar configuración
+                      </button>
                     </div>
 
                   </div>
