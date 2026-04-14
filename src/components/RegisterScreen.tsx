@@ -227,7 +227,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       {entryTypeMode === 'both' && (
         <div style={{
           display: 'flex',
-          backgroundColor: D.chip,
+          backgroundColor: D.primary,
           borderRadius: 999,
           padding: 4,
           marginBottom: 10,

@@ -26,7 +26,7 @@ export default function BristolPicker({ value, onChange, restrictedTypes }: Bris
                 borderRadius: 12, padding: '10px 8px 8px',
                 border: isSelected ? `2px solid var(--fluxia-primary, #353435)` : '2px solid transparent',
                 cursor: isLocked ? 'default' : 'pointer',
-                backgroundColor: isSelected ? 'var(--fluxia-chip, #D7D9D8)' : D.chip,
+                backgroundColor: isSelected ? D.navBg : D.navBg,
                 opacity: isLocked ? 0.3 : 1,
                 transition: 'all 0.15s',
               }}
@@ -44,7 +44,7 @@ export default function BristolPicker({ value, onChange, restrictedTypes }: Bris
       {value && (
         <div style={{
           marginTop: 8, borderRadius: 10, padding: '8px 12px',
-          backgroundColor: D.chip,
+          backgroundColor: D.navBg,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
