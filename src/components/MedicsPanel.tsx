@@ -1939,7 +1939,7 @@ export default function MedicsPanel() {
                           }}>
                           <div style={{
                             width: 32, height: 32, borderRadius: '50%',
-                            background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.dark} 50%)`,
+                            background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.secondary} 50%)`,
                             boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
                           }} />
                           <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
