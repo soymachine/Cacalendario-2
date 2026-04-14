@@ -683,7 +683,9 @@ export default function MedicsPanel() {
       .update({ hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode })
       .eq('id', selectedPatient.id);
     if (!error) {
-      setSelectedPatient({ ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode });
+      const updated = { ...selectedPatient, hidden_fields: patientHiddenFields, entry_type_mode: patientEntryTypeMode };
+      setSelectedPatient(updated);
+      setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
       setPatientFieldsSaved(true);
       setTimeout(() => setPatientFieldsSaved(false), 3000);
     }
@@ -1421,7 +1423,7 @@ export default function MedicsPanel() {
                   onClick={e => e.stopPropagation()}
                   style={{
                     width: '100%', maxWidth: 420, height: '100%',
-                    backgroundColor: '#F5F5F5', overflowY: 'auto',
+                    backgroundColor: '#F5F5F5',
                     boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
                     display: 'flex', flexDirection: 'column' as const,
                   }}
@@ -1443,7 +1445,7 @@ export default function MedicsPanel() {
                   </div>
 
                   {/* Modal content */}
-                  <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                  <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
 
                     {/* Semáforo personalizado */}
                     <div style={{ ...s.card, padding: '14px 16px' }}>
