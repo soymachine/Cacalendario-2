@@ -13,7 +13,7 @@ interface CongratsScreenProps {
 
 export default function CongratsScreen({ date, time, entryType, onEdit, onClose }: CongratsScreenProps) {
   const { emoji } = usePreferences();
-  const dayText = formatDateForDisplay(date);
+  const dayText = formatDateForDisplay(date); // "LUNES, 13 de abril"
   const isPoop = entryType === 'poop';
 
   return (
@@ -35,61 +35,62 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
           </svg>
         </button>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '64px 32px 48px' }}>
-          {/* Title */}
-          <div>
-            <p style={{ fontSize: 32, fontWeight: 900, color: D.primary, lineHeight: 1.2, margin: 0 }}>
-              {isPoop ? <>¡Enhorabuena,<br />has obrado!</> : <>¡Registro<br />guardado!</>}
-            </p>
+        {/* Title */}
+        <div style={{ padding: '88px 24px 0' }}>
+          <p style={{ fontSize: 54, fontWeight: 900, color: D.text, lineHeight: 1.05, margin: 0 }}>
+            Registro<br />correcto
+          </p>
+        </div>
+
+        {/* Summary card */}
+        <div style={{
+          margin: '32px 16px 0',
+          backgroundColor: D.card,
+          borderRadius: 20,
+          padding: '20px 20px 16px',
+        }}>
+          {/* Date & Time row */}
+          <div style={{ display: 'flex', gap: 32, marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 4px', letterSpacing: 0.8 }}>DÍA</p>
+              <p style={{ fontSize: 16, fontWeight: 600, color: D.text, margin: 0 }}>{dayText}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 4px', letterSpacing: 0.8 }}>HORA</p>
+              <p style={{ fontSize: 16, fontWeight: 600, color: D.text, margin: 0 }}>{time}</p>
+            </div>
           </div>
 
-          {/* Icon */}
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
+          {/* Type badge row */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            backgroundColor: D.chip, borderRadius: 12,
+            padding: '12px 16px', marginBottom: 14,
+          }}>
             {isPoop ? (
-              emoji.char === 'svg' ? (
-                <img src={asset('/poop-big.svg')} alt="Happy poop" style={{ width: 160, height: 160 }} />
-              ) : (
-                <span style={{ fontSize: 120, lineHeight: 1 }}>{emoji.char}</span>
-              )
+              emoji.char === 'svg'
+                ? <img src={asset('/poop-small.svg')} alt="" style={{ width: 28, height: 28 }} />
+                : <span style={{ fontSize: 22 }}>{emoji.char}</span>
             ) : (
-              <span style={{ fontSize: 120, lineHeight: 1 }}>💧</span>
+              <span style={{ fontSize: 22 }}>💧</span>
             )}
+            <span style={{ fontSize: 15, fontWeight: 800, color: D.text }}>
+              {isPoop ? 'Deposición registrada' : 'Micción registrada'}
+            </span>
           </div>
 
-          {/* Summary card */}
-          <div style={{ backgroundColor: D.card, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Date & Time */}
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>DÍA</p>
-                <p style={{ fontSize: 18, color: D.secondary, margin: 0 }}>{dayText}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 900, color: D.textMuted, margin: '0 0 2px', letterSpacing: 0.5 }}>HORA</p>
-                <p style={{ fontSize: 18, color: D.secondary, margin: 0 }}>{time}</p>
-              </div>
-            </div>
-
-            {/* Type badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: D.bg, borderRadius: 10, padding: '8px 12px' }}>
-              <span style={{ fontSize: 20 }}>{isPoop ? '💩' : '💧'}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: D.secondary }}>
-                {isPoop ? 'Deposición registrada' : 'Micción registrada'}
-              </span>
-            </div>
-
-            {/* Edit button */}
-            <button
-              onClick={onEdit}
-              style={{
-                width: '100%', padding: '13px 0', borderRadius: 99, border: `2px solid ${D.primary}`,
-                backgroundColor: 'transparent', color: D.primary,
-                fontSize: 15, fontWeight: 800, cursor: 'pointer',
-              }}
-            >
-              Editar registro
-            </button>
-          </div>
+          {/* Edit button */}
+          <button
+            onClick={onEdit}
+            style={{
+              width: '100%', padding: '14px 0', borderRadius: 99,
+              border: `2px solid ${D.primary}`,
+              backgroundColor: 'transparent', color: D.primary,
+              fontSize: 15, fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            Editar registro
+          </button>
         </div>
       </div>
     </div>
