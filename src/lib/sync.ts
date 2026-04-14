@@ -123,38 +123,3 @@ export async function deleteEntryFromCloud(userId: string, entryId: string): Pro
     .eq('user_id', userId)
     .eq('entry_id', entryId);
 }
-
-
-export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promise<void> {
-  const { error } = await supabase.from('entries').upsert(
-    {
-      user_id: userId,
-      entry_id: entry.id,
-      date: entry.date,
-      time: entry.time,
-      notes: entry.notes,
-      timestamp: entry.timestamp,
-      entry_type: entry.entry_type ?? 'poop',
-      bristol: entry.bristol ?? null,
-      floats: entry.floats ?? null,
-      color: entry.color ?? null,
-      quantity: entry.quantity ?? null,
-      duration: entry.duration ?? null,
-      symptoms: entry.symptoms ?? [],
-      urine_type: entry.urine_type ?? null,
-      urine_quantity: entry.urine_quantity ?? null,
-      urine_color: entry.urine_color ?? null,
-      urine_characteristics: entry.urine_characteristics ?? [],
-    },
-    { onConflict: 'user_id,entry_id' }
-  );
-  if (error) console.error('[sync] saveEntryToCloud error:', error.message);
-}
-
-export async function deleteEntryFromCloud(userId: string, entryId: string): Promise<void> {
-  await supabase
-    .from('entries')
-    .delete()
-    .eq('user_id', userId)
-    .eq('entry_id', entryId);
-}
