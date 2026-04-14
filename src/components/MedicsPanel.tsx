@@ -507,7 +507,6 @@ export default function MedicsPanel() {
     setPatientSemaforoOverride(patient.semaforo_override ?? false);
     setPatientSemaforoGreen(patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1);
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
-    setPatientSemaforoSaved(false);
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
     setPatientConfigOpen(false);
