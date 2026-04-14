@@ -1399,16 +1399,17 @@ export default function MedicsPanel() {
                 style={{
                   position: 'fixed', inset: 0, zIndex: 200,
                   backgroundColor: 'rgba(0,0,0,0.45)',
-                  display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+                  display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end',
                 }}
               >
                 <div
                   onClick={e => e.stopPropagation()}
                   style={{
-                    width: '100%', maxWidth: 420, height: '100%',
+                    width: '100%', maxWidth: 420,
                     backgroundColor: '#F5F5F5',
                     boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
                     display: 'flex', flexDirection: 'column' as const,
+                    overflow: 'hidden',
                   }}
                 >
                   {/* Modal header */}
