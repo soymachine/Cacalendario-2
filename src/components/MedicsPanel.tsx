@@ -55,7 +55,11 @@ interface DoctorInfo {
   semaforo_green: number;
   semaforo_red: number;
   palette?: string;
+  plan: 'free' | 'pro';
 }
+
+// Free tier limit: 1 patient (accepted + pending). Pro is effectively unlimited.
+const FREE_PLAN_PATIENT_LIMIT = 1;
 
 interface PatientEntry {
   id: string;
@@ -131,10 +135,15 @@ export default function MedicsPanel() {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState<'off' | 'email' | 'sent'>('off');
   const [registerMode, setRegisterMode] = useState(false);
-  const [registerStep, setRegisterStep] = useState<'email' | 'password' | 'done'>('email');
+  const [registerStep, setRegisterStep] = useState<'email' | 'details' | 'password' | 'done'>('email');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerCenterName, setRegisterCenterName] = useState('');
+  const [registerSpecialty, setRegisterSpecialty] = useState('');
+  const [registerIsSelfService, setRegisterIsSelfService] = useState(false);
   const [pendingCenterName, setPendingCenterName] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
@@ -194,6 +203,7 @@ export default function MedicsPanel() {
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
+    plan: (d.plan as 'free' | 'pro') || 'free',
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -311,8 +321,40 @@ export default function MedicsPanel() {
         }
       }
 
+      // Self-service registration: user signed up on their own and now logs in
+      // for the first time. Create a center + doctor record on the fly.
       if (!doctorData) {
-        setError('No tienes permisos de acceso médico. Pide a tu administrador que te vincule a un centro.');
+        const md = (data.user.user_metadata || {}) as Record<string, any>;
+        if (md.is_doctor) {
+          const userEmail = data.user.email?.toLowerCase() || '';
+          const centerName = (md.center_name as string)?.trim() || `Consulta de ${md.name || userEmail.split('@')[0]}`;
+          const { data: newCenter, error: centerErr } = await supabase
+            .from('centers')
+            .insert({ name: centerName })
+            .select('id')
+            .single();
+          if (!centerErr && newCenter) {
+            const { error: docErr } = await supabase.from('doctors').insert({
+              id: data.user.id,
+              center_id: newCenter.id,
+              name: (md.name as string)?.trim() || userEmail.split('@')[0],
+              specialty: (md.specialty as string)?.trim() || null,
+              plan: 'free',
+            });
+            if (!docErr) {
+              const { data: newDoctor } = await supabase
+                .from('doctors')
+                .select('*, centers(name, image_url)')
+                .eq('id', data.user.id)
+                .single();
+              doctorData = newDoctor;
+            }
+          }
+        }
+      }
+
+      if (!doctorData) {
+        setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
         await supabase.auth.signOut();
         setLoading(false);
         return;
@@ -398,6 +440,11 @@ export default function MedicsPanel() {
     setError('');
     setEmailSent(false);
     setEmailError('');
+    // Free tier: enforce the 1-patient limit (accepted + pending combined)
+    if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error: rpcError } = await supabase.rpc('doctor_create_invite', {
@@ -586,11 +633,22 @@ export default function MedicsPanel() {
       .limit(1)
       .single();
     setLoading(false);
-    if (!pendingCenter) {
-      setError('Este email no está asociado a ningún centro. Contacta con tu administrador.');
-      return;
+    if (pendingCenter) {
+      // Invited flow: skip directly to password
+      setPendingCenterName(pendingCenter.name);
+      setRegisterIsSelfService(false);
+      setRegisterStep('password');
+    } else {
+      // Self-service flow: collect doctor + center details
+      setRegisterIsSelfService(true);
+      setRegisterStep('details');
     }
-    setPendingCenterName(pendingCenter.name);
+  };
+
+  const handleRegisterFillDetails = () => {
+    setError('');
+    if (!registerName.trim()) { setError('Introduce tu nombre'); return; }
+    if (!registerCenterName.trim()) { setError('Introduce el nombre de tu consulta o centro'); return; }
     setRegisterStep('password');
   };
 
@@ -601,10 +659,21 @@ export default function MedicsPanel() {
       return;
     }
     setLoading(true);
-    const { error: signUpError } = await supabase.auth.signUp({
+    const signUpPayload: any = {
       email: registerEmail.trim().toLowerCase(),
       password: registerPassword,
-    });
+    };
+    if (registerIsSelfService) {
+      signUpPayload.options = {
+        data: {
+          is_doctor: true,
+          name: registerName.trim(),
+          center_name: registerCenterName.trim(),
+          specialty: registerSpecialty.trim() || null,
+        },
+      };
+    }
+    const { error: signUpError } = await supabase.auth.signUp(signUpPayload);
     setLoading(false);
     if (signUpError) {
       setError(signUpError.message);
@@ -860,18 +929,29 @@ export default function MedicsPanel() {
                 ¿Olvidaste tu contraseña?
               </button>
               <button
-                onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); }}
+                onClick={() => {
+                  setRegisterMode(true);
+                  setRegisterStep('email');
+                  setError('');
+                  setRegisterEmail('');
+                  setRegisterPassword('');
+                  setRegisterName('');
+                  setRegisterCenterName('');
+                  setRegisterSpecialty('');
+                  setRegisterIsSelfService(false);
+                }}
                 style={{ width: '100%', marginTop: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
               >
-                Completar registro
+                Crear cuenta / Completar registro
               </button>
             </>
           ) : registerStep === 'email' ? (
             <>
               <p style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-                Introduce el email con el que tu administrador te ha dado de alta.
+                Crea tu cuenta profesional en Fluxia. Si tu administrador te ha dado de alta,
+                detectaremos tu centro automáticamente. Si no, te registrarás como consulta independiente (plan Free).
               </p>
-              <label style={s.label}>Email</label>
+              <label style={s.label}>Email profesional</label>
               <input
                 type="email"
                 value={registerEmail}
@@ -891,13 +971,64 @@ export default function MedicsPanel() {
                 Volver al inicio de sesión
               </button>
             </>
+          ) : registerStep === 'details' ? (
+            <>
+              <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: th.dark, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Plan Free · 1 paciente gratis
+                </p>
+                <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0', lineHeight: 1.4 }}>
+                  Podrás añadir tu primer paciente sin coste. Para más pacientes, pasarás al plan Pro.
+                </p>
+              </div>
+              <label style={s.label}>Tu nombre</label>
+              <input
+                type="text"
+                value={registerName}
+                onChange={(e) => setRegisterName(e.target.value)}
+                placeholder="Dra. Elena Márquez"
+                style={s.input}
+              />
+              <label style={s.label}>Nombre de tu consulta o centro</label>
+              <input
+                type="text"
+                value={registerCenterName}
+                onChange={(e) => setRegisterCenterName(e.target.value)}
+                placeholder="Consulta Dr. Márquez"
+                style={s.input}
+              />
+              <label style={s.label}>Especialidad (opcional)</label>
+              <input
+                type="text"
+                value={registerSpecialty}
+                onChange={(e) => setRegisterSpecialty(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleRegisterFillDetails()}
+                placeholder="Urología, Gastroenterología..."
+                style={s.input}
+              />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleRegisterFillDetails} style={ts.btnPrimary}>
+                Continuar
+              </button>
+              <button
+                onClick={() => { setRegisterStep('email'); setError(''); }}
+                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Volver
+              </button>
+            </>
           ) : registerStep === 'password' ? (
             <>
               <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: th.dark, margin: 0 }}>
-                  {'\u{1F3E5}'} {pendingCenterName}
+                  {'\u{1F3E5}'} {registerIsSelfService ? registerCenterName : pendingCenterName}
                 </p>
                 <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>{registerEmail}</p>
+                {registerIsSelfService && (
+                  <p style={{ fontSize: 11, color: '#888', margin: '6px 0 0', fontStyle: 'italic' }}>
+                    Plan Free · 1 paciente gratis
+                  </p>
+                )}
               </div>
               <label style={s.label}>Elige una contraseña</label>
               <input
@@ -913,7 +1044,7 @@ export default function MedicsPanel() {
                 {loading ? '...' : 'Finalizar registro'}
               </button>
               <button
-                onClick={() => { setRegisterStep('email'); setError(''); }}
+                onClick={() => { setRegisterStep(registerIsSelfService ? 'details' : 'email'); setError(''); }}
                 style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Volver
@@ -1631,6 +1762,51 @@ export default function MedicsPanel() {
               subtitle="Genera un código de vinculación para tu paciente"
             />
 
+            {/* Plan banner */}
+            {doctorInfo?.plan === 'free' && (
+              <div style={{
+                backgroundColor: '#fff8e1',
+                border: '1px solid #ffe082',
+                borderRadius: 12,
+                padding: '14px 18px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap' as const,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 20 }}>⭐</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5810' }}>
+                      Plan Free · {patients.length}/{FREE_PLAN_PATIENT_LIMIT} paciente{FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8a6b20' }}>
+                      {patients.length >= FREE_PLAN_PATIENT_LIMIT
+                        ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.'
+                        : 'El primer paciente es gratis. Después, pasa al plan Pro.'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 999,
+                    border: 'none',
+                    backgroundColor: th.dark,
+                    color: '#fff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pasar a Pro
+                </button>
+              </div>
+            )}
+
             <div style={s.card}>
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 24 }}>
                 {/* Option 1: By email */}
@@ -2075,6 +2251,54 @@ export default function MedicsPanel() {
               style={{ ...ts.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
             >
               Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── UPGRADE TO PRO MODAL ── */}
+      {showUpgradeModal && (
+        <div
+          onClick={() => setShowUpgradeModal(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: '#fff', borderRadius: 20, padding: 32, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}
+          >
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>⭐</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', margin: '0 0 8px' }}>Pasa al plan Pro</h2>
+            <p style={{ fontSize: 14, color: '#666', margin: '0 0 20px', lineHeight: 1.5 }}>
+              Has alcanzado el límite del plan gratuito ({FREE_PLAN_PATIENT_LIMIT} paciente). Con Pro podrás añadir pacientes ilimitados,
+              acceder a alertas avanzadas y exportar informes PDF firmados.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Hasta 200 pacientes en seguimiento</li>
+              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Dashboard con alertas y cohortes</li>
+              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Informes PDF firmados</li>
+              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Soporte prioritario en 24h</li>
+            </ul>
+            <div style={{ backgroundColor: '#f5f5f5', borderRadius: 12, padding: 16, marginBottom: 20, textAlign: 'center' as const }}>
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#111' }}>49 €<span style={{ fontSize: 13, fontWeight: 500, color: '#888' }}>/mes</span></div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Facturación mensual · Cancela cuando quieras</div>
+            </div>
+            <button
+              onClick={() => { alert('Pronto: integración con Stripe para activar el plan Pro.'); }}
+              style={{ ...ts.btnPrimary, width: '100%' }}
+            >
+              Activar plan Pro
+            </button>
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer' }}
+            >
+              Quizás más tarde
             </button>
           </div>
         </div>

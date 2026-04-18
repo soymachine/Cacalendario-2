@@ -1,0 +1,99 @@
+---
+import App from '../components/App';
+import { asset } from '../lib/config';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Fluxia</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+
+    <!-- PWA -->
+    <link rel="manifest" href={asset('/manifest.json')} />
+    <meta name="theme-color" content="#F0F2F4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Fluxia" />
+    <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
+
+    <!-- GitHub Pages SPA: restore redirect from 404.html -->
+    <script is:inline>
+      (function() {
+        var qs = window.location.search;
+        if (qs.indexOf('?p=') === 0 || qs.indexOf('&p=') !== -1) {
+          var params = new URLSearchParams(qs);
+          var path = params.get('p') || '';
+          var hash = params.get('h') || '';
+          window.history.replaceState(null, '', path + hash || '/user');
+        }
+      })();
+    </script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet" />
+
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      :root {
+        --fluxia-primary: #353435;
+        --fluxia-primary-text: #E3EBEE;
+      }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: #F0F2F4;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="max-width: 448px; margin: 0 auto; min-height: 100vh; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+      <App client:only="react" />
+    </div>
+
+    <!-- Update banner (hidden by default) -->
+    <div id="update-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; padding:12px; text-align:center; background:#231f20; color:white; font-family:'Inter',sans-serif; font-size:14px;">
+      🆕 Nueva versión disponible
+      <button onclick="window.location.reload()" style="margin-left:12px; padding:6px 16px; border-radius:20px; border:none; background:white; color:#231f20; font-weight:bold; font-size:14px; cursor:pointer;">
+        Actualizar
+      </button>
+    </div>
+
+    <script define:vars={{ base: import.meta.env.BASE_URL }}>
+      if ('serviceWorker' in navigator) {
+        const swPath = base.endsWith('/') ? base + 'sw.js' : base + '/sw.js';
+        navigator.serviceWorker.register(swPath).then((registration) => {
+          console.log('Service Worker registered');
+
+          // Check for updates every 60 seconds
+          setInterval(() => registration.update(), 60 * 1000);
+
+          // When a new SW is found and installed, show the update banner
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+              // New SW is installed and waiting — show banner
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                document.getElementById('update-banner').style.display = 'block';
+              }
+            });
+          });
+        }).catch((err) => {
+          console.log('SW registration failed:', err);
+        });
+
+        // When the new SW takes over, reload the page
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+    </script>
+  </body>
+</html>
