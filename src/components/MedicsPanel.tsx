@@ -267,13 +267,15 @@ export default function MedicsPanel() {
     // PKCE exchange failed silently, leaving initialLoading=true forever.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
+      // Unblock the UI immediately — never wait on an async query to remove
+      // the loading screen, since a hung query would freeze the page forever.
+      setInitialLoading(false);
       if (session?.user) {
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
         try { await tryLoadDoctor(session.user); } catch (_) {}
       }
-      if (mounted) setInitialLoading(false);
     });
 
     return () => { mounted = false; subscription.unsubscribe(); };
