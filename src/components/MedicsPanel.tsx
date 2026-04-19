@@ -43,6 +43,7 @@ interface PatientLink {
   push_min_hours?: number;
   push_frequency?: number;
   hasPushSub?: boolean | null;
+  doctor_notes?: string;
 }
 
 interface DoctorInfo {
@@ -169,6 +170,7 @@ export default function MedicsPanel() {
   const [section, setSection] = useState<Section>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -218,6 +220,8 @@ export default function MedicsPanel() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [onboardingSkippable, setOnboardingSkippable] = useState(false);
+  const [notesDraft, setNotesDraft] = useState('');
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -568,6 +572,22 @@ export default function MedicsPanel() {
     setOnboardingOpen(true);
   };
 
+  // ── Save clinical notes for selected patient ──
+  const handleSaveNotes = async () => {
+    if (!selectedPatient) return;
+    setNotesSaving(true);
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ doctor_notes: notesDraft })
+      .eq('id', selectedPatient.id);
+    setNotesSaving(false);
+    if (!error) {
+      const updated = { ...selectedPatient, doctor_notes: notesDraft };
+      setSelectedPatient(updated);
+      setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
+    }
+  };
+
   // ── Invite patient ──
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -703,6 +723,7 @@ export default function MedicsPanel() {
     setEntryPage(0);
     setEntryFilterFrom('');
     setEntryFilterTo('');
+    setNotesDraft(patient.doctor_notes || '');
 
     setPatientDetail({
       entries: entryList,
@@ -1304,8 +1325,8 @@ export default function MedicsPanel() {
               actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
             />
             <div style={s.card}>
-              {/* Sort controls + Column headers */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8 }}>
+              {/* Sort controls + Search */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8, flexWrap: 'wrap' as const }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#888' }}>Ordenar por:</span>
                 {(['estado', 'nombre'] as const).map(opt => (
                   <button key={opt} onClick={() => setSortBy(opt)} style={{
@@ -1316,6 +1337,15 @@ export default function MedicsPanel() {
                     {opt === 'estado' ? 'Estado' : 'Nombre'}
                   </button>
                 ))}
+                <div style={{ flex: 1, minWidth: 140, marginLeft: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar paciente…"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    style={{ width: '100%', padding: '4px 10px', borderRadius: 12, border: '1px solid #e0e0e0', fontSize: 12, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}
+                  />
+                </div>
               </div>
               <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
                 <span style={{ width: 40 }}></span>
@@ -1332,20 +1362,31 @@ export default function MedicsPanel() {
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                   No hay pacientes. Invita a tu primer paciente desde la sección "Invitar Paciente".
                 </div>
-              ) : (
-                [...patients].sort((a, b) => {
-                  if (sortBy === 'estado') {
-                    if (a.status === b.status) return patientLabel(a).localeCompare(patientLabel(b));
-                    return a.status === 'accepted' ? -1 : 1;
-                  }
-                  return patientLabel(a).localeCompare(patientLabel(b));
-                }).map((patient, i) => {
+              ) : (() => {
+                const q = searchQuery.trim().toLowerCase();
+                const displayed = [...patients]
+                  .filter(p => !q
+                    || patientLabel(p).toLowerCase().includes(q)
+                    || (p.patient_email || '').toLowerCase().includes(q))
+                  .sort((a, b) => {
+                    if (sortBy === 'estado') {
+                      if (a.status === b.status) return patientLabel(a).localeCompare(patientLabel(b));
+                      return a.status === 'accepted' ? -1 : 1;
+                    }
+                    return patientLabel(a).localeCompare(patientLabel(b));
+                  });
+                if (displayed.length === 0) return (
+                  <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                    Sin resultados para "{searchQuery}"
+                  </div>
+                );
+                return displayed.map((patient, i) => {
                   const isAccepted = patient.status === 'accepted';
                   const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
                   const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < patients.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < displayed.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
                       {/* Semáforo */}
                       <div style={{ width: 40 }}>
                         {isAccepted ? (
@@ -1421,8 +1462,8 @@ export default function MedicsPanel() {
                       </div>
                     </div>
                   );
-                })
-              )}
+                });
+              })()}
             </div>
           </>
         )}
@@ -1476,7 +1517,129 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Left column (calendar + semáforo) + Right column (entries) */}
+            {/* Row 2: Stats + Charts */}
+            <div style={{ ...s.card, marginBottom: 16 }}>
+              <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                📊 Estadísticas
+              </div>
+              <div style={{ padding: '14px 16px' }}>
+                {/* Summary stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+                  {[
+                    { label: 'Total registros', value: patientDetail.totalEntries },
+                    { label: 'Bristol promedio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
+                    { label: 'Días sin registrar', value: patientDetail.daysSinceLast ?? '—' },
+                  ].map(st => (
+                    <div key={st.label} style={{ backgroundColor: '#00000005', borderRadius: 10, padding: '10px 12px', textAlign: 'center' as const }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: '#111' }}>{st.value}</div>
+                      <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{st.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Charts row */}
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
+                  {/* Bristol trend sparkline */}
+                  <div style={{ flex: '2 1 260px', minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 6 }}>TENDENCIA BRISTOL</div>
+                    {(() => {
+                      const data = patientDetail.entries
+                        .filter(e => e.entry_type === 'poop' && e.bristol != null)
+                        .slice(0, 30).reverse();
+                      if (data.length < 2) return (
+                        <div style={{ fontSize: 12, color: '#ccc', padding: '12px 0' }}>Sin suficientes datos de Bristol</div>
+                      );
+                      const W = 400, H = 80, PAD = 8;
+                      const xStep = (W - PAD * 2) / (data.length - 1);
+                      const yOf = (b: number) => PAD + ((7 - b) / 6) * (H - PAD * 2);
+                      const pts = data.map((e, i) => ({ x: PAD + i * xStep, y: yOf(e.bristol!), b: e.bristol! }));
+                      const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+                      return (
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 80 }}>
+                          <rect x={0} y={yOf(7)} width={W} height={yOf(5) - yOf(7)} fill="#e74c3c06" />
+                          <rect x={0} y={yOf(5)} width={W} height={yOf(3) - yOf(5)} fill="#2ecc7106" />
+                          <rect x={0} y={yOf(3)} width={W} height={H - yOf(3)} fill="#e74c3c06" />
+                          {[3, 5].map(b => (
+                            <line key={b} x1={0} y1={yOf(b)} x2={W} y2={yOf(b)} stroke="#00000010" strokeWidth={0.5} />
+                          ))}
+                          <path d={pathD} fill="none" stroke={th.primary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                          {pts.map((p, i) => (
+                            <circle key={i} cx={p.x} cy={p.y} r={2.5}
+                              fill={p.b >= 3 && p.b <= 5 ? '#27ae60' : p.b < 3 ? '#f39c12' : '#e74c3c'} />
+                          ))}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Weekly frequency bars */}
+                  <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 6 }}>FRECUENCIA SEMANAL</div>
+                    {(() => {
+                      const now = new Date();
+                      const weeks = Array.from({ length: 8 }, (_, w) => {
+                        const endDate = new Date(now);
+                        endDate.setDate(now.getDate() - w * 7);
+                        const startDate = new Date(endDate);
+                        startDate.setDate(endDate.getDate() - 7);
+                        const s = startDate.toISOString().slice(0, 10);
+                        const e = endDate.toISOString().slice(0, 10);
+                        return {
+                          label: w === 0 ? 'Esta' : w === 1 ? 'Ant.' : `-${w}s`,
+                          count: patientDetail.entries.filter(en => en.date >= s && en.date < e).length,
+                        };
+                      }).reverse();
+                      const maxC = Math.max(...weeks.map(w => w.count), 1);
+                      const W2 = 220, H2 = 80, BW = 20, GAP = 5;
+                      const total = weeks.length * (BW + GAP) - GAP;
+                      const ox = (W2 - total) / 2;
+                      return (
+                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 80 }}>
+                          {weeks.map((wk, i) => {
+                            const bh = (wk.count / maxC) * (H2 - 22);
+                            const x = ox + i * (BW + GAP);
+                            const y = H2 - 14 - bh;
+                            return (
+                              <g key={i}>
+                                <rect x={x} y={y} width={BW} height={bh} rx={3}
+                                  fill={wk.count > 0 ? th.primary : '#e0e0e0'}
+                                  opacity={wk.count > 0 ? 0.75 : 0.25} />
+                                {wk.count > 0 && (
+                                  <text x={x + BW / 2} y={y - 2} textAnchor="middle" fontSize={8} fill="#555">{wk.count}</text>
+                                )}
+                                <text x={x + BW / 2} y={H2 - 1} textAnchor="middle" fontSize={7} fill="#bbb">{wk.label}</text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Top symptoms */}
+                {(() => {
+                  const symCount: Record<string, number> = {};
+                  patientDetail.entries.forEach(e => e.symptoms.forEach(s => { symCount[s] = (symCount[s] || 0) + 1; }));
+                  const top = Object.entries(symCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                  if (top.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 8 }}>SÍNTOMAS MÁS FRECUENTES</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                        {top.map(([sym, count]) => (
+                          <span key={sym} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 8, backgroundColor: '#e74c3c10', color: '#c0392b', fontWeight: 600 }}>
+                            {SYMPTOM_LABEL[sym] || sym} <span style={{ fontWeight: 400, opacity: 0.6 }}>×{count}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Row 3: Left column (calendar) + Right column (entries) */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Left column: calendar + semáforo override */}
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
@@ -1545,6 +1708,37 @@ export default function MedicsPanel() {
                       return cells;
                     })()}
                   </div>
+                </div>
+              </div>
+
+              {/* Clinical notes card */}
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                  📝 Notas clínicas
+                </div>
+                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                  <textarea
+                    value={notesDraft}
+                    onChange={e => setNotesDraft(e.target.value)}
+                    placeholder="Observaciones, diagnóstico, próxima cita…"
+                    rows={5}
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: 10,
+                      border: '1px solid #e0e0e0', fontSize: 13, color: '#333',
+                      resize: 'vertical' as const, fontFamily: 'inherit',
+                      lineHeight: 1.5, boxSizing: 'border-box' as const, outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={handleSaveNotes}
+                    disabled={notesSaving}
+                    style={{
+                      ...ts.btnPrimary, padding: '8px 0', fontSize: 13,
+                      opacity: notesSaving ? 0.5 : 1,
+                    }}
+                  >
+                    {notesSaving ? 'Guardando…' : 'Guardar nota'}
+                  </button>
                 </div>
               </div>
 
