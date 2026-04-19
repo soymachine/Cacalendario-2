@@ -397,8 +397,20 @@ export default function MedicsPanel() {
         }
         try { await tryLoadDoctor(session.user); } catch (e) {
           if (mounted) {
+            const msg = e instanceof Error ? e.message : '';
+            // Supabase PKCE lock contention during OAuth callback — the token is still
+            // valid; retry once with a fresh session instead of showing an error.
+            if (msg.includes('Lock broken')) {
+              try {
+                const { data: { session: fresh } } = await supabase.auth.getSession();
+                if (fresh?.user && mounted) await tryLoadDoctor(fresh.user);
+              } catch (e2) {
+                if (mounted) { setDebugMsg(''); setError('Error al iniciar sesión. Intenta de nuevo.'); setLoading(false); }
+              }
+              return;
+            }
             setDebugMsg('');
-            setError(e instanceof Error ? e.message : 'Error inesperado. Intenta de nuevo.');
+            setError(msg || 'Error inesperado. Intenta de nuevo.');
             setLoading(false);
           }
         }
