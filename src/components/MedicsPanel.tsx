@@ -2471,8 +2471,16 @@ export default function MedicsPanel() {
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 620, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' as const }}
+              style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 620, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' as const, position: 'relative' as const }}
             >
+              {/* Close button — only when skippable */}
+              {onboardingSkippable && (
+                <button
+                  onClick={finishOnboarding}
+                  style={{ position: 'absolute' as const, top: 16, right: 18, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#aaa', lineHeight: 1, zIndex: 1 }}
+                >×</button>
+              )}
+
               {/* Progress bar */}
               <div style={{ height: 4, backgroundColor: '#f0f0f0' }}>
                 <div style={{ height: '100%', width: `${progress}%`, backgroundColor: step.accent, transition: 'width 0.3s ease' }} />
@@ -2480,12 +2488,6 @@ export default function MedicsPanel() {
 
               {/* Content */}
               <div style={{ padding: '40px 48px 32px', flex: 1, overflow: 'auto', backgroundColor: step.color }}>
-                {onboardingSkippable && (
-                  <button
-                    onClick={finishOnboarding}
-                    style={{ position: 'absolute' as const, top: 20, right: 24, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#bbb', lineHeight: 1 }}
-                  >×</button>
-                )}
                 <div style={{ textAlign: 'center' as const }}>
                   <div style={{ fontSize: 72, lineHeight: 1, marginBottom: 24 }}>{step.icon}</div>
                   <h2 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: '0 0 14px', lineHeight: 1.2 }}>{step.title}</h2>
@@ -2809,7 +2811,7 @@ const s: Record<string, React.CSSProperties> = {
   sidebar: {
     width: 260, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const,
     position: 'fixed' as const, top: 0, left: 0, bottom: 0, zIndex: 10,
-    overflowY: 'auto' as const,
+    overflowY: 'auto' as const, overflowX: 'hidden' as const,
   },
   sidebarLogo: {
     display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', height: 70,
