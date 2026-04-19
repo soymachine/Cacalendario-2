@@ -1866,7 +1866,7 @@ export default function MedicsPanel() {
                       const pts = data.map((e, i) => ({ x: xOf(i), y: yOf(e.bristol!), b: e.bristol!, date: shortDate(e.date) }));
                       const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
                       return (
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 100, display: 'block' as const, overflow: 'visible' as const }}>
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 150, display: 'block' as const, overflow: 'visible' as const }}>
                           {/* Zone backgrounds */}
                           <rect x={XL} y={yOf(7)} width={CW} height={yOf(5) - yOf(7)} fill="#e74c3c08" />
                           <rect x={XL} y={yOf(5)} width={CW} height={yOf(3) - yOf(5)} fill="#2ecc7110" />
@@ -1948,7 +1948,7 @@ export default function MedicsPanel() {
                       const total = weeks.length * (BW + GAP) - GAP;
                       const ox = (W2 - total) / 2;
                       return (
-                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 48, display: 'block' as const }}>
+                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 72, display: 'block' as const }}>
                           {weeks.map((wk, i) => {
                             const bh = Math.max((wk.count / maxC) * (H2 - 18), wk.count > 0 ? 4 : 0);
                             const x = ox + i * (BW + GAP);
