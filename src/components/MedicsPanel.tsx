@@ -244,20 +244,85 @@ export default function MedicsPanel() {
     let mounted = true;
 
     const tryLoadDoctor = async (user: any) => {
-      const { data: doctorData } = await supabase
+      const isGoogle = (user.app_metadata?.provider || '') === 'google';
+
+      // 1. Existing doctor record
+      let { data: doctorData } = await supabase
         .from('doctors')
         .select('*, centers(name, image_url)')
         .eq('id', user.id)
         .single();
       if (!mounted) return;
-      if (doctorData) {
-        applyDoctorInfo(buildDoctorInfo(doctorData));
-        setLoggedIn(true);
-      } else {
-        const md = user.user_metadata || {};
-        setRegisterName(((md.full_name || md.name || '') as string).trim());
-        setGoogleProfileMode(true);
+
+      // 2. Pending admin invitation (email/password only)
+      if (!doctorData && !isGoogle) {
+        const userEmail = user.email?.toLowerCase();
+        if (userEmail) {
+          const { data: pendingCenter } = await supabase
+            .from('centers').select('*')
+            .eq('pending_doctor_email', userEmail).limit(1).single();
+          if (pendingCenter) {
+            const { error: insertErr } = await supabase.from('doctors').insert({
+              id: user.id, center_id: pendingCenter.id,
+              name: pendingCenter.pending_doctor_name || userEmail.split('@')[0],
+              specialty: pendingCenter.pending_doctor_specialty || null,
+            });
+            if (!insertErr) {
+              await supabase.from('centers').update({
+                pending_doctor_email: null, pending_doctor_name: null, pending_doctor_specialty: null,
+              }).eq('id', pendingCenter.id);
+              const { data: d } = await supabase.from('doctors')
+                .select('*, centers(name, image_url)').eq('id', user.id).single();
+              doctorData = d;
+            }
+          }
+        }
       }
+      if (!mounted) return;
+
+      // 3. Self-service first login (email/password with is_doctor metadata)
+      if (!doctorData && !isGoogle) {
+        const md = (user.user_metadata || {}) as Record<string, any>;
+        if (md.is_doctor) {
+          const userEmail = user.email?.toLowerCase() || '';
+          const centerName = (md.center_name as string)?.trim() || `Consulta de ${md.name || userEmail.split('@')[0]}`;
+          const { data: newCenter, error: centerErr } = await supabase
+            .from('centers').insert({ name: centerName }).select('id').single();
+          if (!centerErr && newCenter) {
+            const { error: docErr } = await supabase.from('doctors').insert({
+              id: user.id, center_id: newCenter.id,
+              name: (md.name as string)?.trim() || userEmail.split('@')[0],
+              specialty: (md.specialty as string)?.trim() || null, plan: 'free',
+            });
+            if (!docErr) {
+              const { data: d } = await supabase.from('doctors')
+                .select('*, centers(name, image_url)').eq('id', user.id).single();
+              doctorData = d;
+            }
+          }
+        }
+      }
+      if (!mounted) return;
+
+      // 4. Still no doctor record
+      if (!doctorData) {
+        if (isGoogle) {
+          // Google OAuth new user — show profile completion form
+          const md = user.user_metadata || {};
+          setRegisterName(((md.full_name || md.name || '') as string).trim());
+          setGoogleProfileMode(true);
+        } else {
+          // Email/password user with no doctor record — reject
+          setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
+          await supabase.auth.signOut();
+          setLoading(false);
+        }
+        return;
+      }
+
+      applyDoctorInfo(buildDoctorInfo(doctorData));
+      setLoggedIn(true);
+      setLoading(false);
     };
 
     // onAuthStateChange always fires INITIAL_SESSION on mount (with or without
@@ -282,112 +347,19 @@ export default function MedicsPanel() {
   }, []);
 
   // ── Login ──
+  // Only handles authentication. Doctor loading is done by tryLoadDoctor
+  // via onAuthStateChange SIGNED_IN, which avoids a race condition where
+  // both handleLogin and onAuthStateChange were loading the doctor in parallel.
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) {
-        setError(authError.message);
-        setLoading(false);
-        return;
-      }
-      if (!data.user) {
-        setError('No se pudo iniciar sesión');
-        setLoading(false);
-        return;
-      }
-
-      // Check if the user is already a doctor
-      let { data: doctorData } = await supabase
-        .from('doctors')
-        .select('*, centers(name, image_url)')
-        .eq('id', data.user.id)
-        .single();
-
-      // If not found, check if there's a pending invitation by email
-      if (!doctorData) {
-        const userEmail = data.user.email?.toLowerCase();
-        if (userEmail) {
-          const { data: pendingCenter } = await supabase
-            .from('centers')
-            .select('*')
-            .eq('pending_doctor_email', userEmail)
-            .limit(1)
-            .single();
-
-          if (pendingCenter) {
-            const { error: insertErr } = await supabase.from('doctors').insert({
-              id: data.user.id,
-              center_id: pendingCenter.id,
-              name: pendingCenter.pending_doctor_name || userEmail.split('@')[0],
-              specialty: pendingCenter.pending_doctor_specialty || null,
-            });
-
-            if (!insertErr) {
-              await supabase.from('centers').update({
-                pending_doctor_email: null,
-                pending_doctor_name: null,
-                pending_doctor_specialty: null,
-              }).eq('id', pendingCenter.id);
-
-              const { data: newDoctor } = await supabase
-                .from('doctors')
-                .select('*, centers(name, image_url)')
-                .eq('id', data.user.id)
-                .single();
-              doctorData = newDoctor;
-            }
-          }
-        }
-      }
-
-      // Self-service registration: user signed up on their own and now logs in
-      // for the first time. Create a center + doctor record on the fly.
-      if (!doctorData) {
-        const md = (data.user.user_metadata || {}) as Record<string, any>;
-        if (md.is_doctor) {
-          const userEmail = data.user.email?.toLowerCase() || '';
-          const centerName = (md.center_name as string)?.trim() || `Consulta de ${md.name || userEmail.split('@')[0]}`;
-          const { data: newCenter, error: centerErr } = await supabase
-            .from('centers')
-            .insert({ name: centerName })
-            .select('id')
-            .single();
-          if (!centerErr && newCenter) {
-            const { error: docErr } = await supabase.from('doctors').insert({
-              id: data.user.id,
-              center_id: newCenter.id,
-              name: (md.name as string)?.trim() || userEmail.split('@')[0],
-              specialty: (md.specialty as string)?.trim() || null,
-              plan: 'free',
-            });
-            if (!docErr) {
-              const { data: newDoctor } = await supabase
-                .from('doctors')
-                .select('*, centers(name, image_url)')
-                .eq('id', data.user.id)
-                .single();
-              doctorData = newDoctor;
-            }
-          }
-        }
-      }
-
-      if (!doctorData) {
-        setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
-        await supabase.auth.signOut();
-        setLoading(false);
-        return;
-      }
-
-      applyDoctorInfo(buildDoctorInfo(doctorData));
-      setLoggedIn(true);
-    } catch (err) {
-      setError('Error inesperado al iniciar sesión');
-    } finally {
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
     }
+    // On success: onAuthStateChange fires SIGNED_IN → tryLoadDoctor runs →
+    // calls setLoading(false) and setLoggedIn(true) when done.
   };
 
   // ── Google OAuth sign-in ──
