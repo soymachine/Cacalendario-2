@@ -94,19 +94,11 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  doc_plan text;
-  existing_count int;
 BEGIN
-  SELECT plan INTO doc_plan FROM public.doctors WHERE id = NEW.doctor_id;
-  IF doc_plan = 'free' THEN
-    SELECT count(*) INTO existing_count
-      FROM public.patient_links
-     WHERE doctor_id = NEW.doctor_id;
-    IF existing_count >= 1 THEN
-      RAISE EXCEPTION 'Plan Free: solo puedes gestionar 1 paciente. Pasa al plan Pro para añadir más.'
-        USING ERRCODE = 'check_violation';
-    END IF;
+  IF (SELECT plan FROM public.doctors WHERE id = NEW.doctor_id) = 'free'
+     AND (SELECT count(*) FROM public.patient_links WHERE doctor_id = NEW.doctor_id) >= 1
+  THEN
+    RAISE EXCEPTION 'Plan Free: solo puedes gestionar 1 paciente. Pasa al plan Pro para añadir más.';
   END IF;
   RETURN NEW;
 END;
