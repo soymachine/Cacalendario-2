@@ -72,6 +72,7 @@ export default function AdminPanel() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
+  const [planConfirm, setPlanConfirm] = useState<{ doctor: Doctor; newPlan: 'free' | 'pro' } | null>(null);
 
   // Backup state
   interface BackupRecord { filename: string; createdAt: string; summary: string; }
@@ -572,7 +573,7 @@ export default function AdminPanel() {
                           {doc.plan === 'pro' ? '🚀 Pro' : '⭐ Free'}
                         </span>
                         <button
-                          onClick={() => handleChangeDoctorPlan(doc.id, doc.plan === 'pro' ? 'free' : 'pro')}
+                          onClick={() => setPlanConfirm({ doctor: doc, newPlan: doc.plan === 'pro' ? 'free' : 'pro' })}
                           disabled={isChanging}
                           title={doc.plan === 'pro' ? 'Cambiar a Free' : 'Activar Pro'}
                           style={{
@@ -873,6 +874,50 @@ export default function AdminPanel() {
         )}
       </main>
 
+      {/* ── Plan change confirmation modal ── */}
+      {planConfirm && (() => {
+        const { doctor, newPlan } = planConfirm;
+        const isPro = newPlan === 'pro';
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <span style={{ fontSize: 40 }}>{isPro ? '🚀' : '⭐'}</span>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', margin: '12px 0 6px' }}>
+                  {isPro ? 'Activar plan Pro' : 'Cambiar a plan Free'}
+                </h3>
+                <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.5 }}>
+                  ¿Confirmas el cambio de plan de <strong>{doctor.name}</strong> a{' '}
+                  <strong>{isPro ? 'Pro' : 'Free'}</strong>?
+                </p>
+                {!isPro && (
+                  <p style={{ fontSize: 13, color: '#c0392b', marginTop: 10, backgroundColor: '#fdecea', borderRadius: 8, padding: '8px 12px' }}>
+                    El médico quedará limitado a 1 paciente.
+                  </p>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setPlanConfirm(null)}
+                  style={{ flex: 1, padding: 12, borderRadius: 24, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    setPlanConfirm(null);
+                    await handleChangeDoctorPlan(doctor.id, newPlan);
+                  }}
+                  disabled={changingPlanId === doctor.id}
+                  style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#1a0e0e', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isPro ? '🚀 Activar Pro' : '↓ Cambiar a Free'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
