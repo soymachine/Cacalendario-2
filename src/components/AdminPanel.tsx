@@ -30,6 +30,8 @@ interface Doctor {
   center_name: string;
   plan: 'free' | 'pro';
   created_at: string;
+  email?: string;
+  provider?: string;
 }
 
 interface DashboardStats {
@@ -160,14 +162,30 @@ export default function AdminPanel() {
       .select('id, name, specialty, plan, created_at, centers(name)')
       .order('created_at', { ascending: false });
     if (error) { console.error('loadDoctors:', error); return; }
-    setDoctors((data || []).map((d: any) => ({
+
+    const docList: Doctor[] = (data || []).map((d: any) => ({
       id: d.id,
       name: d.name,
       specialty: d.specialty,
       center_name: d.centers?.name || '—',
       plan: d.plan || 'free',
       created_at: d.created_at,
-    })));
+    }));
+
+    // Fetch email + OAuth provider for each doctor directly from auth.users
+    const ids = docList.map(d => d.id);
+    if (ids.length > 0) {
+      const { data: authInfo } = await supabase.rpc('admin_get_doctor_auth_info', { p_ids: ids });
+      if (authInfo) {
+        const byId = new Map((authInfo as any[]).map(a => [a.id, a]));
+        docList.forEach(d => {
+          const a = byId.get(d.id);
+          if (a) { d.email = a.email; d.provider = a.provider; }
+        });
+      }
+    }
+
+    setDoctors(docList);
   };
 
   const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'pro') => {
@@ -547,7 +565,7 @@ export default function AdminPanel() {
               ) : (
                 doctors.map((doc, i) => {
                   const isChanging = changingPlanId === doc.id;
-                  const docEmail = users.find(u => u.id === doc.id)?.email || '—';
+                  const isGoogle = doc.provider === 'google';
                   return (
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < doctors.length - 1 ? '1px solid #00000010' : 'none' }}>
                       <div style={{ flex: 2.5, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -559,7 +577,14 @@ export default function AdminPanel() {
                           <div style={{ fontSize: 11, color: '#999' }}>{doc.id.slice(0, 8)}…</div>
                         </div>
                       </div>
-                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{docEmail}</span>
+                      <span style={{ flex: 2, fontSize: 13, color: '#555', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {doc.email || (!isGoogle && '—')}
+                        {isGoogle && (
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, backgroundColor: '#e8f0fe', color: '#1a73e8', whiteSpace: 'nowrap' as const }}>
+                            Google
+                          </span>
+                        )}
+                      </span>
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{doc.center_name}</span>
                       <span style={{ flex: 1.5, fontSize: 13, color: '#555' }}>{doc.specialty || '—'}</span>
                       <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(doc.created_at)}</span>
