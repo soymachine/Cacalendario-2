@@ -142,6 +142,7 @@ export default function MedicsPanel() {
   const [registerCenterName, setRegisterCenterName] = useState('');
   const [registerSpecialty, setRegisterSpecialty] = useState('');
   const [registerIsSelfService, setRegisterIsSelfService] = useState(false);
+  const [googleProfileMode, setGoogleProfileMode] = useState(false);
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
@@ -238,28 +239,42 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Recover session on mount ──
+  // ── Recover session on mount + handle Google OAuth callback ──
   useEffect(() => {
-    const recoverSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: doctorData } = await supabase
-            .from('doctors')
-            .select('*, centers(name, image_url)')
-            .eq('id', session.user.id)
-            .single();
-          if (doctorData) {
-            applyDoctorInfo(buildDoctorInfo(doctorData));
-            setLoggedIn(true);
-          }
-        }
-      } catch (_) {
-        // Session expired or invalid — stay on login
+    const tryLoadDoctor = async (user: any) => {
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('*, centers(name, image_url)')
+        .eq('id', user.id)
+        .single();
+      if (doctorData) {
+        applyDoctorInfo(buildDoctorInfo(doctorData));
+        setLoggedIn(true);
+      } else {
+        // Google OAuth user on first sign-in — needs profile setup
+        const md = user.user_metadata || {};
+        setRegisterName(((md.full_name || md.name || '') as string).trim());
+        setGoogleProfileMode(true);
       }
-      setInitialLoading(false);
     };
-    recoverSession();
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      try {
+        if (session?.user) await tryLoadDoctor(session.user);
+      } catch (_) {}
+      setInitialLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        if (window.location.search || window.location.hash) {
+          window.history.replaceState({}, '', '/medics');
+        }
+        try { await tryLoadDoctor(session.user); } catch (_) {}
+        setInitialLoading(false);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // ── Login ──
@@ -366,6 +381,56 @@ export default function MedicsPanel() {
       setLoggedIn(true);
     } catch (err) {
       setError('Error inesperado al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Google OAuth sign-in ──
+  const handleGoogleSignIn = async () => {
+    setError('');
+    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/medics' },
+    });
+    if (oauthErr) setError('Error al conectar con Google: ' + oauthErr.message);
+  };
+
+  // ── Complete profile for Google OAuth first-timers ──
+  const handleGoogleProfileComplete = async () => {
+    if (!registerName.trim()) { setError('Introduce tu nombre'); return; }
+    if (!registerCenterName.trim()) { setError('Introduce el nombre de tu consulta o centro'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sin sesión activa');
+      const { data: newCenter, error: centerErr } = await supabase
+        .from('centers')
+        .insert({ name: registerCenterName.trim() })
+        .select('id')
+        .single();
+      if (centerErr || !newCenter) throw new Error(centerErr?.message || 'Error al crear el centro');
+      const { error: docErr } = await supabase.from('doctors').insert({
+        id: user.id,
+        center_id: newCenter.id,
+        name: registerName.trim(),
+        specialty: registerSpecialty.trim() || null,
+        plan: 'free',
+      });
+      if (docErr) throw new Error(docErr.message);
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('*, centers(name, image_url)')
+        .eq('id', user.id)
+        .single();
+      if (doctorData) {
+        applyDoctorInfo(buildDoctorInfo(doctorData));
+        setGoogleProfileMode(false);
+        setLoggedIn(true);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al crear tu perfil');
     } finally {
       setLoading(false);
     }
@@ -877,210 +942,213 @@ export default function MedicsPanel() {
 
   // ── Login / Register screen ──
   if (!loggedIn) {
-    return (
-      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
-        <div style={s.loginCard}>
-          <div style={{ marginBottom: 28 }}>
-            <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain', display: 'block', marginBottom: 16 }} />
-            <p style={{ color: '#888', fontSize: 13, textAlign: 'center' }}>
-              {forgotMode !== 'off' ? 'Recuperar contraseña' : registerMode ? 'Completar registro' : 'Acceso para profesionales'}
-            </p>
-          </div>
+    const showGoogleBtn = !googleProfileMode && forgotMode === 'off'
+      && (!registerMode || registerStep === 'email');
 
-          {forgotMode === 'email' ? (
-            <>
-              <p style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-                Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+    let cardTitle = 'Inicia sesión en tu cuenta';
+    let cardSubtitle = '¡Bienvenido de nuevo! Introduce tus credenciales para continuar.';
+    if (googleProfileMode) {
+      cardTitle = 'Completa tu perfil médico';
+      cardSubtitle = 'Necesitamos algunos datos para configurar tu cuenta en Fluxia.';
+    } else if (forgotMode === 'email') {
+      cardTitle = 'Recuperar contraseña';
+      cardSubtitle = 'Te enviaremos un enlace a tu email para restablecer tu contraseña.';
+    } else if (forgotMode === 'sent') {
+      cardTitle = '¡Email enviado!';
+      cardSubtitle = '';
+    } else if (registerMode) {
+      if (registerStep === 'email') { cardTitle = 'Crea tu cuenta profesional'; cardSubtitle = 'Comienza gratis. Incluye 1 paciente sin coste.'; }
+      else if (registerStep === 'details') { cardTitle = 'Cuéntanos sobre ti'; cardSubtitle = 'Estos datos aparecerán en la app de tus pacientes.'; }
+      else if (registerStep === 'password') { cardTitle = 'Elige tu contraseña'; cardSubtitle = registerIsSelfService ? `Consulta: ${registerCenterName}` : `Centro: ${pendingCenterName}`; }
+      else { cardTitle = '¡Revisa tu email!'; cardSubtitle = ''; }
+    }
+
+    const GoogleG = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+    );
+
+    const backLink = (label: string, onClick: () => void) => (
+      <button onClick={onClick} style={{ display: 'block', width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+        ← {label}
+      </button>
+    );
+
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+
+        {/* ── Left branding panel (desktop only) ── */}
+        {!isMobile && (
+          <div style={{ flex: '0 0 42%', backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const, padding: '48px 52px', overflow: 'hidden' }}>
+            <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 40, objectFit: 'contain', objectPosition: 'left', filter: 'brightness(0) invert(1)', display: 'block' }} />
+            <div style={{ marginTop: 'auto', paddingBottom: 16 }}>
+              <h1 style={{ fontSize: 42, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 20px' }}>
+                Bienvenido<br />al portal<br />médico.
+              </h1>
+              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, margin: 0 }}>
+                Gestiona el seguimiento clínico de tus pacientes desde cualquier dispositivo.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Right form panel ── */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: isMobile ? '48px 24px' : '48px 64px' }}>
+          <div style={{ width: '100%', maxWidth: 420 }}>
+
+            {/* Mobile logo */}
+            {isMobile && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
+                <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 40, objectFit: 'contain' }} />
+              </div>
+            )}
+
+            <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#1a0e0e', margin: '0 0 8px' }}>{cardTitle}</h2>
+            {cardSubtitle && <p style={{ fontSize: 14, color: '#888', margin: '0 0 28px', lineHeight: 1.55 }}>{cardSubtitle}</p>}
+
+            {/* Google button + divider */}
+            {showGoogleBtn && (
+              <>
+                <button onClick={handleGoogleSignIn} style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', color: '#333', marginBottom: 14 }}>
+                  <GoogleG />
+                  Continuar con Google
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
+                  <span style={{ fontSize: 12, color: '#bbb', fontWeight: 500, whiteSpace: 'nowrap' as const }}>o con tu email</span>
+                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
+                </div>
+              </>
+            )}
+
+            {/* ── Login ── */}
+            {!registerMode && !googleProfileMode && forgotMode === 'off' && (<>
+              <label style={s.label}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} placeholder="tu@email.com" />
+              <label style={s.label}>Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} placeholder="••••••" />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Iniciar sesión'}</button>
+              <button onClick={() => { setForgotMode('email'); setError(''); }} style={{ display: 'block', width: '100%', marginTop: 14, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            </>)}
+
+            {/* ── Forgot: email ── */}
+            {forgotMode === 'email' && (<>
               <label style={s.label}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleForgotPassword} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
-                {loading ? '...' : 'Enviar enlace'}
-              </button>
-              <button
-                onClick={() => { setForgotMode('off'); setError(''); }}
-                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Volver al inicio de sesión
-              </button>
-            </>
-          ) : forgotMode === 'sent' ? (
-            <>
+              <button onClick={handleForgotPassword} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Enviar enlace'}</button>
+              {backLink('Volver al inicio de sesión', () => { setForgotMode('off'); setError(''); })}
+            </>)}
+
+            {/* ── Forgot: sent ── */}
+            {forgotMode === 'sent' && (
               <div style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: 40 }}>✅</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Email enviado!</p>
-                <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
-                  Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada (y spam).
+                <span style={{ fontSize: 48 }}>✅</span>
+                <p style={{ fontSize: 14, color: '#555', marginTop: 16, lineHeight: 1.55 }}>
+                  Hemos enviado un enlace a <strong>{email}</strong>. Revisa tu bandeja de entrada (y la carpeta de spam).
                 </p>
+                <button onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }} style={{ ...ts.btnPrimary, marginTop: 24 }}>
+                  Volver al inicio de sesión
+                </button>
               </div>
-              <button
-                onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }}
-                style={{ ...ts.btnPrimary, marginTop: 20 }}
-              >
-                Volver al login
-              </button>
-            </>
-          ) : !registerMode ? (
-            <>
-              <label style={s.label}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
-              <label style={s.label}>Contraseña</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
-                {loading ? '...' : 'Entrar'}
-              </button>
-              <button
-                onClick={() => { setForgotMode('email'); setError(''); }}
-                style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
-              <button
-                onClick={() => {
-                  setRegisterMode(true);
-                  setRegisterStep('email');
-                  setError('');
-                  setRegisterEmail('');
-                  setRegisterPassword('');
-                  setRegisterName('');
-                  setRegisterCenterName('');
-                  setRegisterSpecialty('');
-                  setRegisterIsSelfService(false);
-                }}
-                style={{ width: '100%', marginTop: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Crear cuenta / Completar registro
-              </button>
-            </>
-          ) : registerStep === 'email' ? (
-            <>
-              <p style={{ fontSize: 13, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-                Crea tu cuenta profesional en Fluxia. Si tu administrador te ha dado de alta,
-                detectaremos tu centro automáticamente. Si no, te registrarás como consulta independiente (plan Free).
-              </p>
+            )}
+
+            {/* ── Register: email ── */}
+            {registerMode && registerStep === 'email' && (<>
               <label style={s.label}>Email profesional</label>
-              <input
-                type="email"
-                value={registerEmail}
-                onChange={(e) => setRegisterEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleRegisterCheckEmail()}
-                placeholder="tu@email.com"
-                style={s.input}
-              />
+              <input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCheckEmail()} placeholder="tu@email.com" style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
-                {loading ? '...' : 'Continuar'}
-              </button>
-              <button
-                onClick={() => { setRegisterMode(false); setError(''); }}
-                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Volver al inicio de sesión
-              </button>
-            </>
-          ) : registerStep === 'details' ? (
-            <>
-              <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: th.dark, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Plan Free · 1 paciente gratis
-                </p>
-                <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0', lineHeight: 1.4 }}>
-                  Podrás añadir tu primer paciente sin coste. Para más pacientes, pasarás al plan Pro.
-                </p>
+              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Continuar'}</button>
+            </>)}
+
+            {/* ── Register: details ── */}
+            {registerMode && registerStep === 'details' && (<>
+              <div style={{ backgroundColor: '#f0faf4', borderRadius: 10, padding: '10px 14px', marginBottom: 20, borderLeft: '3px solid #27ae60' }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#1a6b3a', margin: 0 }}>Plan Free · 1 paciente gratis</p>
+                <p style={{ fontSize: 12, color: '#555', margin: '3px 0 0', lineHeight: 1.4 }}>Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
               </div>
               <label style={s.label}>Tu nombre</label>
-              <input
-                type="text"
-                value={registerName}
-                onChange={(e) => setRegisterName(e.target.value)}
-                placeholder="Dra. Elena Márquez"
-                style={s.input}
-              />
+              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" style={s.input} />
               <label style={s.label}>Nombre de tu consulta o centro</label>
-              <input
-                type="text"
-                value={registerCenterName}
-                onChange={(e) => setRegisterCenterName(e.target.value)}
-                placeholder="Consulta Dr. Márquez"
-                style={s.input}
-              />
-              <label style={s.label}>Especialidad (opcional)</label>
-              <input
-                type="text"
-                value={registerSpecialty}
-                onChange={(e) => setRegisterSpecialty(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleRegisterFillDetails()}
-                placeholder="Urología, Gastroenterología..."
-                style={s.input}
-              />
+              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" style={s.input} />
+              <label style={s.label}>Especialidad <span style={{ fontWeight: 400, color: '#bbb' }}>(opcional)</span></label>
+              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterFillDetails()} placeholder="Urología, Gastroenterología..." style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterFillDetails} style={ts.btnPrimary}>
-                Continuar
-              </button>
-              <button
-                onClick={() => { setRegisterStep('email'); setError(''); }}
-                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Volver
-              </button>
-            </>
-          ) : registerStep === 'password' ? (
-            <>
-              <div style={{ backgroundColor: `${th.primary}20`, borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: th.dark, margin: 0 }}>
-                  {'\u{1F3E5}'} {registerIsSelfService ? registerCenterName : pendingCenterName}
-                </p>
-                <p style={{ fontSize: 12, color: '#666', margin: '4px 0 0' }}>{registerEmail}</p>
-                {registerIsSelfService && (
-                  <p style={{ fontSize: 11, color: '#888', margin: '6px 0 0', fontStyle: 'italic' }}>
-                    Plan Free · 1 paciente gratis
-                  </p>
-                )}
-              </div>
-              <label style={s.label}>Elige una contraseña</label>
-              <input
-                type="password"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleRegisterCreate()}
-                placeholder="Mínimo 6 caracteres"
-                style={s.input}
-              />
+              <button onClick={handleRegisterFillDetails} style={ts.btnPrimary}>Continuar</button>
+              {backLink('Volver', () => { setRegisterStep('email'); setError(''); })}
+            </>)}
+
+            {/* ── Register: password ── */}
+            {registerMode && registerStep === 'password' && (<>
+              <label style={s.label}>Contraseña</label>
+              <input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCreate()} placeholder="Mínimo 6 caracteres" style={s.input} />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>
-                {loading ? '...' : 'Finalizar registro'}
-              </button>
-              <button
-                onClick={() => { setRegisterStep(registerIsSelfService ? 'details' : 'email'); setError(''); }}
-                style={{ width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Volver
-              </button>
-            </>
-          ) : (
-            <>
+              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Finalizar registro'}</button>
+              {backLink('Volver', () => { setRegisterStep(registerIsSelfService ? 'details' : 'email'); setError(''); })}
+            </>)}
+
+            {/* ── Register: done ── */}
+            {registerMode && registerStep === 'done' && (
               <div style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: 40 }}>{'\u{1F4E7}'}</span>
-                <p style={{ fontSize: 16, fontWeight: 700, color: th.dark, marginTop: 12 }}>¡Revisa tu email!</p>
-                <p style={{ fontSize: 13, color: '#666', marginTop: 8, lineHeight: 1.5 }}>
-                  Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>.
-                  Confirma tu cuenta y después inicia sesión aquí.
+                <span style={{ fontSize: 48 }}>📧</span>
+                <p style={{ fontSize: 14, color: '#555', marginTop: 16, lineHeight: 1.55 }}>
+                  Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>. Confírmalo e inicia sesión aquí.
                 </p>
+                <button onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }} style={{ ...ts.btnPrimary, marginTop: 24 }}>
+                  Ir a iniciar sesión
+                </button>
               </div>
-              <button
-                onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }}
-                style={{ ...ts.btnPrimary, marginTop: 20 }}
-              >
-                Ir a iniciar sesión
+            )}
+
+            {/* ── Google profile completion ── */}
+            {googleProfileMode && (<>
+              <div style={{ backgroundColor: '#f0faf4', borderRadius: 10, padding: '10px 14px', marginBottom: 20, borderLeft: '3px solid #27ae60' }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#1a6b3a', margin: 0 }}>Plan Free · 1 paciente gratis</p>
+                <p style={{ fontSize: 12, color: '#555', margin: '3px 0 0' }}>Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
+              </div>
+              <label style={s.label}>Tu nombre</label>
+              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" style={s.input} />
+              <label style={s.label}>Nombre de tu consulta o centro</label>
+              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" style={s.input} />
+              <label style={s.label}>Especialidad <span style={{ fontWeight: 400, color: '#bbb' }}>(opcional)</span></label>
+              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGoogleProfileComplete()} placeholder="Urología, Gastroenterología..." style={s.input} />
+              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+              <button onClick={handleGoogleProfileComplete} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Crear mi cuenta médica'}</button>
+              <button onClick={async () => { await supabase.auth.signOut(); setGoogleProfileMode(false); }} style={{ display: 'block', width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+                Cancelar y cerrar sesión
               </button>
-            </>
-          )}
+            </>)}
+
+            {/* ── Login / Register toggle ── */}
+            {forgotMode === 'off' && !googleProfileMode && registerStep !== 'done' && (
+              <p style={{ textAlign: 'center' as const, fontSize: 13, color: '#aaa', marginTop: 32, margin: '32px 0 0' }}>
+                {!registerMode ? (
+                  <>¿Nuevo en Fluxia?{' '}
+                    <button onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); setRegisterName(''); setRegisterCenterName(''); setRegisterSpecialty(''); setRegisterIsSelfService(false); }}
+                      style={{ background: 'none', border: 'none', color: '#1a0e0e', fontWeight: 700, cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Crear cuenta</button>
+                  </>
+                ) : (
+                  <>¿Ya tienes cuenta?{' '}
+                    <button onClick={() => { setRegisterMode(false); setError(''); }}
+                      style={{ background: 'none', border: 'none', color: '#1a0e0e', fontWeight: 700, cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Iniciar sesión</button>
+                  </>
+                )}
+              </p>
+            )}
+
+          </div>
         </div>
       </div>
     );
   }
+
 
   // ── Main layout with sidebar ──
   return (
