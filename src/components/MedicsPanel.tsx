@@ -1119,8 +1119,8 @@ export default function MedicsPanel() {
               </p>
             )}
 
+            <p style={{ textAlign: 'center' as const, fontSize: 12, color: '#999', marginTop: 32 }}>{APP_VERSION}</p>
           </div>
-          <p style={{ textAlign: 'center' as const, fontSize: 11, color: '#ccc', marginTop: 32 }}>{APP_VERSION}</p>
         </div>
       </div>
     );
