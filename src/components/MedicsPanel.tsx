@@ -246,14 +246,17 @@ export default function MedicsPanel() {
 
     const tryLoadDoctor = async (user: any) => {
       const isGoogle = (user.app_metadata?.provider || '') === 'google';
-      setDebugMsg(`[1] Buscando médico (provider: ${user.app_metadata?.provider || 'email'})…`);
+      setDebugMsg(`[1] Buscando médico (provider: ${user.app_metadata?.provider || 'email'}, uid: ${user.id.slice(0,8)})…`);
 
-      // 1. Existing doctor record
-      let { data: doctorData, error: doctorErr } = await supabase
-        .from('doctors')
-        .select('*, centers(name, image_url)')
-        .eq('id', user.id)
-        .maybeSingle();
+      // 1. Existing doctor record — with 8 s timeout so a hung query doesn't
+      //    freeze the UI forever (e.g. Supabase project paused, RLS misconfigured)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Sin respuesta de la base de datos (timeout). El proyecto Supabase puede estar pausado.')), 8000)
+      );
+      let { data: doctorData, error: doctorErr } = await Promise.race([
+        supabase.from('doctors').select('*, centers(name, image_url)').eq('id', user.id).maybeSingle(),
+        timeoutPromise,
+      ]);
       if (!mounted) return;
       setDebugMsg(`[2] doctorData: ${doctorData ? 'encontrado' : 'null'} | error: ${doctorErr?.message || 'ninguno'}`);
 
@@ -319,8 +322,8 @@ export default function MedicsPanel() {
           setLoading(false);
         } else {
           // Email/password user with no doctor record — reject
-          setDebugMsg('[5] No hay registro de médico para este usuario.');
-          setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
+          setDebugMsg(`[5] No hay registro de médico para uid: ${user.id.slice(0,8)}`);
+          setError('Acceso denegado: no existe un perfil médico para esta cuenta. Pide al administrador que te añada desde /admin.');
           await supabase.auth.signOut();
           setLoading(false);
         }
