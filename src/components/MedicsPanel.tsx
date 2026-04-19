@@ -127,6 +127,7 @@ export default function MedicsPanel() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [debugMsg, setDebugMsg] = useState('');
   const [section, setSection] = useState<Section>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
@@ -245,17 +246,20 @@ export default function MedicsPanel() {
 
     const tryLoadDoctor = async (user: any) => {
       const isGoogle = (user.app_metadata?.provider || '') === 'google';
+      setDebugMsg(`[1] Buscando médico (provider: ${user.app_metadata?.provider || 'email'})…`);
 
       // 1. Existing doctor record
-      let { data: doctorData } = await supabase
+      let { data: doctorData, error: doctorErr } = await supabase
         .from('doctors')
         .select('*, centers(name, image_url)')
         .eq('id', user.id)
         .maybeSingle();
       if (!mounted) return;
+      setDebugMsg(`[2] doctorData: ${doctorData ? 'encontrado' : 'null'} | error: ${doctorErr?.message || 'ninguno'}`);
 
       // 2. Pending admin invitation (email/password only)
       if (!doctorData && !isGoogle) {
+        setDebugMsg('[3] Sin médico, comprobando invitación pendiente…');
         const userEmail = user.email?.toLowerCase();
         if (userEmail) {
           const { data: pendingCenter } = await supabase
@@ -282,6 +286,7 @@ export default function MedicsPanel() {
 
       // 3. Self-service first login (email/password with is_doctor metadata)
       if (!doctorData && !isGoogle) {
+        setDebugMsg('[4] Sin médico, comprobando self-service (is_doctor)…');
         const md = (user.user_metadata || {}) as Record<string, any>;
         if (md.is_doctor) {
           const userEmail = user.email?.toLowerCase() || '';
@@ -314,6 +319,7 @@ export default function MedicsPanel() {
           setLoading(false);
         } else {
           // Email/password user with no doctor record — reject
+          setDebugMsg('[5] No hay registro de médico para este usuario.');
           setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
           await supabase.auth.signOut();
           setLoading(false);
@@ -321,6 +327,7 @@ export default function MedicsPanel() {
         return;
       }
 
+      setDebugMsg('[6] Médico encontrado, abriendo panel…');
       applyDoctorInfo(buildDoctorInfo(doctorData));
       setLoggedIn(true);
       setLoading(false);
@@ -337,15 +344,20 @@ export default function MedicsPanel() {
       // the loading screen, since a hung query would freeze the page forever.
       setInitialLoading(false);
       if (session?.user) {
+        setDebugMsg(`[AUTH] evento: ${event} | uid: ${session.user.id.slice(0, 8)}…`);
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
         try { await tryLoadDoctor(session.user); } catch (e) {
           if (mounted) {
-            setError(e instanceof Error ? e.message : 'Error al cargar el perfil. Intenta de nuevo.');
+            const msg = e instanceof Error ? e.message : String(e);
+            setDebugMsg(`[ERROR] ${msg}`);
+            setError('Error al cargar el perfil. Intenta de nuevo.');
             setLoading(false);
           }
         }
+      } else {
+        setDebugMsg(`[AUTH] evento: ${event} | sin sesión`);
       }
     });
 
@@ -358,17 +370,23 @@ export default function MedicsPanel() {
   // both handleLogin and onAuthStateChange were loading the doctor in parallel.
   const handleLogin = async () => {
     setError('');
+    setDebugMsg('[LOGIN] Llamando a signInWithPassword…');
     setLoading(true);
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
+        setDebugMsg(`[LOGIN] authError: ${authError.message}`);
         setError(authError.message);
         setLoading(false);
+      } else {
+        setDebugMsg('[LOGIN] Auth OK, esperando onAuthStateChange…');
       }
       // On success: onAuthStateChange fires SIGNED_IN → tryLoadDoctor runs →
       // calls setLoading(false) and setLoggedIn(true) when done.
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error de conexión. Intenta de nuevo.');
+      const msg = e instanceof Error ? e.message : String(e);
+      setDebugMsg(`[LOGIN] excepción: ${msg}`);
+      setError('Error de conexión. Intenta de nuevo.');
       setLoading(false);
     }
   };
@@ -1020,6 +1038,7 @@ export default function MedicsPanel() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} placeholder="••••••" />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
               <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Iniciar sesión'}</button>
+              {debugMsg && <p style={{ fontSize: 11, color: '#888', marginTop: 10, wordBreak: 'break-all' as const }}>{debugMsg}</p>}
               <button onClick={() => { setForgotMode('email'); setError(''); }} style={{ display: 'block', width: '100%', marginTop: 14, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
                 ¿Olvidaste tu contraseña?
               </button>
