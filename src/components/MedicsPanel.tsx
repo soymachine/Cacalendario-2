@@ -414,6 +414,7 @@ export default function MedicsPanel() {
       // the loading screen, since a hung query would freeze the page forever.
       setInitialLoading(false);
       if (session?.user) {
+        setError(''); // clear any error from a previous (e.g. timed-out) auth event
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
