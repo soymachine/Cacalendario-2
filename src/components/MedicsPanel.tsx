@@ -48,6 +48,7 @@ interface PatientLink {
   push_frequency?: number;
   hasPushSub?: boolean | null;
   doctor_notes?: string;
+  tags?: string[];
 }
 
 interface DoctorInfo {
@@ -84,6 +85,7 @@ interface PatientEntry {
   urine_characteristics: string[];
   entry_id: string;
   created_at: string;
+  doctor_note?: string;
 }
 
 interface PatientDetail {
@@ -94,13 +96,24 @@ interface PatientDetail {
   daysSinceLast: number | null;
 }
 
-type Section = 'pacientes' | 'invitar' | 'config';
+type Section = 'inicio' | 'pacientes' | 'invitar' | 'config';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
+  { id: 'inicio', icon: '\u{1F3E0}', label: 'Inicio' },
   { id: 'pacientes', icon: '\u{1F465}', label: 'Pacientes' },
   { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
   { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
 ];
+
+const TAG_COLORS: Record<string, string> = {};
+const TAG_PALETTE = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'];
+const tagColor = (tag: string) => {
+  if (!TAG_COLORS[tag]) {
+    let h = 0; for (const c of tag) h = (h * 31 + c.charCodeAt(0)) % TAG_PALETTE.length;
+    TAG_COLORS[tag] = TAG_PALETTE[h];
+  }
+  return TAG_COLORS[tag];
+};
 
 const ONBOARDING_STEPS = [
   {
@@ -171,7 +184,7 @@ export default function MedicsPanel() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debugMsg, setDebugMsg] = useState('');
-  const [section, setSection] = useState<Section>('pacientes');
+  const [section, setSection] = useState<Section>('inicio');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,6 +240,10 @@ export default function MedicsPanel() {
   const [notesDraft, setNotesDraft] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
   const [bristolHover, setBristolHover] = useState<{ idx: number; b: number; date: string; svgX: number; svgY: number } | null>(null);
+  const [noteEditing, setNoteEditing] = useState<{ entryId: string; draft: string } | null>(null);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [patientTagsDraft, setPatientTagsDraft] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -589,6 +606,25 @@ export default function MedicsPanel() {
     setOnboardingOpen(true);
   };
 
+  // ── Save doctor annotation on a specific entry ──
+  const handleSaveEntryNote = async (entryId: string, note: string) => {
+    if (!doctorInfo) return;
+    if (note.trim()) {
+      await supabase.from('entry_doctor_notes').upsert(
+        { doctor_id: doctorInfo.id, entry_id: entryId, note: note.trim() },
+        { onConflict: 'doctor_id,entry_id' }
+      );
+    } else {
+      await supabase.from('entry_doctor_notes').delete()
+        .eq('doctor_id', doctorInfo.id).eq('entry_id', entryId);
+    }
+    setPatientDetail(prev => prev ? {
+      ...prev,
+      entries: prev.entries.map(e => e.entry_id === entryId ? { ...e, doctor_note: note.trim() } : e),
+    } : prev);
+    setNoteEditing(null);
+  };
+
   // ── Save clinical notes for selected patient ──
   const handleSaveNotes = async () => {
     if (!selectedPatient) return;
@@ -715,9 +751,22 @@ export default function MedicsPanel() {
       created_at: e.created_at,
     }));
 
-    const bristolValues = entryList.filter(e => e.bristol != null).map(e => e.bristol!);
+    // Load doctor entry notes
+    const entryIds = entryList.map(e => e.entry_id).filter(Boolean);
+    let notesMap = new Map<string, string>();
+    if (entryIds.length > 0 && doctorInfo) {
+      const { data: dnotes } = await supabase
+        .from('entry_doctor_notes')
+        .select('entry_id, note')
+        .eq('doctor_id', doctorInfo.id)
+        .in('entry_id', entryIds);
+      (dnotes || []).forEach((n: any) => notesMap.set(n.entry_id, n.note));
+    }
+    const entryListWithNotes = entryList.map(e => ({ ...e, doctor_note: notesMap.get(e.entry_id) || '' }));
+
+    const bristolValues = entryListWithNotes.filter(e => e.bristol != null).map(e => e.bristol!);
     const bristolAvg = bristolValues.length > 0 ? bristolValues.reduce((a, b) => a + b, 0) / bristolValues.length : null;
-    const lastEntryDate = entryList.length > 0 ? entryList[0].date : null;
+    const lastEntryDate = entryListWithNotes.length > 0 ? entryListWithNotes[0].date : null;
     const daysSinceLast = lastEntryDate ? Math.floor((Date.now() - new Date(lastEntryDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
 
     // Reset calendar to current month when opening a patient
@@ -742,9 +791,12 @@ export default function MedicsPanel() {
     setEntryFilterTo('');
     setNotesDraft(patient.doctor_notes || '');
     setBristolHover(null);
+    setNoteEditing(null);
+    setPatientTagsDraft(patient.tags || []);
+    setNewTagInput('');
 
     setPatientDetail({
-      entries: entryList,
+      entries: entryListWithNotes,
       totalEntries: entryList.length,
       bristolAvg,
       lastEntryDate,
@@ -919,6 +971,7 @@ export default function MedicsPanel() {
         entry_type_mode: patientEntryTypeMode,
         push_min_hours: mins,
         push_frequency: freq,
+        tags: patientTagsDraft,
       })
       .eq('id', selectedPatient.id);
     if (error) {
@@ -934,6 +987,7 @@ export default function MedicsPanel() {
         entry_type_mode: patientEntryTypeMode,
         push_min_hours: mins,
         push_frequency: freq,
+        tags: patientTagsDraft,
       };
       setSelectedPatient(updated);
       setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
@@ -1334,6 +1388,114 @@ export default function MedicsPanel() {
       <main style={{ ...s.main, backgroundColor: th.primary, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
         {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
+        {/* ── INICIO / DASHBOARD ── */}
+        {section === 'inicio' && (() => {
+          const accepted = patients.filter(p => p.status === 'accepted');
+          const pending = patients.filter(p => p.status === 'pending');
+          const semCounts = accepted.reduce((acc, p) => {
+            const g = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : (doctorInfo?.semaforo_green ?? 1);
+            const r = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : (doctorInfo?.semaforo_red ?? 3);
+            const d = p.daysSinceLast;
+            if (d === null) acc.gray++;
+            else if (d <= g) acc.green++;
+            else if (d <= r) acc.orange++;
+            else acc.red++;
+            return acc;
+          }, { green: 0, orange: 0, red: 0, gray: 0 });
+          const recentlyActive = [...accepted]
+            .filter(p => p.lastEntryDate)
+            .sort((a, b) => (b.lastEntryDate || '').localeCompare(a.lastEntryDate || ''))
+            .slice(0, 5);
+          const statBox = (icon: string, value: string | number, label: string, bg: string, color: string) => (
+            <div key={label} style={{ flex: '1 1 140px', backgroundColor: bg, borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+              <div style={{ fontSize: 22 }}>{icon}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+              <div style={{ fontSize: 11, color, opacity: 0.7 }}>{label}</div>
+            </div>
+          );
+          return (
+            <>
+              <SectionHeader
+                title={`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''} 👋`}
+                subtitle={`${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
+              />
+              {/* Stat tiles */}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
+                {statBox('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
+                {statBox('🟢', semCounts.green, 'Al día', '#f0fdf4', '#16a34a')}
+                {statBox('🟠', semCounts.orange, 'Atención', '#fffbeb', '#d97706')}
+                {statBox('🔴', semCounts.red, 'Inactivos', '#fff1f2', '#dc2626')}
+                {pending.length > 0 && statBox('⏳', pending.length, 'Invit. pendientes', '#f5f3ff', '#7c3aed')}
+              </div>
+              {/* Semáforo bar */}
+              {accepted.length > 0 && (
+                <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>Estado de la lista</div>
+                  <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 14 }}>
+                    {semCounts.green > 0 && <div style={{ flex: semCounts.green, backgroundColor: '#22c55e' }} title={`${semCounts.green} al día`} />}
+                    {semCounts.orange > 0 && <div style={{ flex: semCounts.orange, backgroundColor: '#f59e0b' }} title={`${semCounts.orange} atención`} />}
+                    {semCounts.red > 0 && <div style={{ flex: semCounts.red, backgroundColor: '#ef4444' }} title={`${semCounts.red} inactivos`} />}
+                    {semCounts.gray > 0 && <div style={{ flex: semCounts.gray, backgroundColor: '#e5e7eb' }} title={`${semCounts.gray} sin datos`} />}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                    {[
+                      { c: '#16a34a', label: `${semCounts.green} al día` },
+                      { c: '#d97706', label: `${semCounts.orange} atención` },
+                      { c: '#dc2626', label: `${semCounts.red} inactivos` },
+                      { c: '#9ca3af', label: `${semCounts.gray} sin datos` },
+                    ].map(({ c, label }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: c }} />
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Recent activity */}
+              {recentlyActive.length > 0 && (
+                <div style={s.card}>
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                    🕐 Actividad reciente
+                  </div>
+                  {recentlyActive.map((p, i) => {
+                    const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
+                    const pR = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
+                    const sem = getSemaforo(p.daysSinceLast, pG, pR);
+                    return (
+                      <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: i < recentlyActive.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
+                        <span style={{ fontSize: 18 }}>{sem.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{patientLabel(p)}</div>
+                          <div style={{ fontSize: 11, color: '#999' }}>
+                            {p.daysSinceLast === 0 ? 'Hoy' : p.daysSinceLast === 1 ? 'Ayer' : `hace ${p.daysSinceLast} días`}
+                            {p.lastEntryDate && ` · ${shortDate(p.lastEntryDate)}`}
+                          </div>
+                        </div>
+                        {(p.tags || []).map(t => (
+                          <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, backgroundColor: tagColor(t) + '20', color: tagColor(t), fontWeight: 700 }}>{t}</span>
+                        ))}
+                        <span style={{ fontSize: 12, color: '#ccc' }}>›</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {accepted.length === 0 && !patientsLoading && (
+                <div style={{ ...s.card, padding: 32, textAlign: 'center' as const }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 8 }}>Aún no tienes pacientes</div>
+                  <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>Invita a tu primer paciente para empezar el seguimiento.</div>
+                  <button onClick={() => setSection('invitar')} style={{ ...ts.btnPrimary, padding: '10px 24px', borderRadius: 99 }}>
+                    + Invitar paciente
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
+
         {/* ── PACIENTES ── */}
         {section === 'pacientes' && !selectedPatient && (
           <>
@@ -1343,6 +1505,28 @@ export default function MedicsPanel() {
               actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
             />
             <div style={s.card}>
+              {/* Tag filter bar */}
+              {(() => {
+                const allTags = [...new Set(patients.flatMap(p => p.tags || []))];
+                if (allTags.length === 0) return null;
+                return (
+                  <div style={{ display: 'flex', gap: 6, padding: '8px 16px', flexWrap: 'wrap' as const, borderBottom: '1px solid #00000008', backgroundColor: '#00000004' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#aaa', alignSelf: 'center', marginRight: 2 }}>FILTRAR:</span>
+                    <button onClick={() => setTagFilter(null)} style={{
+                      fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                      backgroundColor: tagFilter === null ? '#333' : '#00000010',
+                      color: tagFilter === null ? '#fff' : '#555', fontWeight: 600,
+                    }}>Todos</button>
+                    {allTags.map(t => (
+                      <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} style={{
+                        fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                        backgroundColor: tagFilter === t ? tagColor(t) : tagColor(t) + '20',
+                        color: tagFilter === t ? '#fff' : tagColor(t), fontWeight: 600,
+                      }}>{t}</button>
+                    ))}
+                  </div>
+                );
+              })()}
               {/* Sort controls + Search */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8, flexWrap: 'wrap' as const }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#888' }}>Ordenar por:</span>
@@ -1383,9 +1567,10 @@ export default function MedicsPanel() {
               ) : (() => {
                 const q = searchQuery.trim().toLowerCase();
                 const displayed = [...patients]
-                  .filter(p => !q
+                  .filter(p => (!q
                     || patientLabel(p).toLowerCase().includes(q)
                     || (p.patient_email || '').toLowerCase().includes(q))
+                    && (!tagFilter || (p.tags || []).includes(tagFilter)))
                   .sort((a, b) => {
                     if (sortBy === 'estado') {
                       if (a.status === b.status) return patientLabel(a).localeCompare(patientLabel(b));
@@ -1424,6 +1609,13 @@ export default function MedicsPanel() {
                           </div>
                           {!isMobile && patient.display_name && patient.patient_email && (
                             <div style={{ fontSize: 11, color: '#999' }}>{patient.patient_email}</div>
+                          )}
+                          {(patient.tags || []).length > 0 && (
+                            <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' as const }}>
+                              {(patient.tags || []).map(t => (
+                                <span key={t} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 20, backgroundColor: tagColor(t) + '20', color: tagColor(t), fontWeight: 700 }}>{t}</span>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1613,19 +1805,46 @@ export default function MedicsPanel() {
                   📊 Estadísticas
                 </div>
                 <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                  {/* 3 compact stats */}
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[
-                      { label: 'Registros', value: patientDetail.totalEntries },
-                      { label: 'Bristol medio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
-                      { label: 'Días sin reg.', value: patientDetail.daysSinceLast ?? '—' },
-                    ].map(st => (
-                      <div key={st.label} style={{ flex: 1, textAlign: 'center' as const, backgroundColor: '#00000005', borderRadius: 8, padding: '6px 4px' }}>
-                        <div style={{ fontSize: 17, fontWeight: 900, color: '#111', lineHeight: 1 }}>{st.value}</div>
-                        <div style={{ fontSize: 9, color: '#999', marginTop: 3 }}>{st.label}</div>
+                  {/* 3 compact stats + trend */}
+                  {(() => {
+                    const bVals = patientDetail.entries
+                      .filter(e => e.entry_type === 'poop' && e.bristol != null)
+                      .map(e => e.bristol!).slice(0, 10);
+                    let trend: 'up' | 'down' | 'stable' | null = null;
+                    if (bVals.length >= 6) {
+                      const recentAvg = bVals.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+                      const olderAvg = bVals.slice(5, 10).reduce((a, b) => a + b, 0) / bVals.slice(5).length;
+                      const rDist = Math.abs(recentAvg - 4), oDist = Math.abs(olderAvg - 4);
+                      trend = rDist < oDist - 0.4 ? 'up' : rDist > oDist + 0.4 ? 'down' : 'stable';
+                    }
+                    const trendCfg = trend === 'up'
+                      ? { label: '📈 Mejorando', bg: '#f0fdf4', color: '#16a34a' }
+                      : trend === 'down'
+                      ? { label: '📉 Empeorando', bg: '#fff1f2', color: '#dc2626' }
+                      : trend === 'stable'
+                      ? { label: '➡️ Estable', bg: '#f8fafc', color: '#64748b' }
+                      : null;
+                    return (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                        {[
+                          { label: 'Registros', value: patientDetail.totalEntries },
+                          { label: 'Bristol medio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
+                          { label: 'Días sin reg.', value: patientDetail.daysSinceLast ?? '—' },
+                        ].map(st => (
+                          <div key={st.label} style={{ flex: 1, textAlign: 'center' as const, backgroundColor: '#00000005', borderRadius: 8, padding: '6px 4px' }}>
+                            <div style={{ fontSize: 17, fontWeight: 900, color: '#111', lineHeight: 1 }}>{st.value}</div>
+                            <div style={{ fontSize: 9, color: '#999', marginTop: 3 }}>{st.label}</div>
+                          </div>
+                        ))}
+                        {trendCfg && (
+                          <div style={{ flexBasis: '100%', backgroundColor: trendCfg.bg, borderRadius: 8, padding: '5px 8px', textAlign: 'center' as const }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: trendCfg.color }}>{trendCfg.label}</span>
+                            <span style={{ fontSize: 9, color: '#999', marginLeft: 6 }}>últimas 10 deposiciones</span>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
 
                   {/* Bristol trend chart */}
                   <div>
@@ -1868,7 +2087,7 @@ export default function MedicsPanel() {
                           );
                           return (
                             <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 16px', gap: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 16px', gap: 0, position: 'relative' as const }}>
                                 {/* Type icon */}
                                 <div style={{ width: 32, paddingTop: 2 }}>
                                   <span style={{ fontSize: 16 }}>{isUrine ? '💧' : '💩'}</span>
@@ -1879,7 +2098,7 @@ export default function MedicsPanel() {
                                   {entry.time && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span>}
                                 </div>
                                 {/* Type-specific data */}
-                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4, alignItems: 'center' }}>
+                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4, alignItems: 'center', paddingRight: 28 }}>
                                   {isUrine ? (
                                     <>
                                       {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, '#3498db15', '#2980b9')}
@@ -1904,11 +2123,54 @@ export default function MedicsPanel() {
                                     </>
                                   )}
                                 </div>
+                                {/* Annotation button — positioned absolute inside the row */}
+                                <button
+                                  onClick={() => setNoteEditing(ne => ne?.entryId === entry.entry_id ? null : { entryId: entry.entry_id, draft: entry.doctor_note || '' })}
+                                  title={entry.doctor_note ? 'Ver / editar anotación' : 'Añadir anotación'}
+                                  style={{ position: 'absolute' as const, right: 10, top: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: entry.doctor_note ? 1 : 0.2, padding: '3px 5px', borderRadius: 4 }}
+                                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                  onMouseLeave={e => (e.currentTarget.style.opacity = entry.doctor_note ? '1' : '0.2')}
+                                >📝</button>
                               </div>
-                              {/* Notes row — only if present */}
+                              {/* Patient notes (from patient app) */}
                               {entry.notes && (
-                                <div style={{ padding: '0 16px 10px 178px' }}>
+                                <div style={{ padding: '0 16px 6px 178px' }}>
                                   <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
+                                </div>
+                              )}
+                              {/* Doctor annotation */}
+                              {entry.doctor_note && noteEditing?.entryId !== entry.entry_id && (
+                                <div style={{ margin: '0 16px 8px 178px', padding: '6px 10px', backgroundColor: '#fffbeb', borderLeft: '3px solid #f59e0b', borderRadius: '0 6px 6px 0' }}>
+                                  <p style={{ fontSize: 12, color: '#78350f', margin: 0, lineHeight: 1.4 }}>🩺 {entry.doctor_note}</p>
+                                </div>
+                              )}
+                              {/* Inline annotation editor */}
+                              {noteEditing?.entryId === entry.entry_id && (
+                                <div style={{ margin: '0 16px 10px 178px', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                                  <textarea
+                                    autoFocus
+                                    value={noteEditing.draft}
+                                    onChange={e => setNoteEditing({ ...noteEditing, draft: e.target.value })}
+                                    placeholder="Anotación médica (ej: inicio de omeprazol, coincide con brote…)"
+                                    rows={2}
+                                    style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #fbbf24', fontSize: 12, fontFamily: 'inherit', resize: 'none' as const, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fffbeb' }}
+                                  />
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <button onClick={() => handleSaveEntryNote(entry.entry_id, noteEditing.draft)}
+                                      style={{ padding: '4px 14px', borderRadius: 6, border: 'none', backgroundColor: '#f59e0b', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                      Guardar
+                                    </button>
+                                    <button onClick={() => setNoteEditing(null)}
+                                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #e0e0e0', backgroundColor: '#fff', fontSize: 12, color: '#666', cursor: 'pointer' }}>
+                                      Cancelar
+                                    </button>
+                                    {entry.doctor_note && (
+                                      <button onClick={() => handleSaveEntryNote(entry.entry_id, '')}
+                                        style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#fee2e2', fontSize: 12, color: '#dc2626', cursor: 'pointer', marginLeft: 'auto' as const }}>
+                                        Eliminar
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -2017,6 +2279,45 @@ export default function MedicsPanel() {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Etiquetas */}
+                    <div style={{ ...s.card, padding: '14px 16px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>🏷️ Etiquetas</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
+                        {patientTagsDraft.map(t => (
+                          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, padding: '3px 10px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
+                            {t}
+                            <button onClick={() => setPatientTagsDraft(prev => prev.filter(x => x !== t))}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13, color: tagColor(t), lineHeight: 1, opacity: 0.7 }}>×</button>
+                          </span>
+                        ))}
+                        {patientTagsDraft.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>Sin etiquetas</span>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <input
+                          type="text"
+                          value={newTagInput}
+                          onChange={e => setNewTagInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && newTagInput.trim() && !patientTagsDraft.includes(newTagInput.trim())) {
+                              setPatientTagsDraft(prev => [...prev, newTagInput.trim()]);
+                              setNewTagInput('');
+                            }
+                          }}
+                          placeholder="Nueva etiqueta…"
+                          style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 12, outline: 'none' }}
+                        />
+                        <button
+                          onClick={() => {
+                            if (newTagInput.trim() && !patientTagsDraft.includes(newTagInput.trim())) {
+                              setPatientTagsDraft(prev => [...prev, newTagInput.trim()]);
+                              setNewTagInput('');
+                            }
+                          }}
+                          style={{ padding: '6px 12px', borderRadius: 8, border: 'none', backgroundColor: '#f0f0f0', fontSize: 12, color: '#555', cursor: 'pointer', fontWeight: 600 }}
+                        >+ Añadir</button>
+                      </div>
                     </div>
 
                     {/* Campos del formulario */}
