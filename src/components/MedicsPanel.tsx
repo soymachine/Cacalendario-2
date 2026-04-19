@@ -1035,7 +1035,7 @@ export default function MedicsPanel() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} placeholder="••••••" />
               {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
               <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Iniciar sesión'}</button>
-              {debugMsg && <p style={{ fontSize: 12, color: '#888', marginTop: 12, textAlign: 'center' as const, fontStyle: 'italic' }}>{debugMsg}</p>}
+              {loading && debugMsg && <p style={{ fontSize: 12, color: '#888', marginTop: 12, textAlign: 'center' as const, fontStyle: 'italic' }}>{debugMsg}</p>}
               <button onClick={() => { setForgotMode('email'); setError(''); }} style={{ display: 'block', width: '100%', marginTop: 14, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
                 ¿Olvidaste tu contraseña?
               </button>
