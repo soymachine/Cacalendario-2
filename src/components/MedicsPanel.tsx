@@ -1945,11 +1945,11 @@ export default function MedicsPanel() {
                         };
                       }).reverse();
                       const maxC = Math.max(...weeks.map(w => w.count), 1);
-                      const W2 = 310, H2 = 52, BW = 28, GAP = 7;
+                      const W2 = 310, H2 = 69, BW = 28, GAP = 7;
                       const total = weeks.length * (BW + GAP) - GAP;
                       const ox = (W2 - total) / 2;
                       return (
-                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 72, display: 'block' as const }}>
+                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 96, display: 'block' as const }}>
                           {weeks.map((wk, i) => {
                             const bh = Math.max((wk.count / maxC) * (H2 - 18), wk.count > 0 ? 4 : 0);
                             const x = ox + i * (BW + GAP);
