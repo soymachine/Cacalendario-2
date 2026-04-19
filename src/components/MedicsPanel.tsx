@@ -130,6 +130,7 @@ export default function MedicsPanel() {
   const [debugMsg, setDebugMsg] = useState('');
   const [section, setSection] = useState<Section>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -441,6 +442,7 @@ export default function MedicsPanel() {
   // ── Load patients ──
   const loadPatients = async () => {
     if (!doctorInfo) return;
+    setPatientsLoading(true);
     const { data, error: loadError } = await supabase
       .from('patient_links')
       .select('*')
@@ -448,6 +450,7 @@ export default function MedicsPanel() {
       .order('invited_at', { ascending: false });
     if (loadError) {
       setError(loadError.message);
+      setPatientsLoading(false);
       return;
     }
     // Enrich with display_name, email, and last entry date
@@ -494,6 +497,7 @@ export default function MedicsPanel() {
       return { ...p, display_name, patient_email, lastEntryDate, daysSinceLast, hasPushSub };
     }));
     setPatients(enriched);
+    setPatientsLoading(false);
   };
 
   useEffect(() => {
@@ -1251,7 +1255,11 @@ export default function MedicsPanel() {
                 {!isMobile && <span style={{ width: 44, textAlign: 'center' as const }}>🔔</span>}
                 <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
-              {patients.length === 0 ? (
+              {patientsLoading ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                  Cargando pacientes…
+                </div>
+              ) : patients.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                   No hay pacientes. Invita a tu primer paciente desde la sección "Invitar Paciente".
                 </div>
