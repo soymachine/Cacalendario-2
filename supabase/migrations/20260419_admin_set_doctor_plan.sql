@@ -16,15 +16,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  caller_email text;
 BEGIN
-  -- Resolve the caller's email from auth.users
-  SELECT email INTO caller_email
-    FROM auth.users
-   WHERE id = auth.uid();
-
-  IF caller_email NOT IN ('soymachine@gmail.com', 'ericbarbercot@icloud.com') THEN
+  IF (SELECT email FROM auth.users WHERE id = auth.uid()) NOT IN ('soymachine@gmail.com', 'ericbarbercot@icloud.com') THEN
     RAISE EXCEPTION 'No tienes permisos para cambiar el plan.';
   END IF;
 
