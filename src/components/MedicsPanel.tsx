@@ -1809,58 +1809,50 @@ export default function MedicsPanel() {
 
             <div style={s.card}>
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 24 }}>
-                {/* Option 1: By email */}
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 12 }}>Opción 1: Por email</div>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1 }}>
+                {/* Invite by email */}
+                {(() => {
+                  const atLimit = doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT;
+                  return (
+                    <div>
                       <label style={s.label}>Email del paciente</label>
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="paciente@email.com"
-                        style={{ ...s.input, marginBottom: 0 }}
-                      />
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="email"
+                            value={inviteEmail}
+                            onChange={(e) => !atLimit && setInviteEmail(e.target.value)}
+                            placeholder={atLimit ? 'Límite de pacientes alcanzado' : 'paciente@email.com'}
+                            disabled={atLimit}
+                            style={{ ...s.input, marginBottom: 0, opacity: atLimit ? 0.45 : 1, cursor: atLimit ? 'not-allowed' : 'text' }}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleInvite(true)}
+                          disabled={loading || !inviteEmail || atLimit}
+                          style={{
+                            ...s.headerBtn,
+                            backgroundColor: th.dark,
+                            color: '#fff',
+                            height: 44,
+                            opacity: loading || !inviteEmail || atLimit ? 0.45 : 1,
+                            cursor: atLimit ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Enviar invitación
+                        </button>
+                      </div>
+                      {atLimit && (
+                        <p style={{ fontSize: 12, color: '#e67e22', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>⚠️</span> Límite del plan Free alcanzado.{' '}
+                          <button onClick={() => setShowUpgradeModal(true)} style={{ background: 'none', border: 'none', color: th.dark, fontWeight: 700, fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                            Pasa a Pro
+                          </button>{' '}
+                          para añadir más pacientes.
+                        </p>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleInvite(true)}
-                      disabled={loading || !inviteEmail}
-                      style={{
-                        ...s.headerBtn,
-                        backgroundColor: th.dark,
-                        color: '#fff',
-                        height: 44,
-                        opacity: loading || !inviteEmail ? 0.5 : 1,
-                      }}
-                    >
-                      Enviar invitación
-                    </button>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div style={{ borderTop: '1px solid #00000010', paddingTop: 0 }} />
-
-                {/* Option 2: Generic code */}
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 12 }}>Opción 2: Código genérico</div>
-                  <p style={{ fontSize: 13, color: '#666', margin: '0 0 12px' }}>
-                    Genera un código que puedes compartir directamente con tu paciente.
-                  </p>
-                  <button
-                    onClick={() => handleInvite(false)}
-                    disabled={loading}
-                    style={{
-                      ...s.headerBtn,
-                      backgroundColor: th.primary,
-                      color: '#fff',
-                      opacity: loading ? 0.5 : 1,
-                    }}
-                  >
-                    Generar código
-                  </button>
-                </div>
+                  );
+                })()}
 
                 {error && <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{error}</p>}
 
@@ -2021,6 +2013,11 @@ export default function MedicsPanel() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🚦 Semáforo</span>
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                  <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
+                    Define cuántos días sin registro se consideran normales (🟢), en vigilancia (🟠) o en alerta (🔴).
+                    Este umbral se aplica a todos tus pacientes como valor por defecto; puedes personalizarlo individualmente
+                    en la ficha de cada paciente.
+                  </p>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <div style={{ flex: 1, minWidth: 0, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -23,15 +23,13 @@ interface UserInfo {
   last_sign_in_at: string | null;
 }
 
-interface Center {
+interface Doctor {
   id: string;
   name: string;
   specialty: string | null;
-  address: string | null;
-  phone: string | null;
-  subscription_status: string;
+  center_name: string;
+  plan: 'free' | 'pro';
   created_at: string;
-  pending_doctor_email: string | null;
 }
 
 interface DashboardStats {
@@ -48,12 +46,12 @@ interface DashboardStats {
 
 const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
-type Section = 'dashboard' | 'usuarios' | 'centros' | 'estadisticas' | 'registros' | 'reportes' | 'backups';
+type Section = 'dashboard' | 'usuarios' | 'doctores' | 'estadisticas' | 'registros' | 'reportes' | 'backups';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'usuarios', icon: '👥', label: 'Usuarios' },
-  { id: 'centros', icon: '🏥', label: 'Centros' },
+  { id: 'usuarios', icon: '👥', label: 'Pacientes' },
+  { id: 'doctores', icon: '🩺', label: 'Médicos' },
   { id: 'estadisticas', icon: '📈', label: 'Estadísticas' },
   { id: 'registros', icon: '📋', label: 'Registros' },
   { id: 'reportes', icon: '🚩', label: 'Reportes' },
@@ -72,12 +70,8 @@ export default function AdminPanel() {
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all');
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [centers, setCenters] = useState<Center[]>([]);
-  const [showCreateCenter, setShowCreateCenter] = useState(false);
-  const [newCenter, setNewCenter] = useState({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
-  const [editCenterData, setEditCenterData] = useState({ name: '', specialty: '', address: '', phone: '', pending_doctor_email: '' });
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
 
   // Backup state
   interface BackupRecord { filename: string; createdAt: string; summary: string; }
@@ -114,7 +108,7 @@ export default function AdminPanel() {
 
   const loadDashboard = async () => {
     setLoading(true);
-    await Promise.all([loadStats(), loadFeedback(), loadCenters()]);
+    await Promise.all([loadStats(), loadFeedback(), loadDoctors()]);
     setLoading(false);
   };
 
@@ -159,89 +153,31 @@ export default function AdminPanel() {
     })));
   };
 
-  // Note: Centers query requires RLS policy "Admins can read all centers" or disabling RLS on centers table.
-  // TODO: Add an RPC or proper RLS policy for admin access to centers.
-  const loadCenters = async () => {
-    const { data, error } = await supabase.from('centers').select('*').order('created_at', { ascending: false });
-    console.log('loadCenters result:', { data, error });
-    setCenters(data || []);
+  const loadDoctors = async () => {
+    const { data, error } = await supabase
+      .from('doctors')
+      .select('id, name, specialty, plan, created_at, centers(name)')
+      .order('created_at', { ascending: false });
+    if (error) { console.error('loadDoctors:', error); return; }
+    setDoctors((data || []).map((d: any) => ({
+      id: d.id,
+      name: d.name,
+      specialty: d.specialty,
+      center_name: d.centers?.name || '—',
+      plan: d.plan || 'free',
+      created_at: d.created_at,
+    })));
   };
 
-  const handleCreateCenter = async () => {
-    setError('');
-    // Validate required fields
-    const missing: string[] = [];
-    if (!newCenter.name.trim()) missing.push('Nombre del centro');
-    if (!newCenter.doctorEmail.trim()) missing.push('Email del doctor');
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCenter.doctorEmail.trim())) missing.push('Email del doctor (formato inválido)');
-    if (missing.length > 0) {
-      setValidationErrors(missing);
+  const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'pro') => {
+    setChangingPlanId(doctorId);
+    const { error } = await supabase.rpc('admin_set_doctor_plan', { p_doctor_id: doctorId, p_plan: newPlan });
+    setChangingPlanId(null);
+    if (error) {
+      alert('Error al cambiar el plan: ' + error.message);
       return;
     }
-
-    // 1. Create the center
-    const { data: centerData, error: centerError } = await supabase
-      .from('centers')
-      .insert({
-        name: newCenter.name,
-        specialty: newCenter.specialty || null,
-        address: newCenter.address || null,
-        phone: newCenter.phone || null,
-      })
-      .select()
-      .single();
-
-    if (centerError) {
-      console.error('Center creation error:', centerError);
-      setError('Error al crear centro: ' + centerError.message);
-      return;
-    }
-    console.log('Center created:', centerData);
-
-    // 2. Save pending doctor info on the center (doctor will self-register later)
-    if (newCenter.doctorEmail) {
-      await supabase.from('centers').update({
-        pending_doctor_email: newCenter.doctorEmail.trim().toLowerCase(),
-        pending_doctor_name: newCenter.doctorName || null,
-        pending_doctor_specialty: newCenter.doctorSpecialty || null,
-      }).eq('id', centerData.id);
-    }
-
-    loadCenters();
-    setShowCreateCenter(false);
-    setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' });
-  };
-
-  const handleDeleteCenter = async (id: string) => {
-    if (!confirm('¿Eliminar este centro? Esta acción no se puede deshacer.')) return;
-    const { error } = await supabase.from('centers').delete().eq('id', id);
-    if (error) {
-      setError('Error al eliminar: ' + error.message);
-    } else {
-      setCenters(centers.filter((c) => c.id !== id));
-    }
-  };
-
-  const handleStartEditCenter = (center: Center) => {
-    setEditingCenterId(center.id);
-    setEditCenterData({ name: center.name, specialty: center.specialty || '', address: center.address || '', phone: center.phone || '', pending_doctor_email: center.pending_doctor_email || '' });
-  };
-
-  const handleUpdateCenter = async () => {
-    if (!editingCenterId) return;
-    const { error } = await supabase.from('centers').update({
-      name: editCenterData.name.trim(),
-      specialty: editCenterData.specialty.trim() || null,
-      address: editCenterData.address.trim() || null,
-      phone: editCenterData.phone.trim() || null,
-      pending_doctor_email: editCenterData.pending_doctor_email.trim() || null,
-    }).eq('id', editingCenterId);
-    if (error) {
-      setError('Error al actualizar: ' + error.message);
-    } else {
-      setCenters(centers.map(c => c.id === editingCenterId ? { ...c, ...editCenterData, name: editCenterData.name.trim(), specialty: editCenterData.specialty.trim() || null, address: editCenterData.address.trim() || null, phone: editCenterData.phone.trim() || null, pending_doctor_email: editCenterData.pending_doctor_email.trim() || null } : c));
-      setEditingCenterId(null);
-    }
+    setDoctors(prev => prev.map(d => d.id === doctorId ? { ...d, plan: newPlan } : d));
   };
 
   const loadFeedback = async () => {
@@ -546,7 +482,7 @@ export default function AdminPanel() {
             </div>
             <div style={s.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Todos los usuarios ({users.length})</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Pacientes ({users.filter(u => !doctors.some(d => d.id === u.id)).length})</span>
               </div>
               <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
                 <span style={{ flex: 2 }}>Usuario</span>
@@ -555,10 +491,10 @@ export default function AdminPanel() {
                 <span style={{ flex: 1 }}>Último acceso</span>
                 <span style={{ flex: 1, textAlign: 'right' }}>Estado</span>
               </div>
-              {users.map((user, i) => {
+              {users.filter(u => !doctors.some(d => d.id === u.id)).map((user, i, arr) => {
                 const isRecent = user.last_sign_in_at && (Date.now() - new Date(user.last_sign_in_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
                 return (
-                  <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < users.length - 1 ? '1px solid #00000010' : 'none' }}>
+                  <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < arr.length - 1 ? '1px solid #00000010' : 'none' }}>
                     <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 2 === 0 ? '#1a0e0e' : '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                         {(user.email || '?')[0].toUpperCase()}
@@ -580,221 +516,71 @@ export default function AdminPanel() {
           </>
         )}
 
-        {/* ── CENTROS MÉDICOS ── */}
-        {section === 'centros' && (
+        {/* ── MÉDICOS ── */}
+        {section === 'doctores' && (
           <>
             <SectionHeader
-              title="Centros Médicos"
-              subtitle="Gestión de centros y clínicas registradas"
-              actions={
-                <button onClick={() => setShowCreateCenter(true)} style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}>
-                  + Nuevo Centro
-                </button>
-              }
+              title="Médicos"
+              subtitle="Listado de profesionales registrados y gestión de planes"
+              actions={<button onClick={loadDoctors} style={s.headerBtn}>🔄 Actualizar</button>}
             />
             <div style={s.statsRow}>
-              <StatCard emoji="🏥" label="TOTAL CENTROS" value={String(centers.length)} />
-              <StatCard emoji="✅" label="ACTIVOS" value={String(centers.filter(c => c.subscription_status === 'active').length)} dark />
-              <StatCard emoji="⏸️" label="INACTIVOS" value={String(centers.filter(c => c.subscription_status !== 'active').length)} />
-              <StatCard emoji="🩺" label="ESPECIALIDADES" value={String(new Set(centers.map(c => c.specialty).filter(Boolean)).size)} />
+              <StatCard emoji="🩺" label="TOTAL MÉDICOS" value={String(doctors.length)} />
+              <StatCard emoji="⭐" label="PLAN FREE" value={String(doctors.filter(d => d.plan === 'free').length)} />
+              <StatCard emoji="🚀" label="PLAN PRO" value={String(doctors.filter(d => d.plan === 'pro').length)} dark />
+              <StatCard emoji="🏥" label="ESPECIALIDADES" value={String(new Set(doctors.map(d => d.specialty).filter(Boolean)).size)} />
             </div>
 
-            {/* Create center form */}
-            {showCreateCenter && (
-              <div style={s.card}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Crear nuevo centro</span>
-                </div>
-                <div style={{ padding: 20, display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Nombre del centro *</label>
-                      <input
-                        type="text"
-                        value={newCenter.name}
-                        onChange={(e) => setNewCenter({ ...newCenter, name: e.target.value })}
-                        placeholder="Ej: Clínica San Rafael"
-                        style={s.input}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Especialidad</label>
-                      <input
-                        type="text"
-                        value={newCenter.specialty}
-                        onChange={(e) => setNewCenter({ ...newCenter, specialty: e.target.value })}
-                        placeholder="Ej: Gastroenterología"
-                        style={s.input}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Dirección</label>
-                      <input
-                        type="text"
-                        value={newCenter.address}
-                        onChange={(e) => setNewCenter({ ...newCenter, address: e.target.value })}
-                        placeholder="Ej: Calle Mayor 10, Madrid"
-                        style={s.input}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Teléfono</label>
-                      <input
-                        type="text"
-                        value={newCenter.phone}
-                        onChange={(e) => setNewCenter({ ...newCenter, phone: e.target.value })}
-                        placeholder="Ej: +34 612 345 678"
-                        style={s.input}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ borderTop: '1px solid #00000010', paddingTop: 12, marginTop: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>Doctor principal</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Email del doctor</label>
-                      <input
-                        type="email"
-                        value={newCenter.doctorEmail}
-                        onChange={(e) => setNewCenter({ ...newCenter, doctorEmail: e.target.value })}
-                        placeholder="doctor@email.com"
-                        style={s.input}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Nombre del doctor</label>
-                      <input
-                        type="text"
-                        value={newCenter.doctorName}
-                        onChange={(e) => setNewCenter({ ...newCenter, doctorName: e.target.value })}
-                        placeholder="Dr. García López"
-                        style={s.input}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={s.label}>Especialidad del doctor</label>
-                      <input
-                        type="text"
-                        value={newCenter.doctorSpecialty}
-                        onChange={(e) => setNewCenter({ ...newCenter, doctorSpecialty: e.target.value })}
-                        placeholder="Gastroenterología"
-                        style={s.input}
-                      />
-                    </div>
-                  </div>
-                  {error && <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{error}</p>}
-                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                    <button
-                      onClick={() => { setShowCreateCenter(false); setNewCenter({ name: '', specialty: '', address: '', phone: '', doctorEmail: '', doctorName: '', doctorSpecialty: '' }); setError(''); }}
-                      style={{ ...s.headerBtn, backgroundColor: '#eee', color: '#666' }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleCreateCenter}
-                      style={{ ...s.headerBtn, backgroundColor: '#1a0e0e', color: '#fff' }}
-                    >
-                      Crear Centro
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Centers list */}
+            {/* Doctors list */}
             <div style={s.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Todos los centros ({centers.length})</span>
-                <button onClick={loadCenters} style={s.linkBtn}>🔄 Actualizar</button>
-              </div>
               <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
-                <span style={{ flex: 2 }}>Centro</span>
-                <span style={{ flex: 2 }}>Email Doctor</span>
-                <span style={{ flex: 2 }}>Especialidad</span>
-                <span style={{ flex: 2 }}>Dirección</span>
-                <span style={{ flex: 1 }}>Creado</span>
-                <span style={{ flex: 0.5, textAlign: 'right' }}></span>
+                <span style={{ flex: 2.5 }}>Médico</span>
+                <span style={{ flex: 2 }}>Centro / Consulta</span>
+                <span style={{ flex: 1.5 }}>Especialidad</span>
+                <span style={{ flex: 1 }}>Alta</span>
+                <span style={{ flex: 1.2, textAlign: 'center' as const }}>Plan</span>
               </div>
-              {centers.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay centros registrados</div>
+              {doctors.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>No hay médicos registrados</div>
               ) : (
-                centers.map((center, i) => {
-                  const isEditing = editingCenterId === center.id;
+                doctors.map((doc, i) => {
+                  const isChanging = changingPlanId === doc.id;
                   return (
-                    <div key={center.id} style={{ borderBottom: i < centers.length - 1 ? '1px solid #00000010' : 'none' }}>
-                      {/* Row */}
-                      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 20px' }}>
-                        <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                            🏥
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{center.name}</div>
-                            {center.phone && <div style={{ fontSize: 11, color: '#999' }}>{center.phone}</div>}
-                          </div>
+                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < doctors.length - 1 ? '1px solid #00000010' : 'none' }}>
+                      <div style={{ flex: 2.5, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                          {(doc.name || '?')[0].toUpperCase()}
                         </div>
-                        <span style={{ flex: 2, fontSize: 13, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{center.pending_doctor_email || '—'}</span>
-                        <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.specialty || '—'}</span>
-                        <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{center.address || '—'}</span>
-                        <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(center.created_at)}</span>
-                        <span style={{ flex: 0.5, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                          <button
-                            onClick={() => isEditing ? setEditingCenterId(null) : handleStartEditCenter(center)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, opacity: isEditing ? 1 : 0.4, padding: '4px 6px' }}
-                            title="Editar centro"
-                          >✏️</button>
-                          <button
-                            onClick={() => handleDeleteCenter(center.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, opacity: 0.4, padding: '4px 6px' }}
-                            title="Eliminar centro"
-                          >🗑️</button>
-                        </span>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{doc.name}</div>
+                          <div style={{ fontSize: 11, color: '#999' }}>{doc.id.slice(0, 8)}…</div>
+                        </div>
                       </div>
-                      {/* Inline edit form */}
-                      {isEditing && (
-                        <div style={{ padding: '16px 20px 20px', backgroundColor: '#fdf8f7', borderTop: '1px solid #00000008' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                            <div>
-                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Nombre *</label>
-                              <input value={editCenterData.name} onChange={e => setEditCenterData({ ...editCenterData, name: e.target.value })}
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Especialidad</label>
-                              <input value={editCenterData.specialty} onChange={e => setEditCenterData({ ...editCenterData, specialty: e.target.value })}
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Dirección</label>
-                              <input value={editCenterData.address} onChange={e => setEditCenterData({ ...editCenterData, address: e.target.value })}
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Teléfono</label>
-                              <input value={editCenterData.phone} onChange={e => setEditCenterData({ ...editCenterData, phone: e.target.value })}
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, display: 'block', marginBottom: 4 }}>Email del doctor</label>
-                              <input value={editCenterData.pending_doctor_email} onChange={e => setEditCenterData({ ...editCenterData, pending_doctor_email: e.target.value })}
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' as const }} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={handleUpdateCenter} disabled={!editCenterData.name.trim()}
-                              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', backgroundColor: '#dd8273', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                              Guardar
-                            </button>
-                            <button onClick={() => setEditingCenterId(null)}
-                              style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 13, cursor: 'pointer', color: '#666' }}>
-                              Cancelar
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{doc.center_name}</span>
+                      <span style={{ flex: 1.5, fontSize: 13, color: '#555' }}>{doc.specialty || '—'}</span>
+                      <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(doc.created_at)}</span>
+                      <span style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : '#fff8e1',
+                          color: doc.plan === 'pro' ? '#dd8273' : '#7a5810',
+                          border: doc.plan === 'pro' ? 'none' : '1px solid #ffe082',
+                        }}>
+                          {doc.plan === 'pro' ? '🚀 Pro' : '⭐ Free'}
+                        </span>
+                        <button
+                          onClick={() => handleChangeDoctorPlan(doc.id, doc.plan === 'pro' ? 'free' : 'pro')}
+                          disabled={isChanging}
+                          title={doc.plan === 'pro' ? 'Cambiar a Free' : 'Activar Pro'}
+                          style={{
+                            padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11,
+                            cursor: 'pointer', backgroundColor: '#fff', color: '#555',
+                            opacity: isChanging ? 0.4 : 1,
+                          }}
+                        >
+                          {isChanging ? '…' : doc.plan === 'pro' ? '↓ Free' : '↑ Pro'}
+                        </button>
+                      </span>
                     </div>
                   );
                 })
@@ -1084,32 +870,6 @@ export default function AdminPanel() {
         )}
       </main>
 
-      {/* Validation modal */}
-      {validationErrors.length > 0 && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 36 }}>⚠️</span>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', marginTop: 8 }}>Campos obligatorios</h3>
-              <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Completa los siguientes campos para continuar:</p>
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0' }}>
-              {validationErrors.map((err, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: i < validationErrors.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                  <span style={{ color: '#c0392b', fontSize: 14 }}>✗</span>
-                  <span style={{ fontSize: 14, color: '#333' }}>{err}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => setValidationErrors([])}
-              style={{ width: '100%', padding: 12, borderRadius: 24, backgroundColor: '#1a0e0e', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
