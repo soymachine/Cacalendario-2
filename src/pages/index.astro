@@ -1,99 +1,1025 @@
 ---
-import App from '../components/App';
-import { asset } from '../lib/config';
+// Marketing landing page for Fluxia Health
 ---
+<!doctype html>
+<html lang="es" data-accent="blue" data-density="comfortable" data-dark="false">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fluxia Health — Registro clínico de diuresis y deposición</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Fluxia</title>
+<style>
+  :root {
+    /* Neutrals — cool off-white / graphite */
+    --bg: oklch(98.8% 0.003 230);
+    --bg-raise: #ffffff;
+    --bg-sunk: oklch(96.5% 0.004 230);
+    --ink: oklch(22% 0.012 250);
+    --ink-2: oklch(38% 0.012 250);
+    --ink-3: oklch(55% 0.01 250);
+    --ink-4: oklch(72% 0.008 240);
+    --line: oklch(91% 0.005 240);
+    --line-2: oklch(86% 0.007 240);
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+    /* Accents — pulled from logo */
+    --accent: #2F6DDE;          /* logo blue */
+    --accent-ink: #1a4fb0;
+    --accent-bg: oklch(96% 0.03 255);
+    --lime: #C6E34B;            /* logo lime */
+    --lime-ink: #7a9410;
 
-    <!-- PWA -->
-    <link rel="manifest" href={asset('/manifest.json')} />
-    <meta name="theme-color" content="#F0F2F4" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Fluxia" />
-    <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
+    /* Scale */
+    --radius: 10px;
+    --radius-lg: 18px;
+    --radius-xl: 28px;
+    --pad-section: 120px;
+    --pad-gutter: 32px;
 
-    <!-- GitHub Pages SPA: restore redirect from 404.html -->
-    <script is:inline>
-      (function() {
-        var qs = window.location.search;
-        if (qs.indexOf('?p=') === 0 || qs.indexOf('&p=') !== -1) {
-          var params = new URLSearchParams(qs);
-          var path = params.get('p') || '';
-          var hash = params.get('h') || '';
-          window.history.replaceState(null, '', path + hash || '/');
-        }
-      })();
-    </script>
+    /* Type */
+    --f-display: "Inter Tight", system-ui, sans-serif;
+    --f-body: "IBM Plex Sans", system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet" />
+  /* Accent variants */
+  html[data-accent="green"] { --accent: #4a8f2f; --accent-ink: #2f6b18; --accent-bg: oklch(96% 0.03 145); }
+  html[data-accent="teal"]  { --accent: #0f766e; --accent-ink: #0b5a54; --accent-bg: oklch(96% 0.025 190); }
+  html[data-accent="violet"]{ --accent: #6d4cd6; --accent-ink: #553aa8; --accent-bg: oklch(96% 0.03 295); }
+  html[data-accent="graphite"]{ --accent: #2a2f3a; --accent-ink: #14171e; --accent-bg: oklch(95% 0.005 260); }
 
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      :root {
-        --fluxia-primary: #353435;
-        --fluxia-primary-text: #E3EBEE;
-      }
-      body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background-color: #F0F2F4;
-        -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
-      }
-    </style>
-  </head>
-  <body>
-    <div style="max-width: 448px; margin: 0 auto; min-height: 100vh; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-      <App client:only="react" />
+  /* Density */
+  html[data-density="compact"] { --pad-section: 80px; --pad-gutter: 24px; }
+
+  /* Dark */
+  html[data-dark="true"] {
+    --bg: oklch(16% 0.012 250);
+    --bg-raise: oklch(20% 0.012 250);
+    --bg-sunk: oklch(13% 0.01 250);
+    --ink: oklch(96% 0.005 240);
+    --ink-2: oklch(82% 0.008 240);
+    --ink-3: oklch(65% 0.01 240);
+    --ink-4: oklch(50% 0.01 240);
+    --line: oklch(28% 0.012 250);
+    --line-2: oklch(34% 0.012 250);
+    --accent-bg: oklch(30% 0.04 255);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--f-body);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--pad-gutter); }
+
+  /* ——————————————————————————— NAV */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in oklab, var(--bg) 85%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--f-display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em;
+  }
+  .logo img { height: 36px; width: auto; }
+  html[data-dark="true"] .logo img { filter: invert(1) brightness(1.1) hue-rotate(180deg); }
+
+  .nav-links { display: flex; gap: 28px; font-size: 14.5px; color: var(--ink-2); }
+  .nav-links a { transition: color .15s; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 999px;
+    font-family: var(--f-body); font-weight: 500; font-size: 14.5px;
+    transition: transform .1s, background .15s, border-color .15s;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg-raise); }
+  html[data-dark="true"] .btn-primary { background: var(--bg-raise); color: var(--ink); }
+  .btn-primary:hover { background: var(--accent); color: #fff; }
+  .btn-ghost { color: var(--ink); border-color: var(--line-2); }
+  .btn-ghost:hover { border-color: var(--ink); }
+  .btn-link { color: var(--accent); }
+  .btn-link:hover { text-decoration: underline; }
+  .btn-lg { padding: 14px 22px; font-size: 15.5px; }
+
+  /* ——————————————————————————— HERO */
+  .hero { padding: 72px 0 40px; position: relative; }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3);
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-raise);
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .h1 {
+    font-family: var(--f-display);
+    font-size: clamp(42px, 6.2vw, 82px);
+    line-height: 0.98; letter-spacing: -0.035em;
+    font-weight: 600;
+    margin: 20px 0 20px;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .h1 em { font-style: normal; color: var(--accent); }
+  .h1 .mark {
+    background: linear-gradient(180deg, transparent 62%, var(--lime) 62%);
+    padding: 0 4px;
+    font-style: normal;
+  }
+
+  .lede {
+    font-size: 19px; line-height: 1.5; color: var(--ink-2);
+    max-width: 560px; margin: 0 0 28px;
+  }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .hero-meta {
+    display: flex; gap: 22px; margin-top: 28px;
+    font-family: var(--f-mono); font-size: 12px; color: var(--ink-3);
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+  .hero-meta .check { color: var(--accent); font-size: 14px; }
+
+  /* HERO variant: split */
+  .hero.split .hero-grid {
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 64px; align-items: center;
+  }
+  .hero.split .hero-visual { position: relative; height: 620px; overflow: visible; }
+
+  /* Clip the hero visual so absolute mockups never encroach on the copy column */
+  .hero .hero-visual { overflow: hidden; border-radius: 16px; }
+
+  /* HERO variant: stacked */
+  .hero.stacked { text-align: center; padding-bottom: 20px; }
+  .hero.stacked .h1 { max-width: 16ch; margin-inline: auto; }
+  .hero.stacked .lede { margin-inline: auto; }
+  .hero.stacked .hero-cta { justify-content: center; }
+  .hero.stacked .hero-meta { justify-content: center; }
+  .hero.stacked .hero-visual { margin-top: 72px; height: 560px; position: relative; }
+
+  /* HERO variant: dashboard-led */
+  .hero.dash .hero-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; align-items: center; }
+  .hero.dash .hero-visual { position: relative; height: 560px; }
+
+  /* ——————————————————————————— MOCKUPS */
+  /* Phone variant showing real app screenshot: hide notch + pad screen */
+  .phone-real::before { display: none; }
+  .phone-real .phone-screen { background: #f2f2f4; }
+
+  /* Phone */
+  .phone {
+    position: absolute;
+    width: 280px; height: 568px;
+    background: var(--bg-raise);
+    border-radius: 38px;
+    border: 1px solid var(--line-2);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 30px 60px -20px rgba(20,30,60,0.18),
+      0 10px 20px -10px rgba(20,30,60,0.08);
+    padding: 14px;
+    overflow: hidden;
+  }
+  .phone::before {
+    content:""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 22px; background: var(--ink); border-radius: 999px; z-index: 3;
+  }
+  html[data-dark="true"] .phone::before { background: #000; }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: var(--bg-sunk);
+    border-radius: 26px;
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px 10px;
+    font-family: var(--f-mono); font-size: 11px; color: var(--ink);
+  }
+  .phone-status .right { display: flex; gap: 4px; align-items: center; }
+  .phone-header {
+    padding: 44px 20px 14px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .phone-header .greeting { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .phone-header .name { font-family: var(--f-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; }
+  .phone-header .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--lime), var(--accent)); }
+
+  .phone-today {
+    margin: 6px 16px; padding: 14px 16px;
+    background: var(--bg-raise); border: 1px solid var(--line); border-radius: 14px;
+  }
+  .phone-today .label { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+  .phone-today .num { font-family: var(--f-display); font-size: 32px; font-weight: 600; letter-spacing: -0.02em; display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+  .phone-today .num small { font-size: 13px; color: var(--ink-3); font-weight: 400; letter-spacing: 0; }
+  .phone-today .bars { margin-top: 10px; display: grid; grid-template-columns: repeat(12,1fr); gap: 3px; height: 32px; align-items: end; }
+  .phone-today .bars i { background: var(--line-2); border-radius: 2px; display: block; }
+  .phone-today .bars i.a { background: var(--accent); }
+  .phone-today .bars i.b { background: var(--lime); }
+
+  .phone-log {
+    margin: 10px 16px 0; display: flex; flex-direction: column; gap: 6px;
+  }
+  .phone-log .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .phone-log .icn { width: 28px; height: 28px; border-radius: 8px; background: var(--bg-sunk); display:flex;align-items:center;justify-content:center; font-family: var(--f-mono); font-size: 10px; color: var(--ink-2); }
+  .phone-log .icn.m { background: var(--accent-bg); color: var(--accent-ink); }
+  .phone-log .icn.d { background: oklch(95% 0.05 95); color: #7a5810; }
+  .phone-log .meta { flex: 1; }
+  .phone-log .meta .t { font-weight: 500; font-size: 13px; }
+  .phone-log .meta .s { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); }
+  .phone-log .time { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+
+  .phone-fab {
+    position: absolute; bottom: 92px; right: 22px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--ink); color: var(--bg-raise);
+    display:flex;align-items:center;justify-content:center;
+    font-size: 26px; font-weight: 300;
+    box-shadow: 0 8px 16px rgba(0,0,0,.2);
+  }
+  html[data-dark="true"] .phone-fab { background: var(--accent); color: #fff; }
+  .phone-tabbar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 74px;
+    background: var(--bg-raise); border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(4,1fr);
+    padding: 10px 12px 22px;
+  }
+  .phone-tabbar .tab { display:flex;flex-direction:column;align-items:center;gap:4px; font-family: var(--f-mono); font-size: 9.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .phone-tabbar .tab .glyph { width: 20px; height: 20px; border: 1.5px solid var(--ink-3); border-radius: 5px; }
+  .phone-tabbar .tab.active { color: var(--accent); }
+  .phone-tabbar .tab.active .glyph { border-color: var(--accent); background: var(--accent-bg); }
+
+  /* Dashboard */
+  .dash {
+    position: absolute;
+    background: var(--bg-raise);
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+      0 40px 80px -30px rgba(20,30,60,0.22),
+      0 10px 20px -10px rgba(20,30,60,0.1);
+  }
+  .dash-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--line);
+    background: var(--bg-sunk);
+  }
+  .dash-bar .dots { display: flex; gap: 6px; }
+  .dash-bar .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); display: block; }
+  .dash-bar .url {
+    margin-left: 12px; flex: 1;
+    font-family: var(--f-mono); font-size: 11px; color: var(--ink-3);
+    background: var(--bg-raise); border: 1px solid var(--line); padding: 5px 10px; border-radius: 6px;
+    max-width: 320px;
+  }
+  .dash-body { display: grid; grid-template-columns: 200px 1fr; min-height: 460px; }
+  .dash-side { border-right: 1px solid var(--line); padding: 18px 14px; background: var(--bg-sunk); }
+  .dash-side .brand { font-family: var(--f-display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; margin-bottom: 20px; display:flex; align-items:center; gap: 8px;}
+  .dash-side .brand .sq { width: 18px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, var(--lime), var(--accent)); }
+  .dash-side .group { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-4); margin: 14px 0 6px; }
+  .dash-side .item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; color: var(--ink-2); cursor: default;}
+  .dash-side .item .g { width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+  .dash-side .item.active { background: var(--bg-raise); color: var(--ink); box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+  .dash-side .item.active .g { background: var(--accent); }
+
+  .dash-main { padding: 20px 24px; }
+  .dash-crumbs { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); margin-bottom: 8px; }
+  .dash-h { font-family: var(--f-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 18px; display: flex; justify-content: space-between; align-items: center; }
+  .dash-h .tag { font-family: var(--f-mono); font-size: 10.5px; background: var(--accent-bg); color: var(--accent-ink); padding: 4px 10px; border-radius: 999px; letter-spacing: 0.04em; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .kpi { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--bg-raise); }
+  .kpi .l { font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .kpi .v { font-family: var(--f-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .kpi .d { font-family: var(--f-mono); font-size: 11px; margin-top: 2px; color: var(--accent); }
+  .kpi .d.neg { color: #c0413c; }
+
+  .chart {
+    border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+    height: 160px; background: var(--bg-raise);
+    display: flex; flex-direction: column;
+  }
+  .chart .hd { display: flex; justify-content: space-between; align-items: center; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .chart .hd .legend { display: flex; gap: 12px; }
+  .chart .hd .legend span { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-2); text-transform: none; letter-spacing: 0; }
+  .chart .hd .legend i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); display:inline-block; }
+  .chart .hd .legend i.b { background: var(--lime); }
+  .chart svg { flex: 1; width: 100%; }
+
+  .pat-table { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 14px; background: var(--bg-raise); }
+  .pat-table .r { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 80px; gap: 12px; padding: 10px 14px; font-size: 12.5px; border-bottom: 1px solid var(--line); align-items: center; }
+  .pat-table .r:last-child { border-bottom: none; }
+  .pat-table .r.hd { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; background: var(--bg-sunk); }
+  .pat-table .r .name { display: flex; align-items: center; gap: 8px; }
+  .pat-table .r .av { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-sunk); border: 1px solid var(--line-2); font-family: var(--f-mono); font-size: 10px; display:flex;align-items:center;justify-content:center; color: var(--ink-2); }
+  .pat-table .r .st { font-family: var(--f-mono); font-size: 10.5px; padding: 2px 8px; border-radius: 999px; display: inline-block; }
+  .st.ok { background: oklch(94% 0.05 150); color: #2c6a20; }
+  .st.watch { background: oklch(94% 0.06 85); color: #7a5810; }
+  .st.alert { background: oklch(94% 0.05 25); color: #a63a33; }
+  html[data-dark="true"] .st.ok { background: oklch(30% 0.06 150); color: oklch(85% 0.1 150); }
+  html[data-dark="true"] .st.watch { background: oklch(30% 0.08 85); color: oklch(85% 0.12 85); }
+  html[data-dark="true"] .st.alert { background: oklch(30% 0.06 25); color: oklch(85% 0.1 25); }
+
+  /* ——————————————————————————— SECTIONS */
+  section { padding: var(--pad-section) 0; }
+  .kicker {
+    font-family: var(--f-mono); font-size: 12px; color: var(--accent);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .kicker::before { content:""; width: 18px; height: 1px; background: var(--accent); display: inline-block; }
+  .h2 {
+    font-family: var(--f-display);
+    font-size: clamp(32px, 4.5vw, 56px);
+    line-height: 1; letter-spacing: -0.03em;
+    font-weight: 600; margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  .h2-lede { font-size: 18px; color: var(--ink-2); max-width: 620px; line-height: 1.5; margin: 0 0 48px; }
+
+  /* Dark section — invert tokens locally so nested cards keep contrast */
+  section.section-dark {
+    --bg: oklch(18% 0.012 250);
+    --bg-raise: oklch(22% 0.012 250);
+    --bg-sunk: oklch(14% 0.01 250);
+    --ink: oklch(96% 0.005 240);
+    --ink-2: oklch(82% 0.008 240);
+    --ink-3: oklch(65% 0.01 240);
+    --ink-4: oklch(50% 0.01 240);
+    --line: oklch(28% 0.012 250);
+    --line-2: oklch(34% 0.012 250);
+    --accent-bg: oklch(30% 0.04 255);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  section.section-dark .kicker { color: var(--lime); }
+  section.section-dark .kicker::before { background: var(--lime); }
+  section.section-dark .btn-primary { background: var(--lime); color: oklch(18% 0.012 250); }
+  section.section-dark .btn-primary:hover { background: #fff; color: oklch(18% 0.012 250); }
+  section.section-dark .btn-ghost { color: var(--ink); border-color: var(--line-2); }
+
+  /* Logos strip */
+  .logos {
+    padding: 48px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .logos-label { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; text-align: center; margin-bottom: 22px; }
+  .logos-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 24px; align-items: center; opacity: 0.85; }
+  .logos-grid .lg {
+    height: 32px; display:flex;align-items:center;justify-content:center;
+    font-family: var(--f-display); font-weight: 600; font-size: 16px;
+    color: var(--ink-3); letter-spacing: -0.01em;
+    border: 1px dashed var(--line-2); border-radius: 6px; padding: 0 12px;
+  }
+
+  /* Product split */
+  .product-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+  }
+  .product-card {
+    background: var(--bg-raise);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    padding: 36px;
+    position: relative; overflow: hidden;
+    min-height: 520px;
+    display: flex; flex-direction: column;
+  }
+  .product-card .kicker { margin-bottom: 12px; }
+  .product-card h3 {
+    font-family: var(--f-display); font-size: 34px; font-weight: 600;
+    letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 12px;
+  }
+  .product-card p { color: var(--ink-2); font-size: 16px; margin: 0 0 20px; max-width: 44ch; }
+  .product-card ul { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 10px; }
+  .product-card li { font-size: 14.5px; color: var(--ink-2); display: flex; gap: 10px; align-items: flex-start; }
+  .product-card li::before {
+    content: "→"; font-family: var(--f-mono); color: var(--accent); flex-shrink: 0;
+  }
+  .product-card .visual { margin-top: auto; height: 260px; position: relative; }
+
+  /* Benefits / metrics */
+  .bens {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 32px;
+  }
+  .ben {
+    padding: 28px; background: var(--bg-raise);
+    border: 1px solid var(--line); border-radius: var(--radius-lg);
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 220px;
+  }
+  .ben .num {
+    font-family: var(--f-display); font-size: 56px; font-weight: 600; letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .ben .num .unit { font-size: 24px; color: var(--ink-3); margin-left: 4px; }
+  .ben .t { font-size: 15px; font-weight: 500; margin-top: 8px;}
+  .ben .d { font-size: 14px; color: var(--ink-3); line-height: 1.5; }
+  .ben.accent { background: var(--ink); color: var(--bg-raise); border-color: var(--ink);}
+  .ben.accent .num { color: var(--lime); }
+  .ben.accent .d { color: oklch(80% 0.01 240); }
+
+  /* Specialties */
+  .specs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
+  .spec {
+    border: 1px solid var(--line); border-radius: var(--radius-lg);
+    background: var(--bg-raise); padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 260px;
+    transition: border-color .2s, transform .2s;
+  }
+  .spec:hover { border-color: var(--ink-3); transform: translateY(-2px); }
+  .spec .glyph {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--accent-bg); color: var(--accent-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-mono); font-size: 13px; font-weight: 500;
+  }
+  .spec h4 { font-family: var(--f-display); font-size: 19px; font-weight: 600; letter-spacing: -0.015em; margin: 4px 0 0;}
+  .spec p { font-size: 14px; color: var(--ink-3); margin: 0; line-height: 1.5; }
+  .spec .usecase {
+    margin-top: auto; padding-top: 16px; border-top: 1px dashed var(--line-2);
+    font-family: var(--f-mono); font-size: 11px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  /* Testimonials */
+  .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 32px; }
+  .quote {
+    padding: 28px; border: 1px solid var(--line); border-radius: var(--radius-lg);
+    background: var(--bg-raise); display: flex; flex-direction: column; gap: 20px; min-height: 280px;
+  }
+  .quote .q {
+    font-family: var(--f-display); font-size: 18px; line-height: 1.35;
+    letter-spacing: -0.01em; color: var(--ink); font-weight: 500;
+  }
+  .quote .q::before { content: "«"; color: var(--accent); margin-right: 4px; font-weight: 600; }
+  .quote .q::after { content: "»"; color: var(--accent); margin-left: 2px; font-weight: 600; }
+  .quote .who { margin-top: auto; display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .quote .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-sunk); border: 1px solid var(--line-2); font-family: var(--f-mono); font-size: 11px; display:flex;align-items:center;justify-content:center; color: var(--ink-2);}
+  .quote .who .n { font-size: 14px; font-weight: 500; }
+  .quote .who .r { font-size: 12.5px; color: var(--ink-3); font-family: var(--f-mono); }
+
+  /* Pricing */
+  .prices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+  .price {
+    border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px;
+    background: var(--bg-raise); display: flex; flex-direction: column; gap: 16px;
+  }
+  .price .plan { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .price .p {
+    font-family: var(--f-display); font-size: 52px; font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .price .p small { font-size: 14px; color: var(--ink-3); font-weight: 400; letter-spacing: 0; }
+  .price .desc { font-size: 14px; color: var(--ink-3); margin: 0; }
+  .price ul { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .price li { font-size: 13.5px; color: var(--ink-2); display: flex; gap: 8px; align-items: flex-start; }
+  .price li::before { content: "✓"; color: var(--accent); flex-shrink: 0; font-size: 13px; }
+  .price .btn { width: 100%; justify-content: center; }
+  .price.featured { background: var(--ink); color: var(--bg-raise); border-color: var(--ink); position: relative; }
+  html[data-dark="true"] .price.featured { background: var(--accent); border-color: var(--accent); color: #fff;}
+  .price.featured .plan { color: var(--lime); }
+  .price.featured .desc, .price.featured li { color: oklch(82% 0.01 240); }
+  html[data-dark="true"] .price.featured .desc, html[data-dark="true"] .price.featured li { color: rgba(255,255,255,0.85); }
+  .price.featured li::before { color: var(--lime); }
+  .price.featured .btn-primary { background: var(--lime); color: var(--ink); }
+  .price.featured .badge {
+    position: absolute; top: -10px; right: 20px;
+    font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    background: var(--lime); color: var(--ink); padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* CTA final */
+  .cta-final {
+    margin: 0 var(--pad-gutter) 64px;
+    padding: 80px 64px;
+    background: var(--ink); color: var(--bg-raise);
+    border-radius: var(--radius-xl);
+    position: relative; overflow: hidden;
+  }
+  html[data-dark="true"] .cta-final { background: linear-gradient(135deg, var(--accent), #1a4fb0); }
+  .cta-final::after {
+    content:""; position: absolute; right: -80px; bottom: -80px;
+    width: 340px; height: 340px; border-radius: 50%;
+    background: radial-gradient(circle, var(--lime) 0%, transparent 70%);
+    opacity: 0.25;
+  }
+  .cta-final h2 {
+    font-family: var(--f-display); font-size: clamp(36px, 5vw, 60px);
+    font-weight: 600; letter-spacing: -0.03em; line-height: 1; margin: 0 0 14px;
+    max-width: 18ch;
+  }
+  .cta-final p { color: oklch(82% 0.01 240); font-size: 17px; margin: 0 0 28px; max-width: 52ch; }
+  .cta-final .btn-primary { background: var(--lime); color: var(--ink); }
+  .cta-final .btn-primary:hover { background: #fff; }
+  .cta-final .btn-ghost { color: var(--bg-raise); border-color: oklch(45% 0.012 250); }
+
+  /* Footer */
+  footer { padding: 64px 0 32px; border-top: 1px solid var(--line); }
+  .foot-grid { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 36px; margin-bottom: 48px;}
+  .foot-grid .col h5 { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); margin: 0 0 14px;}
+  .foot-grid .col a { display: block; font-size: 14px; color: var(--ink-2); padding: 4px 0;}
+  .foot-grid .col a:hover { color: var(--ink); }
+  .foot-grid .brand-col .tag { color: var(--ink-3); font-size: 14px; margin-top: 12px; max-width: 32ch; }
+  .foot-legal {
+    padding-top: 24px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .foot-legal .r { display: flex; gap: 20px; }
+
+  /* Tweaks panel */
+  .tweaks-panel {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    background: var(--bg-raise); border: 1px solid var(--line-2);
+    border-radius: 12px; padding: 14px; width: 260px;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15);
+    display: none;
+    font-family: var(--f-body);
+  }
+  .tweaks-panel.on { display: block; }
+  .tweaks-panel h6 {
+    font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-3); margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .tweaks-panel .grp { margin-bottom: 14px; }
+  .tweaks-panel .grp:last-child { margin-bottom: 0; }
+  .tweaks-panel .lab { font-size: 11px; color: var(--ink-3); font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .tweaks-panel .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tweaks-panel .chip {
+    padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line-2);
+    font-size: 12px; cursor: pointer; color: var(--ink-2); background: var(--bg-raise);
+  }
+  .tweaks-panel .chip.on { background: var(--ink); color: var(--bg-raise); border-color: var(--ink); }
+  .tweaks-panel .swatches { display: flex; gap: 6px; }
+  .tweaks-panel .sw { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid var(--bg-raise); outline: 1px solid var(--line-2); }
+  .tweaks-panel .sw.on { outline: 2px solid var(--ink); }
+
+  /* Responsive */
+  /* Below ~1120px the split layout gets cramped — collapse to stacked so the
+     absolute-positioned dashboard mockup can't overlap the H1. */
+  @media (max-width: 1120px) {
+    .hero.split .hero-grid,
+    .hero.dash .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+    .hero.split .hero-visual,
+    .hero.dash .hero-visual { height: 520px; margin-top: 32px; }
+    .hero.split .hero-visual .dash,
+    .hero.dash .hero-visual .dash {
+      right: 0 !important; left: auto !important;
+      top: 0 !important; width: min(640px, 100%) !important;
+      transform: none !important;
+    }
+    .hero.split .hero-visual .phone,
+    .hero.dash .hero-visual .phone {
+      left: 0 !important; right: auto !important; bottom: auto !important;
+      top: 40px !important; transform: scale(0.85) !important; transform-origin: top left !important;
+    }
+  }
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .hero.split .hero-visual, .hero.dash .hero-visual { height: 540px; }
+    .product-split { grid-template-columns: 1fr; }
+    .bens, .specs, .quotes, .prices { grid-template-columns: 1fr 1fr; }
+    .logos-grid { grid-template-columns: repeat(3,1fr); }
+    .dash-body { grid-template-columns: 1fr; }
+    .dash-side { display: none; }
+    .foot-grid { grid-template-columns: 1fr 1fr; }
+    .cta-final { padding: 48px 32px; }
+  }
+  @media (max-width: 560px) {
+    .bens, .specs, .quotes, .prices { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+<script is:inline>
+  (function() {
+    var q = window.location.search || '';
+    var h = window.location.hash || '';
+    if (h.indexOf('access_token') !== -1 || h.indexOf('error_code') !== -1 ||
+        q.indexOf('code=') !== -1 || q.indexOf('type=recovery') !== -1) {
+      window.location.replace('/user' + q + h);
+    }
+  })();
+  </script>
+</head>
+<body>
+
+<!-- ——————————————————————————— NAV -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="logo" href="#">
+      <img src="/fluxia-logo.png" alt="Fluxia Health" />
+    </a>
+    <nav class="nav-links">
+      <a href="#producto">Producto</a>
+      <a href="#especialidades">Especialidades</a>
+      <a href="#planes">Planes</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="/user">Iniciar sesión</a>
+      <a class="btn btn-primary" href="/medics">Portal médico →</a>
     </div>
+  </div>
+</header>
 
-    <!-- Update banner (hidden by default) -->
-    <div id="update-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; padding:12px; text-align:center; background:#231f20; color:white; font-family:'Inter',sans-serif; font-size:14px;">
-      🆕 Nueva versión disponible
-      <button onclick="window.location.reload()" style="margin-left:12px; padding:6px 16px; border-radius:20px; border:none; background:white; color:#231f20; font-weight:bold; font-size:14px; cursor:pointer;">
-        Actualizar
-      </button>
+<!-- ——————————————————————————— HERO -->
+<section class="hero split" id="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="dot"></span>Plataforma clínica · CE Class I</span>
+        <h1 class="h1">
+          Registro clínico de <span class="mark">diuresis</span> y deposición, en tiempo real.
+        </h1>
+        <p class="lede">
+          Fluxia Health conecta el registro del paciente con el dashboard del equipo clínico. Menos papel, menos ambigüedad y patrones detectables desde el primer día.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="#demo">Solicitar demo clínica</a>
+          <a class="btn btn-ghost btn-lg" href="#producto">Ver cómo funciona →</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <!-- Dashboard back -->
+        <div class="dash" style="right: -40px; top: 20px; width: 640px;">
+          <div class="dash-bar">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="url">panel.fluxia.health / pacientes / rodriguez-m</div>
+          </div>
+          <div class="dash-body">
+            <aside class="dash-side">
+              <div class="brand"><span class="sq"></span> Fluxia Clinic</div>
+              <div class="group">Panel</div>
+              <div class="item"><span class="g"></span> Resumen</div>
+              <div class="item active"><span class="g"></span> Pacientes</div>
+              <div class="item"><span class="g"></span> Alertas</div>
+              <div class="item"><span class="g"></span> Informes</div>
+              <div class="group">Equipo</div>
+              <div class="item"><span class="g"></span> Urología</div>
+              <div class="item"><span class="g"></span> Geriatría</div>
+            </aside>
+            <div class="dash-main">
+              <div class="dash-crumbs">Pacientes / Rodríguez, M. · HCE 00842</div>
+              <h3 class="dash-h">Ficha de seguimiento <span class="tag">● En observación · 14d</span></h3>
+              <div class="kpis">
+                <div class="kpi"><div class="l">Diuresis 24h</div><div class="v">1 820<small style="font-size:11px;color:var(--ink-3);"> ml</small></div><div class="d">+6% vs semana</div></div>
+                <div class="kpi"><div class="l">Micciones</div><div class="v">8<small style="font-size:11px;color:var(--ink-3);"> /día</small></div><div class="d">Estable</div></div>
+                <div class="kpi"><div class="l">Deposiciones</div><div class="v">1,4<small style="font-size:11px;color:var(--ink-3);"> /día</small></div><div class="d neg">−22%</div></div>
+                <div class="kpi"><div class="l">Bristol</div><div class="v">4,2</div><div class="d">En rango</div></div>
+              </div>
+              <div class="chart">
+                <div class="hd">
+                  <span>Registro — 14 días</span>
+                  <span class="legend"><span><i></i>Micción</span><span><i class="b"></i>Deposición</span></span>
+                </div>
+                <svg viewBox="0 0 600 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="ga" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="var(--accent)" stop-opacity="0.35"/>
+                      <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,70 L42,60 L85,65 L128,42 L171,50 L214,30 L257,38 L300,22 L343,34 L386,28 L428,42 L471,32 L514,48 L557,36 L600,44 L600,100 L0,100 Z" fill="url(#ga)"/>
+                  <path d="M0,70 L42,60 L85,65 L128,42 L171,50 L214,30 L257,38 L300,22 L343,34 L386,28 L428,42 L471,32 L514,48 L557,36 L600,44" stroke="var(--accent)" stroke-width="1.8" fill="none"/>
+                  <g stroke="var(--lime-ink)" stroke-width="1.5" opacity="0.75" fill="none">
+                    <path d="M0,82 L42,78 L85,80 L128,72 L171,76 L214,70 L257,74 L300,68 L343,72 L386,70 L428,78 L471,74 L514,82 L557,76 L600,80" stroke-dasharray="3 3"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone front — real app screenshot -->
+        <div class="phone phone-real" style="left: -20px; top: 40px;">
+          <div class="phone-screen">
+            <img src="/app-screenshot.jpeg" alt="App Fluxia — pantalla de registro" style="width:100%; height:100%; object-fit: cover; display:block;"/>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+</section>
 
-    <script define:vars={{ base: import.meta.env.BASE_URL }}>
-      if ('serviceWorker' in navigator) {
-        const swPath = base.endsWith('/') ? base + 'sw.js' : base + '/sw.js';
-        navigator.serviceWorker.register(swPath).then((registration) => {
-          console.log('Service Worker registered');
+<!-- ——————————————————————————— LOGOS -->
+<section class="logos" style="padding: 48px 0;">
+  <div class="wrap">
+    <div class="logos-label">Utilizado por equipos clínicos en</div>
+    <div class="logos-grid">
+      <div class="lg">[logo hospital A]</div>
+      <div class="lg">[logo clínica B]</div>
+      <div class="lg">[logo hospital C]</div>
+      <div class="lg">[logo residencia D]</div>
+      <div class="lg">[logo hospital E]</div>
+      <div class="lg">[logo clínica F]</div>
+    </div>
+  </div>
+</section>
 
-          // Check for updates every 60 seconds
-          setInterval(() => registration.update(), 60 * 1000);
+<!-- ——————————————————————————— PRODUCT SPLIT -->
+<section id="producto" class="section-dark">
+  <div class="wrap">
+    <span class="kicker">Dos apps, un único registro</span>
+    <h2 class="h2">Del síntoma a la decisión clínica,<br/>sin papel de por medio.</h2>
+    <p class="h2-lede">El paciente registra en segundos. El equipo clínico lo ve estructurado, longitudinal y exportable. Nada de adivinar la semana pasada.</p>
 
-          // When a new SW is found and installed, show the update banner
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (!newWorker) return;
+    <div class="product-split">
+      <!-- Paciente -->
+      <div class="product-card">
+        <span class="kicker">App paciente · Web</span>
+        <h3>Registro en menos de 10 segundos.</h3>
+        <p>Diseñado para adherencia real: una sola pantalla, recordatorios adaptativos y lenguaje claro. El paciente anota micciones, deposiciones, volumen, color y escala Bristol.</p>
+        <ul>
+          <li>Registro tanto de micción como deposición</li>
+          <li>Recordatorios configurados por el equipo clínico</li>
+          <li>Intuitivo y fácil de usar</li>
+          <li>Funciona sin conexión; sincroniza al volver</li>
+        </ul>
+        <div class="visual" style="display:flex; justify-content:center;">
+          <div class="phone" style="position: relative; transform: scale(0.78); transform-origin: top center;">
+            <div class="phone-screen">
+              <div class="phone-status"><span>14:32</span><span class="right">◼ ▣ ▢</span></div>
+              <div style="padding: 50px 24px 16px;">
+                <div style="font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em;">Nuevo registro</div>
+                <div style="font-family: var(--f-display); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px;">¿Qué registras?</div>
+              </div>
+              <div style="padding: 0 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="padding: 20px 14px; background: var(--accent); color: #fff; border-radius: 14px;">
+                  <div style="font-family: var(--f-mono); font-size: 10px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em;">Micción</div>
+                  <div style="font-family: var(--f-display); font-size: 22px; font-weight: 600; margin-top: 4px;">280 ml</div>
+                </div>
+                <div style="padding: 20px 14px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: 14px;">
+                  <div style="font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em;">Deposición</div>
+                  <div style="font-family: var(--f-display); font-size: 22px; font-weight: 600; color: var(--ink-3); margin-top: 4px;">—</div>
+                </div>
+              </div>
+              <div style="padding: 14px 16px;">
+                <div style="font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Color</div>
+                <div style="display:flex; gap: 6px;">
+                  <div style="flex:1; height: 32px; background: #FDF6AE; border-radius: 6px; border: 2px solid var(--accent);"></div>
+                  <div style="flex:1; height: 32px; background: #F3D96B; border-radius: 6px;"></div>
+                  <div style="flex:1; height: 32px; background: #D9A43B; border-radius: 6px;"></div>
+                  <div style="flex:1; height: 32px; background: #A87320; border-radius: 6px;"></div>
+                  <div style="flex:1; height: 32px; background: #6B3F10; border-radius: 6px;"></div>
+                </div>
+              </div>
+              <div style="padding: 0 16px; margin-top: auto; padding-bottom: 20px;">
+                <div style="padding: 14px; background: var(--ink); color: var(--bg-raise); border-radius: 999px; text-align:center; font-size: 14px; font-weight: 500;">Guardar registro</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            newWorker.addEventListener('statechange', () => {
-              // New SW is installed and waiting — show banner
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                document.getElementById('update-banner').style.display = 'block';
-              }
-            });
-          });
-        }).catch((err) => {
-          console.log('SW registration failed:', err);
-        });
+      <!-- Médico -->
+      <div class="product-card">
+        <span class="kicker">Dashboard clínico · Web</span>
+        <h3>El patrón del paciente, de un vistazo.</h3>
+        <p>Agrupa cohortes, detecta desviaciones de volumen/frecuencia, exporta PDF para historia clínica. Integrable por HL7/FHIR con la mayoría de HCE.</p>
+        <ul>
+          <li>Fichas longitudinales con KPIs de diuresis y tránsito</li>
+          <li>Alertas configurables por paciente o protocolo</li>
+          <li>Informes PDF listos para adjuntar a la historia</li>
+          <li>Multi-rol: urología, gastro, geriatría, enfermería</li>
+        </ul>
+        <div class="visual">
+          <div class="dash" style="position: relative; width: 100%;">
+            <div class="dash-bar">
+              <div class="dots"><i></i><i></i><i></i></div>
+              <div class="url">panel.fluxia.health / alertas</div>
+            </div>
+            <div style="padding: 16px;">
+              <div style="font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">Alertas activas · 3</div>
+              <div class="pat-table" style="margin: 0;">
+                <div class="r hd"><div>Paciente</div><div>Indicador</div><div>Umbral</div><div>Estado</div><div></div></div>
+                <div class="r"><div class="name"><div class="av">MR</div>Rodríguez, M.</div><div>Diuresis 24h</div><div>&lt; 500 ml</div><div><span class="st alert">Oliguria</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">2h</div></div>
+                <div class="r"><div class="name"><div class="av">JP</div>Pérez, J.</div><div>Frecuencia</div><div>&gt; 10/día</div><div><span class="st watch">Polaquiuria</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">5h</div></div>
+                <div class="r"><div class="name"><div class="av">LS</div>Sánchez, L.</div><div>Bristol</div><div>&gt; 6</div><div><span class="st watch">Diarrea</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">1d</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-        // When the new SW takes over, reload the page
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
-      }
-    </script>
-  </body>
+<!-- ——————————————————————————— SPECIALTIES -->
+<section id="especialidades">
+  <div class="wrap">
+    <span class="kicker">Por especialidad</span>
+    <h2 class="h2">Un registro, cuatro lecturas clínicas.</h2>
+    <p class="h2-lede">Fluxia adapta las plantillas de registro, los umbrales de alerta y los informes al contexto de cada especialidad.</p>
+
+    <div class="specs">
+      <div class="spec">
+        <div class="glyph">UR</div>
+        <h4>Urología</h4>
+        <p>Seguimiento de diuresis 24h, diario miccional, nicturia y post-prostatectomía. Umbrales ICS configurables.</p>
+        <div class="usecase">HBP · Incontinencia · Vejiga hiperactiva</div>
+      </div>
+      <div class="spec">
+        <div class="glyph">GA</div>
+        <h4>Gastroenterología</h4>
+        <p>Escala Bristol, frecuencia, dolor y correlación con dieta. Ideal para EII, SII y estreñimiento crónico.</p>
+        <div class="usecase">EII · SII · Estreñimiento</div>
+      </div>
+      <div class="spec">
+        <div class="glyph">GE</div>
+        <h4>Geriatría</h4>
+        <p>Detección precoz de ITU, deshidratación e impactación fecal. Perfiles accesibles y apoyo del cuidador.</p>
+        <div class="usecase">Residencias · Domicilio</div>
+      </div>
+      <div class="spec">
+        <div class="glyph">PE</div>
+        <h4>Pediatría</h4>
+        <p>Entrenamiento esfinteriano, enuresis y encopresis. Visualización amable para familia y gamificación opcional.</p>
+        <div class="usecase">Enuresis · Encopresis · ERGE</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————————————— QUOTES -->
+<section class="section-dark">
+  <div class="wrap">
+    <span class="kicker">Voces del terreno</span>
+    <h2 class="h2">Lo que nos dicen los equipos.</h2>
+
+    <div class="quotes">
+      <div class="quote">
+        <div class="q">Lo que antes era una hoja arrugada en el bolsillo del pijama ahora es un gráfico longitudinal. Cambia la consulta de raíz.</div>
+        <div class="who">
+          <div class="avatar">EM</div>
+          <div><div class="n">Dra. Elena Márquez</div><div class="r">Urología · Hospital placeholder</div></div>
+        </div>
+      </div>
+      <div class="quote">
+        <div class="q">Los residentes entregan el registro. En residencias geriátricas eso por sí solo justifica la herramienta.</div>
+        <div class="who">
+          <div class="avatar">JT</div>
+          <div><div class="n">Javier Torres</div><div class="r">Coordinador · Residencia placeholder</div></div>
+        </div>
+      </div>
+      <div class="quote">
+        <div class="q">Detectamos una oliguria 3 días antes de la visita. Con Fluxia no es anécdota, es el patrón.</div>
+        <div class="who">
+          <div class="avatar">CL</div>
+          <div><div class="n">Dr. Carlos López</div><div class="r">Gastroenterología · Clínica placeholder</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————————————— PRICING -->
+<section id="planes">
+  <div class="wrap">
+    <span class="kicker">Planes</span>
+    <h2 class="h2">Precios claros. Sin por-paciente.</h2>
+    <p class="h2-lede">App de paciente gratis para siempre. Solo paga el equipo clínico que usa el dashboard. Pruébalo — el primer paciente es gratuito.</p>
+
+    <div class="prices">
+      <div class="price">
+        <div class="plan">Free · Paciente</div>
+        <div class="p">0 €<small>/siempre</small></div>
+        <p class="desc">Para cualquier persona que necesite registrar su salud digestiva o urinaria.</p>
+        <ul>
+          <li>Registro ilimitado de micciones y deposiciones</li>
+          <li>Exportación PDF y CSV</li>
+          <li>Recordatorios personalizables</li>
+          <li>Compartir con hasta 2 médicos</li>
+        </ul>
+        <a class="btn btn-ghost" href="/user">Abrir la app</a>
+      </div>
+
+      <div class="price featured">
+        <div class="badge">Recomendado</div>
+        <div class="plan">Pro · Consulta</div>
+        <div class="p">49 €<small>/profesional/mes</small></div>
+        <p class="desc">Para consultas privadas y especialistas con cartera de pacientes activa.</p>
+        <ul>
+          <li>Hasta 200 pacientes en seguimiento</li>
+          <li>Dashboard con alertas y cohortes</li>
+          <li>Informes PDF firmados</li>
+          <li>Plantillas por especialidad</li>
+          <li>Soporte prioritario en 24h</li>
+        </ul>
+        <a class="btn btn-primary" href="/medics">Crear cuenta médica</a>
+      </div>
+
+      <div class="price">
+        <div class="plan">Clinic · Hospital</div>
+        <div class="p">A medida<small></small></div>
+        <p class="desc">Para hospitales, redes de clínicas y residencias con múltiples servicios.</p>
+        <ul>
+          <li>Pacientes y profesionales ilimitados</li>
+          <li>SSO (SAML / OIDC) y auditoría completa</li>
+          <li>Integración HL7 / FHIR con la HCE</li>
+          <li>Despliegue on-premise opcional</li>
+          <li>SLA 99,95% y gestor de cuenta</li>
+        </ul>
+        <a class="btn btn-ghost" href="#contacto">Hablar con ventas →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————————————— CTA FINAL -->
+<div class="cta-final" id="demo">
+  <h2>¿Vemos Fluxia en marcha con tus pacientes?</h2>
+  <p>Demo guiada de 20 minutos con un clínico de nuestro equipo. Te llevamos tus 3 casos más complejos y te enseñamos cómo quedarían en Fluxia.</p>
+  <div style="display:flex; gap: 12px; flex-wrap: wrap;">
+    <a class="btn btn-primary btn-lg" href="#">Agendar demo clínica</a>
+    <a class="btn btn-ghost btn-lg" href="#contacto">Prefiero que me escriban</a>
+  </div>
+</div>
+
+<!-- ——————————————————————————— FOOTER -->
+<footer id="contacto">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="col brand-col">
+        <div class="logo">
+          <img src="/fluxia-logo.png" alt="Fluxia Health" />
+        </div>
+        <div class="tag">Registro clínico de diuresis y deposición, para pacientes y equipos clínicos.</div>
+      </div>
+      <div class="col">
+        <h5>Producto</h5>
+        <a href="#">App paciente</a>
+        <a href="#">Dashboard clínico</a>
+        <a href="#">Integraciones</a>
+        <a href="#">Cambios</a>
+      </div>
+      <div class="col">
+        <h5>Clínica</h5>
+        <a href="#">Urología</a>
+        <a href="#">Gastroenterología</a>
+        <a href="#">Geriatría</a>
+        <a href="#">Pediatría</a>
+      </div>
+      <div class="col">
+        <h5>Recursos</h5>
+        <a href="#">Estudios piloto</a>
+        <a href="#">Documentación</a>
+        <a href="#">Soporte</a>
+        <a href="#">Centro de ayuda</a>
+      </div>
+      <div class="col">
+        <h5>Empresa</h5>
+        <a href="#">Equipo</a>
+        <a href="#">Seguridad</a>
+        <a href="#">Aviso legal</a>
+        <a href="#">Contacto</a>
+      </div>
+    </div>
+    <div class="foot-legal">
+      <div>© 2026 Fluxia Health · Madrid, España</div>
+      <div class="r">
+        <span>Privacidad</span>
+        <span>RGPD</span>
+        <span>Cookies</span>
+        <span>Estado</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
 </html>

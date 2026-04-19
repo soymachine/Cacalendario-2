@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // so the PWA is never installed with a token-laden URL as its start_url
       if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') &&
           (window.location.search || window.location.hash)) {
-        window.history.replaceState({}, '', '/');
+        window.history.replaceState({}, '', '/user');
       }
       // Ensure user_profiles row exists on sign-in/sign-up
       if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
