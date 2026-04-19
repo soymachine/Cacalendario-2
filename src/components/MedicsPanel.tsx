@@ -23,6 +23,10 @@ const URINE_TYPE_LABEL: Record<string, string> = {
 const URINE_CHAR_LABEL: Record<string, string> = {
   blood: 'Sangre', aspect: 'Aspecto', odor: 'Olor', pain: 'Dolor',
 };
+const BRISTOL_LABEL: Record<number, string> = {
+  1: 'Separados duros', 2: 'Grumoso duro', 3: 'Fisurado',
+  4: 'Suave (ideal)', 5: 'Blandos', 6: 'Pastoso', 7: 'Líquido',
+};
 
 interface PatientLink {
   id: string;
@@ -222,6 +226,7 @@ export default function MedicsPanel() {
   const [onboardingSkippable, setOnboardingSkippable] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
+  const [bristolHover, setBristolHover] = useState<{ idx: number; b: number; date: string; svgX: number; svgY: number } | null>(null);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -736,6 +741,7 @@ export default function MedicsPanel() {
     setEntryFilterFrom('');
     setEntryFilterTo('');
     setNotesDraft(patient.doctor_notes || '');
+    setBristolHover(null);
 
     setPatientDetail({
       entries: entryList,
@@ -1529,129 +1535,7 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Row 2: Stats + Charts */}
-            <div style={{ ...s.card, marginBottom: 16 }}>
-              <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
-                📊 Estadísticas
-              </div>
-              <div style={{ padding: '14px 16px' }}>
-                {/* Summary stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-                  {[
-                    { label: 'Total registros', value: patientDetail.totalEntries },
-                    { label: 'Bristol promedio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
-                    { label: 'Días sin registrar', value: patientDetail.daysSinceLast ?? '—' },
-                  ].map(st => (
-                    <div key={st.label} style={{ backgroundColor: '#00000005', borderRadius: 10, padding: '10px 12px', textAlign: 'center' as const }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: '#111' }}>{st.value}</div>
-                      <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{st.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Charts row */}
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
-                  {/* Bristol trend sparkline */}
-                  <div style={{ flex: '2 1 260px', minWidth: 0 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 6 }}>TENDENCIA BRISTOL</div>
-                    {(() => {
-                      const data = patientDetail.entries
-                        .filter(e => e.entry_type === 'poop' && e.bristol != null)
-                        .slice(0, 30).reverse();
-                      if (data.length < 2) return (
-                        <div style={{ fontSize: 12, color: '#ccc', padding: '12px 0' }}>Sin suficientes datos de Bristol</div>
-                      );
-                      const W = 400, H = 80, PAD = 8;
-                      const xStep = (W - PAD * 2) / (data.length - 1);
-                      const yOf = (b: number) => PAD + ((7 - b) / 6) * (H - PAD * 2);
-                      const pts = data.map((e, i) => ({ x: PAD + i * xStep, y: yOf(e.bristol!), b: e.bristol! }));
-                      const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-                      return (
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 80 }}>
-                          <rect x={0} y={yOf(7)} width={W} height={yOf(5) - yOf(7)} fill="#e74c3c06" />
-                          <rect x={0} y={yOf(5)} width={W} height={yOf(3) - yOf(5)} fill="#2ecc7106" />
-                          <rect x={0} y={yOf(3)} width={W} height={H - yOf(3)} fill="#e74c3c06" />
-                          {[3, 5].map(b => (
-                            <line key={b} x1={0} y1={yOf(b)} x2={W} y2={yOf(b)} stroke="#00000010" strokeWidth={0.5} />
-                          ))}
-                          <path d={pathD} fill="none" stroke={th.primary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-                          {pts.map((p, i) => (
-                            <circle key={i} cx={p.x} cy={p.y} r={2.5}
-                              fill={p.b >= 3 && p.b <= 5 ? '#27ae60' : p.b < 3 ? '#f39c12' : '#e74c3c'} />
-                          ))}
-                        </svg>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Weekly frequency bars */}
-                  <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 6 }}>FRECUENCIA SEMANAL</div>
-                    {(() => {
-                      const now = new Date();
-                      const weeks = Array.from({ length: 8 }, (_, w) => {
-                        const endDate = new Date(now);
-                        endDate.setDate(now.getDate() - w * 7);
-                        const startDate = new Date(endDate);
-                        startDate.setDate(endDate.getDate() - 7);
-                        const s = startDate.toISOString().slice(0, 10);
-                        const e = endDate.toISOString().slice(0, 10);
-                        return {
-                          label: w === 0 ? 'Esta' : w === 1 ? 'Ant.' : `-${w}s`,
-                          count: patientDetail.entries.filter(en => en.date >= s && en.date < e).length,
-                        };
-                      }).reverse();
-                      const maxC = Math.max(...weeks.map(w => w.count), 1);
-                      const W2 = 220, H2 = 80, BW = 20, GAP = 5;
-                      const total = weeks.length * (BW + GAP) - GAP;
-                      const ox = (W2 - total) / 2;
-                      return (
-                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 80 }}>
-                          {weeks.map((wk, i) => {
-                            const bh = (wk.count / maxC) * (H2 - 22);
-                            const x = ox + i * (BW + GAP);
-                            const y = H2 - 14 - bh;
-                            return (
-                              <g key={i}>
-                                <rect x={x} y={y} width={BW} height={bh} rx={3}
-                                  fill={wk.count > 0 ? th.primary : '#e0e0e0'}
-                                  opacity={wk.count > 0 ? 0.75 : 0.25} />
-                                {wk.count > 0 && (
-                                  <text x={x + BW / 2} y={y - 2} textAnchor="middle" fontSize={8} fill="#555">{wk.count}</text>
-                                )}
-                                <text x={x + BW / 2} y={H2 - 1} textAnchor="middle" fontSize={7} fill="#bbb">{wk.label}</text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                {/* Top symptoms */}
-                {(() => {
-                  const symCount: Record<string, number> = {};
-                  patientDetail.entries.forEach(e => e.symptoms.forEach(s => { symCount[s] = (symCount[s] || 0) + 1; }));
-                  const top = Object.entries(symCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                  if (top.length === 0) return null;
-                  return (
-                    <div style={{ marginTop: 14 }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, marginBottom: 8 }}>SÍNTOMAS MÁS FRECUENTES</div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
-                        {top.map(([sym, count]) => (
-                          <span key={sym} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 8, backgroundColor: '#e74c3c10', color: '#c0392b', fontWeight: 600 }}>
-                            {SYMPTOM_LABEL[sym] || sym} <span style={{ fontWeight: 400, opacity: 0.6 }}>×{count}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Row 3: Left column (calendar) + Right column (entries) */}
+            {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Left column: calendar + semáforo override */}
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
@@ -1720,6 +1604,173 @@ export default function MedicsPanel() {
                       return cells;
                     })()}
                   </div>
+                </div>
+              </div>
+
+              {/* Stats + Charts card */}
+              <div style={{ ...s.card }}>
+                <div style={{ padding: '8px 14px', borderBottom: '1px solid #00000010', fontSize: 12, fontWeight: 700, color: '#111' }}>
+                  📊 Estadísticas
+                </div>
+                <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                  {/* 3 compact stats */}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[
+                      { label: 'Registros', value: patientDetail.totalEntries },
+                      { label: 'Bristol medio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
+                      { label: 'Días sin reg.', value: patientDetail.daysSinceLast ?? '—' },
+                    ].map(st => (
+                      <div key={st.label} style={{ flex: 1, textAlign: 'center' as const, backgroundColor: '#00000005', borderRadius: 8, padding: '6px 4px' }}>
+                        <div style={{ fontSize: 17, fontWeight: 900, color: '#111', lineHeight: 1 }}>{st.value}</div>
+                        <div style={{ fontSize: 9, color: '#999', marginTop: 3 }}>{st.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bristol trend chart */}
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 4 }}>TENDENCIA BRISTOL (últimas 30 deposiciones)</div>
+                    {(() => {
+                      const bColor = (b: number) => b >= 3 && b <= 5 ? '#27ae60' : b < 3 ? '#f39c12' : '#e74c3c';
+                      const data = patientDetail.entries
+                        .filter(e => e.entry_type === 'poop' && e.bristol != null)
+                        .slice(0, 30).reverse();
+                      if (data.length < 2) return (
+                        <div style={{ fontSize: 11, color: '#ccc', padding: '10px 0', textAlign: 'center' as const }}>Sin suficientes datos de Bristol</div>
+                      );
+                      const W = 360, H = 120;
+                      const XL = 24, XR = 52, YT = 10, YB = 8;
+                      const CW = W - XL - XR;
+                      const CH = H - YT - YB;
+                      const xOf = (i: number) => XL + (data.length > 1 ? (i * CW) / (data.length - 1) : CW / 2);
+                      const yOf = (b: number) => YT + ((7 - b) / 6) * CH;
+                      const pts = data.map((e, i) => ({ x: xOf(i), y: yOf(e.bristol!), b: e.bristol!, date: shortDate(e.date) }));
+                      const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+                      return (
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 100, display: 'block' as const, overflow: 'visible' as const }}>
+                          {/* Zone backgrounds */}
+                          <rect x={XL} y={yOf(7)} width={CW} height={yOf(5) - yOf(7)} fill="#e74c3c08" />
+                          <rect x={XL} y={yOf(5)} width={CW} height={yOf(3) - yOf(5)} fill="#2ecc7110" />
+                          <rect x={XL} y={yOf(3)} width={CW} height={yOf(1) - yOf(3)} fill="#f39c1208" />
+                          {/* Zone boundary lines */}
+                          {[3, 5].map(b => (
+                            <line key={b} x1={XL} y1={yOf(b)} x2={XL + CW} y2={yOf(b)}
+                              stroke="#00000018" strokeWidth={0.6} strokeDasharray="3,2" />
+                          ))}
+                          {/* Y-axis labels */}
+                          {[1, 2, 3, 4, 5, 6, 7].map(b => (
+                            <text key={b} x={XL - 3} y={yOf(b) + 3.5}
+                              textAnchor="end" fontSize={7}
+                              fill={b === 4 ? '#888' : '#ccc'}
+                              fontWeight={b === 4 ? 700 : 400}>T{b}</text>
+                          ))}
+                          {/* Zone labels (right side) */}
+                          <text x={XL + CW + 4} y={yOf(6) + 3.5} fontSize={7} fill="#e74c3c99">Suelto</text>
+                          <text x={XL + CW + 4} y={yOf(4) + 3.5} fontSize={7} fill="#27ae6099" fontWeight={700}>Normal</text>
+                          <text x={XL + CW + 4} y={yOf(1.5) + 3.5} fontSize={7} fill="#f39c1299">Duro</text>
+                          {/* Trend line */}
+                          <path d={pathD} fill="none" stroke="#33333328" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                          {/* Dots + hit areas */}
+                          {pts.map((p, i) => (
+                            <g key={i}>
+                              {/* Transparent hit area */}
+                              <circle cx={p.x} cy={p.y} r={9} fill="transparent" style={{ cursor: 'crosshair' }}
+                                onMouseEnter={() => setBristolHover({ idx: i, b: p.b, date: p.date, svgX: p.x, svgY: p.y })}
+                                onMouseLeave={() => setBristolHover(null)} />
+                              {/* Visible dot */}
+                              <circle cx={p.x} cy={p.y}
+                                r={bristolHover?.idx === i ? 5 : 3.5}
+                                fill={bColor(p.b)}
+                                stroke="white" strokeWidth={bristolHover?.idx === i ? 1.5 : 0}
+                                style={{ pointerEvents: 'none' as const }} />
+                            </g>
+                          ))}
+                          {/* Tooltip */}
+                          {bristolHover && (() => {
+                            const tipW = 86, tipH = 36;
+                            const tx = bristolHover.svgX + tipW + 14 > W
+                              ? bristolHover.svgX - tipW - 6
+                              : bristolHover.svgX + 10;
+                            const ty = Math.max(YT, Math.min(bristolHover.svgY - tipH / 2, H - YB - tipH));
+                            const bc = bColor(bristolHover.b);
+                            return (
+                              <g style={{ pointerEvents: 'none' as const }}>
+                                <rect x={tx} y={ty} width={tipW} height={tipH} rx={4}
+                                  fill="white" stroke="#e0e0e0" strokeWidth={0.8} />
+                                <rect x={tx} y={ty} width={4} height={tipH} rx={2} fill={bc} />
+                                <text x={tx + 9} y={ty + 12} fontSize={10} fontWeight={700} fill={bc}>T{bristolHover.b}</text>
+                                <text x={tx + 9} y={ty + 23} fontSize={8} fill="#555">{BRISTOL_LABEL[bristolHover.b]}</text>
+                                <text x={tx + 9} y={ty + 33} fontSize={7} fill="#aaa">{bristolHover.date}</text>
+                              </g>
+                            );
+                          })()}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Weekly bars */}
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 4 }}>FRECUENCIA SEMANAL (8 semanas)</div>
+                    {(() => {
+                      const now = new Date();
+                      const weeks = Array.from({ length: 8 }, (_, w) => {
+                        const end = new Date(now); end.setDate(now.getDate() - w * 7);
+                        const start = new Date(end); start.setDate(end.getDate() - 7);
+                        return {
+                          label: w === 0 ? 'Hoy' : w === 1 ? '-1s' : `-${w}s`,
+                          count: patientDetail.entries.filter(en =>
+                            en.date >= start.toISOString().slice(0, 10) && en.date < end.toISOString().slice(0, 10)
+                          ).length,
+                        };
+                      }).reverse();
+                      const maxC = Math.max(...weeks.map(w => w.count), 1);
+                      const W2 = 310, H2 = 52, BW = 28, GAP = 7;
+                      const total = weeks.length * (BW + GAP) - GAP;
+                      const ox = (W2 - total) / 2;
+                      return (
+                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 48, display: 'block' as const }}>
+                          {weeks.map((wk, i) => {
+                            const bh = Math.max((wk.count / maxC) * (H2 - 18), wk.count > 0 ? 4 : 0);
+                            const x = ox + i * (BW + GAP);
+                            const y = H2 - 12 - bh;
+                            return (
+                              <g key={i}>
+                                <rect x={x} y={H2 - 12 - (H2 - 18)} width={BW} height={H2 - 18} rx={3} fill="#00000005" />
+                                <rect x={x} y={y} width={BW} height={bh} rx={3}
+                                  fill={wk.count > 0 ? '#27ae60' : '#e0e0e0'}
+                                  opacity={wk.count > 0 ? 0.7 : 0.2} />
+                                {wk.count > 0 && (
+                                  <text x={x + BW / 2} y={y - 2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={600}>{wk.count}</text>
+                                )}
+                                <text x={x + BW / 2} y={H2 - 1} textAnchor="middle" fontSize={7} fill="#bbb">{wk.label}</text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Top symptoms */}
+                  {(() => {
+                    const symCount: Record<string, number> = {};
+                    patientDetail.entries.forEach(e => e.symptoms.forEach(s => { symCount[s] = (symCount[s] || 0) + 1; }));
+                    const top = Object.entries(symCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
+                    if (top.length === 0) return null;
+                    return (
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 6 }}>SÍNTOMAS MÁS FRECUENTES</div>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                          {top.map(([sym, count]) => (
+                            <span key={sym} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#e74c3c0e', color: '#c0392b', fontWeight: 600 }}>
+                              {SYMPTOM_LABEL[sym] || sym} <span style={{ fontWeight: 400, opacity: 0.55 }}>×{count}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
