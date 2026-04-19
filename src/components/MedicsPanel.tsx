@@ -1949,7 +1949,7 @@ export default function MedicsPanel() {
                       const total = weeks.length * (BW + GAP) - GAP;
                       const ox = (W2 - total) / 2;
                       return (
-                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 96, display: 'block' as const }}>
+                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 96, display: 'block' as const, overflow: 'visible' as const }}>
                           {weeks.map((wk, i) => {
                             const bh = Math.max((wk.count / maxC) * (H2 - 18), wk.count > 0 ? 4 : 0);
                             const x = ox + i * (BW + GAP);
