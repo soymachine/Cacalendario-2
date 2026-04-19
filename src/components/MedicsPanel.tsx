@@ -1052,7 +1052,7 @@ export default function MedicsPanel() {
 
         {/* ── Left branding panel (desktop only) ── */}
         {!isMobile && (
-          <div style={{ flex: '0 0 42%', backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px 52px', overflow: 'hidden' }}>
+          <div style={{ flex: '0 0 35%', maxWidth: 450, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px 52px', overflow: 'hidden' }}>
             <div style={{ maxWidth: 380, width: '100%' }}>
               <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 80, objectFit: 'contain', objectPosition: 'left', filter: 'brightness(0) invert(1)', display: 'block', marginBottom: 32 }} />
               <h1 style={{ fontSize: 42, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 20px' }}>
