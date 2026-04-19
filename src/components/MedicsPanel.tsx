@@ -148,6 +148,7 @@ export default function MedicsPanel() {
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
   const [configName, setConfigName] = useState('');
+  const [configCenterName, setConfigCenterName] = useState('');
   const [configGreen, setConfigGreen] = useState(1);
   const [configRed, setConfigRed] = useState(3);
   const [configSaved, setConfigSaved] = useState(false);
@@ -209,6 +210,7 @@ export default function MedicsPanel() {
   const applyDoctorInfo = (info: DoctorInfo) => {
     setDoctorInfo(info);
     setConfigName(info.name);
+    setConfigCenterName(info.center_name);
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
 
@@ -687,16 +689,23 @@ export default function MedicsPanel() {
     if (!doctorInfo) return;
     setLoading(true);
     const trimmedName = configName.trim() || doctorInfo.name;
+    const trimmedCenter = configCenterName.trim() || doctorInfo.center_name;
     const paletteToSave = configPalette === 'custom'
       ? `custom:${customColor1.replace('#', '')}:${customColor2.replace('#', '')}`
       : configPalette;
-    const { error: updateErr } = await supabase
-      .from('doctors')
-      .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
-      .eq('id', doctorInfo.id);
+    const [{ error: doctorErr }, { error: centerErr }] = await Promise.all([
+      supabase
+        .from('doctors')
+        .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
+        .eq('id', doctorInfo.id),
+      supabase
+        .from('centers')
+        .update({ name: trimmedCenter })
+        .eq('id', doctorInfo.center_id),
+    ]);
     setLoading(false);
-    if (!updateErr) {
-      const updated = { ...doctorInfo, name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
+    if (!doctorErr && !centerErr) {
+      const updated = { ...doctorInfo, name: trimmedName, center_name: trimmedCenter, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
@@ -1963,11 +1972,11 @@ export default function MedicsPanel() {
                     <label style={s.label}>Centro médico</label>
                     <input
                       type="text"
-                      value={doctorInfo?.center_name || ''}
-                      disabled
-                      style={{ ...s.input, marginBottom: 0, backgroundColor: '#f5f5f5', color: '#999' }}
+                      value={configCenterName}
+                      onChange={(e) => setConfigCenterName(e.target.value)}
+                      style={{ ...s.input, marginBottom: 0 }}
+                      placeholder="Nombre del centro o consulta"
                     />
-                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Gestionado por el administrador.</p>
                   </div>
                   {configSaved && (
                     <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>

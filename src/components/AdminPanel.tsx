@@ -535,6 +535,7 @@ export default function AdminPanel() {
             <div style={s.card}>
               <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
                 <span style={{ flex: 2.5 }}>Médico</span>
+                <span style={{ flex: 2 }}>Email</span>
                 <span style={{ flex: 2 }}>Centro / Consulta</span>
                 <span style={{ flex: 1.5 }}>Especialidad</span>
                 <span style={{ flex: 1 }}>Alta</span>
@@ -545,6 +546,7 @@ export default function AdminPanel() {
               ) : (
                 doctors.map((doc, i) => {
                   const isChanging = changingPlanId === doc.id;
+                  const docEmail = users.find(u => u.id === doc.id)?.email || '—';
                   return (
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < doctors.length - 1 ? '1px solid #00000010' : 'none' }}>
                       <div style={{ flex: 2.5, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -556,6 +558,7 @@ export default function AdminPanel() {
                           <div style={{ fontSize: 11, color: '#999' }}>{doc.id.slice(0, 8)}…</div>
                         </div>
                       </div>
+                      <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{docEmail}</span>
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{doc.center_name}</span>
                       <span style={{ flex: 1.5, fontSize: 13, color: '#555' }}>{doc.specialty || '—'}</span>
                       <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(doc.created_at)}</span>
