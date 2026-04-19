@@ -241,40 +241,42 @@ export default function MedicsPanel() {
 
   // ── Recover session on mount + handle Google OAuth callback ──
   useEffect(() => {
+    let mounted = true;
+
     const tryLoadDoctor = async (user: any) => {
       const { data: doctorData } = await supabase
         .from('doctors')
         .select('*, centers(name, image_url)')
         .eq('id', user.id)
         .single();
+      if (!mounted) return;
       if (doctorData) {
         applyDoctorInfo(buildDoctorInfo(doctorData));
         setLoggedIn(true);
       } else {
-        // Google OAuth user on first sign-in — needs profile setup
         const md = user.user_metadata || {};
         setRegisterName(((md.full_name || md.name || '') as string).trim());
         setGoogleProfileMode(true);
       }
     };
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        if (session?.user) await tryLoadDoctor(session.user);
-      } catch (_) {}
-      setInitialLoading(false);
-    });
-
+    // onAuthStateChange always fires INITIAL_SESSION on mount (with or without
+    // a session), so this single handler covers all cases: no session, existing
+    // session, and Google OAuth callback (which fires SIGNED_IN after the PKCE
+    // code exchange). Relying on getSession() instead caused a hang when the
+    // PKCE exchange failed silently, leaving initialLoading=true forever.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (!mounted) return;
+      if (session?.user) {
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
         try { await tryLoadDoctor(session.user); } catch (_) {}
-        setInitialLoading(false);
       }
+      if (mounted) setInitialLoading(false);
     });
-    return () => subscription.unsubscribe();
+
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   // ── Login ──
