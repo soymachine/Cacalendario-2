@@ -251,7 +251,7 @@ export default function MedicsPanel() {
         .from('doctors')
         .select('*, centers(name, image_url)')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       if (!mounted) return;
 
       // 2. Pending admin invitation (email/password only)
@@ -311,6 +311,7 @@ export default function MedicsPanel() {
           const md = user.user_metadata || {};
           setRegisterName(((md.full_name || md.name || '') as string).trim());
           setGoogleProfileMode(true);
+          setLoading(false);
         } else {
           // Email/password user with no doctor record — reject
           setError('No tienes permisos de acceso médico. Regístrate como profesional o pide a tu administrador que te vincule a un centro.');
@@ -339,7 +340,12 @@ export default function MedicsPanel() {
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
-        try { await tryLoadDoctor(session.user); } catch (_) {}
+        try { await tryLoadDoctor(session.user); } catch (e) {
+          if (mounted) {
+            setError(e instanceof Error ? e.message : 'Error al cargar el perfil. Intenta de nuevo.');
+            setLoading(false);
+          }
+        }
       }
     });
 
@@ -353,13 +359,18 @@ export default function MedicsPanel() {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) {
-      setError(authError.message);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+      }
+      // On success: onAuthStateChange fires SIGNED_IN → tryLoadDoctor runs →
+      // calls setLoading(false) and setLoggedIn(true) when done.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error de conexión. Intenta de nuevo.');
       setLoading(false);
     }
-    // On success: onAuthStateChange fires SIGNED_IN → tryLoadDoctor runs →
-    // calls setLoading(false) and setLoggedIn(true) when done.
   };
 
   // ── Google OAuth sign-in ──
