@@ -97,6 +97,44 @@ const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
 ];
 
+const ONBOARDING_STEPS = [
+  {
+    icon: '👋',
+    color: '#fff7f0',
+    accent: '#dd8273',
+    title: '¡Bienvenido a Fluxia!',
+    body: 'Este es tu portal médico. Desde aquí gestionarás a tus pacientes y harás un seguimiento en tiempo real de su salud digestiva.',
+  },
+  {
+    icon: '👥',
+    color: '#f0f7ff',
+    accent: '#3b82f6',
+    title: 'Tus pacientes',
+    body: 'En la sección «Pacientes» verás todos los pacientes vinculados. El semáforo de cada uno indica cuántos días llevan sin registrar: 🟢 al día · 🟡 varios días · 🔴 inactivo.',
+  },
+  {
+    icon: '✉️',
+    color: '#f0fff4',
+    accent: '#22c55e',
+    title: 'Invita a un paciente',
+    body: 'Ve a «Invitar Paciente» y genera un código o envía un email de invitación. Tu paciente lo introduce en la app Fluxia y queda vinculado a tu cuenta automáticamente.',
+  },
+  {
+    icon: '📊',
+    color: '#fdf4ff',
+    accent: '#a855f7',
+    title: 'Revisa los registros',
+    body: 'Pulsa sobre cualquier paciente para ver sus registros detallados: tipo, consistencia, color, síntomas y más. Todo ordenado cronológicamente para facilitar el seguimiento.',
+  },
+  {
+    icon: '⚙️',
+    color: '#fffbeb',
+    accent: '#f59e0b',
+    title: 'Personaliza tu portal',
+    body: 'Desde «Configuración» actualiza tu nombre, el nombre de tu consulta, los umbrales del semáforo y el color del panel. ¡Hazlo tuyo!',
+  },
+];
+
 function SemaforoSlider({ value, min, max, color, onChange }: {
   value: number; min: number; max: number; color: string;
   onChange: (v: number) => void;
@@ -177,6 +215,9 @@ export default function MedicsPanel() {
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [onboardingSkippable, setOnboardingSkippable] = useState(false);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -504,6 +545,28 @@ export default function MedicsPanel() {
     if (!loggedIn || !doctorInfo) return;
     loadPatients();
   }, [loggedIn, doctorInfo]);
+
+  // ── Onboarding: show on first login, persist via localStorage ──
+  useEffect(() => {
+    if (!loggedIn || !doctorInfo) return;
+    const key = `fluxia_onboarding_v1_${doctorInfo.id}`;
+    if (!localStorage.getItem(key)) {
+      setOnboardingStep(0);
+      setOnboardingSkippable(false);
+      setOnboardingOpen(true);
+    }
+  }, [loggedIn, doctorInfo?.id]);
+
+  const finishOnboarding = () => {
+    if (doctorInfo) localStorage.setItem(`fluxia_onboarding_v1_${doctorInfo.id}`, '1');
+    setOnboardingOpen(false);
+  };
+
+  const openGuide = () => {
+    setOnboardingStep(0);
+    setOnboardingSkippable(true);
+    setOnboardingOpen(true);
+  };
 
   // ── Invite patient ──
   const [emailSent, setEmailSent] = useState(false);
@@ -1196,6 +1259,12 @@ export default function MedicsPanel() {
             </button>
           ))}
         </nav>
+
+        {/* Guide button */}
+        <button onClick={openGuide} style={{ ...s.navItem, color: th.textMuted, margin: '8px 12px 0' }}>
+          <span style={{ fontSize: 16 }}>📖</span>
+          <span style={{ fontSize: 14 }}>Guía de uso</span>
+        </button>
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
@@ -2389,6 +2458,83 @@ export default function MedicsPanel() {
           </div>
         </div>
       )}
+
+      {/* ── ONBOARDING MODAL ── */}
+      {onboardingOpen && (() => {
+        const step = ONBOARDING_STEPS[onboardingStep];
+        const isLast = onboardingStep === ONBOARDING_STEPS.length - 1;
+        const progress = ((onboardingStep + 1) / ONBOARDING_STEPS.length) * 100;
+        return (
+          <div
+            onClick={onboardingSkippable ? finishOnboarding : undefined}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 620, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' as const }}
+            >
+              {/* Progress bar */}
+              <div style={{ height: 4, backgroundColor: '#f0f0f0' }}>
+                <div style={{ height: '100%', width: `${progress}%`, backgroundColor: step.accent, transition: 'width 0.3s ease' }} />
+              </div>
+
+              {/* Content */}
+              <div style={{ padding: '40px 48px 32px', flex: 1, overflow: 'auto', backgroundColor: step.color }}>
+                {onboardingSkippable && (
+                  <button
+                    onClick={finishOnboarding}
+                    style={{ position: 'absolute' as const, top: 20, right: 24, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#bbb', lineHeight: 1 }}
+                  >×</button>
+                )}
+                <div style={{ textAlign: 'center' as const }}>
+                  <div style={{ fontSize: 72, lineHeight: 1, marginBottom: 24 }}>{step.icon}</div>
+                  <h2 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: '0 0 14px', lineHeight: 1.2 }}>{step.title}</h2>
+                  <p style={{ fontSize: 16, color: '#555', lineHeight: 1.65, margin: '0 auto', maxWidth: 460 }}>{step.body}</p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '20px 48px 28px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 20 }}>
+                {/* Dots */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {ONBOARDING_STEPS.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setOnboardingStep(i)}
+                      style={{
+                        width: i === onboardingStep ? 22 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+                        backgroundColor: i === onboardingStep ? step.accent : '#ddd',
+                        transition: 'all 0.2s ease',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 380 }}>
+                  {onboardingStep > 0 && (
+                    <button
+                      onClick={() => setOnboardingStep(s => s - 1)}
+                      style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: '1.5px solid #e0e0e0', background: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', color: '#555' }}
+                    >
+                      ← Anterior
+                    </button>
+                  )}
+                  <button
+                    onClick={isLast ? finishOnboarding : () => setOnboardingStep(s => s + 1)}
+                    style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: 'none', backgroundColor: step.accent, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    {isLast ? '¡Empezar!' : 'Siguiente →'}
+                  </button>
+                </div>
+
+                {/* Step counter */}
+                <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>{onboardingStep + 1} de {ONBOARDING_STEPS.length}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
