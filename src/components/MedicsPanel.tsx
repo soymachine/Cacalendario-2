@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
@@ -187,6 +188,7 @@ export default function MedicsPanel() {
   const [section, setSection] = useState<Section>('inicio');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
@@ -766,6 +768,7 @@ export default function MedicsPanel() {
   const loadPatientDetail = async (patient: PatientLink) => {
     if (!patient.patient_id) return;
     setSelectedPatient(patient);
+    setDetailLoading(true);
     setLoading(true);
 
     const { data: entries } = await supabase
@@ -846,6 +849,7 @@ export default function MedicsPanel() {
       lastEntryDate,
       daysSinceLast,
     });
+    setDetailLoading(false);
     setLoading(false);
   };
 
@@ -1370,6 +1374,7 @@ export default function MedicsPanel() {
   // ── Main layout with sidebar ──
   return (
     <div style={s.shell}>
+      <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
       {/* ── SIDEBAR (desktop) ── */}
       <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
         {/* Center image header */}
@@ -1466,8 +1471,13 @@ export default function MedicsPanel() {
             <>
               <SectionHeader
                 title={`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''} 👋`}
-                subtitle={`${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
+                subtitle={patientsLoading ? 'Cargando…' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
               />
+              {patientsLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 80 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid #e8e8e8`, borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
+                </div>
+              ) : (<>
               {/* Stat tiles */}
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
                 {tile('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
@@ -1660,7 +1670,7 @@ export default function MedicsPanel() {
                   </div>
                 );
               })()}
-              {accepted.length === 0 && !patientsLoading && (
+              {accepted.length === 0 && (
                 <div style={{ ...s.card, padding: 32, textAlign: 'center' as const }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 8 }}>Aún no tienes pacientes</div>
@@ -1670,6 +1680,7 @@ export default function MedicsPanel() {
                   </button>
                 </div>
               )}
+              </>)}
             </>
           );
         })()}
@@ -1698,24 +1709,42 @@ export default function MedicsPanel() {
                   { key: 'no7d',   icon: '📅', label: 'Sin reg. 7d', desc: 'Sin ningún registro en los últimos 7 días (incluye sin datos)',           count: no7d,           color: '#7c3aed' },
                 ];
                 const activePill = pills.find(p => p.key === semaforoFilter);
+                const tooltipContent: React.CSSProperties = {
+                  backgroundColor: '#1c1c1e', color: '#fff', borderRadius: 10, padding: '8px 12px',
+                  fontSize: 12, lineHeight: 1.45, maxWidth: 230, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                  zIndex: 9999,
+                };
                 return (
                   <div style={{ borderBottom: '1px solid #00000008' }}>
-                    <div style={{ display: 'flex', gap: 6, padding: '10px 16px', flexWrap: 'wrap' as const }}>
-                      {pills.map(({ key, icon, label, desc, count, color }) => {
-                        const active = semaforoFilter === key;
-                        return (
-                          <button key={key} onClick={() => setSemaforoFilter(key)} title={desc} style={{
-                            fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer',
-                            border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
-                            backgroundColor: active ? color + '18' : '#00000008',
-                            color: active ? color : '#666', fontWeight: active ? 700 : 500,
-                            display: 'flex', alignItems: 'center', gap: 4,
-                          }}>
-                            {icon} {label} <span style={{ opacity: 0.7 }}>{count}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <RadixTooltip.Provider delayDuration={250} skipDelayDuration={100}>
+                      <div style={{ display: 'flex', gap: 6, padding: '10px 16px', flexWrap: 'wrap' as const }}>
+                        {pills.map(({ key, icon, label, desc, count, color }) => {
+                          const active = semaforoFilter === key;
+                          return (
+                            <RadixTooltip.Root key={key}>
+                              <RadixTooltip.Trigger asChild>
+                                <button onClick={() => setSemaforoFilter(key)} style={{
+                                  fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer',
+                                  border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
+                                  backgroundColor: active ? color + '18' : '#00000008',
+                                  color: active ? color : '#666', fontWeight: active ? 700 : 500,
+                                  display: 'flex', alignItems: 'center', gap: 4,
+                                }}>
+                                  {icon} {label} <span style={{ opacity: 0.7 }}>{count}</span>
+                                </button>
+                              </RadixTooltip.Trigger>
+                              <RadixTooltip.Portal>
+                                <RadixTooltip.Content side="top" sideOffset={6} style={tooltipContent}>
+                                  <div style={{ fontWeight: 600, marginBottom: 3 }}>{icon} {label}</div>
+                                  <div style={{ opacity: 0.8 }}>{desc}</div>
+                                  <RadixTooltip.Arrow style={{ fill: '#1c1c1e' }} />
+                                </RadixTooltip.Content>
+                              </RadixTooltip.Portal>
+                            </RadixTooltip.Root>
+                          );
+                        })}
+                      </div>
+                    </RadixTooltip.Provider>
                     {activePill && activePill.key !== 'all' && (
                       <div style={{ padding: '0 16px 8px', fontSize: 11, color: '#999', fontStyle: 'italic' as const }}>
                         {activePill.icon} {activePill.desc}
@@ -1905,7 +1934,13 @@ export default function MedicsPanel() {
         )}
 
         {/* ── PATIENT DETAIL ── */}
-        {section === 'pacientes' && selectedPatient && patientDetail && (
+        {section === 'pacientes' && selectedPatient && detailLoading && (
+          <div style={{ display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', gap: 16, minHeight: 300 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid #e8e8e8`, borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
+            <div style={{ fontSize: 13, color: '#aaa' }}>Cargando ficha…</div>
+          </div>
+        )}
+        {section === 'pacientes' && selectedPatient && patientDetail && !detailLoading && (
           <>
             <SectionHeader
               title={
