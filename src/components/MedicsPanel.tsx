@@ -244,6 +244,8 @@ export default function MedicsPanel() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [patientTagsDraft, setPatientTagsDraft] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
+  const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
+  const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -584,6 +586,25 @@ export default function MedicsPanel() {
     if (!loggedIn || !doctorInfo) return;
     loadPatients();
   }, [loggedIn, doctorInfo]);
+
+  useEffect(() => {
+    const accepted = patients.filter(p => p.status === 'accepted' && p.patient_id);
+    if (accepted.length === 0) { setPracticeStats(null); return; }
+    const patientIds = accepted.map(p => p.patient_id as string);
+    const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    let cancelled = false;
+    supabase.from('entries').select('date, bristol, entry_type').in('user_id', patientIds).gte('date', twoWeeksAgoStr).then(({ data }) => {
+      if (cancelled || !data) return;
+      const thisWeek = data.filter((e: any) => e.date >= oneWeekAgoStr);
+      const lastWeek = data.filter((e: any) => e.date < oneWeekAgoStr);
+      const avgBristol = (entries: any[]) => { const bv = entries.filter(e => e.entry_type === 'poop' && e.bristol != null).map(e => e.bristol as number); return bv.length ? bv.reduce((s: number, v: number) => s + v, 0) / bv.length : null; };
+      setPracticeStats({ thisWeekEntries: thisWeek.length, lastWeekEntries: lastWeek.length, thisWeekBristol: avgBristol(thisWeek), lastWeekBristol: avgBristol(lastWeek) });
+    });
+    return () => { cancelled = true; };
+  }, [patients]);
 
   // ── Onboarding: show on first login, persist via localStorage ──
   useEffect(() => {
@@ -1083,6 +1104,15 @@ export default function MedicsPanel() {
     return { color: '#e74c3c', icon: '\u{1F534}' };
   };
 
+  const getSemaforoKey = (p: PatientLink): 'green' | 'orange' | 'red' | 'gray' => {
+    if (p.daysSinceLast === null) return 'gray';
+    const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : (doctorInfo?.semaforo_green ?? 1);
+    const pR = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : (doctorInfo?.semaforo_red ?? 3);
+    if (p.daysSinceLast <= pG) return 'green';
+    if (p.daysSinceLast <= pR) return 'orange';
+    return 'red';
+  };
+
   // Effective semáforo thresholds for the currently selected patient
   const effectiveGreen = selectedPatient?.semaforo_override
     ? (selectedPatient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1)
@@ -1393,25 +1423,21 @@ export default function MedicsPanel() {
         {section === 'inicio' && (() => {
           const accepted = patients.filter(p => p.status === 'accepted');
           const pending = patients.filter(p => p.status === 'pending');
-          const semCounts = accepted.reduce((acc, p) => {
-            const g = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : (doctorInfo?.semaforo_green ?? 1);
-            const r = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : (doctorInfo?.semaforo_red ?? 3);
-            const d = p.daysSinceLast;
-            if (d === null) acc.gray++;
-            else if (d <= g) acc.green++;
-            else if (d <= r) acc.orange++;
-            else acc.red++;
-            return acc;
-          }, { green: 0, orange: 0, red: 0, gray: 0 });
-          const recentlyActive = [...accepted]
-            .filter(p => p.lastEntryDate)
-            .sort((a, b) => (b.lastEntryDate || '').localeCompare(a.lastEntryDate || ''))
-            .slice(0, 5);
-          const statBox = (icon: string, value: string | number, label: string, bg: string, color: string) => (
-            <div key={label} style={{ flex: '1 1 140px', backgroundColor: bg, borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+          const semCounts = accepted.reduce((acc, p) => { const k = getSemaforoKey(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {} as Record<string, number>);
+          const noDataWeek = accepted.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
+          const attentionList = [...accepted].sort((a, b) => {
+            const order: Record<string, number> = { red: 0, gray: 1, orange: 2, green: 3 };
+            const ka = getSemaforoKey(a), kb = getSemaforoKey(b);
+            if (ka !== kb) return order[ka] - order[kb];
+            const da = a.daysSinceLast ?? 9999, db = b.daysSinceLast ?? 9999;
+            return ka === 'green' ? da - db : db - da;
+          }).slice(0, 7);
+          const tile = (icon: string, value: string | number, label: string, bg: string, color: string, filter?: typeof semaforoFilter) => (
+            <div key={label} onClick={filter !== undefined ? () => { setSemaforoFilter(filter); setSection('pacientes'); } : undefined}
+              style={{ flex: '1 1 130px', backgroundColor: bg, borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4, cursor: filter !== undefined ? 'pointer' : 'default' }}>
               <div style={{ fontSize: 22 }}>{icon}</div>
               <div style={{ fontSize: 28, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: 11, color, opacity: 0.7 }}>{label}</div>
+              <div style={{ fontSize: 11, color, opacity: 0.75 }}>{label}{filter !== undefined ? ' ↗' : ''}</div>
             </div>
           );
           return (
@@ -1422,28 +1448,29 @@ export default function MedicsPanel() {
               />
               {/* Stat tiles */}
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-                {statBox('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
-                {statBox('🟢', semCounts.green, 'Al día', '#f0fdf4', '#16a34a')}
-                {statBox('🟠', semCounts.orange, 'Atención', '#fffbeb', '#d97706')}
-                {statBox('🔴', semCounts.red, 'Inactivos', '#fff1f2', '#dc2626')}
-                {pending.length > 0 && statBox('⏳', pending.length, 'Invit. pendientes', '#f5f3ff', '#7c3aed')}
+                {tile('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
+                {tile('🟢', semCounts.green || 0, 'Al día', '#f0fdf4', '#16a34a', 'green')}
+                {tile('🟠', semCounts.orange || 0, 'Atención', '#fffbeb', '#d97706', 'orange')}
+                {tile('🔴', semCounts.red || 0, 'Inactivos', '#fff1f2', '#dc2626', 'red')}
+                {tile('📅', noDataWeek, 'Sin reg. 7d', '#faf5ff', '#7c3aed', noDataWeek > 0 ? 'no7d' : undefined)}
+                {pending.length > 0 && tile('⏳', pending.length, 'Invit. pendientes', '#f5f3ff', '#7c3aed')}
               </div>
               {/* Semáforo bar */}
               {accepted.length > 0 && (
                 <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>Estado de la lista</div>
                   <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 14 }}>
-                    {semCounts.green > 0 && <div style={{ flex: semCounts.green, backgroundColor: '#22c55e' }} title={`${semCounts.green} al día`} />}
-                    {semCounts.orange > 0 && <div style={{ flex: semCounts.orange, backgroundColor: '#f59e0b' }} title={`${semCounts.orange} atención`} />}
-                    {semCounts.red > 0 && <div style={{ flex: semCounts.red, backgroundColor: '#ef4444' }} title={`${semCounts.red} inactivos`} />}
-                    {semCounts.gray > 0 && <div style={{ flex: semCounts.gray, backgroundColor: '#e5e7eb' }} title={`${semCounts.gray} sin datos`} />}
+                    {(semCounts.green || 0) > 0 && <div style={{ flex: semCounts.green, backgroundColor: '#22c55e' }} title={`${semCounts.green} al día`} />}
+                    {(semCounts.orange || 0) > 0 && <div style={{ flex: semCounts.orange, backgroundColor: '#f59e0b' }} title={`${semCounts.orange} atención`} />}
+                    {(semCounts.red || 0) > 0 && <div style={{ flex: semCounts.red, backgroundColor: '#ef4444' }} title={`${semCounts.red} inactivos`} />}
+                    {(semCounts.gray || 0) > 0 && <div style={{ flex: semCounts.gray, backgroundColor: '#e5e7eb' }} title={`${semCounts.gray} sin datos`} />}
                   </div>
                   <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
                     {[
-                      { c: '#16a34a', label: `${semCounts.green} al día` },
-                      { c: '#d97706', label: `${semCounts.orange} atención` },
-                      { c: '#dc2626', label: `${semCounts.red} inactivos` },
-                      { c: '#9ca3af', label: `${semCounts.gray} sin datos` },
+                      { c: '#16a34a', label: `${semCounts.green || 0} al día` },
+                      { c: '#d97706', label: `${semCounts.orange || 0} atención` },
+                      { c: '#dc2626', label: `${semCounts.red || 0} inactivos` },
+                      { c: '#9ca3af', label: `${semCounts.gray || 0} sin datos` },
                     ].map(({ c, label }) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: c }} />
@@ -1453,25 +1480,60 @@ export default function MedicsPanel() {
                   </div>
                 </div>
               )}
-              {/* Recent activity */}
-              {recentlyActive.length > 0 && (
-                <div style={s.card}>
-                  <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
-                    🕐 Actividad reciente
+              {/* Practice stats */}
+              {practiceStats !== null && accepted.length > 0 && (
+                <div style={{ ...s.card, padding: '14px 20px', marginBottom: 16, display: 'flex', gap: 32, flexWrap: 'wrap' as const }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 0.5, marginBottom: 4 }}>📝 REGISTROS ESTA SEMANA</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: '#111', lineHeight: 1 }}>{practiceStats.thisWeekEntries}</div>
+                    {practiceStats.lastWeekEntries > 0 && (
+                      <div style={{ fontSize: 11, marginTop: 3, color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '#16a34a' : '#dc2626' }}>
+                        {practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '↑' : '↓'} vs {practiceStats.lastWeekEntries} sem. anterior
+                      </div>
+                    )}
                   </div>
-                  {recentlyActive.map((p, i) => {
+                  {practiceStats.thisWeekBristol !== null && (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 0.5, marginBottom: 4 }}>🔬 BRISTOL MEDIO (7 DÍAS)</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                        <div style={{ fontSize: 28, fontWeight: 900, color: '#111', lineHeight: 1 }}>{practiceStats.thisWeekBristol.toFixed(1)}</div>
+                        <div style={{ fontSize: 12, color: '#bbb' }}>/ 7</div>
+                      </div>
+                      {practiceStats.lastWeekBristol !== null && (() => {
+                        const curr = practiceStats.thisWeekBristol!;
+                        const prev = practiceStats.lastWeekBristol!;
+                        const improving = Math.abs(curr - 4) < Math.abs(prev - 4);
+                        return (
+                          <div style={{ fontSize: 11, marginTop: 3, color: improving ? '#16a34a' : '#dc2626' }}>
+                            {improving ? '↑ mejorando' : '↓ empeorando'} vs sem. anterior
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Attention list */}
+              {attentionList.length > 0 && (
+                <div style={s.card}>
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>⚠️ Requieren atención</span>
+                    <button onClick={() => { setSemaforoFilter('all'); setSection('pacientes'); }}
+                      style={{ fontSize: 11, color: '#888', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Ver todos →</button>
+                  </div>
+                  {attentionList.map((p, i) => {
                     const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
                     const pR = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                     const sem = getSemaforo(p.daysSinceLast, pG, pR);
                     return (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: i < recentlyActive.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: i < attentionList.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
                         <span style={{ fontSize: 18 }}>{sem.icon}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{patientLabel(p)}</div>
                           <div style={{ fontSize: 11, color: '#999' }}>
-                            {p.daysSinceLast === 0 ? 'Hoy' : p.daysSinceLast === 1 ? 'Ayer' : `hace ${p.daysSinceLast} días`}
-                            {p.lastEntryDate && ` · ${shortDate(p.lastEntryDate)}`}
+                            {p.daysSinceLast === null ? 'Sin registros' : p.daysSinceLast === 0 ? 'Hoy' : p.daysSinceLast === 1 ? 'Ayer' : `hace ${p.daysSinceLast} días`}
+                            {p.lastEntryDate && p.daysSinceLast !== null && ` · ${shortDate(p.lastEntryDate)}`}
                           </div>
                         </div>
                         {(p.tags || []).map(t => (
@@ -1506,6 +1568,38 @@ export default function MedicsPanel() {
               actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
             />
             <div style={s.card}>
+              {/* Semáforo quick-filter pills */}
+              {(() => {
+                const acc = patients.filter(p => p.status === 'accepted');
+                const sc = acc.reduce((a, p) => { const k = getSemaforoKey(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
+                const no7d = acc.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
+                const pills: { key: typeof semaforoFilter; icon: string; label: string; count: number; color: string }[] = [
+                  { key: 'all', icon: '👥', label: 'Todos', count: acc.length, color: '#333' },
+                  { key: 'green', icon: '🟢', label: 'Al día', count: sc.green || 0, color: '#16a34a' },
+                  { key: 'orange', icon: '🟠', label: 'Atención', count: sc.orange || 0, color: '#d97706' },
+                  { key: 'red', icon: '🔴', label: 'Inactivos', count: sc.red || 0, color: '#dc2626' },
+                  { key: 'gray', icon: '⚪', label: 'Sin datos', count: sc.gray || 0, color: '#9ca3af' },
+                  { key: 'no7d', icon: '📅', label: 'Sin reg. 7d', count: no7d, color: '#7c3aed' },
+                ];
+                return (
+                  <div style={{ display: 'flex', gap: 6, padding: '10px 16px', flexWrap: 'wrap' as const, borderBottom: '1px solid #00000008' }}>
+                    {pills.map(({ key, icon, label, count, color }) => {
+                      const active = semaforoFilter === key;
+                      return (
+                        <button key={key} onClick={() => setSemaforoFilter(key)} style={{
+                          fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer',
+                          border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
+                          backgroundColor: active ? color + '18' : '#00000008',
+                          color: active ? color : '#666', fontWeight: active ? 700 : 500,
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}>
+                          {icon} {label} <span style={{ opacity: 0.7 }}>{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               {/* Tag filter bar */}
               {(() => {
                 const allTags = [...new Set(patients.flatMap(p => p.tags || []))];
@@ -1568,10 +1662,13 @@ export default function MedicsPanel() {
               ) : (() => {
                 const q = searchQuery.trim().toLowerCase();
                 const displayed = [...patients]
-                  .filter(p => (!q
-                    || patientLabel(p).toLowerCase().includes(q)
-                    || (p.patient_email || '').toLowerCase().includes(q))
-                    && (!tagFilter || (p.tags || []).includes(tagFilter)))
+                  .filter(p => {
+                    if (q && !patientLabel(p).toLowerCase().includes(q) && !(p.patient_email || '').toLowerCase().includes(q)) return false;
+                    if (tagFilter && !(p.tags || []).includes(tagFilter)) return false;
+                    if (semaforoFilter === 'no7d') return p.status === 'accepted' && (p.daysSinceLast === null || p.daysSinceLast >= 7);
+                    if (semaforoFilter !== 'all') return p.status === 'accepted' && getSemaforoKey(p) === semaforoFilter;
+                    return true;
+                  })
                   .sort((a, b) => {
                     if (sortBy === 'estado') {
                       if (a.status === b.status) return patientLabel(a).localeCompare(patientLabel(b));
