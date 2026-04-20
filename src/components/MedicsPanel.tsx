@@ -1470,6 +1470,31 @@ export default function MedicsPanel() {
           <span style={{ fontSize: 14 }}>Guía de uso</span>
         </button>
 
+        {/* Upgrade CTA — only shown on free plan */}
+        {doctorInfo?.plan === 'free' && (
+          <button
+            onClick={() => setShowUpgradeModal(true)}
+            style={{
+              margin: '12px 12px 0',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              alignItems: 'flex-start',
+              gap: 3,
+              textAlign: 'left' as const,
+              boxShadow: '0 2px 12px rgba(249,115,22,0.35)',
+              transition: 'opacity 0.15s',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: 0.2 }}>⭐ Pasar a Pro</span>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>Pacientes ilimitados y más funciones</span>
+          </button>
+        )}
+
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
