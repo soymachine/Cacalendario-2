@@ -63,6 +63,7 @@ interface DoctorInfo {
   semaforo_red: number;
   palette?: string;
   plan: 'free' | 'pro';
+  global_tags: string[];
 }
 
 // Free tier limit: 1 patient (accepted + pending). Pro is effectively unlimited.
@@ -247,6 +248,9 @@ export default function MedicsPanel() {
   const [patientTagsDraft, setPatientTagsDraft] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
   const [patientTagsSaving, setPatientTagsSaving] = useState(false);
+  const [globalTags, setGlobalTags] = useState<string[]>([]);
+  const [globalTagsSaving, setGlobalTagsSaving] = useState(false);
+  const [configTagInput, setConfigTagInput] = useState('');
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
   const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
@@ -283,6 +287,7 @@ export default function MedicsPanel() {
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
     plan: (d.plan as 'free' | 'pro') || 'free',
+    global_tags: d.global_tags || [],
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -291,6 +296,7 @@ export default function MedicsPanel() {
     setConfigCenterName(info.center_name);
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
+    setGlobalTags(info.global_tags || []);
 
     const imageUrl = info.center_image_url || null;
     setCenterImageUrl(imageUrl);
@@ -1059,6 +1065,37 @@ export default function MedicsPanel() {
     setPatientTagsSaving(false);
   };
 
+  // ── Save global tag catalog ──
+  const saveGlobalTags = async (newTags: string[]) => {
+    if (!doctorInfo) return;
+    setGlobalTags(newTags);
+    setDoctorInfo(prev => prev ? { ...prev, global_tags: newTags } : prev);
+    await supabase.from('doctors').update({ global_tags: newTags }).eq('id', doctorInfo.id);
+  };
+
+  // ── Delete global tag + cascade remove from all patients ──
+  const deleteGlobalTag = async (tag: string) => {
+    if (!doctorInfo) return;
+    setGlobalTagsSaving(true);
+    const newGlobal = globalTags.filter(t => t !== tag);
+    setGlobalTags(newGlobal);
+    setDoctorInfo(prev => prev ? { ...prev, global_tags: newGlobal } : prev);
+    const affected = patients.filter(p => (p.tags || []).includes(tag));
+    await Promise.all([
+      supabase.from('doctors').update({ global_tags: newGlobal }).eq('id', doctorInfo.id),
+      ...affected.map(p =>
+        supabase.from('patient_links').update({ tags: (p.tags || []).filter(t => t !== tag) }).eq('id', p.id)
+      ),
+    ]);
+    setPatients(prev => prev.map(p => ({ ...p, tags: (p.tags || []).filter(t => t !== tag) })));
+    if (selectedPatient && (selectedPatient.tags || []).includes(tag)) {
+      const newPatTags = (selectedPatient.tags || []).filter(t => t !== tag);
+      setSelectedPatient(prev => prev ? { ...prev, tags: newPatTags } : prev);
+      setPatientTagsDraft(newPatTags);
+    }
+    setGlobalTagsSaving(false);
+  };
+
   // ── Send test push notification to patient ──
   const handleSendTestPush = async () => {
     if (!selectedPatient?.patient_id) return;
@@ -1769,27 +1806,23 @@ export default function MedicsPanel() {
                 );
               })()}
               {/* Tag filter bar */}
-              {(() => {
-                const allTags = [...new Set(patients.flatMap(p => p.tags || []))];
-                if (allTags.length === 0) return null;
-                return (
-                  <div style={{ display: 'flex', gap: 6, padding: '8px 16px', flexWrap: 'wrap' as const, borderBottom: '1px solid #00000008', backgroundColor: '#00000004' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#aaa', alignSelf: 'center', marginRight: 2 }}>FILTRAR:</span>
-                    <button onClick={() => setTagFilter(null)} style={{
+              {globalTags.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, padding: '8px 16px', flexWrap: 'wrap' as const, borderBottom: '1px solid #00000008', backgroundColor: '#00000004' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#aaa', alignSelf: 'center', marginRight: 2 }}>FILTRAR:</span>
+                  <button onClick={() => setTagFilter(null)} style={{
+                    fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                    backgroundColor: tagFilter === null ? '#333' : '#00000010',
+                    color: tagFilter === null ? '#fff' : '#555', fontWeight: 600,
+                  }}>Todos</button>
+                  {globalTags.map(t => (
+                    <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} style={{
                       fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                      backgroundColor: tagFilter === null ? '#333' : '#00000010',
-                      color: tagFilter === null ? '#fff' : '#555', fontWeight: 600,
-                    }}>Todos</button>
-                    {allTags.map(t => (
-                      <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} style={{
-                        fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                        backgroundColor: tagFilter === t ? tagColor(t) : tagColor(t) + '20',
-                        color: tagFilter === t ? '#fff' : tagColor(t), fontWeight: 600,
-                      }}>{t}</button>
-                    ))}
-                  </div>
-                );
-              })()}
+                      backgroundColor: tagFilter === t ? tagColor(t) : tagColor(t) + '20',
+                      color: tagFilter === t ? '#fff' : tagColor(t), fontWeight: 600,
+                    }}>{t}</button>
+                  ))}
+                </div>
+              )}
               {/* Sort controls + Search */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8, flexWrap: 'wrap' as const }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#888' }}>Ordenar por:</span>
@@ -2002,24 +2035,70 @@ export default function MedicsPanel() {
               )}
             </div>
 
-            {/* Tags bar — always visible, auto-saves on every change */}
-            <div style={{ ...s.card, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#aaa', whiteSpace: 'nowrap' as const }}>🏷️ ETIQUETAS</span>
-              {patientTagsDraft.map(t => (
-                <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, padding: '2px 8px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
-                  {t}
-                  <button onClick={() => savePatientTags(patientTagsDraft.filter(x => x !== t))}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', fontSize: 13, color: tagColor(t), lineHeight: 1, opacity: 0.6 }}>×</button>
-                </span>
-              ))}
-              <form onSubmit={e => { e.preventDefault(); const v = newTagInput.trim(); if (v && !patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]); setNewTagInput(''); }}
-                style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {/* Tags bar — global catalog, click to assign/unassign, input to create new */}
+            <div style={{ ...s.card, padding: '10px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' as const }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#aaa', whiteSpace: 'nowrap' as const }}>🏷️ ETIQUETAS</span>
+                {(patientTagsSaving || globalTagsSaving) && <span style={{ fontSize: 10, color: '#bbb' }}>Guardando…</span>}
+              </div>
+              {globalTags.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 8 }}>
+                  {globalTags.map(t => {
+                    const assigned = patientTagsDraft.includes(t);
+                    return (
+                      <button key={t}
+                        onClick={() => assigned
+                          ? savePatientTags(patientTagsDraft.filter(x => x !== t))
+                          : savePatientTags([...patientTagsDraft, t])
+                        }
+                        title={assigned ? `Quitar "${t}"` : `Asignar "${t}"`}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: 12, padding: '3px 10px', borderRadius: 20,
+                          border: assigned ? 'none' : `1px solid ${tagColor(t)}40`,
+                          cursor: 'pointer',
+                          backgroundColor: assigned ? tagColor(t) + '22' : 'transparent',
+                          color: assigned ? tagColor(t) : '#bbb',
+                          fontWeight: assigned ? 700 : 400,
+                          transition: 'all 0.15s',
+                        }}>
+                        {assigned && <span style={{ fontSize: 9, lineHeight: 1 }}>✓</span>}
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: '#ccc', margin: '0 0 8px', fontStyle: 'italic' as const }}>
+                  Sin etiquetas. Créalas desde Configuración o escribe una nueva abajo.
+                </p>
+              )}
+              <form
+                onSubmit={async e => {
+                  e.preventDefault();
+                  const v = newTagInput.trim();
+                  if (!v) return;
+                  setNewTagInput('');
+                  const isNew = !globalTags.includes(v);
+                  if (isNew) {
+                    const newGlobal = [...globalTags, v];
+                    setGlobalTagsSaving(true);
+                    setGlobalTags(newGlobal);
+                    setDoctorInfo(prev => prev ? { ...prev, global_tags: newGlobal } : prev);
+                    await supabase.from('doctors').update({ global_tags: newGlobal }).eq('id', doctorInfo!.id);
+                    setGlobalTagsSaving(false);
+                  }
+                  if (!patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]);
+                }}
+                style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
-                  placeholder="Nueva etiqueta…"
-                  style={{ padding: '3px 8px', borderRadius: 20, border: '1px solid #ddd', fontSize: 11, outline: 'none', width: 130 }} />
-                <button type="submit" style={{ padding: '3px 10px', borderRadius: 20, border: 'none', backgroundColor: '#f0f0f0', fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 600 }}>+</button>
+                  placeholder="Nueva etiqueta global…"
+                  style={{ padding: '4px 10px', borderRadius: 20, border: '1px solid #ddd', fontSize: 11, outline: 'none', flex: 1, minWidth: 0 }} />
+                <button type="submit"
+                  style={{ padding: '4px 12px', borderRadius: 20, border: 'none', backgroundColor: '#f0f0f0', fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' as const }}>
+                  Crear y asignar
+                </button>
               </form>
-              {patientTagsSaving && <span style={{ fontSize: 10, color: '#bbb' }}>Guardando…</span>}
             </div>
 
             {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
@@ -3026,8 +3105,56 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Cols 1–2 Row 3 — Paleta de colores */}
+              {/* Cols 1–2 Row 3 — Etiquetas globales */}
               <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 3 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏷️ Etiquetas globales</span>
+                </div>
+                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                  <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
+                    Define las etiquetas de tu consulta para clasificar pacientes. Desde la ficha de cada paciente podrás asignar una o varias.
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, minHeight: 36 }}>
+                    {globalTags.length === 0 ? (
+                      <span style={{ fontSize: 13, color: '#ccc', fontStyle: 'italic' as const, alignSelf: 'center' }}>Sin etiquetas todavía</span>
+                    ) : globalTags.map(t => (
+                      <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, padding: '4px 12px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
+                        {t}
+                        <button
+                          onClick={() => deleteGlobalTag(t)}
+                          title={`Eliminar etiqueta "${t}"`}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', fontSize: 14, color: tagColor(t), lineHeight: 1, opacity: 0.5 }}>
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <form
+                    onSubmit={async e => {
+                      e.preventDefault();
+                      const v = configTagInput.trim();
+                      if (!v || globalTags.includes(v)) { setConfigTagInput(''); return; }
+                      setConfigTagInput('');
+                      await saveGlobalTags([...globalTags, v]);
+                    }}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      value={configTagInput}
+                      onChange={e => setConfigTagInput(e.target.value)}
+                      placeholder="Nueva etiqueta…"
+                      style={{ ...s.input, margin: 0, flex: 1 }}
+                    />
+                    <button type="submit"
+                      style={{ ...ts.btnPrimary, padding: '9px 18px', whiteSpace: 'nowrap' as const }}>
+                      Añadir
+                    </button>
+                  </form>
+                  {globalTagsSaving && <span style={{ fontSize: 11, color: '#bbb' }}>Guardando…</span>}
+                </div>
+              </div>
+
+              {/* Cols 1–2 Row 4 — Paleta de colores */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
                 </div>
