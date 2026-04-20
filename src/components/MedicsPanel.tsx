@@ -1471,7 +1471,7 @@ export default function MedicsPanel() {
             <>
               <SectionHeader
                 title={`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''} 👋`}
-                subtitle={patientsLoading ? 'Cargando…' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
+                subtitle={patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
               />
               {patientsLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 80 }}>
@@ -1935,9 +1935,8 @@ export default function MedicsPanel() {
 
         {/* ── PATIENT DETAIL ── */}
         {section === 'pacientes' && selectedPatient && detailLoading && (
-          <div style={{ display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', gap: 16, minHeight: 300 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid #e8e8e8`, borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
-            <div style={{ fontSize: 13, color: '#aaa' }}>Cargando ficha…</div>
           </div>
         )}
         {section === 'pacientes' && selectedPatient && patientDetail && !detailLoading && (
