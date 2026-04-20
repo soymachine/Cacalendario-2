@@ -246,6 +246,8 @@ export default function MedicsPanel() {
   const [newTagInput, setNewTagInput] = useState('');
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
+  const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
+  const [bristolAlerts, setBristolAlerts] = useState<{ patientId: string; curr: number; prev: number }[]>([]);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -589,19 +591,38 @@ export default function MedicsPanel() {
 
   useEffect(() => {
     const accepted = patients.filter(p => p.status === 'accepted' && p.patient_id);
-    if (accepted.length === 0) { setPracticeStats(null); return; }
+    if (accepted.length === 0) { setPracticeStats(null); setActivityHeatmap({}); setBristolAlerts([]); return; }
     const patientIds = accepted.map(p => p.patient_id as string);
-    const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
-    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    const d98 = new Date(); d98.setDate(d98.getDate() - 98);
+    const d14 = new Date(); d14.setDate(d14.getDate() - 14);
+    const d7  = new Date(); d7.setDate(d7.getDate() - 7);
+    const s98 = d98.toISOString().split('T')[0];
+    const s14 = d14.toISOString().split('T')[0];
+    const s7  = d7.toISOString().split('T')[0];
     let cancelled = false;
-    supabase.from('entries').select('date, bristol, entry_type').in('user_id', patientIds).gte('date', twoWeeksAgoStr).then(({ data }) => {
+    supabase.from('entries').select('date, bristol, entry_type, user_id').in('user_id', patientIds).gte('date', s98).then(({ data }) => {
       if (cancelled || !data) return;
-      const thisWeek = data.filter((e: any) => e.date >= oneWeekAgoStr);
-      const lastWeek = data.filter((e: any) => e.date < oneWeekAgoStr);
-      const avgBristol = (entries: any[]) => { const bv = entries.filter(e => e.entry_type === 'poop' && e.bristol != null).map(e => e.bristol as number); return bv.length ? bv.reduce((s: number, v: number) => s + v, 0) / bv.length : null; };
-      setPracticeStats({ thisWeekEntries: thisWeek.length, lastWeekEntries: lastWeek.length, thisWeekBristol: avgBristol(thisWeek), lastWeekBristol: avgBristol(lastWeek) });
+      // Practice stats (last 2 weeks)
+      const thisWeek = data.filter((e: any) => e.date >= s7);
+      const lastWeek = data.filter((e: any) => e.date >= s14 && e.date < s7);
+      const avgB = (es: any[]) => { const bv = es.filter(e => e.entry_type === 'poop' && e.bristol != null).map(e => e.bristol as number); return bv.length ? bv.reduce((s: number, v: number) => s + v, 0) / bv.length : null; };
+      setPracticeStats({ thisWeekEntries: thisWeek.length, lastWeekEntries: lastWeek.length, thisWeekBristol: avgB(thisWeek), lastWeekBristol: avgB(lastWeek) });
+      // Activity heatmap (14 weeks)
+      const heatmap = data.reduce((acc: Record<string, number>, e: any) => { acc[e.date] = (acc[e.date] || 0) + 1; return acc; }, {});
+      setActivityHeatmap(heatmap);
+      // Per-patient Bristol worsening alerts
+      const alerts: { patientId: string; curr: number; prev: number }[] = [];
+      for (const pid of patientIds) {
+        const pe = data.filter((e: any) => e.user_id === pid && e.entry_type === 'poop' && e.bristol != null);
+        const cw = pe.filter((e: any) => e.date >= s7).map((e: any) => e.bristol as number);
+        const lw = pe.filter((e: any) => e.date >= s14 && e.date < s7).map((e: any) => e.bristol as number);
+        if (cw.length >= 2 && lw.length >= 2) {
+          const ca = cw.reduce((s, v) => s + v, 0) / cw.length;
+          const pa = lw.reduce((s, v) => s + v, 0) / lw.length;
+          if (Math.abs(ca - 4) > Math.abs(pa - 4) + 0.5) alerts.push({ patientId: pid, curr: ca, prev: pa });
+        }
+      }
+      setBristolAlerts(alerts);
     });
     return () => { cancelled = true; };
   }, [patients]);
@@ -1513,6 +1534,38 @@ export default function MedicsPanel() {
                   )}
                 </div>
               )}
+              {/* Proactive alerts */}
+              {(() => {
+                const noAct = accepted
+                  .filter(p => p.daysSinceLast === null || p.daysSinceLast >= 10)
+                  .sort((a, b) => (b.daysSinceLast ?? 999) - (a.daysSinceLast ?? 999))
+                  .slice(0, 3)
+                  .map(p => ({ p, msg: p.daysSinceLast === null ? 'Nunca ha registrado ninguna entrada' : `Sin registro hace ${p.daysSinceLast} días`, color: '#dc2626' }));
+                const bristolItems = bristolAlerts.slice(0, 2).map(a => {
+                  const p = accepted.find(pt => pt.patient_id === a.patientId);
+                  if (!p) return null;
+                  const dir = a.curr > 4 ? 'Bristol alto' : 'Bristol bajo';
+                  return { p, msg: `📉 ${dir}: T${a.prev.toFixed(1)}→T${a.curr.toFixed(1)} esta semana`, color: '#d97706' };
+                }).filter(Boolean) as { p: PatientLink; msg: string; color: string }[];
+                const all = [...noAct, ...bristolItems].slice(0, 5);
+                if (all.length === 0) return null;
+                return (
+                  <div style={{ ...s.card, marginBottom: 16 }}>
+                    <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>🔔 Alertas proactivas</div>
+                    {all.map(({ p, msg, color }, i) => (
+                      <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: i < all.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
+                        <div style={{ width: 3, height: 32, borderRadius: 2, backgroundColor: color, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{patientLabel(p)}</div>
+                          <div style={{ fontSize: 11, color }}>{msg}</div>
+                        </div>
+                        <span style={{ fontSize: 12, color: '#ccc' }}>›</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               {/* Attention list */}
               {attentionList.length > 0 && (
                 <div style={s.card}>
@@ -1545,6 +1598,53 @@ export default function MedicsPanel() {
                   })}
                 </div>
               )}
+              {/* Activity heatmap */}
+              {Object.keys(activityHeatmap).length > 0 && (() => {
+                const today = new Date();
+                const daysFromMon = (today.getDay() + 6) % 7;
+                const gridStart = new Date(today);
+                gridStart.setDate(today.getDate() - daysFromMon - 13 * 7);
+                const WEEKS = 14, CELL = 11, GAP = 2, LEFT = 16;
+                const W = LEFT + WEEKS * (CELL + GAP);
+                const H = 7 * (CELL + GAP) + 14;
+                const color = (n: number) => n === 0 ? '#efefef' : n <= 2 ? '#9be9a8' : n <= 5 ? '#40c463' : n <= 10 ? '#30a14e' : '#216e39';
+                const dayLbls = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                const monLbls = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const cells: { x: number; y: number; count: number; tip: string }[] = [];
+                const mLabels: { x: number; text: string }[] = [];
+                let lastMon = -1;
+                for (let w = 0; w < WEEKS; w++) {
+                  for (let d = 0; d < 7; d++) {
+                    const dt = new Date(gridStart); dt.setDate(gridStart.getDate() + w * 7 + d);
+                    if (dt > today) continue;
+                    const ds = dt.toISOString().split('T')[0];
+                    const cnt = activityHeatmap[ds] || 0;
+                    cells.push({ x: LEFT + w * (CELL + GAP), y: d * (CELL + GAP), count: cnt, tip: `${ds}: ${cnt} reg.` });
+                    if (d === 0 && dt.getMonth() !== lastMon) { lastMon = dt.getMonth(); mLabels.push({ x: LEFT + w * (CELL + GAP), text: monLbls[dt.getMonth()] }); }
+                  }
+                }
+                return (
+                  <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>📊 Actividad de la consulta — últimas 14 semanas</div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <svg viewBox={`0 0 ${W} ${H}`} style={{ minWidth: W, height: H, display: 'block' as const }}>
+                        {dayLbls.map((l, d) => <text key={d} x={LEFT - 3} y={d * (CELL + GAP) + CELL - 1} textAnchor="end" fontSize={7} fill="#bbb">{l}</text>)}
+                        {cells.map(({ x, y, count, tip }) => (
+                          <rect key={tip} x={x} y={y} width={CELL} height={CELL} rx={2} fill={color(count)}>
+                            <title>{tip}</title>
+                          </rect>
+                        ))}
+                        {mLabels.map(({ x, text }) => <text key={text + x} x={x} y={H - 1} fontSize={7} fill="#bbb">{text}</text>)}
+                      </svg>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 10, color: '#bbb' }}>
+                      <span>Menos</span>
+                      {[0, 1, 3, 6, 11].map(n => <div key={n} style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: color(n) }} />)}
+                      <span>Más</span>
+                    </div>
+                  </div>
+                );
+              })()}
               {accepted.length === 0 && !patientsLoading && (
                 <div style={{ ...s.card, padding: 32, textAlign: 'center' as const }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
