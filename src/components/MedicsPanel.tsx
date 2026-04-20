@@ -247,6 +247,7 @@ export default function MedicsPanel() {
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
   const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
+  const [heatHover, setHeatHover] = useState<{ tip: string; svgX: number; svgY: number } | null>(null);
   const [bristolAlerts, setBristolAlerts] = useState<{ patientId: string; curr: number; prev: number }[]>([]);
 
   const th: MedicsTheme = configPalette === 'custom'
@@ -1604,10 +1605,10 @@ export default function MedicsPanel() {
                 const daysFromMon = (today.getDay() + 6) % 7;
                 const gridStart = new Date(today);
                 gridStart.setDate(today.getDate() - daysFromMon - 13 * 7);
-                const WEEKS = 14, CELL = 11, GAP = 2, LEFT = 16;
+                const WEEKS = 14, CELL = 17, GAP = 3, LEFT = 24;
                 const W = LEFT + WEEKS * (CELL + GAP);
-                const H = 7 * (CELL + GAP) + 14;
-                const color = (n: number) => n === 0 ? '#efefef' : n <= 2 ? '#9be9a8' : n <= 5 ? '#40c463' : n <= 10 ? '#30a14e' : '#216e39';
+                const H = 7 * (CELL + GAP) + 18;
+                const heatColor = (n: number) => n === 0 ? '#efefef' : n <= 2 ? '#9be9a8' : n <= 5 ? '#40c463' : n <= 10 ? '#30a14e' : '#216e39';
                 const dayLbls = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
                 const monLbls = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                 const cells: { x: number; y: number; count: number; tip: string }[] = [];
@@ -1619,27 +1620,41 @@ export default function MedicsPanel() {
                     if (dt > today) continue;
                     const ds = dt.toISOString().split('T')[0];
                     const cnt = activityHeatmap[ds] || 0;
-                    cells.push({ x: LEFT + w * (CELL + GAP), y: d * (CELL + GAP), count: cnt, tip: `${ds}: ${cnt} reg.` });
-                    if (d === 0 && dt.getMonth() !== lastMon) { lastMon = dt.getMonth(); mLabels.push({ x: LEFT + w * (CELL + GAP), text: monLbls[dt.getMonth()] }); }
+                    const cx = LEFT + w * (CELL + GAP), cy = d * (CELL + GAP);
+                    cells.push({ x: cx, y: cy, count: cnt, tip: `${ds}: ${cnt} registros` });
+                    if (d === 0 && dt.getMonth() !== lastMon) { lastMon = dt.getMonth(); mLabels.push({ x: cx, text: monLbls[dt.getMonth()] }); }
                   }
                 }
                 return (
                   <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>📊 Actividad de la consulta — últimas 14 semanas</div>
                     <div style={{ overflowX: 'auto' }}>
-                      <svg viewBox={`0 0 ${W} ${H}`} style={{ minWidth: W, height: H, display: 'block' as const }}>
-                        {dayLbls.map((l, d) => <text key={d} x={LEFT - 3} y={d * (CELL + GAP) + CELL - 1} textAnchor="end" fontSize={7} fill="#bbb">{l}</text>)}
+                      <svg viewBox={`0 0 ${W} ${H}`} style={{ minWidth: W, height: H, display: 'block' as const, overflow: 'visible' as const }}
+                        onMouseLeave={() => setHeatHover(null)}>
+                        {dayLbls.map((l, d) => <text key={d} x={LEFT - 4} y={d * (CELL + GAP) + CELL - 2} textAnchor="end" fontSize={10} fill="#bbb">{l}</text>)}
                         {cells.map(({ x, y, count, tip }) => (
-                          <rect key={tip} x={x} y={y} width={CELL} height={CELL} rx={2} fill={color(count)}>
-                            <title>{tip}</title>
-                          </rect>
+                          <rect key={tip} x={x} y={y} width={CELL} height={CELL} rx={3} fill={heatColor(count)}
+                            style={{ cursor: 'default' }}
+                            onMouseEnter={() => setHeatHover({ tip, svgX: x + CELL / 2, svgY: y })}
+                          />
                         ))}
-                        {mLabels.map(({ x, text }) => <text key={text + x} x={x} y={H - 1} fontSize={7} fill="#bbb">{text}</text>)}
+                        {mLabels.map(({ x, text }) => <text key={text + x} x={x} y={H - 2} fontSize={9} fill="#bbb">{text}</text>)}
+                        {heatHover && (() => {
+                          const TW = 120, TH = 18;
+                          const tx = Math.min(Math.max(heatHover.svgX - TW / 2, 0), W - TW);
+                          const ty = heatHover.svgY >= TH + 4 ? heatHover.svgY - TH - 4 : heatHover.svgY + CELL + 4;
+                          return (
+                            <g style={{ pointerEvents: 'none' as const }}>
+                              <rect x={tx} y={ty} width={TW} height={TH} rx={4} fill="#222" opacity={0.88} />
+                              <text x={tx + TW / 2} y={ty + 12} textAnchor="middle" fontSize={9} fill="#fff" fontWeight={500}>{heatHover.tip}</text>
+                            </g>
+                          );
+                        })()}
                       </svg>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 10, color: '#bbb' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, fontSize: 11, color: '#bbb' }}>
                       <span>Menos</span>
-                      {[0, 1, 3, 6, 11].map(n => <div key={n} style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: color(n) }} />)}
+                      {[0, 1, 3, 6, 11].map(n => <div key={n} style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: heatColor(n) }} />)}
                       <span>Más</span>
                     </div>
                   </div>
