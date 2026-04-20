@@ -251,6 +251,7 @@ export default function MedicsPanel() {
   const [globalTags, setGlobalTags] = useState<string[]>([]);
   const [globalTagsSaving, setGlobalTagsSaving] = useState(false);
   const [configTagInput, setConfigTagInput] = useState('');
+  const [clearTagsConfirm, setClearTagsConfirm] = useState(false);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
   const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
@@ -3112,9 +3113,10 @@ export default function MedicsPanel() {
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
                   <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
-                    Define las etiquetas de tu consulta para clasificar pacientes. Desde la ficha de cada paciente podrás asignar una o varias.
+                    Define las etiquetas de tu consulta. Desde la ficha de cada paciente puedes asignar una o varias.
+                    Eliminar una etiqueta la borra también de todos los pacientes.
                   </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, minHeight: 36 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, minHeight: 32 }}>
                     {globalTags.length === 0 ? (
                       <span style={{ fontSize: 13, color: '#ccc', fontStyle: 'italic' as const, alignSelf: 'center' }}>Sin etiquetas todavía</span>
                     ) : globalTags.map(t => (
@@ -3122,7 +3124,7 @@ export default function MedicsPanel() {
                         {t}
                         <button
                           onClick={() => deleteGlobalTag(t)}
-                          title={`Eliminar etiqueta "${t}"`}
+                          title={`Eliminar "${t}"`}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', fontSize: 14, color: tagColor(t), lineHeight: 1, opacity: 0.5 }}>
                           ×
                         </button>
@@ -3142,14 +3144,53 @@ export default function MedicsPanel() {
                       value={configTagInput}
                       onChange={e => setConfigTagInput(e.target.value)}
                       placeholder="Nueva etiqueta…"
-                      style={{ ...s.input, margin: 0, flex: 1 }}
+                      style={{ flex: 1, minWidth: 0, padding: '8px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, outline: 'none' }}
                     />
                     <button type="submit"
-                      style={{ ...ts.btnPrimary, padding: '9px 18px', whiteSpace: 'nowrap' as const }}>
+                      style={{ ...ts.btnPrimary, width: 'auto', flexShrink: 0, padding: '8px 16px', fontSize: 13, borderRadius: 8 }}>
                       Añadir
                     </button>
                   </form>
                   {globalTagsSaving && <span style={{ fontSize: 11, color: '#bbb' }}>Guardando…</span>}
+                  {patients.some(p => (p.tags || []).length > 0) && (
+                    <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {clearTagsConfirm ? (
+                        <>
+                          <span style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600 }}>¿Seguro? Esto borrará todas las etiquetas de todos los pacientes.</span>
+                          <button
+                            onClick={async () => {
+                              setClearTagsConfirm(false);
+                              setGlobalTagsSaving(true);
+                              const affected = patients.filter(p => (p.tags || []).length > 0);
+                              await Promise.all([
+                                supabase.from('doctors').update({ global_tags: [] }).eq('id', doctorInfo!.id),
+                                ...affected.map(p => supabase.from('patient_links').update({ tags: [] }).eq('id', p.id)),
+                              ]);
+                              setGlobalTags([]);
+                              setDoctorInfo(prev => prev ? { ...prev, global_tags: [] } : prev);
+                              setPatients(prev => prev.map(p => ({ ...p, tags: [] })));
+                              if (selectedPatient) {
+                                setSelectedPatient(prev => prev ? { ...prev, tags: [] } : prev);
+                                setPatientTagsDraft([]);
+                              }
+                              setGlobalTagsSaving(false);
+                            }}
+                            style={{ padding: '5px 12px', borderRadius: 6, border: 'none', backgroundColor: '#e74c3c', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                            Sí, borrar todo
+                          </button>
+                          <button onClick={() => setClearTagsConfirm(false)}
+                            style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 12, color: '#555', cursor: 'pointer' }}>
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => setClearTagsConfirm(true)}
+                          style={{ fontSize: 11, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', opacity: 0.7 }}>
+                          Limpiar todas las etiquetas de pacientes
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
