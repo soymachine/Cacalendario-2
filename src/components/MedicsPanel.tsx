@@ -1444,7 +1444,7 @@ export default function MedicsPanel() {
 
       {/* ── MAIN CONTENT ── */}
       <main style={{ ...s.main, backgroundColor: th.primary, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
-        {loading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
+        {loading && !detailLoading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
 
         {/* ── INICIO / DASHBOARD ── */}
         {section === 'inicio' && (() => {
