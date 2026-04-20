@@ -246,6 +246,7 @@ export default function MedicsPanel() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [patientTagsDraft, setPatientTagsDraft] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
+  const [patientTagsSaving, setPatientTagsSaving] = useState(false);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
   const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
@@ -1042,6 +1043,20 @@ export default function MedicsPanel() {
       setPatientConfigSaved(true);
       setTimeout(() => setPatientConfigSaved(false), 3000);
     }
+  };
+
+  // ── Save patient tags (auto-save on every add/remove) ──
+  const savePatientTags = async (newTags: string[]) => {
+    if (!selectedPatient) return;
+    setPatientTagsSaving(true);
+    setPatientTagsDraft(newTags);
+    const { error } = await supabase.from('patient_links').update({ tags: newTags }).eq('id', selectedPatient.id);
+    if (!error) {
+      const updated = { ...selectedPatient, tags: newTags };
+      setSelectedPatient(updated);
+      setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
+    }
+    setPatientTagsSaving(false);
   };
 
   // ── Send test push notification to patient ──
@@ -1987,6 +2002,26 @@ export default function MedicsPanel() {
               )}
             </div>
 
+            {/* Tags bar — always visible, auto-saves on every change */}
+            <div style={{ ...s.card, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#aaa', whiteSpace: 'nowrap' as const }}>🏷️ ETIQUETAS</span>
+              {patientTagsDraft.map(t => (
+                <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, padding: '2px 8px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
+                  {t}
+                  <button onClick={() => savePatientTags(patientTagsDraft.filter(x => x !== t))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', fontSize: 13, color: tagColor(t), lineHeight: 1, opacity: 0.6 }}>×</button>
+                </span>
+              ))}
+              <form onSubmit={e => { e.preventDefault(); const v = newTagInput.trim(); if (v && !patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]); setNewTagInput(''); }}
+                style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
+                  placeholder="Nueva etiqueta…"
+                  style={{ padding: '3px 8px', borderRadius: 20, border: '1px solid #ddd', fontSize: 11, outline: 'none', width: 130 }} />
+                <button type="submit" style={{ padding: '3px 10px', borderRadius: 20, border: 'none', backgroundColor: '#f0f0f0', fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 600 }}>+</button>
+              </form>
+              {patientTagsSaving && <span style={{ fontSize: 10, color: '#bbb' }}>Guardando…</span>}
+            </div>
+
             {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Left column: calendar + semáforo override */}
@@ -2539,45 +2574,6 @@ export default function MedicsPanel() {
                           </div>
                         </div>
                       )}
-                    </div>
-
-                    {/* Etiquetas */}
-                    <div style={{ ...s.card, padding: '14px 16px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>🏷️ Etiquetas</div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
-                        {patientTagsDraft.map(t => (
-                          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, padding: '3px 10px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
-                            {t}
-                            <button onClick={() => setPatientTagsDraft(prev => prev.filter(x => x !== t))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13, color: tagColor(t), lineHeight: 1, opacity: 0.7 }}>×</button>
-                          </span>
-                        ))}
-                        {patientTagsDraft.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>Sin etiquetas</span>}
-                      </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <input
-                          type="text"
-                          value={newTagInput}
-                          onChange={e => setNewTagInput(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter' && newTagInput.trim() && !patientTagsDraft.includes(newTagInput.trim())) {
-                              setPatientTagsDraft(prev => [...prev, newTagInput.trim()]);
-                              setNewTagInput('');
-                            }
-                          }}
-                          placeholder="Nueva etiqueta…"
-                          style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 12, outline: 'none' }}
-                        />
-                        <button
-                          onClick={() => {
-                            if (newTagInput.trim() && !patientTagsDraft.includes(newTagInput.trim())) {
-                              setPatientTagsDraft(prev => [...prev, newTagInput.trim()]);
-                              setNewTagInput('');
-                            }
-                          }}
-                          style={{ padding: '6px 12px', borderRadius: 8, border: 'none', backgroundColor: '#f0f0f0', fontSize: 12, color: '#555', cursor: 'pointer', fontWeight: 600 }}
-                        >+ Añadir</button>
-                      </div>
                     </div>
 
                     {/* Campos del formulario */}
