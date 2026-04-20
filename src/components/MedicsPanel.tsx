@@ -22,7 +22,7 @@ const URINE_TYPE_LABEL: Record<string, string> = {
   voluntary: 'Voluntaria', involuntary_escape: 'Escape', involuntary_drip: 'Goteo',
 };
 const URINE_CHAR_LABEL: Record<string, string> = {
-  blood: 'Sangre', aspect: 'Aspecto', odor: 'Olor', pain: 'Dolor',
+  blood: 'Sangre', odor: 'Olor', pain: 'Dolor',
 };
 const BRISTOL_LABEL: Record<number, string> = {
   1: 'Separados duros', 2: 'Grumoso duro', 3: 'Fisurado',
@@ -85,6 +85,8 @@ interface PatientEntry {
   urine_quantity: number | null;
   urine_color: string | null;
   urine_characteristics: string[];
+  urine_urgency?: number | null;
+  during_sleep?: boolean | null;
   entry_id: string;
   created_at: string;
   doctor_note?: string;
@@ -254,8 +256,6 @@ export default function MedicsPanel() {
   const [clearTagsConfirm, setClearTagsConfirm] = useState(false);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
-  const [activityHeatmap, setActivityHeatmap] = useState<Record<string, number>>({});
-  const [heatHover, setHeatHover] = useState<{ tip: string; svgX: number; svgY: number } | null>(null);
   const [bristolAlerts, setBristolAlerts] = useState<{ patientId: string; curr: number; prev: number }[]>([]);
 
   const th: MedicsTheme = configPalette === 'custom'
@@ -602,7 +602,7 @@ export default function MedicsPanel() {
 
   useEffect(() => {
     const accepted = patients.filter(p => p.status === 'accepted' && p.patient_id);
-    if (accepted.length === 0) { setPracticeStats(null); setActivityHeatmap({}); setBristolAlerts([]); return; }
+    if (accepted.length === 0) { setPracticeStats(null); setBristolAlerts([]); return; }
     const patientIds = accepted.map(p => p.patient_id as string);
     const d98 = new Date(); d98.setDate(d98.getDate() - 98);
     const d14 = new Date(); d14.setDate(d14.getDate() - 14);
@@ -618,9 +618,6 @@ export default function MedicsPanel() {
       const lastWeek = data.filter((e: any) => e.date >= s14 && e.date < s7);
       const avgB = (es: any[]) => { const bv = es.filter(e => e.entry_type === 'poop' && e.bristol != null).map(e => e.bristol as number); return bv.length ? bv.reduce((s: number, v: number) => s + v, 0) / bv.length : null; };
       setPracticeStats({ thisWeekEntries: thisWeek.length, lastWeekEntries: lastWeek.length, thisWeekBristol: avgB(thisWeek), lastWeekBristol: avgB(lastWeek) });
-      // Activity heatmap (14 weeks)
-      const heatmap = data.reduce((acc: Record<string, number>, e: any) => { acc[e.date] = (acc[e.date] || 0) + 1; return acc; }, {});
-      setActivityHeatmap(heatmap);
       // Per-patient Bristol worsening alerts
       const alerts: { patientId: string; curr: number; prev: number }[] = [];
       for (const pid of patientIds) {
@@ -802,6 +799,8 @@ export default function MedicsPanel() {
       urine_quantity: e.urine_quantity ?? null,
       urine_color: e.urine_color ?? null,
       urine_characteristics: e.urine_characteristics ?? [],
+      urine_urgency: e.urine_urgency ?? null,
+      during_sleep: e.during_sleep ?? null,
       entry_id: e.entry_id || '',
       created_at: e.created_at,
     }));
@@ -1518,7 +1517,12 @@ export default function MedicsPanel() {
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Dr. {doctorInfo?.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                Dr. {doctorInfo?.name}
+                {doctorInfo?.plan === 'pro' && (
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#f59e0b', color: '#1a0e0e', letterSpacing: 0.3, flexShrink: 0 }}>PRO</span>
+                )}
+              </div>
               <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>
             </div>
           </div>
@@ -1700,67 +1704,6 @@ export default function MedicsPanel() {
                   })}
                 </div>
               )}
-              {/* Activity heatmap */}
-              {Object.keys(activityHeatmap).length > 0 && (() => {
-                const today = new Date();
-                const daysFromMon = (today.getDay() + 6) % 7;
-                const gridStart = new Date(today);
-                gridStart.setDate(today.getDate() - daysFromMon - 13 * 7);
-                const WEEKS = 14, CELL = 17, GAP = 3, LEFT = 24;
-                const W = LEFT + WEEKS * (CELL + GAP);
-                const H = 7 * (CELL + GAP) + 18;
-                const heatColor = (n: number) => n === 0 ? '#efefef' : n <= 2 ? '#9be9a8' : n <= 5 ? '#40c463' : n <= 10 ? '#30a14e' : '#216e39';
-                const dayLbls = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-                const monLbls = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                const cells: { x: number; y: number; count: number; tip: string }[] = [];
-                const mLabels: { x: number; text: string }[] = [];
-                let lastMon = -1;
-                for (let w = 0; w < WEEKS; w++) {
-                  for (let d = 0; d < 7; d++) {
-                    const dt = new Date(gridStart); dt.setDate(gridStart.getDate() + w * 7 + d);
-                    if (dt > today) continue;
-                    const ds = dt.toISOString().split('T')[0];
-                    const cnt = activityHeatmap[ds] || 0;
-                    const cx = LEFT + w * (CELL + GAP), cy = d * (CELL + GAP);
-                    cells.push({ x: cx, y: cy, count: cnt, tip: `${ds}: ${cnt} registros` });
-                    if (d === 0 && dt.getMonth() !== lastMon) { lastMon = dt.getMonth(); mLabels.push({ x: cx, text: monLbls[dt.getMonth()] }); }
-                  }
-                }
-                return (
-                  <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>📊 Actividad de la consulta — últimas 14 semanas</div>
-                    <div style={{ overflowX: 'auto' }}>
-                      <svg viewBox={`0 0 ${W} ${H}`} style={{ minWidth: W, height: H, display: 'block' as const, overflow: 'visible' as const }}
-                        onMouseLeave={() => setHeatHover(null)}>
-                        {dayLbls.map((l, d) => <text key={d} x={LEFT - 4} y={d * (CELL + GAP) + CELL - 2} textAnchor="end" fontSize={10} fill="#bbb">{l}</text>)}
-                        {cells.map(({ x, y, count, tip }) => (
-                          <rect key={tip} x={x} y={y} width={CELL} height={CELL} rx={3} fill={heatColor(count)}
-                            style={{ cursor: 'default' }}
-                            onMouseEnter={() => setHeatHover({ tip, svgX: x + CELL / 2, svgY: y })}
-                          />
-                        ))}
-                        {mLabels.map(({ x, text }) => <text key={text + x} x={x} y={H - 2} fontSize={9} fill="#bbb">{text}</text>)}
-                        {heatHover && (() => {
-                          const TW = 120, TH = 18;
-                          const tx = Math.min(Math.max(heatHover.svgX - TW / 2, 0), W - TW);
-                          const ty = heatHover.svgY >= TH + 4 ? heatHover.svgY - TH - 4 : heatHover.svgY + CELL + 4;
-                          return (
-                            <g style={{ pointerEvents: 'none' as const }}>
-                              <rect x={tx} y={ty} width={TW} height={TH} rx={4} fill="#222" opacity={0.88} />
-                              <text x={tx + TW / 2} y={ty + 12} textAnchor="middle" fontSize={9} fill="#fff" fontWeight={500}>{heatHover.tip}</text>
-                            </g>
-                          );
-                        })()}
-                      </svg>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, fontSize: 11, color: '#bbb' }}>
-                      <span>Menos</span>
-                      {[0, 1, 3, 6, 11].map(n => <div key={n} style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: heatColor(n) }} />)}
-                      <span>Más</span>
-                    </div>
-                  </div>
-                );
-              })()}
               {accepted.length === 0 && (
                 <div style={{ ...s.card, padding: 32, textAlign: 'center' as const }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
@@ -2520,7 +2463,9 @@ export default function MedicsPanel() {
                                       {entry.urine_characteristics.length > 0
                                         ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, '#e74c3c12', '#c0392b'))
                                         : null}
-                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                      {entry.urine_urgency != null && chip(`Urgencia ${entry.urine_urgency}/5`, '#f59e0b18', '#b45309')}
+                                      {entry.during_sleep === true && chip('Durante sueño', '#8b5cf618', '#6d28d9')}
+                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && entry.urine_urgency == null && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
                                     </>
                                   ) : (
                                     <>

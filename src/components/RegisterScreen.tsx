@@ -68,7 +68,6 @@ const URINE_TYPE_OPTIONS = [
 
 const URINE_CHARACTERISTICS = [
   { key: 'blood', label: 'Sangre' },
-  { key: 'aspect', label: 'Aspecto' },
   { key: 'odor', label: 'Olor' },
   { key: 'pain', label: 'Dolor' },
 ];
@@ -132,6 +131,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const [urineQuantity, setUrineQuantity] = useState(0);
   const [urineColor, setUrineColor] = useState<string | null>(null);
   const [urineCharacteristics, setUrineCharacteristics] = useState<string[]>([]);
+  const [urineUrgency, setUrineUrgency] = useState<number | null>(null);
+  const [duringSleep, setDuringSleep] = useState<boolean | null>(null);
 
   const targetDate = date ?? toDateKey(now);
   const dayText = formatDateForDisplay(targetDate);
@@ -164,6 +165,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       urine_quantity: isUrine ? urineQuantity : null,
       urine_color: isUrine ? urineColor : null,
       urine_characteristics: isUrine ? urineCharacteristics : [],
+      urine_urgency: isUrine ? urineUrgency : null,
+      during_sleep: isUrine ? duringSleep : null,
     });
     window.dispatchEvent(new Event('fluxia-updated'));
     onSuccess(targetDate, timeText, entryType, entryId);
@@ -503,6 +506,48 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             </div>
           </div>
         )}
+
+        <div style={sectionCard}>
+          <span style={sectionLabel}>Nivel de Urgencia</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => setUrineUrgency(urineUrgency === n ? null : n)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  fontSize: 15, fontWeight: 700, transition: 'all 0.1s',
+                  ...(urineUrgency === n ? chipActive : chipInactive),
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: D.secondary, opacity: 0.6 }}>
+            <span>Sin urgencia</span>
+            <span>Urgencia extrema</span>
+          </div>
+        </div>
+
+        <div style={sectionCard}>
+          <span style={sectionLabel}>¿Durante el sueño?</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {([{ label: 'Sí', value: true }, { label: 'No', value: false }] as const).map(({ label, value }) => (
+              <button
+                key={label}
+                onClick={() => setDuringSleep(duringSleep === value ? null : value)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  fontSize: 14, fontWeight: 600, transition: 'all 0.1s',
+                  ...(duringSleep === value ? chipActive : chipInactive),
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </>}
 
       {/* Notes */}

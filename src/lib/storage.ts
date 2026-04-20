@@ -19,7 +19,9 @@ export interface PoopEntry {
   urine_type?: 'voluntary' | 'involuntary_escape' | 'involuntary_drip' | null;
   urine_quantity?: number | null; // 0-500 ml
   urine_color?: string | null; // hex color
-  urine_characteristics?: string[]; // ['blood', 'aspect', 'odor', 'pain']
+  urine_characteristics?: string[]; // ['blood', 'odor', 'pain']
+  urine_urgency?: number | null; // 1-5
+  during_sleep?: boolean | null;
 }
 
 const STORAGE_KEY = 'cacalendario_entries';

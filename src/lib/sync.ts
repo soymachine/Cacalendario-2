@@ -10,7 +10,7 @@ import type { PoopEntry } from './storage';
 
 const SYNC_PAGE_SIZE = 500;
 
-const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics';
+const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
 
 function rowToEntry(r: Record<string, unknown>): PoopEntry {
   return {
@@ -30,6 +30,8 @@ function rowToEntry(r: Record<string, unknown>): PoopEntry {
     urine_quantity: (r.urine_quantity as number) ?? null,
     urine_color: (r.urine_color as string) ?? null,
     urine_characteristics: (r.urine_characteristics as string[]) ?? [],
+    urine_urgency: (r.urine_urgency as number) ?? null,
+    during_sleep: (r.during_sleep as boolean) ?? null,
   };
 }
 
@@ -110,6 +112,8 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       urine_quantity: entry.urine_quantity ?? null,
       urine_color: entry.urine_color ?? null,
       urine_characteristics: entry.urine_characteristics ?? [],
+      urine_urgency: entry.urine_urgency ?? null,
+      during_sleep: entry.during_sleep ?? null,
     },
     { onConflict: 'user_id,entry_id' }
   );

@@ -43,7 +43,6 @@ const URINE_TYPE_OPTIONS = [
 
 const URINE_CHARACTERISTICS = [
   { key: 'blood', label: 'Sangre' },
-  { key: 'aspect', label: 'Aspecto' },
   { key: 'odor', label: 'Olor' },
   { key: 'pain', label: 'Dolor' },
 ];
@@ -98,6 +97,8 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const [urineQuantity, setUrineQuantity] = useState<number>(entry.urine_quantity ?? 0);
   const [urineColor, setUrineColor] = useState<string | null>(entry.urine_color ?? null);
   const [urineCharacteristics, setUrineCharacteristics] = useState<string[]>(entry.urine_characteristics ?? []);
+  const [urineUrgency, setUrineUrgency] = useState<number | null>(entry.urine_urgency ?? null);
+  const [duringSleep, setDuringSleep] = useState<boolean | null>(entry.during_sleep ?? null);
 
   const dayText = formatDateForDisplay(currentDate);
   const timeText = formatTime(hours, minutes);
@@ -129,6 +130,8 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
       urine_quantity: isUrine ? urineQuantity : null,
       urine_color: isUrine ? urineColor : null,
       urine_characteristics: isUrine ? urineCharacteristics : [],
+      urine_urgency: isUrine ? urineUrgency : null,
+      during_sleep: isUrine ? duringSleep : null,
     });
     window.dispatchEvent(new Event('fluxia-updated'));
     onClose();
@@ -446,6 +449,33 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                 </div>
               </div>
             )}
+
+            <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <span style={sectionLabel}>NIVEL DE URGENCIA</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => setUrineUrgency(urineUrgency === n ? null : n)}
+                    style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.1s', ...(urineUrgency === n ? chipActive : chipInactive) }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: D.textMuted }}>
+                <span>Sin urgencia</span><span>Urgencia extrema</span>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <span style={sectionLabel}>¿DURANTE EL SUEÑO?</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([{ label: 'Sí', value: true }, { label: 'No', value: false }] as const).map(({ label, value }) => (
+                  <button key={label} onClick={() => setDuringSleep(duringSleep === value ? null : value)}
+                    style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all 0.1s', ...(duringSleep === value ? chipActive : chipInactive) }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </>}
 
           {/* Notes */}
