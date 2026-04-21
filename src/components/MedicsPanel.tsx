@@ -356,6 +356,7 @@ export default function MedicsPanel() {
               name: pendingCenter.pending_doctor_name || userEmail.split('@')[0],
               specialty: pendingCenter.pending_doctor_specialty || null,
             });
+            if (insertErr) console.error('[tryLoadDoctor] admin-invite doctors INSERT failed:', insertErr);
             if (!insertErr) {
               await supabase.from('centers').update({
                 pending_doctor_email: null, pending_doctor_name: null, pending_doctor_specialty: null,
@@ -384,11 +385,17 @@ export default function MedicsPanel() {
             p_center_name: centerName,
             p_specialty: (md.specialty as string)?.trim() || null,
           });
-          if (!regErr) {
-            const { data: d } = await supabase.from('doctors')
-              .select('*, centers(name, image_url)').eq('id', user.id).single();
-            doctorData = d;
+          if (regErr) {
+            console.error('[tryLoadDoctor] doctor_self_register RPC failed:', regErr);
+            setDebugMsg('');
+            setError(`Error al activar tu cuenta: ${regErr.message}`);
+            setLoading(false);
+            return; // valid auth account — don't sign out, let them retry
           }
+          const { data: d, error: selectErr } = await supabase.from('doctors')
+            .select('*, centers(name, image_url)').eq('id', user.id).single();
+          if (selectErr) console.error('[tryLoadDoctor] doctors SELECT post-RPC failed:', selectErr);
+          doctorData = d;
         }
       }
       if (!mounted) return;
