@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="es" data-astro-cid-rkrdl5k3> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="generator" content="Astro v4.16.19"><title>Fluxia</title><!-- Favicon --><link rel="icon" type="image/x-icon" href="/favicon.ico"><!-- PWA --><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#F0F2F4"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Fluxia"><link rel="apple-touch-icon" href="/icons/icon-192x192.png"><!-- GitHub Pages SPA: restore redirect from 404.html --><script>
+      (function() {
+        var qs = window.location.search;
+        if (qs.indexOf('?p=') === 0 || qs.indexOf('&p=') !== -1) {
+          var params = new URLSearchParams(qs);
+          var path = params.get('p') || '';
+          var hash = params.get('h') || '';
+          window.history.replaceState(null, '', path + hash || '/user');
+        }
+      })();
+    </script><!-- Fonts --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/_astro/admin.B_KAsODz.css">
+<style>[data-astro-cid-rkrdl5k3]{margin:0;padding:0;box-sizing:border-box}:root{--fluxia-primary: #353435;--fluxia-primary-text: #E3EBEE}body{font-family:Inter,system-ui,sans-serif;background-color:#f0f2f4;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+</style></head> <body data-astro-cid-rkrdl5k3> <div style="max-width: 448px; margin: 0 auto; min-height: 100vh; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);" data-astro-cid-rkrdl5k3> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).only=e;window.dispatchEvent(new Event("astro:only"));})();;(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="Z25saJO" component-url="/_astro/App.B-gwj6ua.js" component-export="default" renderer-url="/_astro/client.CNQpmoY6.js" props="{&quot;data-astro-cid-rkrdl5k3&quot;:[0,true]}" ssr="" client="only" opts="{&quot;name&quot;:&quot;App&quot;,&quot;value&quot;:&quot;react&quot;}"></astro-island> </div> <!-- Update banner (hidden by default) --> <div id="update-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; padding:12px; text-align:center; background:#231f20; color:white; font-family:'Inter',sans-serif; font-size:14px;" data-astro-cid-rkrdl5k3>
+🆕 Nueva versión disponible
+<button onclick="window.location.reload()" style="margin-left:12px; padding:6px 16px; border-radius:20px; border:none; background:white; color:#231f20; font-weight:bold; font-size:14px; cursor:pointer;" data-astro-cid-rkrdl5k3>
+Actualizar
+</button> </div> <script>(function(){const base = "/";
+
+      if ('serviceWorker' in navigator) {
+        const swPath = base.endsWith('/') ? base + 'sw.js' : base + '/sw.js';
+        navigator.serviceWorker.register(swPath).then((registration) => {
+          console.log('Service Worker registered');
+
+          // Check for updates every 60 seconds
+          setInterval(() => registration.update(), 60 * 1000);
+
+          // When a new SW is found and installed, show the update banner
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+              // New SW is installed and waiting — show banner
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                document.getElementById('update-banner').style.display = 'block';
+              }
+            });
+          });
+        }).catch((err) => {
+          console.log('SW registration failed:', err);
+        });
+
+        // When the new SW takes over, reload the page
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+    })();</script> </body> </html>

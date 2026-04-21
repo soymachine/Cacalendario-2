@@ -430,6 +430,11 @@ export default function MedicsPanel() {
       setInitialLoading(false);
       if (session?.user) {
         setError(''); // clear any error from a previous (e.g. timed-out) auth event
+        // Token refresh and user-update events don't require reloading the doctor
+        // profile — the doctor is already in state. Reloading would re-run the
+        // 8 s DB timeout, which can fire spuriously right after functions.invoke
+        // triggers an internal token refresh, showing a false connection error.
+        if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
         if (window.location.search || window.location.hash) {
           window.history.replaceState({}, '', '/medics');
         }
