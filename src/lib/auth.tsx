@@ -30,8 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      // Ensure user_profiles row exists for existing sessions
-      if (session?.user) {
+      // Ensure user_profiles row exists for existing sessions (skip doctors)
+      if (session?.user && !session.user.user_metadata?.is_doctor) {
         supabase.from('user_profiles').upsert(
           { id: session.user.id, email: session.user.email ?? null },
           { onConflict: 'id', ignoreDuplicates: true },
@@ -52,8 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           (window.location.search || window.location.hash)) {
         window.history.replaceState({}, '', '/user');
       }
-      // Ensure user_profiles row exists on sign-in/sign-up
-      if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
+      // Ensure user_profiles row exists on sign-in/sign-up (skip doctors)
+      if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user
+          && !session.user.user_metadata?.is_doctor) {
         supabase.from('user_profiles').upsert(
           { id: session.user.id, email: session.user.email ?? null },
           { onConflict: 'id', ignoreDuplicates: true },

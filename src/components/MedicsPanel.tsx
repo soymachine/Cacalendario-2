@@ -949,17 +949,18 @@ export default function MedicsPanel() {
     const signUpPayload: any = {
       email: registerEmail.trim().toLowerCase(),
       password: registerPassword,
+      options: {
+        emailRedirectTo: window.location.origin + '/medics',
+        ...(registerIsSelfService ? {
+          data: {
+            is_doctor: true,
+            name: registerName.trim(),
+            center_name: registerCenterName.trim(),
+            specialty: registerSpecialty.trim() || null,
+          },
+        } : {}),
+      },
     };
-    if (registerIsSelfService) {
-      signUpPayload.options = {
-        data: {
-          is_doctor: true,
-          name: registerName.trim(),
-          center_name: registerCenterName.trim(),
-          specialty: registerSpecialty.trim() || null,
-        },
-      };
-    }
     const { error: signUpError } = await supabase.auth.signUp(signUpPayload);
     setLoading(false);
     if (signUpError) {
