@@ -623,6 +623,23 @@
     .bens, .specs, .quotes, .prices { grid-template-columns: 1fr; }
     .kpis { grid-template-columns: 1fr 1fr; }
   }
+  @media (max-width: 640px) {
+    .nav-inner {
+      height: auto;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px 0;
+      gap: 8px;
+    }
+    .logo {
+      width: 100%;
+      justify-content: center;
+    }
+    .nav-cta {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 </style>
 <script is:inline>
   (function() {
