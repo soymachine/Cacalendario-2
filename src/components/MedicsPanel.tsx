@@ -370,25 +370,24 @@ export default function MedicsPanel() {
       if (!mounted) return;
 
       // 3. Self-service first login (email/password with is_doctor metadata)
+      // Uses an RPC (SECURITY DEFINER) to create center + doctor atomically,
+      // avoiding the RLS chicken-and-egg: centers SELECT policy requires a
+      // doctors row that doesn't exist yet at insert time.
       if (!doctorData && !isGoogle) {
         setDebugMsg('Configurando tu cuenta por primera vez…');
         const md = (user.user_metadata || {}) as Record<string, any>;
         if (md.is_doctor) {
           const userEmail = user.email?.toLowerCase() || '';
           const centerName = (md.center_name as string)?.trim() || `Consulta de ${md.name || userEmail.split('@')[0]}`;
-          const { data: newCenter, error: centerErr } = await supabase
-            .from('centers').insert({ name: centerName }).select('id').single();
-          if (!centerErr && newCenter) {
-            const { error: docErr } = await supabase.from('doctors').insert({
-              id: user.id, center_id: newCenter.id,
-              name: (md.name as string)?.trim() || userEmail.split('@')[0],
-              specialty: (md.specialty as string)?.trim() || null, plan: 'free',
-            });
-            if (!docErr) {
-              const { data: d } = await supabase.from('doctors')
-                .select('*, centers(name, image_url)').eq('id', user.id).single();
-              doctorData = d;
-            }
+          const { error: regErr } = await supabase.rpc('doctor_self_register', {
+            p_name: (md.name as string)?.trim() || userEmail.split('@')[0],
+            p_center_name: centerName,
+            p_specialty: (md.specialty as string)?.trim() || null,
+          });
+          if (!regErr) {
+            const { data: d } = await supabase.from('doctors')
+              .select('*, centers(name, image_url)').eq('id', user.id).single();
+            doctorData = d;
           }
         }
       }
