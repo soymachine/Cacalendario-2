@@ -329,6 +329,8 @@ export default function MedicsPanel() {
 
     const tryLoadDoctor = async (user: any) => {
       const isGoogle = (user.app_metadata?.provider || '') === 'google';
+      const userMeta = (user.user_metadata || {}) as Record<string, any>;
+      console.log('[tryLoadDoctor] uid:', user.id, 'provider:', user.app_metadata?.provider, 'metadata:', userMeta);
       setDebugMsg('Buscando tu perfil médico…');
 
       // 1. Existing doctor record — with 8 s timeout so a hung query doesn't
@@ -340,6 +342,7 @@ export default function MedicsPanel() {
         supabase.from('doctors').select('*, centers(name, image_url)').eq('id', user.id).maybeSingle(),
         timeoutPromise,
       ]);
+      console.log('[tryLoadDoctor] step1 doctor:', doctorData);
       if (!mounted) return;
 
       // 2. Pending admin invitation (email/password only)
@@ -376,14 +379,14 @@ export default function MedicsPanel() {
       // doctors row that doesn't exist yet at insert time.
       if (!doctorData && !isGoogle) {
         setDebugMsg('Configurando tu cuenta por primera vez…');
-        const md = (user.user_metadata || {}) as Record<string, any>;
-        if (md.is_doctor) {
+        console.log('[tryLoadDoctor] step3 is_doctor:', userMeta.is_doctor, 'center_name:', userMeta.center_name);
+        if (userMeta.is_doctor) {
           const userEmail = user.email?.toLowerCase() || '';
-          const centerName = (md.center_name as string)?.trim() || `Consulta de ${md.name || userEmail.split('@')[0]}`;
+          const centerName = (userMeta.center_name as string)?.trim() || `Consulta de ${userMeta.name || userEmail.split('@')[0]}`;
           const { error: regErr } = await supabase.rpc('doctor_self_register', {
-            p_name: (md.name as string)?.trim() || userEmail.split('@')[0],
+            p_name: (userMeta.name as string)?.trim() || userEmail.split('@')[0],
             p_center_name: centerName,
-            p_specialty: (md.specialty as string)?.trim() || null,
+            p_specialty: (userMeta.specialty as string)?.trim() || null,
           });
           if (regErr) {
             console.error('[tryLoadDoctor] doctor_self_register RPC failed:', regErr);
@@ -392,9 +395,18 @@ export default function MedicsPanel() {
             setLoading(false);
             return; // valid auth account — don't sign out, let them retry
           }
+          console.log('[tryLoadDoctor] RPC ok, fetching doctor row…');
           const { data: d, error: selectErr } = await supabase.from('doctors')
             .select('*, centers(name, image_url)').eq('id', user.id).single();
-          if (selectErr) console.error('[tryLoadDoctor] doctors SELECT post-RPC failed:', selectErr);
+          console.log('[tryLoadDoctor] post-RPC doctor:', d, 'err:', selectErr);
+          if (selectErr) {
+            // RPC succeeded (doctor+center created) but SELECT failed — don't sign out
+            console.error('[tryLoadDoctor] doctors SELECT post-RPC failed:', selectErr);
+            setDebugMsg('');
+            setError('Tu cuenta ha sido activada. Recarga la página para continuar.');
+            setLoading(false);
+            return;
+          }
           doctorData = d;
         }
       }
@@ -408,8 +420,13 @@ export default function MedicsPanel() {
           setRegisterName(((md.full_name || md.name || '') as string).trim());
           setGoogleProfileMode(true);
           setLoading(false);
+        } else if (userMeta.is_doctor) {
+          // Self-service doctor: account exists but profile couldn't be loaded — don't sign out
+          setDebugMsg('');
+          setError('Tu cuenta está siendo activada. Inicia sesión de nuevo en unos segundos.');
+          setLoading(false);
         } else {
-          // Email/password user with no doctor record — reject
+          // Email/password user with no doctor record and not self-service — reject
           setDebugMsg('');
           setError('No encontramos un perfil médico para esta cuenta. Pide al administrador que te dé de alta desde /admin.');
           await supabase.auth.signOut();
