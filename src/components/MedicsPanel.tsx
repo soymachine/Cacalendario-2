@@ -179,6 +179,20 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
   );
 }
 
+function translateAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login credentials') || m.includes('invalid credentials')) return 'Credenciales incorrectas. Revisa tu email y contraseña.';
+  if (m.includes('email not confirmed')) return 'Email no confirmado. Revisa tu bandeja de entrada.';
+  if (m.includes('user already registered') || m.includes('already been registered')) return 'Este email ya está registrado.';
+  if (m.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (m.includes('unable to validate email') || m.includes('invalid format')) return 'El formato del email no es válido.';
+  if (m.includes('email rate limit') || m.includes('too many requests')) return 'Demasiados intentos. Espera unos minutos.';
+  if (m.includes('once every 60 seconds') || m.includes('security purposes')) return 'Por seguridad, solo puedes solicitarlo una vez cada 60 segundos.';
+  if (m.includes('signup is disabled') || m.includes('signup_disabled')) return 'El registro está desactivado.';
+  if (m.includes('network') || m.includes('fetch')) return 'Error de conexión. Intenta de nuevo.';
+  return msg;
+}
+
 export default function MedicsPanel() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -498,7 +512,7 @@ export default function MedicsPanel() {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         setDebugMsg('');
-        setError(authError.message);
+        setError(translateAuthError(authError.message));
         setLoading(false);
       } else {
         setDebugMsg('Credenciales correctas, cargando tu perfil…');
@@ -927,7 +941,7 @@ export default function MedicsPanel() {
       redirectTo: siteUrl,
     });
     setLoading(false);
-    if (resetError) { setError(resetError.message); return; }
+    if (resetError) { setError(translateAuthError(resetError.message)); return; }
     setForgotMode('sent');
   };
 
@@ -987,7 +1001,7 @@ export default function MedicsPanel() {
     const { error: signUpError } = await supabase.auth.signUp(signUpPayload);
     setLoading(false);
     if (signUpError) {
-      setError(signUpError.message);
+      setError(translateAuthError(signUpError.message));
       return;
     }
     setRegisterStep('done');
