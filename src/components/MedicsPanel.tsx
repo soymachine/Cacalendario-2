@@ -1231,9 +1231,9 @@ export default function MedicsPanel() {
   // ── Initial loading ──
   if (initialLoading) {
     return (
-      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const }}>
-        <div style={{ textAlign: 'center', color: '#fff' }}>
-          <span style={{ fontSize: 40 }}>{'\u{1F3E5}'}</span>
+      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const, backgroundColor: '#fff' }}>
+        <div style={{ textAlign: 'center', color: '#1a0e0e' }}>
+          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 40, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
           <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600 }}>Cargando...</p>
         </div>
       </div>
