@@ -1321,7 +1321,7 @@ export default function MedicsPanel() {
               </div>
             )}
 
-            <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#1a0e0e', margin: '0 0 8px' }}>{cardTitle}</h2>
+            <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#1a0e0e', margin: '0 0 8px', textAlign: (registerMode && registerStep === 'done') ? 'center' : 'left' }}>{cardTitle}</h2>
             {cardSubtitle && <p style={{ fontSize: 14, color: '#888', margin: '0 0 28px', lineHeight: 1.55 }}>{cardSubtitle}</p>}
 
             {/* Google button + divider */}
