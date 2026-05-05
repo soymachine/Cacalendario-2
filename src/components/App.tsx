@@ -93,11 +93,20 @@ function AppContent() {
     setActiveTab('calendar');
   };
 
-  // ── Login gate: show only when auth is resolved and no user ──
-  if (!showSplash && !authLoading && !user) {
+  // ── Phase 1: splash or auth not yet resolved → blank screen (splash covers it) ──
+  if (showSplash || authLoading) {
+    return (
+      <div style={{ height: '100dvh', backgroundColor: D.bg }}>
+        {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      </div>
+    );
+  }
+
+  // ── Phase 2: auth resolved, no user → login gate ──
+  if (!user) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: D.bg, padding: '32px 24px' }}>
-        <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 36, objectFit: 'contain', marginBottom: 48 }} />
+        <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 72, objectFit: 'contain', marginBottom: 48 }} />
         <div style={{ width: '100%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 16, padding: '32px 24px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: D.text, marginBottom: 8 }}>
             Inicia sesión para empezar a usar la app
@@ -120,6 +129,7 @@ function AppContent() {
     );
   }
 
+  // ── Phase 3: auth resolved, user logged in → full app ──
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: D.bg, overflow: 'hidden' }}>
       {/* ── MAIN CONTENT (tabs) ── */}
@@ -219,7 +229,6 @@ function AppContent() {
         <PrivacyScreen onClose={() => setOverlay('none')} />
       )}
 
-      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
     </div>
   );
 }
