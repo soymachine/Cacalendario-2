@@ -27,7 +27,7 @@ initSentry();
 type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
 
 function AppContent() {
-  const { user, isRecovery } = useAuth();
+  const { user, loading: authLoading, isRecovery } = useAuth();
   const { emoji } = usePreferences();
   const [activeTab, setActiveTab] = useState<Tab>('register');
   const [overlay, setOverlay] = useState<Overlay>('none');
@@ -92,6 +92,33 @@ function AppContent() {
     setOverlay('none');
     setActiveTab('calendar');
   };
+
+  // ── Login gate: show only when auth is resolved and no user ──
+  if (!showSplash && !authLoading && !user) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', backgroundColor: D.bg, padding: '32px 24px' }}>
+        <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 36, objectFit: 'contain', marginBottom: 48 }} />
+        <div style={{ width: '100%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 16, padding: '32px 24px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p style={{ fontSize: 17, fontWeight: 700, color: D.text, marginBottom: 8 }}>
+            Inicia sesión para empezar a usar la app
+          </p>
+          <p style={{ fontSize: 13, color: D.textMuted, marginBottom: 24, lineHeight: 1.55 }}>
+            Guarda tus registros en la nube y accede desde cualquier dispositivo.
+          </p>
+          <button
+            onClick={() => setOverlay('auth')}
+            style={{ width: '100%', padding: '13px 0', borderRadius: 99, backgroundColor: D.primary, color: D.primaryText, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Iniciar sesión / Registrarse
+          </button>
+        </div>
+        {overlay === 'auth' && (
+          <AuthScreen onClose={() => setOverlay('none')} onSuccess={() => setOverlay('none')} onShowPrivacy={() => setOverlay('privacy')} />
+        )}
+        {overlay === 'privacy' && <PrivacyScreen onClose={() => setOverlay('none')} />}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: D.bg, overflow: 'hidden' }}>

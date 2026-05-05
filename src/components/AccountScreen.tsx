@@ -289,7 +289,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
             <div style={{ ...card, textAlign: 'center', padding: '32px 16px' }}>
               <p style={{ fontSize: 40, marginBottom: 12 }}>👤</p>
               <p style={{ fontSize: 17, fontWeight: 700, color: D.text, marginBottom: 8 }}>
-                Inicia sesión para sincronizar
+                Inicia sesión para empezar a usar la app
               </p>
               <p style={{ fontSize: 13, color: D.textMuted, marginBottom: 20, lineHeight: 1.5 }}>
                 Guarda tus registros en la nube y accede desde cualquier dispositivo.
