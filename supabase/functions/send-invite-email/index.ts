@@ -1,5 +1,5 @@
 // Supabase Edge Function: send-invite-email
-// Sends a branded invitation email to a patient with their invite code.
+// Sends a branded invitation email to a patient (no invite code).
 // Deploy via: supabase functions deploy send-invite-email
 // Requires RESEND_API_KEY secret
 
@@ -16,11 +16,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { patientEmail, inviteCode, doctorName, centerName } = await req.json()
+    const { patientEmail, doctorName, centerName } = await req.json()
 
-    if (!patientEmail || !inviteCode) {
+    if (!patientEmail) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing patientEmail or inviteCode' }),
+        JSON.stringify({ success: false, error: 'Missing patientEmail' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -48,12 +48,16 @@ Deno.serve(async (req) => {
     <div style="background:#ffffff;padding:32px 24px;border-radius:0 0 16px 16px;">
       <p style="font-size:16px;color:#1a2535;margin:0 0 8px;">Hola,</p>
       <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 24px;">
-        <strong>Dr. ${doctor}</strong> del centro <strong>${center}</strong> te invita a usar
+        <strong>Dr. ${doctor}</strong> del centro <strong>${center}</strong> te ha invitado a usar
         <strong>Fluxia</strong> para hacer seguimiento de tu salud intestinal.
       </p>
-      <div style="background:#fafef0;border:2px dashed #d8d927;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
-        <p style="font-size:12px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tu código de invitación</p>
-        <div style="font-size:32px;font-weight:900;color:#1a2535;letter-spacing:6px;font-family:monospace;">${inviteCode}</div>
+      <div style="background:#f0f8ff;border-left:4px solid #477eb0;border-radius:8px;padding:20px 24px;margin:0 0 24px;">
+        <p style="font-size:15px;color:#1a2535;margin:0;font-weight:600;">
+          Inicia sesión en Fluxia para aceptar la invitación
+        </p>
+        <p style="font-size:13px;color:#666;margin:8px 0 0;line-height:1.5;">
+          La invitación te estará esperando en tu cuenta. Solo tienes que aceptarla con un clic.
+        </p>
       </div>
       <h2 style="font-size:16px;color:#1a2535;margin:0 0 16px;font-weight:800;">¿Cómo empezar?</h2>
       <div style="margin:0 0 16px;">
@@ -69,36 +73,18 @@ Deno.serve(async (req) => {
         <div style="display:flex;margin-bottom:14px;">
           <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">2</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a2535;font-size:14px;">Crea tu cuenta</strong>
+            <strong style="color:#1a2535;font-size:14px;">Inicia sesión o crea tu cuenta</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
-              Regístrate con tu email y contraseña. Es rápido y gratuito.
-            </p>
-          </div>
-        </div>
-        <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">3</div>
-          <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a2535;font-size:14px;">Ve a Ajustes</strong>
-            <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
-              Una vez dentro, pulsa el icono de ajustes ⚙️ en la barra inferior.
-            </p>
-          </div>
-        </div>
-        <div style="display:flex;margin-bottom:14px;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">4</div>
-          <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a2535;font-size:14px;">Vincúlate con tu médico</strong>
-            <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
-              Pulsa en <strong>"Vincular con mi médico"</strong> e introduce el código de arriba.
+              Usa el mismo email al que te enviamos esta invitación.
             </p>
           </div>
         </div>
         <div style="display:flex;margin-bottom:0;">
-          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">5</div>
+          <div style="min-width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">3</div>
           <div style="margin-left:12px;padding-top:5px;">
-            <strong style="color:#1a2535;font-size:14px;">¡Empieza a registrar!</strong>
+            <strong style="color:#1a2535;font-size:14px;">Acepta la invitación</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.4;">
-              Cada día, registra tus deposiciones. Tu médico podrá hacer seguimiento de forma segura.
+              En tu cuenta verás la invitación de tu médico. Acéptala y empieza a registrar.
             </p>
           </div>
         </div>

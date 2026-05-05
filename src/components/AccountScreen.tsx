@@ -43,10 +43,9 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   // Settings state
   const [displayName, setDisplayName] = useState('');
   const [nameSaved, setNameSaved] = useState(false);
-  const [code, setCode] = useState('');
-  const [linkStatus, setLinkStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [linkMessage, setLinkMessage] = useState('');
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<Array<{ id: string; doctor_name: string; center_name: string; invited_at: string }>>([]);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [pushLoading, setPushLoading] = useState(false);
@@ -68,6 +67,22 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const isStandalone = typeof window !== 'undefined' &&
     ((navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
 
+  const loadPendingInvites = async () => {
+    if (!user) return;
+    const { data } = await supabase.rpc('patient_get_pending_invites');
+    if (Array.isArray(data)) setPendingInvites(data);
+  };
+
+  const handleRespondInvite = async (linkId: string, accept: boolean) => {
+    setRespondingId(linkId);
+    const { data } = await supabase.rpc('patient_respond_to_invite', { p_link_id: linkId, p_accept: accept });
+    setRespondingId(null);
+    if (data?.success) {
+      if (accept && data.center_name) setLinkedCenter(data.center_name);
+      await loadPendingInvites();
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     // Load display_name
@@ -82,6 +97,8 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
             .then(({ data: center }) => { if (center) setLinkedCenter(center.name); });
         }
       });
+    // Load pending invites
+    loadPendingInvites();
     // Check push
     if (!('Notification' in window)) { setPushPermission('unsupported'); return; }
     setPushPermission(Notification.permission);
@@ -104,28 +121,11 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
     setTimeout(() => setNameSaved(false), 2000);
   };
 
-  const handleLinkDoctor = async () => {
-    if (!code.trim() || !user) return;
-    setLinkStatus('loading');
-    const { data, error } = await supabase.rpc('patient_accept_invite', { p_code: code.trim().toUpperCase() });
-    if (error || !data?.success) {
-      setLinkStatus('error');
-      setLinkMessage(data?.error || 'Código no válido');
-    } else {
-      setLinkStatus('success');
-      setLinkMessage(`Vinculado con ${data.center_name}`);
-      setLinkedCenter(data.center_name);
-    }
-  };
-
   const handleUnlink = async () => {
     if (!user) return;
     await supabase.from('patient_links').update({ status: 'rejected' })
       .eq('patient_id', user.id).eq('status', 'accepted');
     setLinkedCenter(null);
-    setLinkStatus('idle');
-    setLinkMessage('');
-    setCode('');
   };
 
   const handleTogglePush = async () => {
@@ -364,47 +364,51 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
               </button>
             </div>
 
-            {/* Link with doctor */}
-            <div style={card}>
-              <span style={label}>🏥 VINCULAR CON MI MÉDICO</span>
-              {linkedCenter ? (
-                <>
-                  <p style={{ fontSize: 14, color: D.text, marginBottom: 4 }}>
-                    Vinculado con: <strong>{linkedCenter}</strong>
-                  </p>
-                  <p style={{ fontSize: 12, color: D.textMuted }}>
-                    Tu médico puede ver tus registros para ayudarte mejor.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ fontSize: 12, color: D.textMuted, marginBottom: 10, marginTop: -4 }}>
-                    Si tu médico te ha dado un código, introdúcelo aquí para compartir tus registros.
-                  </p>
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="CAC-XXXXXX"
-                    maxLength={10}
-                    style={{ ...inputStyle, textAlign: 'center', fontSize: 18, fontWeight: 700, letterSpacing: 3 }}
-                  />
-                  <button
-                    onClick={handleLinkDoctor}
-                    disabled={linkStatus === 'loading' || !code.trim()}
-                    style={{ ...primaryBtn, marginTop: 10, opacity: (linkStatus === 'loading' || !code.trim()) ? 0.5 : 1 }}
-                  >
-                    {linkStatus === 'loading' ? 'Verificando...' : 'Vincular'}
-                  </button>
-                  {linkStatus === 'success' && (
-                    <p style={{ fontSize: 12, color: D.success, textAlign: 'center', marginTop: 8 }}>✅ {linkMessage}</p>
-                  )}
-                  {linkStatus === 'error' && (
-                    <p style={{ fontSize: 12, color: D.danger, textAlign: 'center', marginTop: 8 }}>❌ {linkMessage}</p>
-                  )}
-                </>
-              )}
-            </div>
+            {/* Pending invitations */}
+            {pendingInvites.length > 0 && (
+              <div style={card}>
+                <span style={label}>🏥 INVITACIONES DE TU MÉDICO</span>
+                {pendingInvites.map((invite) => (
+                  <div key={invite.id} style={{ marginBottom: 12 }}>
+                    <p style={{ fontSize: 14, color: D.text, fontWeight: 600, margin: '0 0 2px' }}>
+                      {invite.center_name}
+                    </p>
+                    <p style={{ fontSize: 12, color: D.textMuted, margin: '0 0 10px' }}>
+                      Dr. {invite.doctor_name} te ha invitado a compartir tus registros.
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => handleRespondInvite(invite.id, true)}
+                        disabled={respondingId === invite.id}
+                        style={{ ...primaryBtn, flex: 1, opacity: respondingId === invite.id ? 0.5 : 1 }}
+                      >
+                        {respondingId === invite.id ? '...' : 'Aceptar'}
+                      </button>
+                      <button
+                        onClick={() => handleRespondInvite(invite.id, false)}
+                        disabled={respondingId === invite.id}
+                        style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: `1px solid ${D.border}`, background: 'none', color: D.textMuted, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: respondingId === invite.id ? 0.5 : 1 }}
+                      >
+                        Declinar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Linked center */}
+            {linkedCenter && (
+              <div style={card}>
+                <span style={label}>🏥 MI MÉDICO</span>
+                <p style={{ fontSize: 14, color: D.text, marginBottom: 4 }}>
+                  Vinculado con: <strong>{linkedCenter}</strong>
+                </p>
+                <p style={{ fontSize: 12, color: D.textMuted }}>
+                  Tu médico puede ver tus registros para ayudarte mejor.
+                </p>
+              </div>
+            )}
 
             {/* Push notifications */}
             {pushPermission !== 'unsupported' && (

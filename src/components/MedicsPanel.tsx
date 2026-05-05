@@ -32,7 +32,7 @@ const BRISTOL_LABEL: Record<number, string> = {
 interface PatientLink {
   id: string;
   patient_id: string | null;
-  invite_code: string;
+  invite_code?: string | null;
   status: string;
   invited_at: string;
   accepted_at: string | null;
@@ -210,7 +210,7 @@ export default function MedicsPanel() {
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
   const [forgotMode, setForgotMode] = useState<'off' | 'email' | 'sent'>('off');
   const [registerMode, setRegisterMode] = useState(false);
   const [registerStep, setRegisterStep] = useState<'email' | 'details' | 'password' | 'done'>('email');
@@ -738,10 +738,12 @@ export default function MedicsPanel() {
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
 
-  const handleInvite = async (useEmail: boolean) => {
+  const handleInvite = async () => {
     setError('');
     setEmailSent(false);
     setEmailError('');
+    setInviteSuccess(false);
+    if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
     if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
@@ -749,46 +751,43 @@ export default function MedicsPanel() {
     }
     setLoading(true);
     try {
-      const { data, error: rpcError } = await supabase.rpc('doctor_create_invite', {
-        p_patient_email: useEmail && inviteEmail ? inviteEmail : null,
+      const { data, error: rpcError } = await supabase.rpc('doctor_invite_patient', {
+        p_patient_email: inviteEmail.trim(),
       });
       if (rpcError) {
-        setError(rpcError.message);
+        setError(translateAuthError(rpcError.message));
         setLoading(false);
         return;
       }
-      if (data) {
-        setInviteCode(data.invite_code);
-
-        // Send email if email was provided
-        if (useEmail && inviteEmail) {
-          try {
-            const { data: fnData, error: fnError } = await supabase.functions.invoke('send-invite-email', {
-              body: {
-                patientEmail: inviteEmail,
-                inviteCode: data.invite_code,
-                doctorName: doctorInfo?.name || '',
-                centerName: doctorInfo?.center_name || '',
-              },
-            });
-            if (fnError) {
-              console.error('Edge Function error:', fnError);
-              setEmailError(`No se pudo enviar el email: ${fnError.message || JSON.stringify(fnError)}`);
-            } else if (fnData?.error) {
-              console.error('Email service error:', fnData.error, fnData.details);
-              setEmailError(`No se pudo enviar el email: ${fnData.error}${fnData.details ? ' — ' + fnData.details : ''}`);
-            } else {
-              setEmailSent(true);
-            }
-          } catch (e: any) {
-            console.error('Email catch error:', e);
-            setEmailError(`No se pudo enviar el email: ${e?.message || 'Error desconocido'}`);
-          }
-        }
-
-        setInviteEmail('');
-        loadPatients();
+      if (data?.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
       }
+
+      // Send notification email
+      try {
+        const { data: fnData, error: fnError } = await supabase.functions.invoke('send-invite-email', {
+          body: {
+            patientEmail: inviteEmail.trim(),
+            doctorName: doctorInfo?.name || '',
+            centerName: doctorInfo?.center_name || '',
+          },
+        });
+        if (fnError) {
+          setEmailError(`No se pudo enviar el email: ${fnError.message || JSON.stringify(fnError)}`);
+        } else if (fnData?.error) {
+          setEmailError(`No se pudo enviar el email: ${fnData.error}`);
+        } else {
+          setEmailSent(true);
+        }
+      } catch (e: any) {
+        setEmailError(`No se pudo enviar el email: ${e?.message || 'Error desconocido'}`);
+      }
+
+      setInviteSuccess(true);
+      setInviteEmail('');
+      loadPatients();
     } catch (err) {
       setError('Error al crear la invitación');
     } finally {
@@ -900,12 +899,6 @@ export default function MedicsPanel() {
     });
     setDetailLoading(false);
     setLoading(false);
-  };
-
-  const handleCopyCode = () => {
-    if (inviteCode) {
-      navigator.clipboard.writeText(inviteCode).catch(() => {});
-    }
   };
 
   // ── Helpers ──
@@ -1959,12 +1952,8 @@ export default function MedicsPanel() {
                         ) : isAccepted ? (
                           <span style={{ fontSize: 12, color: '#aaa' }}>Sin registros</span>
                         ) : (
-                          <span
-                            title="Clic para copiar"
-                            onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(patient.invite_code); }}
-                            style={{ fontSize: 12, fontWeight: 700, color: th.primary, letterSpacing: 1, cursor: 'pointer', padding: '2px 6px', borderRadius: 6, backgroundColor: `${th.primary}15` }}
-                          >
-                            {patient.invite_code}
+                          <span style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic' }}>
+                            Invitación pendiente
                           </span>
                         )}
                       </div>}
@@ -2886,8 +2875,7 @@ export default function MedicsPanel() {
             )}
 
             <div style={s.card}>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 24 }}>
-                {/* Invite by email */}
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
                 {(() => {
                   const atLimit = doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT;
                   return (
@@ -2899,20 +2887,21 @@ export default function MedicsPanel() {
                             type="email"
                             value={inviteEmail}
                             onChange={(e) => !atLimit && setInviteEmail(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
                             placeholder={atLimit ? 'Límite de pacientes alcanzado' : 'paciente@email.com'}
                             disabled={atLimit}
                             style={{ ...s.input, marginBottom: 0, opacity: atLimit ? 0.45 : 1, cursor: atLimit ? 'not-allowed' : 'text' }}
                           />
                         </div>
                         <button
-                          onClick={() => handleInvite(true)}
-                          disabled={loading || !inviteEmail || atLimit}
+                          onClick={handleInvite}
+                          disabled={loading || !inviteEmail.trim() || atLimit}
                           style={{
                             ...s.headerBtn,
                             backgroundColor: th.dark,
                             color: '#fff',
                             height: 44,
-                            opacity: loading || !inviteEmail || atLimit ? 0.45 : 1,
+                            opacity: loading || !inviteEmail.trim() || atLimit ? 0.45 : 1,
                             cursor: atLimit ? 'not-allowed' : 'pointer',
                           }}
                         >
@@ -2934,51 +2923,21 @@ export default function MedicsPanel() {
 
                 {error && <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{error}</p>}
 
-                {/* Generated code display */}
-                {inviteCode && (
-                  <div style={{
-                    backgroundColor: '#f9f9f9',
-                    borderRadius: 16,
-                    padding: 32,
-                    textAlign: 'center',
-                    border: `2px dashed ${th.primary}`,
-                  }}>
+                {inviteSuccess && (
+                  <div style={{ backgroundColor: '#2ecc7115', borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>✅</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#27ae60' }}>Invitación enviada</span>
+                    </div>
                     {emailSent && (
-                      <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>✅</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#27ae60' }}>Email enviado correctamente</span>
-                      </div>
+                      <p style={{ fontSize: 12, color: '#555', margin: 0 }}>El paciente recibirá un email con las instrucciones.</p>
                     )}
                     {emailError && (
-                      <div style={{ backgroundColor: '#f39c1220', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>⚠️</span>
-                        <span style={{ fontSize: 12, color: '#e67e22' }}>{emailError}</span>
-                      </div>
+                      <p style={{ fontSize: 12, color: '#e67e22', margin: 0 }}>⚠️ {emailError}</p>
                     )}
-                    <p style={{ fontSize: 14, color: '#666', margin: '0 0 16px' }}>
-                      {emailSent ? 'Email enviado. También puedes compartir el código:' : 'Comparte este código con tu paciente'}
+                    <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+                      El paciente verá la invitación en su cuenta al iniciar sesión.
                     </p>
-                    <div style={{
-                      fontSize: 36,
-                      fontWeight: 900,
-                      color: th.dark,
-                      letterSpacing: 6,
-                      fontFamily: 'monospace',
-                      marginBottom: 16,
-                    }}>
-                      {inviteCode}
-                    </div>
-                    <button
-                      onClick={handleCopyCode}
-                      style={{
-                        ...s.headerBtn,
-                        backgroundColor: th.dark,
-                        color: '#fff',
-                        padding: '10px 24px',
-                      }}
-                    >
-                      {'\u{1F4CB}'} Copiar código
-                    </button>
                   </div>
                 )}
               </div>
@@ -2991,13 +2950,12 @@ export default function MedicsPanel() {
                 <div style={{ fontSize: 14, color: '#555', lineHeight: 1.8 }}>
                   <p style={{ margin: '0 0 8px' }}>El paciente debe seguir estos pasos:</p>
                   <ol style={{ margin: 0, paddingLeft: 20 }}>
-                    <li>Abrir la app</li>
-                    <li>Ir a <strong>Ajustes</strong></li>
-                    <li>Pulsar en <strong>Vincular con mi médico</strong></li>
-                    <li>Introducir el código proporcionado</li>
+                    <li>Abrir la app en <strong>fluxia-health.com/user</strong></li>
+                    <li>Iniciar sesión con el email al que le enviaste la invitación</li>
+                    <li>Ir a su cuenta y <strong>aceptar la invitación</strong></li>
                   </ol>
                   <p style={{ margin: '12px 0 0', color: '#999', fontSize: 13 }}>
-                    Una vez vinculado, podrás ver los registros del paciente desde tu panel.
+                    Una vez aceptada, podrás ver los registros del paciente desde tu panel.
                   </p>
                 </div>
               </div>
