@@ -695,59 +695,12 @@
 
       <div class="hero-visual">
         <!-- Dashboard back -->
-        <div class="dash" style="right: -40px; top: 20px; width: 640px;">
-          <div class="dash-bar">
-            <div class="dots"><i></i><i></i><i></i></div>
-            <div class="url">panel.fluxia.health / pacientes / rodriguez-m</div>
-          </div>
-          <div class="dash-body">
-            <aside class="dash-side">
-              <div class="brand"><span class="sq"></span> Fluxia Clinic</div>
-              <div class="group">Panel</div>
-              <div class="item"><span class="g"></span> Resumen</div>
-              <div class="item active"><span class="g"></span> Pacientes</div>
-              <div class="item"><span class="g"></span> Alertas</div>
-              <div class="item"><span class="g"></span> Informes</div>
-              <div class="group">Equipo</div>
-              <div class="item"><span class="g"></span> Urología</div>
-              <div class="item"><span class="g"></span> Geriatría</div>
-            </aside>
-            <div class="dash-main">
-              <div class="dash-crumbs">Pacientes / Rodríguez, M. · HCE 00842</div>
-              <h3 class="dash-h">Ficha de seguimiento <span class="tag">● En observación · 14d</span></h3>
-              <div class="kpis">
-                <div class="kpi"><div class="l">Diuresis 24h</div><div class="v">1 820<small style="font-size:11px;color:var(--ink-3);"> ml</small></div><div class="d">+6% vs semana</div></div>
-                <div class="kpi"><div class="l">Micciones</div><div class="v">8<small style="font-size:11px;color:var(--ink-3);"> /día</small></div><div class="d">Estable</div></div>
-                <div class="kpi"><div class="l">Deposiciones</div><div class="v">1,4<small style="font-size:11px;color:var(--ink-3);"> /día</small></div><div class="d neg">−22%</div></div>
-                <div class="kpi"><div class="l">Bristol</div><div class="v">4,2</div><div class="d">En rango</div></div>
-              </div>
-              <div class="chart">
-                <div class="hd">
-                  <span>Registro — 14 días</span>
-                  <span class="legend"><span><i></i>Micción</span><span><i class="b"></i>Deposición</span></span>
-                </div>
-                <svg viewBox="0 0 600 100" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="ga" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0" stop-color="var(--accent)" stop-opacity="0.35"/>
-                      <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,70 L42,60 L85,65 L128,42 L171,50 L214,30 L257,38 L300,22 L343,34 L386,28 L428,42 L471,32 L514,48 L557,36 L600,44 L600,100 L0,100 Z" fill="url(#ga)"/>
-                  <path d="M0,70 L42,60 L85,65 L128,42 L171,50 L214,30 L257,38 L300,22 L343,34 L386,28 L428,42 L471,32 L514,48 L557,36 L600,44" stroke="var(--accent)" stroke-width="1.8" fill="none"/>
-                  <g stroke="var(--lime-ink)" stroke-width="1.5" opacity="0.75" fill="none">
-                    <path d="M0,82 L42,78 L85,80 L128,72 L171,76 L214,70 L257,74 L300,68 L343,72 L386,70 L428,78 L471,74 L514,82 L557,76 L600,80" stroke-dasharray="3 3"/>
-                  </g>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+        <img src="/dashboard-screenshot.png" alt="Dashboard clínico Fluxia" style="position:absolute; right: -40px; top: 20px; width: 640px; border-radius: 14px; box-shadow: 0 40px 80px -30px rgba(20,30,60,0.22), 0 10px 20px -10px rgba(20,30,60,0.1);"/>
 
         <!-- Phone front — real app screenshot -->
         <div class="phone phone-real" style="left: -20px; top: 40px;">
           <div class="phone-screen">
-            <img src="/app-screenshot.jpeg" alt="App Fluxia — pantalla de registro" style="width:100%; height:100%; object-fit: cover; display:block;"/>
+            <img src="/app-screenshot.png" alt="App Fluxia — pantalla de registro" style="width:100%; height:100%; object-fit: cover; display:block;"/>
           </div>
         </div>
       </div>
@@ -779,7 +732,7 @@
         <div class="visual" style="display:flex; justify-content:center;">
           <div class="phone phone-real" style="position: relative; transform: scale(0.78); transform-origin: top center;">
             <div class="phone-screen">
-              <img src="/app-screenshot.jpeg" alt="App Fluxia — pantalla de registro" style="width:100%; height:100%; object-fit: cover; display:block;"/>
+              <img src="/app-screenshot.png" alt="App Fluxia — pantalla de registro" style="width:100%; height:100%; object-fit: cover; display:block;"/>
             </div>
           </div>
         </div>
@@ -796,22 +749,8 @@
           <li>Informes PDF listos para adjuntar a la historia</li>
           <li>Multi-rol: urología, gastro, geriatría, enfermería</li>
         </ul>
-        <div class="visual">
-          <div class="dash" style="position: relative; width: 100%;">
-            <div class="dash-bar">
-              <div class="dots"><i></i><i></i><i></i></div>
-              <div class="url">panel.fluxia.health / alertas</div>
-            </div>
-            <div style="padding: 16px;">
-              <div style="font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">Alertas activas · 3</div>
-              <div class="pat-table" style="margin: 0;">
-                <div class="r hd"><div>Paciente</div><div>Indicador</div><div>Umbral</div><div>Estado</div><div></div></div>
-                <div class="r"><div class="name"><div class="av">MR</div>Rodríguez, M.</div><div>Diuresis 24h</div><div>&lt; 500 ml</div><div><span class="st alert">Oliguria</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">2h</div></div>
-                <div class="r"><div class="name"><div class="av">JP</div>Pérez, J.</div><div>Frecuencia</div><div>&gt; 10/día</div><div><span class="st watch">Polaquiuria</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">5h</div></div>
-                <div class="r"><div class="name"><div class="av">LS</div>Sánchez, L.</div><div>Bristol</div><div>&gt; 6</div><div><span class="st watch">Diarrea</span></div><div style="text-align:right;font-family:var(--f-mono);font-size:11px;color:var(--ink-3);">1d</div></div>
-              </div>
-            </div>
-          </div>
+        <div class="visual" style="display:flex; align-items:flex-end;">
+          <img src="/dashboard-screenshot.png" alt="Dashboard clínico Fluxia" style="width:100%; border-radius: 12px; box-shadow: 0 20px 48px -16px rgba(20,30,60,0.22);"/>
         </div>
       </div>
     </div>
