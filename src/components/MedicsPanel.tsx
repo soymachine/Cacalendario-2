@@ -326,7 +326,15 @@ export default function MedicsPanel() {
       });
     }
 
-    setConfigPalette('terracotta');
+    const palette = info.palette || 'terracotta';
+    if (palette.startsWith('custom:')) {
+      const parts = palette.split(':');
+      setCustomColor1('#' + (parts[1] || 'dd8273'));
+      setCustomColor2('#' + (parts[2] || '1a0e0e'));
+      setConfigPalette('custom');
+    } else {
+      setConfigPalette(palette);
+    }
   };
 
   // ── Recover session on mount + handle Google OAuth callback ──
@@ -3170,8 +3178,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
-              {false && <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
+              {/* Cols 1–2 Row 4 — Paleta de colores */}
+              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
                 </div>
@@ -3290,7 +3298,7 @@ export default function MedicsPanel() {
                     )}
                   </div>
                 </div>
-              </div>}
+              </div>
 
             </div>
             {isMobile && (
