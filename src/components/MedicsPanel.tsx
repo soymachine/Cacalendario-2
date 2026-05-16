@@ -1461,7 +1461,7 @@ export default function MedicsPanel() {
       <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
         {/* Center image header */}
         <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
-          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
+          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', border: `1px solid ${th.border}` }}>
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
             ) : (
