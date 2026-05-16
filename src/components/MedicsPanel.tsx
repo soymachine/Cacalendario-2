@@ -139,7 +139,7 @@ const ONBOARDING_STEPS = [
     color: '#f0fff4',
     accent: '#22c55e',
     title: 'Invita a un paciente',
-    body: 'Ve a «Invitar Paciente» y genera un código o envía un email de invitación. Tu paciente lo introduce en la app Fluxia y queda vinculado a tu cuenta automáticamente.',
+    body: 'Ve a «Invitar Paciente» e introduce el email de tu paciente. Una vez que se registre en Fluxia, verá un botón para aceptar tu invitación en su apartado de configuración y quedará vinculado a tu cuenta automáticamente.',
   },
   {
     icon: '📊',
@@ -2818,7 +2818,7 @@ export default function MedicsPanel() {
           <>
             <SectionHeader
               title="Invitar Paciente"
-              subtitle="Genera un código de vinculación para tu paciente"
+              subtitle="Envía una invitación por email a tu paciente"
             />
 
             {/* Plan banner */}
@@ -2944,7 +2944,7 @@ export default function MedicsPanel() {
                   <ol style={{ margin: 0, paddingLeft: 20 }}>
                     <li>Abrir la app en <strong>fluxia-health.com/user</strong></li>
                     <li>Iniciar sesión con el email al que le enviaste la invitación</li>
-                    <li>Ir a su cuenta y <strong>aceptar la invitación</strong></li>
+                    <li>Ir a <strong>Configuración</strong> y aceptar la invitación del médico</li>
                   </ol>
                   <p style={{ margin: '12px 0 0', color: '#999', fontSize: 13 }}>
                     Una vez aceptada, podrás ver los registros del paciente desde tu panel.
