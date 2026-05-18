@@ -62,12 +62,13 @@ interface DoctorInfo {
   semaforo_green: number;
   semaforo_red: number;
   palette?: string;
-  plan: 'free' | 'pro';
+  plan: 'free' | 'beta' | 'pro';
   global_tags: string[];
 }
 
-// Free tier limit: 1 patient (accepted + pending). Pro is effectively unlimited.
+// Free tier limit: 1 patient (accepted + pending). Beta: 100. Pro is effectively unlimited.
 const FREE_PLAN_PATIENT_LIMIT = 1;
+const BETA_PLAN_PATIENT_LIMIT = 100;
 
 interface PatientEntry {
   id: string;
@@ -301,7 +302,7 @@ export default function MedicsPanel() {
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
-    plan: (d.plan as 'free' | 'pro') || 'free',
+    plan: (d.plan as 'free' | 'beta' | 'pro') || 'free',
     global_tags: d.global_tags || [],
   });
 
@@ -550,7 +551,7 @@ export default function MedicsPanel() {
         center_id: newCenter.id,
         name: registerName.trim(),
         specialty: registerSpecialty.trim() || null,
-        plan: 'free',
+        plan: 'beta',
       });
       if (docErr) throw new Error(docErr.message);
       const { data: doctorData } = await supabase
@@ -739,6 +740,10 @@ export default function MedicsPanel() {
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
+    if (doctorInfo?.plan === 'beta' && patients.length >= BETA_PLAN_PATIENT_LIMIT) {
+      setShowUpgradeModal(true);
+      return;
+    }
     if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
@@ -1551,6 +1556,9 @@ export default function MedicsPanel() {
                 Dr. {doctorInfo?.name}
                 {doctorInfo?.plan === 'pro' && (
                   <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#f59e0b', color: '#1a0e0e', letterSpacing: 0.3, flexShrink: 0 }}>PRO</span>
+                )}
+                {doctorInfo?.plan === 'beta' && (
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#6366f1', color: '#fff', letterSpacing: 0.3, flexShrink: 0 }}>BETA</span>
                 )}
               </div>
               <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>

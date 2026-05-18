@@ -28,7 +28,7 @@ interface Doctor {
   name: string;
   specialty: string | null;
   center_name: string;
-  plan: 'free' | 'pro';
+  plan: 'free' | 'beta' | 'pro';
   created_at: string;
   email?: string;
   provider?: string;
@@ -74,7 +74,7 @@ export default function AdminPanel() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
-  const [planConfirm, setPlanConfirm] = useState<{ doctor: Doctor; newPlan: 'free' | 'pro' } | null>(null);
+  const [planConfirm, setPlanConfirm] = useState<{ doctor: Doctor; newPlan: 'free' | 'beta' | 'pro' } | null>(null);
 
   // Backup state
   interface BackupRecord { filename: string; createdAt: string; summary: string; }
@@ -188,7 +188,7 @@ export default function AdminPanel() {
     setDoctors(docList);
   };
 
-  const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'pro') => {
+  const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'beta' | 'pro') => {
     setChangingPlanId(doctorId);
     const { error } = await supabase.rpc('admin_set_doctor_plan', { p_doctor_id: doctorId, p_plan: newPlan });
     setChangingPlanId(null);
@@ -546,6 +546,7 @@ export default function AdminPanel() {
             <div style={s.statsRow}>
               <StatCard emoji="🩺" label="TOTAL MÉDICOS" value={String(doctors.length)} />
               <StatCard emoji="⭐" label="PLAN FREE" value={String(doctors.filter(d => d.plan === 'free').length)} />
+              <StatCard emoji="🧪" label="PLAN BETA" value={String(doctors.filter(d => d.plan === 'beta').length)} />
               <StatCard emoji="🚀" label="PLAN PRO" value={String(doctors.filter(d => d.plan === 'pro').length)} dark />
               <StatCard emoji="🏥" label="ESPECIALIDADES" value={String(new Set(doctors.map(d => d.specialty).filter(Boolean)).size)} />
             </div>
@@ -591,23 +592,23 @@ export default function AdminPanel() {
                       <span style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : '#fff8e1',
-                          color: doc.plan === 'pro' ? '#dd8273' : '#7a5810',
-                          border: doc.plan === 'pro' ? 'none' : '1px solid #ffe082',
+                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : doc.plan === 'beta' ? '#6366f1' : '#fff8e1',
+                          color: doc.plan === 'pro' ? '#dd8273' : doc.plan === 'beta' ? '#fff' : '#7a5810',
+                          border: doc.plan === 'pro' || doc.plan === 'beta' ? 'none' : '1px solid #ffe082',
                         }}>
-                          {doc.plan === 'pro' ? '🚀 Pro' : '⭐ Free'}
+                          {doc.plan === 'pro' ? '🚀 Pro' : doc.plan === 'beta' ? '🧪 Beta' : '⭐ Free'}
                         </span>
                         <button
-                          onClick={() => setPlanConfirm({ doctor: doc, newPlan: doc.plan === 'pro' ? 'free' : 'pro' })}
+                          onClick={() => setPlanConfirm({ doctor: doc, newPlan: doc.plan === 'pro' ? 'free' : doc.plan === 'beta' ? 'pro' : 'beta' })}
                           disabled={isChanging}
-                          title={doc.plan === 'pro' ? 'Cambiar a Free' : 'Activar Pro'}
+                          title={doc.plan === 'pro' ? 'Cambiar a Free' : doc.plan === 'beta' ? 'Activar Pro' : 'Activar Beta'}
                           style={{
                             padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11,
                             cursor: 'pointer', backgroundColor: '#fff', color: '#555',
                             opacity: isChanging ? 0.4 : 1,
                           }}
                         >
-                          {isChanging ? '…' : doc.plan === 'pro' ? '↓ Free' : '↑ Pro'}
+                          {isChanging ? '…' : doc.plan === 'pro' ? '↓ Free' : doc.plan === 'beta' ? '↑ Pro' : '↑ Beta'}
                         </button>
                       </span>
                     </div>
