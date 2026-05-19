@@ -1470,7 +1470,7 @@ export default function MedicsPanel() {
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
             ) : (
-              <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
+              <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '80%', objectFit: 'contain' }} />
             )}
           </div>
           <div style={{ textAlign: 'center' as const }}>
@@ -2832,7 +2832,7 @@ export default function MedicsPanel() {
             />
 
             {/* Plan banner */}
-            {doctorInfo?.plan === 'free' && (
+            {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
               <div style={{
                 backgroundColor: '#fff8e1',
                 border: '1px solid #ffe082',
@@ -2846,15 +2846,17 @@ export default function MedicsPanel() {
                 flexWrap: 'wrap' as const,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 20 }}>⭐</span>
+                  <span style={{ fontSize: 20 }}>{doctorInfo?.plan === 'beta' ? '🧪' : '⭐'}</span>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5810' }}>
-                      Plan Free · {patients.length}/{FREE_PLAN_PATIENT_LIMIT} paciente{FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}
+                      {doctorInfo?.plan === 'beta'
+                        ? `Plan Beta · ${patients.length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
+                        : `Plan Free · ${patients.length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
                     <div style={{ fontSize: 12, color: '#8a6b20' }}>
-                      {patients.length >= FREE_PLAN_PATIENT_LIMIT
-                        ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.'
-                        : 'El primer paciente es gratis. Después, pasa al plan Pro.'}
+                      {doctorInfo?.plan === 'beta'
+                        ? (patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.')
+                        : (patients.length >= FREE_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.' : 'El primer paciente es gratis. Después, pasa al plan Pro.')}
                     </div>
                   </div>
                 </div>
