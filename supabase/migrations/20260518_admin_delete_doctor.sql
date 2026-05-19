@@ -35,7 +35,7 @@ BEGIN
     AND NOT EXISTS (SELECT 1 FROM doctors WHERE center_id = v_center_id);
 
   -- 4. Delete auth user
-  PERFORM auth.admin_delete_user(p_doctor_id);
+  DELETE FROM auth.users WHERE id = p_doctor_id;
 
 EXCEPTION WHEN OTHERS THEN
   RAISE;
