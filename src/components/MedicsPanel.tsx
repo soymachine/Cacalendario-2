@@ -62,12 +62,13 @@ interface DoctorInfo {
   semaforo_green: number;
   semaforo_red: number;
   palette?: string;
-  plan: 'free' | 'pro';
+  plan: 'free' | 'beta' | 'pro';
   global_tags: string[];
 }
 
-// Free tier limit: 1 patient (accepted + pending). Pro is effectively unlimited.
+// Free tier limit: 1 patient (accepted + pending). Beta: 100. Pro is effectively unlimited.
 const FREE_PLAN_PATIENT_LIMIT = 1;
+const BETA_PLAN_PATIENT_LIMIT = 100;
 
 interface PatientEntry {
   id: string;
@@ -139,7 +140,7 @@ const ONBOARDING_STEPS = [
     color: '#f0fff4',
     accent: '#22c55e',
     title: 'Invita a un paciente',
-    body: 'Ve a «Invitar Paciente» y genera un código o envía un email de invitación. Tu paciente lo introduce en la app Fluxia y queda vinculado a tu cuenta automáticamente.',
+    body: 'Ve a «Invitar Paciente» e introduce el email de tu paciente. Una vez que se registre en Fluxia, verá un botón para aceptar tu invitación en su apartado de configuración y quedará vinculado a tu cuenta automáticamente.',
   },
   {
     icon: '📊',
@@ -301,7 +302,7 @@ export default function MedicsPanel() {
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
-    plan: (d.plan as 'free' | 'pro') || 'free',
+    plan: (d.plan as 'free' | 'beta' | 'pro') || 'free',
     global_tags: d.global_tags || [],
   });
 
@@ -326,15 +327,9 @@ export default function MedicsPanel() {
       });
     }
 
-    const palette = info.palette || 'terracotta';
-    if (palette.startsWith('custom:')) {
-      const parts = palette.split(':');
-      setCustomColor1('#' + (parts[1] || 'dd8273'));
-      setCustomColor2('#' + (parts[2] || '1a0e0e'));
-      setConfigPalette('custom');
-    } else {
-      setConfigPalette(palette);
-    }
+    setCustomColor1('#a84a38');
+    setCustomColor2('#141414');
+    setConfigPalette('custom');
   };
 
   // ── Recover session on mount + handle Google OAuth callback ──
@@ -556,7 +551,7 @@ export default function MedicsPanel() {
         center_id: newCenter.id,
         name: registerName.trim(),
         specialty: registerSpecialty.trim() || null,
-        plan: 'free',
+        plan: 'beta',
       });
       if (docErr) throw new Error(docErr.message);
       const { data: doctorData } = await supabase
@@ -745,6 +740,10 @@ export default function MedicsPanel() {
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
+    if (doctorInfo?.plan === 'beta' && patients.length >= BETA_PLAN_PATIENT_LIMIT) {
+      setShowUpgradeModal(true);
+      return;
+    }
     if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
@@ -1467,11 +1466,11 @@ export default function MedicsPanel() {
       <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
         {/* Center image header */}
         <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
-          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: th.navActive, border: `1px solid ${th.border}` }}>
+          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', border: `1px solid ${th.border}` }}>
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
             ) : (
-              <span style={{ fontSize: 36 }}>{'\u{1F3E5}'}</span>
+              <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '80%', objectFit: 'contain' }} />
             )}
           </div>
           <div style={{ textAlign: 'center' as const }}>
@@ -1557,6 +1556,9 @@ export default function MedicsPanel() {
                 Dr. {doctorInfo?.name}
                 {doctorInfo?.plan === 'pro' && (
                   <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#f59e0b', color: '#1a0e0e', letterSpacing: 0.3, flexShrink: 0 }}>PRO</span>
+                )}
+                {doctorInfo?.plan === 'beta' && (
+                  <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#6366f1', color: '#fff', letterSpacing: 0.3, flexShrink: 0 }}>BETA</span>
                 )}
               </div>
               <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>
@@ -2826,11 +2828,11 @@ export default function MedicsPanel() {
           <>
             <SectionHeader
               title="Invitar Paciente"
-              subtitle="Genera un código de vinculación para tu paciente"
+              subtitle="Envía una invitación por email a tu paciente"
             />
 
             {/* Plan banner */}
-            {doctorInfo?.plan === 'free' && (
+            {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
               <div style={{
                 backgroundColor: '#fff8e1',
                 border: '1px solid #ffe082',
@@ -2844,15 +2846,17 @@ export default function MedicsPanel() {
                 flexWrap: 'wrap' as const,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 20 }}>⭐</span>
+                  <span style={{ fontSize: 20 }}>{doctorInfo?.plan === 'beta' ? '🧪' : '⭐'}</span>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5810' }}>
-                      Plan Free · {patients.length}/{FREE_PLAN_PATIENT_LIMIT} paciente{FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}
+                      {doctorInfo?.plan === 'beta'
+                        ? `Plan Beta · ${patients.length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
+                        : `Plan Free · ${patients.length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
                     <div style={{ fontSize: 12, color: '#8a6b20' }}>
-                      {patients.length >= FREE_PLAN_PATIENT_LIMIT
-                        ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.'
-                        : 'El primer paciente es gratis. Después, pasa al plan Pro.'}
+                      {doctorInfo?.plan === 'beta'
+                        ? (patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.')
+                        : (patients.length >= FREE_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.' : 'El primer paciente es gratis. Después, pasa al plan Pro.')}
                     </div>
                   </div>
                 </div>
@@ -2952,7 +2956,7 @@ export default function MedicsPanel() {
                   <ol style={{ margin: 0, paddingLeft: 20 }}>
                     <li>Abrir la app en <strong>fluxia-health.com/user</strong></li>
                     <li>Iniciar sesión con el email al que le enviaste la invitación</li>
-                    <li>Ir a su cuenta y <strong>aceptar la invitación</strong></li>
+                    <li>Ir a <strong>Configuración</strong> y aceptar la invitación del médico</li>
                   </ol>
                   <p style={{ margin: '12px 0 0', color: '#999', fontSize: 13 }}>
                     Una vez aceptada, podrás ver los registros del paciente desde tu panel.
@@ -3178,8 +3182,8 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Cols 1–2 Row 4 — Paleta de colores */}
-              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
+              {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
+              {false && <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
                 </div>
@@ -3298,7 +3302,7 @@ export default function MedicsPanel() {
                     )}
                   </div>
                 </div>
-              </div>
+              </div>}
 
             </div>
             {isMobile && (
