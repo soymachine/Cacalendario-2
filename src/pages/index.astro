@@ -1,5 +1,6 @@
 ---
 // Marketing landing page for Fluxia Health
+import { asset } from '../lib/config';
 ---
 <!doctype html>
 <html lang="es" data-accent="blue" data-density="comfortable" data-dark="false">
@@ -7,6 +8,17 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Fluxia Health — Registro clínico de diuresis y deposición</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+
+<!-- PWA -->
+<link rel="manifest" href={asset('/manifest.json')} />
+<meta name="theme-color" content="#F0F2F4" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Fluxia" />
+<link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
