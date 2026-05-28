@@ -2,7 +2,7 @@
   "name": "Fluxia",
   "short_name": "Fluxia",
   "description": "Tu calendario de caca personal 💩",
-  "start_url": "/",
+  "start_url": "/user",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
