@@ -634,6 +634,7 @@ import { asset } from '../lib/config';
   @media (max-width: 560px) {
     .bens, .specs, .quotes, .prices { grid-template-columns: 1fr; }
     .kpis { grid-template-columns: 1fr 1fr; }
+    .product-card .visual img { max-width: 50%; margin: 0 auto; }
   }
   @media (max-width: 640px) {
     .nav-inner {
@@ -651,8 +652,9 @@ import { asset } from '../lib/config';
     .nav-cta {
       width: 100%;
       justify-content: center;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
+      flex-wrap: wrap;
     }
   }
 </style>
@@ -737,6 +739,9 @@ import { asset } from '../lib/config';
           <li>Intuitivo y fácil de usar</li>
           <li>Funciona sin conexión; sincroniza al volver</li>
         </ul>
+        <button class="btn btn-ghost" onclick="document.getElementById('demo-modal').showModal()" style="margin-bottom:20px;">
+          ▶ Ver demo en vídeo
+        </button>
         <div class="visual" style="display:flex; justify-content:center;">
           <img src="/app-screenshot.png" alt="App Fluxia — pantalla de registro" style="max-height:390px; width:auto;"/>
         </div>
@@ -934,6 +939,44 @@ import { asset } from '../lib/config';
     </div>
   </div>
 </footer>
+
+<!-- ——————————————————————————— VIDEO MODAL -->
+<dialog id="demo-modal" style="
+  border:none; border-radius:16px; padding:0; background:#000;
+  max-width:min(860px, 94vw); width:100%;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+">
+  <div style="position:relative; padding-bottom:56.25%; height:0;">
+    <iframe id="demo-iframe" width="100%" height="100%"
+      src="about:blank"
+      data-src="https://www.youtube.com/embed/TU_VIDEO_ID?autoplay=1&rel=0"
+      frameborder="0" allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen
+      style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;">
+    </iframe>
+  </div>
+  <button onclick="closeDemo()" style="
+    position:absolute; top:12px; right:14px;
+    background:rgba(255,255,255,0.15); color:#fff; border:none;
+    border-radius:50%; width:32px; height:32px; font-size:18px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(4px);
+  ">✕</button>
+</dialog>
+<script is:inline>
+  var demoModal = document.getElementById('demo-modal');
+  var demoIframe = document.getElementById('demo-iframe');
+  demoModal.addEventListener('click', function(e) {
+    if (e.target === demoModal) closeDemo();
+  });
+  document.querySelector('[onclick*="demo-modal"]').addEventListener('click', function() {
+    demoIframe.src = demoIframe.dataset.src;
+  });
+  function closeDemo() {
+    demoIframe.src = 'about:blank';
+    demoModal.close();
+  }
+</script>
 
 </body>
 </html>
