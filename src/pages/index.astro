@@ -138,6 +138,15 @@ import { asset } from '../lib/config';
   .btn-link:hover { text-decoration: underline; }
   .btn-lg { padding: 14px 22px; font-size: 15.5px; }
 
+  /* Demo button — fondo blanco, texto se desplaza en hover */
+  .btn-demo {
+    background: #fff; color: var(--ink); border-color: var(--line-2);
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn-demo:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-ink); }
+  .btn-demo .btn-label { display: inline-block; transition: transform .18s; }
+  .btn-demo:hover .btn-label { transform: translateX(5px); }
+
   /* ——————————————————————————— HERO */
   .hero { padding: 72px 0 40px; position: relative; }
   .eyebrow {
@@ -525,6 +534,29 @@ import { asset } from '../lib/config';
   html[data-dark="true"] .price.featured .desc, html[data-dark="true"] .price.featured li { color: rgba(255,255,255,0.85); }
   .price.featured li::before { color: var(--lime); }
   .price.featured .btn-primary { background: var(--lime); color: var(--ink); }
+  .price.featured .btn-primary:hover { background: #fff; color: var(--ink); border-color: #fff; }
+
+  /* Toggle mensual / anual */
+  .billing-toggle {
+    display: flex; background: oklch(16% 0.01 250); border-radius: 999px;
+    padding: 3px; gap: 2px; margin-bottom: 16px; width: fit-content;
+  }
+  .billing-opt {
+    padding: 5px 14px; border-radius: 999px;
+    font-family: var(--f-mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: oklch(55% 0.01 240);
+    cursor: pointer; border: none; background: none;
+    transition: background .15s, color .15s;
+  }
+  .billing-opt.active { background: var(--lime); color: oklch(18% 0.012 250); font-weight: 600; }
+  .pro-saving {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.04em;
+    background: oklch(28% 0.08 90); color: var(--lime);
+    padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+    display: none;
+  }
+  .pro-saving.visible { display: inline-block; }
+
   .price.featured .badge {
     position: absolute; top: -10px; right: 20px;
     font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -741,9 +773,11 @@ import { asset } from '../lib/config';
           <li>Intuitivo y fácil de usar</li>
           <li>Funciona sin conexión; sincroniza al volver</li>
         </ul>
-        <button class="btn btn-ghost" onclick="document.getElementById('demo-modal').showModal()" style="margin-bottom:20px;">
-          ▶ Ver demo en vídeo
-        </button>
+        <div style="display:flex; justify-content:center; margin-bottom:20px;">
+          <button class="btn btn-demo" onclick="document.getElementById('demo-modal').showModal()">
+            ▶ <span class="btn-label">Ver demo en vídeo</span>
+          </button>
+        </div>
         <div class="visual" style="display:flex; justify-content:center;">
           <img src="/app-screenshot.png" alt="App Fluxia — pantalla de registro" style="max-height:390px; width:auto;"/>
         </div>
@@ -860,7 +894,12 @@ import { asset } from '../lib/config';
       <div class="price featured">
         <div class="badge">Recomendado</div>
         <div class="plan">Pro · Consulta</div>
-        <div class="p">XX €<small>/profesional/mes</small></div>
+        <div class="billing-toggle">
+          <button class="billing-opt active" onclick="setProBilling('monthly',this)">Mensual</button>
+          <button class="billing-opt" onclick="setProBilling('annual',this)">Anual</button>
+        </div>
+        <div class="pro-saving" id="pro-saving">XX € de ahorro al año</div>
+        <div class="p" id="pro-price">XX €<small id="pro-period">/profesional/mes</small></div>
         <p class="desc">Para consultas privadas y especialistas con cartera de pacientes activa.</p>
         <ul>
           <li>Hasta 200 pacientes en seguimiento</li>
@@ -977,6 +1016,20 @@ import { asset } from '../lib/config';
   function closeDemo() {
     demoIframe.src = 'about:blank';
     demoModal.close();
+  }
+
+  function setProBilling(mode, btn) {
+    document.querySelectorAll('.billing-opt').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var saving = document.getElementById('pro-saving');
+    var period = document.getElementById('pro-period');
+    if (mode === 'annual') {
+      period.textContent = '/profesional/año';
+      saving.classList.add('visible');
+    } else {
+      period.textContent = '/profesional/mes';
+      saving.classList.remove('visible');
+    }
   }
 </script>
 
