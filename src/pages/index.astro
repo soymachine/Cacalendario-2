@@ -80,7 +80,7 @@ import { asset } from '../lib/config';
   }
 
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; }
   body {
     font-family: var(--f-body);
     background: var(--bg);
@@ -634,9 +634,11 @@ import { asset } from '../lib/config';
   @media (max-width: 560px) {
     .bens, .specs, .quotes, .prices { grid-template-columns: 1fr; }
     .kpis { grid-template-columns: 1fr 1fr; }
-    .product-card .visual img { max-width: 50%; margin: 0 auto; }
+    .product-card .visual { display: flex !important; justify-content: center; }
+    .product-card .visual img { width: 50% !important; max-width: 50% !important; max-height: none !important; height: auto !important; }
   }
   @media (max-width: 640px) {
+    .hero-visual { display: none !important; }
     .nav-inner {
       height: auto;
       flex-wrap: wrap;
