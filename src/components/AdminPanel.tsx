@@ -32,6 +32,7 @@ interface Doctor {
   created_at: string;
   email?: string;
   provider?: string;
+  patientCount: number;
 }
 
 interface DashboardStats {
@@ -165,6 +166,14 @@ export default function AdminPanel() {
       .order('created_at', { ascending: false });
     if (error) { console.error('loadDoctors:', error); return; }
 
+    // Fetch accepted patient counts per doctor
+    const { data: links } = await supabase
+      .from('patient_links')
+      .select('doctor_id')
+      .eq('status', 'accepted');
+    const countMap: Record<string, number> = {};
+    (links || []).forEach((l: any) => { countMap[l.doctor_id] = (countMap[l.doctor_id] || 0) + 1; });
+
     const docList: Doctor[] = (data || []).map((d: any) => ({
       id: d.id,
       name: d.name,
@@ -172,6 +181,7 @@ export default function AdminPanel() {
       center_name: d.centers?.name || '—',
       plan: d.plan || 'free',
       created_at: d.created_at,
+      patientCount: countMap[d.id] || 0,
     }));
 
     // Fetch email + OAuth provider for each doctor directly from auth.users
@@ -573,6 +583,7 @@ export default function AdminPanel() {
                 <span style={{ flex: 2 }}>Centro / Consulta</span>
                 <span style={{ flex: 1.5 }}>Especialidad</span>
                 <span style={{ flex: 1 }}>Alta</span>
+                <span style={{ flex: 0.8, textAlign: 'center' as const }}>Pacientes</span>
                 <span style={{ flex: 1.2, textAlign: 'center' as const }}>Plan</span>
               </div>
               {doctors.length === 0 ? (
@@ -603,6 +614,9 @@ export default function AdminPanel() {
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{doc.center_name}</span>
                       <span style={{ flex: 1.5, fontSize: 13, color: '#555' }}>{doc.specialty || '—'}</span>
                       <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(doc.created_at)}</span>
+                      <span style={{ flex: 0.8, textAlign: 'center' as const, fontSize: 13, fontWeight: 600, color: doc.patientCount > 0 ? '#1a0e0e' : '#bbb' }}>
+                        {doc.patientCount}
+                      </span>
                       <span style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
