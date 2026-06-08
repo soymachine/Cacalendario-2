@@ -19,14 +19,14 @@ const FLOAT_OPTIONS = [
 ];
 
 const COLOR_OPTIONS = [
+  { hex: '#1A1A1A', label: 'Negro' },
   { hex: '#3B1F0E', label: 'Marrón oscuro' },
   { hex: '#7B4226', label: 'Marrón' },
   { hex: '#C4844A', label: 'Marrón claro' },
   { hex: '#D4B84A', label: 'Amarillo' },
   { hex: '#C0392B', label: 'Rojo' },
-  { hex: '#1A1A1A', label: 'Negro' },
-  { hex: '#F5F5F5', label: 'Blanco' },
   { hex: '#9E9E9E', label: 'Gris' },
+  { hex: '#F5F5F5', label: 'Blanco' },
 ];
 
 const URINE_COLOR_OPTIONS = [
@@ -269,14 +269,14 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
             {show('color') && (
               <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
                 <span style={sectionLabel}>COLOR</span>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                   {COLOR_OPTIONS.map(opt => (
                     <button
                       key={opt.hex}
                       onClick={() => setColor(color === opt.hex ? null : opt.hex)}
                       title={opt.label}
                       style={{
-                        flex: 1, aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
+                        width: '100%', aspectRatio: '1', borderRadius: '50%', backgroundColor: opt.hex,
                         border: 'none',
                         boxShadow: color === opt.hex ? '0 0 0 3px white, 0 0 0 5px rgba(0,0,0,0.5)' : 'none',
                         transition: 'box-shadow 0.1s', cursor: 'pointer',
