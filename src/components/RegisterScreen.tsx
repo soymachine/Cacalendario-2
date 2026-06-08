@@ -49,6 +49,9 @@ const COLOR_OPTIONS = [
   { hex: '#C4844A', label: 'Marrón claro' },
   { hex: '#D4B84A', label: 'Amarillo' },
   { hex: '#C0392B', label: 'Rojo' },
+  { hex: '#1A1A1A', label: 'Negro' },
+  { hex: '#F5F5F5', label: 'Blanco' },
+  { hex: '#9E9E9E', label: 'Gris' },
 ];
 
 const URINE_COLOR_OPTIONS = [
@@ -58,6 +61,7 @@ const URINE_COLOR_OPTIONS = [
   { hex: '#FFC107', label: 'Amarillo' },
   { hex: '#FF8F00', label: 'Ámbar' },
   { hex: '#5D4037', label: 'Marrón oscuro' },
+  { hex: '#E53935', label: 'Rojizo' },
 ];
 
 const URINE_TYPE_OPTIONS = [
@@ -70,6 +74,7 @@ const URINE_CHARACTERISTICS = [
   { key: 'blood', label: 'Sangre' },
   { key: 'odor', label: 'Olor' },
   { key: 'pain', label: 'Dolor' },
+  { key: 'turbid', label: 'Turbio' },
 ];
 
 const DURATION_OPTIONS = [
@@ -90,6 +95,8 @@ const SYMPTOMS = [
   { key: 'sticky', label: 'Pegajoso' },
   { key: 'stringy', label: 'Filamentoso' },
   { key: 'undigested', label: 'No digerido' },
+  { key: 'weight_loss', label: 'Pérdida de peso' },
+  { key: 'fever', label: 'Fiebre' },
 ];
 
 // Edit icon for date/time row and notes
