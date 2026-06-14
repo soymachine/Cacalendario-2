@@ -3315,11 +3315,12 @@ export default function MedicsPanel() {
       {showDemoModal && (
         <div
           onClick={() => setShowDemoModal(false)}
-          className="medics-demo-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-6"
+          className="medics-demo-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-3"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-black rounded-fx-lg max-w-[800px] w-full shadow-fx-xl relative overflow-hidden"
+            className="bg-black rounded-fx-lg shadow-fx-xl relative overflow-hidden max-w-full max-h-full"
+            style={{ width: 'min(100%, calc((100vh - 24px) * 16 / 9))', aspectRatio: '16 / 9' }}
           >
             <button
               onClick={() => setShowDemoModal(false)}
@@ -3327,14 +3328,12 @@ export default function MedicsPanel() {
             >
               ×
             </button>
-            <div className="relative pb-[56.25%] h-0">
-              <iframe
-                src="https://player.vimeo.com/video/1196684941?autoplay=1"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="absolute top-0 left-0 w-full h-full border-none"
-              />
-            </div>
+            <iframe
+              src="https://player.vimeo.com/video/1196684941?autoplay=1"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              className="absolute top-0 left-0 w-full h-full border-none"
+            />
           </div>
         </div>
       )}
