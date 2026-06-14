@@ -284,6 +284,7 @@ export default function MedicsPanel() {
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -1237,10 +1238,10 @@ export default function MedicsPanel() {
   // ── Initial loading ──
   if (initialLoading) {
     return (
-      <div style={{ ...ts.loginContainer, flexDirection: 'column' as const, backgroundColor: '#fff' }}>
-        <div style={{ textAlign: 'center', color: '#1a0e0e' }}>
-          <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 40, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
-          <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600 }}>Cargando...</p>
+      <div className="medics-loading min-h-screen flex flex-col items-center justify-center bg-fx-surface font-fx">
+        <div className="medics-loading__inner text-center text-fx-text">
+          <img src="/fluxia-logo.png" alt="Fluxia" className="h-10 object-contain block mx-auto" />
+          <p className="mt-3 text-base font-semibold">Cargando...</p>
         </div>
       </div>
     );
@@ -1270,7 +1271,7 @@ export default function MedicsPanel() {
     }
 
     const GoogleG = () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" className="flex-shrink-0">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -1279,23 +1280,23 @@ export default function MedicsPanel() {
     );
 
     const backLink = (label: string, onClick: () => void) => (
-      <button onClick={onClick} style={{ display: 'block', width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+      <button onClick={onClick} className="medics-auth__back-link block w-full mt-4 bg-transparent border-none text-fx-text-tertiary text-[13px] cursor-pointer text-center">
         ← {label}
       </button>
     );
 
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div className="medics-auth flex min-h-screen font-sans">
 
         {/* ── Left branding panel (desktop only) ── */}
         {!isMobile && (
-          <div style={{ flex: '0 0 35%', maxWidth: 450, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '48px 52px', overflow: 'hidden' }}>
-            <div style={{ maxWidth: 380, width: '100%' }}>
-              <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 120, objectFit: 'contain', objectPosition: 'left', filter: 'brightness(0) invert(1)', display: 'block', marginBottom: 32, position: 'relative' as const, left: -30 }} />
-              <h1 style={{ fontSize: 42, fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: '0 0 20px' }}>
+          <div className="medics-auth__branding flex-none max-w-[450px] basis-[35%] bg-[#1a0e0e] flex flex-col items-center justify-center px-[52px] py-12 overflow-hidden">
+            <div className="max-w-[380px] w-full">
+              <img src="/fluxia-logo.png" alt="Fluxia" className="h-[120px] object-contain object-left block mb-8 relative -left-[30px]" style={{ filter: 'brightness(0) invert(1)' }} />
+              <h1 className="text-[42px] font-black text-white leading-[1.2] m-0 mb-5">
                 Bienvenido<br />al portal<br />médico.
               </h1>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, margin: 0 }}>
+              <p className="text-base text-white/50 leading-[1.7] m-0">
                 Gestiona el seguimiento clínico de tus pacientes desde cualquier dispositivo.
               </p>
             </div>
@@ -1303,65 +1304,65 @@ export default function MedicsPanel() {
         )}
 
         {/* ── Right form panel ── */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: isMobile ? '48px 24px' : '48px 64px' }}>
-          <div style={{ width: '100%', maxWidth: 420 }}>
+        <div className={`medics-auth__form flex-1 flex items-center justify-center bg-fx-surface ${isMobile ? 'px-6 py-12' : 'px-16 py-12'}`}>
+          <div className="w-full max-w-[420px]">
 
             {/* Mobile logo */}
             {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
-                <img src="/fluxia-logo.png" alt="Fluxia" style={{ height: 40, objectFit: 'contain' }} />
+              <div className="flex justify-center mb-9">
+                <img src="/fluxia-logo.png" alt="Fluxia" className="h-10 object-contain" />
               </div>
             )}
 
-            <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#1a0e0e', margin: '0 0 8px', textAlign: (registerMode && registerStep === 'done') ? 'center' : 'left' }}>{cardTitle}</h2>
-            {cardSubtitle && <p style={{ fontSize: 14, color: '#888', margin: '0 0 28px', lineHeight: 1.55 }}>{cardSubtitle}</p>}
+            <h2 className={`medics-auth__title font-extrabold text-[#1a0e0e] m-0 mb-2 ${isMobile ? 'text-[22px]' : 'text-2xl'} ${(registerMode && registerStep === 'done') ? 'text-center' : 'text-left'}`}>{cardTitle}</h2>
+            {cardSubtitle && <p className="medics-auth__subtitle text-sm text-fx-text-tertiary m-0 mb-7 leading-[1.55]">{cardSubtitle}</p>}
 
             {/* Google button + divider */}
             {showGoogleBtn && (
               <>
-                <button onClick={handleGoogleSignIn} style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: '1px solid #e0e0e0', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', color: '#333', marginBottom: 14 }}>
+                <button onClick={handleGoogleSignIn} className="medics-auth__google-btn w-full px-4 py-[11px] rounded-[10px] border border-fx-border bg-fx-surface flex items-center justify-center gap-2.5 text-[15px] font-semibold cursor-pointer text-fx-text mb-3.5">
                   <GoogleG />
                   Continuar con Google
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
-                  <span style={{ fontSize: 12, color: '#bbb', fontWeight: 500, whiteSpace: 'nowrap' as const }}>o con tu email</span>
-                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
+                <div className="medics-auth__divider flex items-center gap-3 mb-6">
+                  <div className="flex-1 h-px bg-fx-border-soft" />
+                  <span className="text-xs text-fx-text-tertiary font-medium whitespace-nowrap">o con tu email</span>
+                  <div className="flex-1 h-px bg-fx-border-soft" />
                 </div>
               </>
             )}
 
             {/* ── Login ── */}
             {!registerMode && !googleProfileMode && forgotMode === 'off' && (<>
-              <label style={s.label}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} placeholder="tu@email.com" />
-              <label style={s.label}>Contraseña</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} placeholder="••••••" />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleLogin} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Iniciar sesión'}</button>
-              {loading && debugMsg && <p style={{ fontSize: 12, color: '#888', marginTop: 12, textAlign: 'center' as const, fontStyle: 'italic' }}>{debugMsg}</p>}
-              <button onClick={() => { setForgotMode('email'); setError(''); }} style={{ display: 'block', width: '100%', marginTop: 14, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" placeholder="tu@email.com" />
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" placeholder="••••••" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleLogin} disabled={loading} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Iniciar sesión'}</button>
+              {loading && debugMsg && <p className="text-xs text-fx-text-tertiary mt-3 text-center italic">{debugMsg}</p>}
+              <button onClick={() => { setForgotMode('email'); setError(''); }} className="medics-auth__forgot-link block w-full mt-3.5 bg-transparent border-none text-fx-text-tertiary text-[13px] cursor-pointer text-center">
                 ¿Olvidaste tu contraseña?
               </button>
             </>)}
 
             {/* ── Forgot: email ── */}
             {forgotMode === 'email' && (<>
-              <label style={s.label}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleForgotPassword} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Enviar enlace'}</button>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()} className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleForgotPassword} disabled={loading} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Enviar enlace'}</button>
               {backLink('Volver al inicio de sesión', () => { setForgotMode('off'); setError(''); })}
             </>)}
 
             {/* ── Forgot: sent ── */}
             {forgotMode === 'sent' && (
-              <div style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: 48 }}>✅</span>
-                <p style={{ fontSize: 14, color: '#555', marginTop: 16, lineHeight: 1.55 }}>
+              <div className="medics-auth__sent text-center">
+                <span className="text-5xl">✅</span>
+                <p className="text-sm text-fx-text-secondary mt-4 leading-[1.55]">
                   Hemos enviado un enlace a <strong>{email}</strong>. Revisa tu bandeja de entrada (y la carpeta de spam).
                 </p>
-                <button onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }} style={{ ...ts.btnPrimary, marginTop: 24 }}>
+                <button onClick={() => { setForgotMode('off'); setError(''); setPassword(''); }} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx mt-6" style={{ backgroundColor: th.dark }}>
                   Volver al inicio de sesión
                 </button>
               </div>
@@ -1369,46 +1370,46 @@ export default function MedicsPanel() {
 
             {/* ── Register: email ── */}
             {registerMode && registerStep === 'email' && (<>
-              <label style={s.label}>Email profesional</label>
-              <input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCheckEmail()} placeholder="tu@email.com" style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCheckEmail} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Continuar'}</button>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email profesional</label>
+              <input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCheckEmail()} placeholder="tu@email.com" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleRegisterCheckEmail} disabled={loading} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Continuar'}</button>
             </>)}
 
             {/* ── Register: details ── */}
             {registerMode && registerStep === 'details' && (<>
-              <div style={{ backgroundColor: '#f0faf4', borderRadius: 10, padding: '10px 14px', marginBottom: 20, borderLeft: '3px solid #27ae60' }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#1a6b3a', margin: 0 }}>Plan Free · 1 paciente gratis</p>
-                <p style={{ fontSize: 12, color: '#555', margin: '3px 0 0', lineHeight: 1.4 }}>Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
+              <div className="medics-auth__plan-banner bg-fx-success-50 rounded-[10px] px-3.5 py-2.5 mb-5 border-l-[3px] border-fx-success-500">
+                <p className="text-xs font-bold text-fx-success-700 m-0">Plan Free · 1 paciente gratis</p>
+                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0 leading-[1.4]">Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
               </div>
-              <label style={s.label}>Tu nombre</label>
-              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" style={s.input} />
-              <label style={s.label}>Nombre de tu consulta o centro</label>
-              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" style={s.input} />
-              <label style={s.label}>Especialidad <span style={{ fontWeight: 400, color: '#bbb' }}>(opcional)</span></label>
-              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterFillDetails()} placeholder="Urología, Gastroenterología..." style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterFillDetails} style={ts.btnPrimary}>Continuar</button>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Tu nombre</label>
+              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Nombre de tu consulta o centro</label>
+              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Especialidad <span className="font-normal text-fx-text-tertiary">(opcional)</span></label>
+              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterFillDetails()} placeholder="Urología, Gastroenterología..." className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleRegisterFillDetails} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>Continuar</button>
               {backLink('Volver', () => { setRegisterStep('email'); setError(''); })}
             </>)}
 
             {/* ── Register: password ── */}
             {registerMode && registerStep === 'password' && (<>
-              <label style={s.label}>Contraseña</label>
-              <input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCreate()} placeholder="Mínimo 6 caracteres" style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleRegisterCreate} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Finalizar registro'}</button>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Contraseña</label>
+              <input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleRegisterCreate()} placeholder="Mínimo 6 caracteres" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleRegisterCreate} disabled={loading} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Finalizar registro'}</button>
               {backLink('Volver', () => { setRegisterStep(registerIsSelfService ? 'details' : 'email'); setError(''); })}
             </>)}
 
             {/* ── Register: done ── */}
             {registerMode && registerStep === 'done' && (
-              <div style={{ textAlign: 'center' }}>
-                <span style={{ fontSize: 48 }}>📧</span>
-                <p style={{ fontSize: 14, color: '#555', marginTop: 16, lineHeight: 1.55 }}>
+              <div className="medics-auth__sent text-center">
+                <span className="text-5xl">📧</span>
+                <p className="text-sm text-fx-text-secondary mt-4 leading-[1.55]">
                   Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>. Confírmalo e inicia sesión aquí.
                 </p>
-                <button onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }} style={{ ...ts.btnPrimary, marginTop: 24 }}>
+                <button onClick={() => { setRegisterMode(false); setEmail(registerEmail); setError(''); }} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx mt-6" style={{ backgroundColor: th.dark }}>
                   Ir a iniciar sesión
                 </button>
               </div>
@@ -1416,41 +1417,41 @@ export default function MedicsPanel() {
 
             {/* ── Google profile completion ── */}
             {googleProfileMode && (<>
-              <div style={{ backgroundColor: '#f0faf4', borderRadius: 10, padding: '10px 14px', marginBottom: 20, borderLeft: '3px solid #27ae60' }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#1a6b3a', margin: 0 }}>Plan Free · 1 paciente gratis</p>
-                <p style={{ fontSize: 12, color: '#555', margin: '3px 0 0' }}>Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
+              <div className="medics-auth__plan-banner bg-fx-success-50 rounded-[10px] px-3.5 py-2.5 mb-5 border-l-[3px] border-fx-success-500">
+                <p className="text-xs font-bold text-fx-success-700 m-0">Plan Free · 1 paciente gratis</p>
+                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0">Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
               </div>
-              <label style={s.label}>Tu nombre</label>
-              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" style={s.input} />
-              <label style={s.label}>Nombre de tu consulta o centro</label>
-              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" style={s.input} />
-              <label style={s.label}>Especialidad <span style={{ fontWeight: 400, color: '#bbb' }}>(opcional)</span></label>
-              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGoogleProfileComplete()} placeholder="Urología, Gastroenterología..." style={s.input} />
-              {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-              <button onClick={handleGoogleProfileComplete} disabled={loading} style={{ ...ts.btnPrimary, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Crear mi cuenta médica'}</button>
-              <button onClick={async () => { await supabase.auth.signOut(); setGoogleProfileMode(false); }} style={{ display: 'block', width: '100%', marginTop: 16, background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', textAlign: 'center' as const }}>
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Tu nombre</label>
+              <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Nombre de tu consulta o centro</label>
+              <input type="text" value={registerCenterName} onChange={(e) => setRegisterCenterName(e.target.value)} placeholder="Consulta Dr. Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Especialidad <span className="font-normal text-fx-text-tertiary">(opcional)</span></label>
+              <input type="text" value={registerSpecialty} onChange={(e) => setRegisterSpecialty(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGoogleProfileComplete()} placeholder="Urología, Gastroenterología..." className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
+              {error && <p className="medics-auth__error text-fx-error-600 text-[13px] mb-4">{error}</p>}
+              <button onClick={handleGoogleProfileComplete} disabled={loading} className="medics-auth__submit w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold cursor-pointer font-fx" style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>{loading ? '...' : 'Crear mi cuenta médica'}</button>
+              <button onClick={async () => { await supabase.auth.signOut(); setGoogleProfileMode(false); }} className="medics-auth__cancel-link block w-full mt-4 bg-transparent border-none text-fx-text-tertiary text-[13px] cursor-pointer text-center">
                 Cancelar y cerrar sesión
               </button>
             </>)}
 
             {/* ── Login / Register toggle ── */}
             {forgotMode === 'off' && !googleProfileMode && registerStep !== 'done' && (
-              <p style={{ textAlign: 'center' as const, fontSize: 13, color: '#aaa', marginTop: 32, margin: '32px 0 0' }}>
+              <p className="medics-auth__toggle text-center text-[13px] text-fx-text-tertiary mt-8 mb-0">
                 {!registerMode ? (
                   <>¿Nuevo en Fluxia?{' '}
                     <button onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); setRegisterName(''); setRegisterCenterName(''); setRegisterSpecialty(''); setRegisterIsSelfService(false); }}
-                      style={{ background: 'none', border: 'none', color: '#1a0e0e', fontWeight: 700, cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Crear cuenta</button>
+                      className="bg-transparent border-none text-[#1a0e0e] font-bold cursor-pointer text-[13px] underline">Crear cuenta</button>
                   </>
                 ) : (
                   <>¿Ya tienes cuenta?{' '}
                     <button onClick={() => { setRegisterMode(false); setError(''); }}
-                      style={{ background: 'none', border: 'none', color: '#1a0e0e', fontWeight: 700, cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Iniciar sesión</button>
+                      className="bg-transparent border-none text-[#1a0e0e] font-bold cursor-pointer text-[13px] underline">Iniciar sesión</button>
                   </>
                 )}
               </p>
             )}
 
-            <p style={{ textAlign: 'center' as const, fontSize: 12, color: '#999', marginTop: 32 }}>{APP_VERSION}</p>
+            <p className="medics-auth__version text-center text-xs text-fx-text-tertiary mt-8">{APP_VERSION}</p>
           </div>
         </div>
       </div>
@@ -1460,124 +1461,110 @@ export default function MedicsPanel() {
 
   // ── Main layout with sidebar ──
   return (
-    <div style={s.shell}>
+    <div className="medics-shell min-h-screen flex flex-col bg-fx-bg font-fx" style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}>
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
-      {/* ── SIDEBAR (desktop) ── */}
-      <aside style={{ ...s.sidebar, backgroundColor: th.dark, display: isMobile ? 'none' : 'flex' }}>
-        {/* Center image header */}
-        <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${th.border}`, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10 }}>
-          <div style={{ width: '100%', aspectRatio: '16/7', borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', border: `1px solid ${th.border}` }}>
+
+      {/* ── TOP BAR ── */}
+      <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-4 md:px-6 bg-white/85 backdrop-blur-md border-b border-fx-border-soft">
+        {/* Logo / center */}
+        <div className="medics-topbar__logo flex items-center gap-3 min-w-0 flex-shrink-0">
+          <div className="w-10 h-10 rounded-fx-md overflow-hidden flex items-center justify-center bg-white border border-fx-border-soft flex-shrink-0">
             {centerImageUrl ? (
-              <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
+              <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-contain" />
             ) : (
-              <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '80%', objectFit: 'contain' }} />
+              <img src="/fluxia-logo.png" alt="Fluxia" className="w-3/4 object-contain" />
             )}
           </div>
-          <div style={{ textAlign: 'center' as const }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: th.primary, lineHeight: 1.2 }}>{doctorInfo?.center_name || 'Centro médico'}</div>
-            <div style={{ fontSize: 11, color: th.textMuted, marginTop: 2 }}>Dr. {doctorInfo?.name}</div>
+          <div className="hidden sm:flex flex-col leading-tight min-w-0">
+            <span className="text-sm font-semibold text-fx-text truncate">{doctorInfo?.center_name || 'Centro médico'}</span>
+            <span className="text-xs text-fx-text-tertiary truncate">Dr. {doctorInfo?.name}</span>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav style={s.sidebarNav}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: th.menuLabel, marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
-              style={{
-                ...s.navItem,
-                backgroundColor: section === item.id ? th.navActive : 'transparent',
-                color: section === item.id ? th.primary : th.textMuted,
-              }}
-            >
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ fontSize: 14, fontWeight: section === item.id ? 500 : 400 }}>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Guide button */}
-        <button onClick={openGuide} style={{ ...s.navItem, color: th.textMuted, margin: '8px 12px 0' }}>
-          <span style={{ fontSize: 16 }}>📖</span>
-          <span style={{ fontSize: 14 }}>Guía de uso</span>
-        </button>
-
-        {/* Upgrade CTA — only shown on free plan */}
-        {doctorInfo?.plan === 'free' && (
-          <div style={{
-            margin: '12px 12px 0',
-            padding: '12px 14px',
-            borderRadius: 12,
-            backgroundColor: '#fff8e1',
-            border: '1px solid #ffe082',
-            display: 'flex',
-            flexDirection: 'column' as const,
-            gap: 8,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>⭐</span>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#7a5810', lineHeight: 1.2 }}>Plan Free</div>
-                <div style={{ fontSize: 10, color: '#8a6b20', lineHeight: 1.4, marginTop: 1 }}>Pasa a Pro para más funciones</div>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              style={{
-                width: '100%',
-                padding: '6px 12px',
-                borderRadius: 999,
-                border: 'none',
-                backgroundColor: th.dark,
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Pasar a Pro
-            </button>
-          </div>
+        {/* Nav (desktop, centered) */}
+        {!isMobile && (
+          <nav className="medics-topbar__nav flex-1 flex items-center justify-center gap-1">
+            {NAV_ITEMS.map(item => {
+              const active = section === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
+                  className="medics-topbar__nav-item flex items-center gap-2 px-4 h-10 rounded-fx-pill text-sm transition-colors"
+                  style={active ? { backgroundColor: th.navActive, color: th.primary, fontWeight: 600 } : { color: 'var(--text-secondary)', fontWeight: 400 }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'var(--fx-ink-100)'; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         )}
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Footer */}
-        <div style={{ borderTop: `1px solid ${th.border}`, padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: th.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+        {/* Account access */}
+        <div className="medics-topbar__account relative flex items-center ml-auto flex-shrink-0">
+          <button
+            onClick={() => setAccountMenuOpen(o => !o)}
+            className="medics-topbar__account-btn flex items-center gap-2 pl-2 pr-2 sm:pr-3 h-10 rounded-fx-pill hover:bg-fx-ink-100 transition-colors"
+            aria-label="Cuenta"
+          >
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.primary }}>
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-                Dr. {doctorInfo?.name}
-                {doctorInfo?.plan === 'pro' && (
-                  <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#f59e0b', color: '#1a0e0e', letterSpacing: 0.3, flexShrink: 0 }}>PRO</span>
-                )}
-                {doctorInfo?.plan === 'beta' && (
-                  <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 99, backgroundColor: '#6366f1', color: '#fff', letterSpacing: 0.3, flexShrink: 0 }}>BETA</span>
-                )}
-              </div>
-              <div style={{ fontSize: 11, color: th.textMuted }}>{doctorInfo?.specialty || 'Médico'}</div>
-            </div>
-          </div>
-          <button
-            onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
-            style={{ ...s.navItem, color: th.logoutColor, width: '100%' }}
-          >
-            <span style={{ fontSize: 14 }}>{'\u{1F6AA}'}</span>
-            <span style={{ fontSize: 13 }}>Cerrar sesión</span>
+            {doctorInfo?.plan === 'pro' && (
+              <span className="hidden sm:inline-flex text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-500 text-white">PRO</span>
+            )}
+            {doctorInfo?.plan === 'beta' && (
+              <span className="hidden sm:inline-flex text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-violet-400 text-white">BETA</span>
+            )}
           </button>
-          <div style={{ fontSize: 10, color: '#ffffff', marginTop: 8, paddingLeft: 4 }}>{APP_VERSION}</div>
+
+          {accountMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setAccountMenuOpen(false)} />
+              <div className="medics-account-menu absolute right-0 top-full mt-2 w-64 bg-white rounded-fx-lg shadow-fx-lg border border-fx-border-soft p-2 z-40">
+                <div className="medics-account-menu__header px-3 py-2 border-b border-fx-border-soft mb-1">
+                  <div className="text-sm font-semibold text-fx-text truncate">Dr. {doctorInfo?.name}</div>
+                  <div className="text-xs text-fx-text-tertiary truncate">{doctorInfo?.specialty || 'Médico'}</div>
+                </div>
+                {doctorInfo?.plan === 'free' && (
+                  <button
+                    onClick={() => { setShowUpgradeModal(true); setAccountMenuOpen(false); }}
+                    className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
+                  >
+                    ⭐ Pasar a Pro
+                  </button>
+                )}
+                <button
+                  onClick={() => { setSection('config'); setAccountMenuOpen(false); }}
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
+                >
+                  ⚙️ Configuración
+                </button>
+                <button
+                  onClick={() => { openGuide(); setAccountMenuOpen(false); }}
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
+                >
+                  📖 Guía de uso
+                </button>
+                <button
+                  onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-error-600 hover:bg-fx-error-50"
+                >
+                  🚪 Cerrar sesión
+                </button>
+                <div className="medics-account-menu__version px-3 pt-2 text-[10px] text-fx-text-tertiary">{APP_VERSION}</div>
+              </div>
+            </>
+          )}
         </div>
-      </aside>
+      </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ ...s.main, backgroundColor: th.primary, marginLeft: isMobile ? 0 : 260, padding: isMobile ? 16 : 32, paddingBottom: isMobile ? 80 : 32 }}>
-        {loading && !detailLoading && <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Cargando...</div>}
+      <main className="medics-content flex-1 w-full mx-auto px-4 md:px-8 py-6 md:py-8 box-border" style={{ maxWidth: 'var(--medics-max-width)', paddingBottom: isMobile ? 88 : undefined }}>
+        {loading && !detailLoading && <div className="text-center py-10 text-fx-text-secondary">Cargando...</div>}
 
         {/* ── INICIO / DASHBOARD ── */}
         {section === 'inicio' && (() => {
@@ -1594,25 +1581,26 @@ export default function MedicsPanel() {
           }).slice(0, 7);
           const tile = (icon: string, value: string | number, label: string, bg: string, color: string, filter?: typeof semaforoFilter) => (
             <div key={label} onClick={filter !== undefined ? () => { setSemaforoFilter(filter); setSection('pacientes'); } : undefined}
-              style={{ flex: '1 1 130px', backgroundColor: bg, borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4, cursor: filter !== undefined ? 'pointer' : 'default' }}>
-              <div style={{ fontSize: 22 }}>{icon}</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: 11, color, opacity: 0.75 }}>{label}{filter !== undefined ? ' ↗' : ''}</div>
+              className={`medics-stat-tile flex-1 basis-[130px] rounded-fx-sm p-3.5 flex flex-col gap-1 ${filter !== undefined ? 'cursor-pointer' : 'cursor-default'}`}
+              style={{ backgroundColor: bg }}>
+              <div className="text-[22px]">{icon}</div>
+              <div className="text-[28px] font-black leading-none" style={{ color }}>{value}</div>
+              <div className="text-[11px]" style={{ color, opacity: 0.75 }}>{label}{filter !== undefined ? ' ↗' : ''}</div>
             </div>
           );
           return (
-            <>
+            <div className="medics-inicio">
               <SectionHeader
                 title={`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''} 👋`}
                 subtitle={patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
               />
               {patientsLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 80 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid #e8e8e8`, borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
+                <div className="medics-inicio__loading flex justify-center items-center p-20">
+                  <div className="w-10 h-10 rounded-full border-[3px] border-fx-ink-150" style={{ borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
                 </div>
               ) : (<>
               {/* Stat tiles */}
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
+              <div className="medics-stats flex gap-3 flex-wrap mb-4">
                 {tile('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
                 {tile('🟢', semCounts.green || 0, 'Al día', '#f0fdf4', '#16a34a', 'green')}
                 {tile('🟠', semCounts.orange || 0, 'Atención', '#fffbeb', '#d97706', 'orange')}
@@ -1622,23 +1610,23 @@ export default function MedicsPanel() {
               </div>
               {/* Semáforo bar */}
               {accepted.length > 0 && (
-                <div style={{ ...s.card, padding: '14px 16px', marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 10 }}>Estado de la lista</div>
-                  <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 14 }}>
+                <div className="medics-semaforo-card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-3.5 mb-4">
+                  <div className="text-xs font-bold text-fx-text-secondary mb-2.5">Estado de la lista</div>
+                  <div className="medics-semaforo-bar flex rounded-lg overflow-hidden h-3.5">
                     {(semCounts.green || 0) > 0 && <div style={{ flex: semCounts.green, backgroundColor: '#22c55e' }} title={`${semCounts.green} al día`} />}
                     {(semCounts.orange || 0) > 0 && <div style={{ flex: semCounts.orange, backgroundColor: '#f59e0b' }} title={`${semCounts.orange} atención`} />}
                     {(semCounts.red || 0) > 0 && <div style={{ flex: semCounts.red, backgroundColor: '#ef4444' }} title={`${semCounts.red} inactivos`} />}
                     {(semCounts.gray || 0) > 0 && <div style={{ flex: semCounts.gray, backgroundColor: '#e5e7eb' }} title={`${semCounts.gray} sin datos`} />}
                   </div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                  <div className="medics-semaforo-legend flex gap-4 mt-2">
                     {[
                       { c: '#16a34a', label: `${semCounts.green || 0} al día` },
                       { c: '#d97706', label: `${semCounts.orange || 0} atención` },
                       { c: '#dc2626', label: `${semCounts.red || 0} inactivos` },
                       { c: '#9ca3af', label: `${semCounts.gray || 0} sin datos` },
                     ].map(({ c, label }) => (
-                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: c }} />
+                      <div key={label} className="flex items-center gap-[5px] text-[11px] text-fx-text-secondary">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
                         {label}
                       </div>
                     ))}
@@ -1647,29 +1635,29 @@ export default function MedicsPanel() {
               )}
               {/* Practice stats */}
               {practiceStats !== null && accepted.length > 0 && (
-                <div style={{ ...s.card, padding: '14px 20px', marginBottom: 16, display: 'flex', gap: 32, flexWrap: 'wrap' as const }}>
+                <div className="medics-practice-stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 0.5, marginBottom: 4 }}>📝 REGISTROS ESTA SEMANA</div>
-                    <div style={{ fontSize: 28, fontWeight: 900, color: '#111', lineHeight: 1 }}>{practiceStats.thisWeekEntries}</div>
+                    <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">📝 REGISTROS ESTA SEMANA</div>
+                    <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekEntries}</div>
                     {practiceStats.lastWeekEntries > 0 && (
-                      <div style={{ fontSize: 11, marginTop: 3, color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '#16a34a' : '#dc2626' }}>
+                      <div className="text-[11px] mt-[3px]" style={{ color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '#16a34a' : '#dc2626' }}>
                         {practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '↑' : '↓'} vs {practiceStats.lastWeekEntries} sem. anterior
                       </div>
                     )}
                   </div>
                   {practiceStats.thisWeekBristol !== null && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 0.5, marginBottom: 4 }}>🔬 BRISTOL MEDIO (7 DÍAS)</div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: '#111', lineHeight: 1 }}>{practiceStats.thisWeekBristol.toFixed(1)}</div>
-                        <div style={{ fontSize: 12, color: '#bbb' }}>/ 7</div>
+                      <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">🔬 BRISTOL MEDIO (7 DÍAS)</div>
+                      <div className="flex items-baseline gap-1">
+                        <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekBristol.toFixed(1)}</div>
+                        <div className="text-xs text-fx-text-tertiary">/ 7</div>
                       </div>
                       {practiceStats.lastWeekBristol !== null && (() => {
                         const curr = practiceStats.thisWeekBristol!;
                         const prev = practiceStats.lastWeekBristol!;
                         const improving = Math.abs(curr - 4) < Math.abs(prev - 4);
                         return (
-                          <div style={{ fontSize: 11, marginTop: 3, color: improving ? '#16a34a' : '#dc2626' }}>
+                          <div className="text-[11px] mt-[3px]" style={{ color: improving ? '#16a34a' : '#dc2626' }}>
                             {improving ? '↑ mejorando' : '↓ empeorando'} vs sem. anterior
                           </div>
                         );
@@ -1694,17 +1682,17 @@ export default function MedicsPanel() {
                 const all = [...noAct, ...bristolItems].slice(0, 5);
                 if (all.length === 0) return null;
                 return (
-                  <div style={{ ...s.card, marginBottom: 16 }}>
-                    <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>🔔 Alertas proactivas</div>
+                  <div className="medics-alerts bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mb-4">
+                    <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">🔔 Alertas proactivas</div>
                     {all.map(({ p, msg, color }, i) => (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: i < all.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
-                        <div style={{ width: 3, height: 32, borderRadius: 2, backgroundColor: color, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{patientLabel(p)}</div>
-                          <div style={{ fontSize: 11, color }}>{msg}</div>
+                        className={`medics-alerts__item flex items-center gap-3 px-4 py-2.5 cursor-pointer ${i < all.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
+                        <div className="w-[3px] h-8 rounded flex-shrink-0" style={{ backgroundColor: color }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap">{patientLabel(p)}</div>
+                          <div className="text-[11px]" style={{ color }}>{msg}</div>
                         </div>
-                        <span style={{ fontSize: 12, color: '#ccc' }}>›</span>
+                        <span className="text-xs text-fx-text-tertiary">›</span>
                       </div>
                     ))}
                   </div>
@@ -1712,11 +1700,11 @@ export default function MedicsPanel() {
               })()}
               {/* Attention list */}
               {attentionList.length > 0 && (
-                <div style={s.card}>
-                  <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="medics-attention-list bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                  <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex justify-between items-center">
                     <span>⚠️ Requieren atención</span>
                     <button onClick={() => { setSemaforoFilter('all'); setSection('pacientes'); }}
-                      style={{ fontSize: 11, color: '#888', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Ver todos →</button>
+                      className="text-[11px] text-fx-text-tertiary bg-transparent border-none cursor-pointer p-0">Ver todos →</button>
                   </div>
                   {attentionList.map((p, i) => {
                     const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
@@ -1724,36 +1712,36 @@ export default function MedicsPanel() {
                     const sem = getSemaforo(p.daysSinceLast, pG, pR);
                     return (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: i < attentionList.length - 1 ? '1px solid #00000008' : 'none', cursor: 'pointer' }}>
-                        <span style={{ fontSize: 18 }}>{sem.icon}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{patientLabel(p)}</div>
-                          <div style={{ fontSize: 11, color: '#999' }}>
+                        className={`medics-attention-list__item flex items-center gap-3 px-4 py-[11px] cursor-pointer ${i < attentionList.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
+                        <span className="text-lg">{sem.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap">{patientLabel(p)}</div>
+                          <div className="text-[11px] text-fx-text-tertiary">
                             {p.daysSinceLast === null ? 'Sin registros' : p.daysSinceLast === 0 ? 'Hoy' : p.daysSinceLast === 1 ? 'Ayer' : `hace ${p.daysSinceLast} días`}
                             {p.lastEntryDate && p.daysSinceLast !== null && ` · ${shortDate(p.lastEntryDate)}`}
                           </div>
                         </div>
                         {(p.tags || []).map(t => (
-                          <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, backgroundColor: tagColor(t) + '20', color: tagColor(t), fontWeight: 700 }}>{t}</span>
+                          <span key={t} className="text-[10px] px-[7px] py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '20', color: tagColor(t) }}>{t}</span>
                         ))}
-                        <span style={{ fontSize: 12, color: '#ccc' }}>›</span>
+                        <span className="text-xs text-fx-text-tertiary">›</span>
                       </div>
                     );
                   })}
                 </div>
               )}
               {accepted.length === 0 && (
-                <div style={{ ...s.card, padding: 32, textAlign: 'center' as const }}>
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 8 }}>Aún no tienes pacientes</div>
-                  <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>Invita a tu primer paciente para empezar el seguimiento.</div>
-                  <button onClick={() => setSection('invitar')} style={{ ...ts.btnPrimary, padding: '10px 24px', borderRadius: 99 }}>
+                <div className="medics-empty-state bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-8 text-center">
+                  <div className="text-4xl mb-3">👥</div>
+                  <div className="text-[15px] font-bold text-fx-text mb-2">Aún no tienes pacientes</div>
+                  <div className="text-[13px] text-fx-text-tertiary mb-5">Invita a tu primer paciente para empezar el seguimiento.</div>
+                  <button onClick={() => setSection('invitar')} className="w-full px-6 py-2.5 rounded-fx-pill text-white font-semibold text-[15px] border-none cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>
                     + Invitar paciente
                   </button>
                 </div>
               )}
               </>)}
-            </>
+            </div>
           );
         })()}
 
@@ -3314,21 +3302,21 @@ export default function MedicsPanel() {
 
       {/* ── BOTTOM NAV (mobile) ── */}
       {isMobile && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: th.dark, display: 'flex', zIndex: 20, borderTop: `1px solid ${th.border}` }}>
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
-              style={{
-                flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
-                gap: 3, padding: '10px 0', border: 'none', cursor: 'pointer', background: 'transparent',
-                borderTop: section === item.id ? `2px solid ${th.primary}` : '2px solid transparent',
-              }}
-            >
-              <span style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: section === item.id ? th.primary : th.textMuted }}>{item.label}</span>
-            </button>
-          ))}
+        <nav className="medics-bottomnav fixed bottom-0 left-0 right-0 flex z-20 bg-white/90 backdrop-blur-md border-t border-fx-border-soft">
+          {NAV_ITEMS.map(item => {
+            const active = section === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
+                className="medics-bottomnav__item flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 border-t-2"
+                style={{ borderTopColor: active ? th.primary : 'transparent', color: active ? th.primary : 'var(--text-tertiary)' }}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="text-[10px] font-semibold">{item.label}</span>
+              </button>
+            );
+          })}
         </nav>
       )}
 
@@ -3718,14 +3706,13 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 
 // ── Section Header ──
 function SectionHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle: string; actions?: React.ReactNode }) {
-  const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
   return (
-    <div style={{ display: 'flex', flexDirection: mobile ? 'column' as const : 'row' as const, justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-start', gap: 12, marginBottom: 20 }}>
-      <div>
-        <h1 style={{ fontSize: mobile ? 22 : 28, fontWeight: 900, color: '#111', margin: 0 }}>{title}</h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: '4px 0 0' }}>{subtitle}</p>
+    <div className="medics-section-header flex flex-col md:flex-row md:items-start justify-between gap-3 mb-5">
+      <div className="medics-section-header__text">
+        <h1 className="text-[22px] md:text-[28px] font-extrabold text-fx-text m-0 tracking-tight">{title}</h1>
+        <p className="text-sm text-fx-text-secondary mt-1 mb-0">{subtitle}</p>
       </div>
-      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>{actions}</div>}
+      {actions && <div className="medics-section-header__actions flex gap-2 flex-wrap">{actions}</div>}
     </div>
   );
 }
@@ -3757,65 +3744,36 @@ function StatCard({ emoji, label, value, sub, dark }: {
 const s: Record<string, React.CSSProperties> = {
   loginContainer: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
+    backgroundColor: '#dd8273', fontFamily: 'var(--font-sans)',
   },
   loginCard: {
-    width: '100%', maxWidth: 380, padding: 24, backgroundColor: 'white',
-    borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+    width: '100%', maxWidth: 380, padding: 24, backgroundColor: 'var(--color-surface)',
+    borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)',
     margin: '0 16px',
   },
   label: {
-    display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#555',
+    display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)',
   },
   input: {
-    width: '100%', padding: 12, borderRadius: 10, border: '1px solid #e0e0e0',
-    marginBottom: 16, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
+    width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
+    marginBottom: 16, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const,
+    backgroundColor: 'var(--color-surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
   },
   btnPrimary: {
-    width: '100%', padding: 14, borderRadius: 24, backgroundColor: '#1a0e0e',
-    color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer',
-  },
-  shell: {
-    display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif',
-  },
-  sidebar: {
-    width: 260, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const,
-    position: 'fixed' as const, top: 0, left: 0, bottom: 0, zIndex: 10,
-    overflowY: 'auto' as const, overflowX: 'hidden' as const,
-  },
-  sidebarLogo: {
-    display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', height: 70,
-    borderBottom: '1px solid #2d1a18',
-  },
-  sidebarNav: {
-    padding: '12px 12px 8px', display: 'flex', flexDirection: 'column' as const, gap: 2,
-  },
-  navItem: {
-    display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', height: 40,
-    borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent',
-    textAlign: 'left' as const, width: '100%',
-  },
-  main: {
-    flex: 1, marginLeft: 260, backgroundColor: '#dd8273', padding: 32,
-    minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, gap: 24,
-  },
-  statsRow: {
-    display: 'flex', gap: 16,
+    width: '100%', padding: 14, borderRadius: 'var(--radius-pill)', backgroundColor: '#1a0e0e',
+    color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
   },
   card: {
-    backgroundColor: '#fff', borderRadius: 16,
+    backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-xl)',
+    boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-soft)',
   },
   headerBtn: {
-    padding: '8px 16px', borderRadius: 999, border: 'none',
-    backgroundColor: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', gap: 6,
+    padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)',
+    backgroundColor: 'var(--color-surface)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
   },
   linkBtn: {
     background: 'none', border: 'none', color: '#dd8273', fontSize: 13,
-    fontWeight: 600, cursor: 'pointer',
-  },
-  filterTab: {
-    padding: '8px 18px', borderRadius: 999, border: 'none',
-    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
   },
 };
