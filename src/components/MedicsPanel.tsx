@@ -2787,7 +2787,7 @@ export default function MedicsPanel() {
 
         {/* ── INVITAR PACIENTE ── */}
         {section === 'invitar' && (
-          <>
+          <div className="medics-invitar">
             <SectionHeader
               title="Invitar Paciente"
               subtitle="Envía una invitación por email a tu paciente"
@@ -2795,27 +2795,16 @@ export default function MedicsPanel() {
 
             {/* Plan banner */}
             {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
-              <div style={{
-                backgroundColor: '#fff8e1',
-                border: '1px solid #ffe082',
-                borderRadius: 12,
-                padding: '14px 18px',
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 16,
-                flexWrap: 'wrap' as const,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 20 }}>{doctorInfo?.plan === 'beta' ? '🧪' : '⭐'}</span>
+              <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-4.5 mb-4 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">{doctorInfo?.plan === 'beta' ? '🧪' : '⭐'}</span>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#7a5810' }}>
+                    <div className="text-[13px] font-bold text-fx-warning-700">
                       {doctorInfo?.plan === 'beta'
                         ? `Plan Beta · ${patients.length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
                         : `Plan Free · ${patients.length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
-                    <div style={{ fontSize: 12, color: '#8a6b20' }}>
+                    <div className="text-xs text-fx-warning-600">
                       {doctorInfo?.plan === 'beta'
                         ? (patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.')
                         : (patients.length >= FREE_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.' : 'El primer paciente es gratis. Después, pasa al plan Pro.')}
@@ -2824,31 +2813,23 @@ export default function MedicsPanel() {
                 </div>
                 <button
                   onClick={() => setShowUpgradeModal(true)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 999,
-                    border: 'none',
-                    backgroundColor: th.dark,
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="py-2 px-4 rounded-fx-pill border-none text-white text-[13px] font-semibold cursor-pointer"
+                  style={{ backgroundColor: th.dark }}
                 >
                   Pasar a Pro
                 </button>
               </div>
             )}
 
-            <div style={s.card}>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+            <div className="medics-invitar__form bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+              <div className="p-6 flex flex-col gap-4">
                 {(() => {
                   const atLimit = doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT;
                   return (
                     <div>
-                      <label style={s.label}>Email del paciente</label>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                        <div style={{ flex: 1 }}>
+                      <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email del paciente</label>
+                      <div className="flex gap-3 items-end">
+                        <div className="flex-1">
                           <input
                             type="email"
                             value={inviteEmail}
@@ -2856,17 +2837,16 @@ export default function MedicsPanel() {
                             onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
                             placeholder={atLimit ? 'Límite de pacientes alcanzado' : 'paciente@email.com'}
                             disabled={atLimit}
-                            style={{ ...s.input, marginBottom: 0, opacity: atLimit ? 0.45 : 1, cursor: atLimit ? 'not-allowed' : 'text' }}
+                            className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
+                            style={{ opacity: atLimit ? 0.45 : 1, cursor: atLimit ? 'not-allowed' : 'text' }}
                           />
                         </div>
                         <button
                           onClick={handleInvite}
                           disabled={loading || !inviteEmail.trim() || atLimit}
+                          className="py-2 px-4 rounded-fx-pill border-none text-[13px] font-semibold h-11 flex items-center gap-1.5 font-sans text-white"
                           style={{
-                            ...s.headerBtn,
                             backgroundColor: th.dark,
-                            color: '#fff',
-                            height: 44,
                             opacity: loading || !inviteEmail.trim() || atLimit ? 0.45 : 1,
                             cursor: atLimit ? 'not-allowed' : 'pointer',
                           }}
@@ -2875,9 +2855,9 @@ export default function MedicsPanel() {
                         </button>
                       </div>
                       {atLimit && (
-                        <p style={{ fontSize: 12, color: '#e67e22', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <p className="text-xs text-fx-warning-600 mt-2 flex items-center gap-1.5">
                           <span>⚠️</span> Límite del plan Free alcanzado.{' '}
-                          <button onClick={() => setShowUpgradeModal(true)} style={{ background: 'none', border: 'none', color: th.dark, fontWeight: 700, fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                          <button onClick={() => setShowUpgradeModal(true)} className="bg-transparent border-none font-bold text-xs cursor-pointer underline p-0" style={{ color: th.dark }}>
                             Pasa a Pro
                           </button>{' '}
                           para añadir más pacientes.
@@ -2887,21 +2867,21 @@ export default function MedicsPanel() {
                   );
                 })()}
 
-                {error && <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{error}</p>}
+                {error && <p className="text-fx-error-600 text-[13px] m-0">{error}</p>}
 
                 {inviteSuccess && (
-                  <div style={{ backgroundColor: '#2ecc7115', borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>✅</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#27ae60' }}>Invitación enviada</span>
+                  <div className="bg-fx-success-50 rounded-[10px] py-3 px-4 flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      <span className="text-[13px] font-bold text-fx-success-500">Invitación enviada</span>
                     </div>
                     {emailSent && (
-                      <p style={{ fontSize: 12, color: '#555', margin: 0 }}>El paciente recibirá un email con las instrucciones.</p>
+                      <p className="text-xs text-fx-text-secondary m-0">El paciente recibirá un email con las instrucciones.</p>
                     )}
                     {emailError && (
-                      <p style={{ fontSize: 12, color: '#e67e22', margin: 0 }}>⚠️ {emailError}</p>
+                      <p className="text-xs text-fx-warning-600 m-0">⚠️ {emailError}</p>
                     )}
-                    <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+                    <p className="text-xs text-fx-ink-400 m-0">
                       El paciente verá la invitación en su cuenta al iniciar sesión.
                     </p>
                   </div>
@@ -2910,172 +2890,173 @@ export default function MedicsPanel() {
             </div>
 
             {/* Instructions */}
-            <div style={s.card}>
-              <div style={{ padding: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 12 }}>{'\u{1F4D6}'} Instrucciones para el paciente</div>
-                <div style={{ fontSize: 14, color: '#555', lineHeight: 1.8 }}>
-                  <p style={{ margin: '0 0 8px' }}>El paciente debe seguir estos pasos:</p>
-                  <ol style={{ margin: 0, paddingLeft: 20 }}>
+            <div className="medics-invitar__instructions bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mt-4">
+              <div className="p-6">
+                <div className="text-base font-bold text-fx-text mb-3">{'\u{1F4D6}'} Instrucciones para el paciente</div>
+                <div className="text-sm text-fx-text-secondary leading-loose">
+                  <p className="m-0 mb-2">El paciente debe seguir estos pasos:</p>
+                  <ol className="m-0 pl-5">
                     <li>Abrir la app en <strong>fluxia-health.com/user</strong></li>
                     <li>Iniciar sesión con el email al que le enviaste la invitación</li>
                     <li>Ir a <strong>Configuración</strong> y aceptar la invitación del médico</li>
                   </ol>
-                  <p style={{ margin: '12px 0 0', color: '#999', fontSize: 13 }}>
+                  <p className="mt-3 mb-0 text-fx-ink-400 text-[13px]">
                     Una vez aceptada, podrás ver los registros del paciente desde tu panel.
                   </p>
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* ── CONFIGURACIÓN ── */}
         {section === 'config' && (
-          <>
+          <div className="medics-config">
             <SectionHeader
               title="Configuración"
               subtitle="Ajusta tu perfil y los parámetros del semáforo"
             />
 
             {/* ── Config grid layout ── */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-              gap: 16,
-              maxWidth: 1550,
-            }}>
+            <div className="medics-config__grid grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[1550px]">
 
               {/* Col 1 Row 1 — Datos del médico */}
-              <div style={{ ...s.card, gridColumn: 1, gridRow: 1 }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>👤 Datos del médico</span>
+              <div className="medics-config__doctor-info bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-1">
+                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">👤 Datos del médico</span>
                 </div>
-                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                <div className="p-4.5 flex flex-col gap-3.5">
                   <div>
-                    <label style={s.label}>Nombre</label>
+                    <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Nombre</label>
                     <input
                       type="text"
                       value={configName}
                       onChange={(e) => setConfigName(e.target.value)}
-                      style={{ ...s.input, marginBottom: 0 }}
+                      className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
                       placeholder="Dr. Nombre Apellido"
                     />
                   </div>
                   <div>
-                    <label style={s.label}>Centro médico</label>
+                    <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Centro médico</label>
                     <input
                       type="text"
                       value={configCenterName}
                       onChange={(e) => setConfigCenterName(e.target.value)}
-                      style={{ ...s.input, marginBottom: 0 }}
+                      className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
                       placeholder="Nombre del centro o consulta"
                     />
                   </div>
                   {configSaved && (
-                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="bg-fx-success-100 rounded-lg py-2 px-3 flex items-center gap-2">
                       <span>✅</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                      <span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                     </div>
                   )}
                   <button onClick={handleSaveConfig} disabled={loading}
-                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    className="w-full py-2.5 px-5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+                    style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>
                     {loading ? '...' : 'Guardar'}
                   </button>
                 </div>
               </div>
 
               {/* Col 2 Rows 1–2 — Imagen del centro */}
-              <div style={{ ...s.card, gridColumn: isMobile ? 1 : 2, gridRow: isMobile ? 'auto' : '1 / span 2' }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏥 Imagen del centro</span>
+              <div className="medics-config__center-image bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-2 md:row-start-1 md:row-span-2">
+                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">🏥 Imagen del centro</span>
                 </div>
-                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14, alignItems: 'center' }}>
-                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, border: '2px dashed #ddd', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9' }}>
+                <div className="p-4.5 flex flex-col gap-3.5 items-center">
+                  <div className="w-full aspect-video rounded-xl border-2 border-dashed border-fx-border overflow-hidden flex items-center justify-center bg-fx-ink-50">
                     {centerImageUrl ? (
-                      <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'scale-down' }} />
+                      <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-scale-down" />
                     ) : (
-                      <span style={{ fontSize: 32 }}>🏥</span>
+                      <span className="text-[32px]">🏥</span>
                     )}
                   </div>
-                  <p style={{ fontSize: 12, color: '#888', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+                  <p className="text-xs text-fx-ink-400 m-0 text-center leading-relaxed">
                     Aparecerá en la app de los pacientes vinculados.
                   </p>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...ts.btnPrimary, padding: '9px 18px', cursor: 'pointer', opacity: uploadingImage ? 0.5 : 1 } as React.CSSProperties}>
+                  <label
+                    className="w-full inline-flex items-center gap-2 py-2.5 px-4.5 rounded-fx-pill text-white text-[15px] font-semibold font-sans cursor-pointer"
+                    style={{ backgroundColor: th.dark, opacity: uploadingImage ? 0.5 : 1 }}
+                  >
                     {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
-                    <input type="file" accept="image/*" disabled={uploadingImage} style={{ display: 'none' }}
+                    <input type="file" accept="image/*" disabled={uploadingImage} className="hidden"
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
                   </label>
-                  <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>PNG, JPG o WEBP · Máx 2 MB</p>
+                  <p className="text-[11px] text-fx-ink-300 m-0">PNG, JPG o WEBP · Máx 2 MB</p>
                 </div>
               </div>
 
               {/* Col 1 Row 2 — Semáforo */}
-              <div style={{ ...s.card, gridColumn: 1, gridRow: isMobile ? 'auto' : 2 }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🚦 Semáforo</span>
+              <div className="medics-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-2">
+                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">🚦 Semáforo</span>
                 </div>
-                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-                  <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
+                <div className="p-4.5 flex flex-col gap-4">
+                  <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
                     Define cuántos días sin registro se consideran normales (🟢), en vigilancia (🟠) o en alerta (🔴).
                     Este umbral se aplica a todos tus pacientes como valor por defecto; puedes personalizarlo individualmente
                     en la ficha de cada paciente.
                   </p>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 14 }}>🟢</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#27ae60' }}>≤ {configGreen}d</span>
+                  <div className="flex gap-1.5">
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: '#2ecc7115', borderLeft: '3px solid #27ae60' }}>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm">🟢</span>
+                        <span className="text-[11px] font-bold" style={{ color: '#27ae60' }}>≤ {configGreen}d</span>
                       </div>
                       <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
                         onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#f39c1215', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 14 }}>🟠</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>{configGreen + 1}–{configRed}d</span>
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col justify-center" style={{ backgroundColor: '#f39c1215', borderLeft: '3px solid #f39c12' }}>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm">🟠</span>
+                        <span className="text-[11px] font-bold" style={{ color: '#e67e22' }}>{configGreen + 1}–{configRed}d</span>
                       </div>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '8px 10px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 14 }}>🔴</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#e74c3c' }}>&gt;{configRed}d</span>
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: '#e74c3c15', borderLeft: '3px solid #e74c3c' }}>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm">🔴</span>
+                        <span className="text-[11px] font-bold" style={{ color: '#e74c3c' }}>&gt;{configRed}d</span>
                       </div>
                       <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
                         onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
                     </div>
                   </div>
                   {configSaved && (
-                    <div style={{ backgroundColor: '#2ecc7120', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>✅</span><span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                    <div className="bg-fx-success-100 rounded-lg py-2 px-3 flex items-center gap-2">
+                      <span>✅</span><span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                     </div>
                   )}
                   <button onClick={handleSaveConfig} disabled={loading}
-                    style={{ ...ts.btnPrimary, padding: '9px 20px', opacity: loading ? 0.5 : 1 }}>
+                    className="w-full py-2.5 px-5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+                    style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>
                     {loading ? '...' : 'Guardar'}
                   </button>
                 </div>
               </div>
 
               {/* Cols 1–2 Row 3 — Etiquetas globales */}
-              <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 3 }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🏷️ Etiquetas globales</span>
+              <div className="medics-config__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-3">
+                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">🏷️ Etiquetas globales</span>
                 </div>
-                <div style={{ padding: 18, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
-                  <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
+                <div className="p-4.5 flex flex-col gap-3.5">
+                  <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
                     Define las etiquetas de tu consulta. Desde la ficha de cada paciente puedes asignar una o varias.
                     Eliminar una etiqueta la borra también de todos los pacientes.
                   </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, minHeight: 32 }}>
+                  <div className="flex flex-wrap gap-2 min-h-8">
                     {globalTags.length === 0 ? (
-                      <span style={{ fontSize: 13, color: '#ccc', fontStyle: 'italic' as const, alignSelf: 'center' }}>Sin etiquetas todavía</span>
+                      <span className="text-[13px] text-fx-ink-300 italic self-center">Sin etiquetas todavía</span>
                     ) : globalTags.map(t => (
-                      <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, padding: '4px 12px', borderRadius: 20, backgroundColor: tagColor(t) + '22', color: tagColor(t), fontWeight: 700 }}>
+                      <span key={t} className="inline-flex items-center gap-[5px] text-[13px] py-1 px-3 rounded-full font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>
                         {t}
                         <button
                           onClick={() => deleteGlobalTag(t)}
                           title={`Eliminar "${t}"`}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 2px', fontSize: 14, color: tagColor(t), lineHeight: 1, opacity: 0.5 }}>
+                          className="bg-transparent border-none cursor-pointer pl-0.5 text-sm leading-none opacity-50"
+                          style={{ color: tagColor(t) }}>
                           ×
                         </button>
                       </span>
@@ -3089,24 +3070,25 @@ export default function MedicsPanel() {
                       setConfigTagInput('');
                       await saveGlobalTags([...globalTags, v]);
                     }}
-                    style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    className="flex gap-2 items-center">
                     <input
                       value={configTagInput}
                       onChange={e => setConfigTagInput(e.target.value)}
                       placeholder="Nueva etiqueta…"
-                      style={{ flex: 1, minWidth: 0, padding: '8px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, outline: 'none' }}
+                      className="flex-1 min-w-0 py-2 px-3 rounded-lg border border-fx-border text-[13px] outline-none"
                     />
                     <button type="submit"
-                      style={{ ...ts.btnPrimary, width: 'auto', flexShrink: 0, padding: '8px 16px', fontSize: 13, borderRadius: 8 }}>
+                      className="flex-shrink-0 py-2 px-4 text-[13px] rounded-lg text-white border-none font-semibold font-sans cursor-pointer"
+                      style={{ backgroundColor: th.dark }}>
                       Añadir
                     </button>
                   </form>
-                  {globalTagsSaving && <span style={{ fontSize: 11, color: '#bbb' }}>Guardando…</span>}
+                  {globalTagsSaving && <span className="text-[11px] text-fx-ink-300">Guardando…</span>}
                   {patients.some(p => (p.tags || []).length > 0) && (
-                    <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div className="border-t border-fx-border-soft pt-3 flex items-center gap-2.5">
                       {clearTagsConfirm ? (
                         <>
-                          <span style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600 }}>¿Seguro? Esto borrará todas las etiquetas de todos los pacientes.</span>
+                          <span className="text-xs text-fx-error-600 font-semibold">¿Seguro? Esto borrará todas las etiquetas de todos los pacientes.</span>
                           <button
                             onClick={async () => {
                               setClearTagsConfirm(false);
@@ -3125,17 +3107,17 @@ export default function MedicsPanel() {
                               }
                               setGlobalTagsSaving(false);
                             }}
-                            style={{ padding: '5px 12px', borderRadius: 6, border: 'none', backgroundColor: '#e74c3c', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                            className="py-1.5 px-3 rounded-md border-none bg-fx-error-500 text-white text-xs font-bold cursor-pointer">
                             Sí, borrar todo
                           </button>
                           <button onClick={() => setClearTagsConfirm(false)}
-                            style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #ddd', backgroundColor: '#fff', fontSize: 12, color: '#555', cursor: 'pointer' }}>
+                            className="py-1.5 px-3 rounded-md border border-fx-border bg-fx-surface text-xs text-fx-text-secondary cursor-pointer">
                             Cancelar
                           </button>
                         </>
                       ) : (
                         <button onClick={() => setClearTagsConfirm(true)}
-                          style={{ fontSize: 11, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', opacity: 0.7 }}>
+                          className="text-[11px] text-fx-error-600 bg-transparent border-none cursor-pointer p-0 underline opacity-70">
                           Limpiar todas las etiquetas de pacientes
                         </button>
                       )}
@@ -3145,105 +3127,98 @@ export default function MedicsPanel() {
               </div>
 
               {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
-              {false && <div style={{ ...s.card, gridColumn: isMobile ? 1 : '1 / span 2', gridRow: isMobile ? 'auto' : 4 }}>
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #00000010' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>🎨 Paleta de colores</span>
+              {false && <div className="medics-config__palette bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
+                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">🎨 Paleta de colores</span>
                 </div>
-                <div style={{ padding: 18 }}>
-                  <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px', lineHeight: 1.6 }}>
+                <div className="p-4.5">
+                  <p className="text-[13px] text-fx-text-secondary mb-3.5 leading-relaxed">
                     Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
                   </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, marginBottom: 14 }}>
+                  <div className="flex flex-wrap gap-2.5 mb-3.5">
                     {PALETTES.map(p => {
                       const isActive = configPalette === p.id;
                       return (
                         <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
+                          className="flex flex-col items-center gap-1.5 py-2 px-3 rounded-xl border-none cursor-pointer transition-all duration-150"
                           style={{
-                            display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
-                            padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
                             backgroundColor: isActive ? '#00000012' : 'transparent',
                             outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
-                            transition: 'all 0.15s',
                           }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: '50%',
+                          <div className="w-8 h-8 rounded-full" style={{
                             background: `linear-gradient(135deg, ${p.theme.primary} 50%, ${p.theme.secondary} 50%)`,
                             boxShadow: isActive ? `0 0 0 3px ${p.theme.primary}50` : 'none',
                           }} />
-                          <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, color: '#444' }}>{p.name}</span>
+                          <span className="text-[10px] text-fx-text-secondary" style={{ fontWeight: isActive ? 700 : 400 }}>{p.name}</span>
                         </button>
                       );
                     })}
 
                     {/* Custom palette option */}
                     <button onClick={() => setConfigPalette('custom')} title="Personalizable"
+                      className="flex flex-col items-center gap-1.5 py-2 px-3 rounded-xl border-none cursor-pointer transition-all duration-150"
                       style={{
-                        display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 5,
-                        padding: '8px 12px', borderRadius: 12, border: 'none', cursor: 'pointer',
                         backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
                         outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
-                        transition: 'all 0.15s',
                       }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
+                      <div className="w-8 h-8 rounded-full" style={{
                         background: configPalette === 'custom'
                           ? `linear-gradient(135deg, ${customColor1} 50%, ${customColor2} 50%)`
                           : 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)',
                         boxShadow: configPalette === 'custom' ? `0 0 0 3px ${customColor1}50` : 'none',
                       }} />
-                      <span style={{ fontSize: 10, fontWeight: configPalette === 'custom' ? 700 : 400, color: '#444' }}>Personalizable</span>
+                      <span className="text-[10px] text-fx-text-secondary" style={{ fontWeight: configPalette === 'custom' ? 700 : 400 }}>Personalizable</span>
                     </button>
                   </div>
 
                   {/* Custom color pickers */}
                   {configPalette === 'custom' && (
-                    <div style={{ backgroundColor: '#f7f7f7', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
-                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const }}>
-                        <div style={{ flex: 1, minWidth: 140 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                    <div className="bg-fx-surface-2 rounded-xl p-4 flex flex-col gap-3.5">
+                      <div className="flex gap-4 flex-wrap">
+                        <div className="flex-1 min-w-[140px]">
+                          <label className="text-xs font-bold text-fx-text-secondary block mb-1.5">
                             Color primario
                           </label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div className="flex items-center gap-2.5">
                             <input type="color" value={customColor1} onChange={e => setCustomColor1(e.target.value)}
-                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor1}</span>
+                              className="w-11 h-11 rounded-lg border-2 border-fx-border cursor-pointer p-0.5" />
+                            <span className="text-[13px] font-semibold text-fx-text font-mono">{customColor1}</span>
                           </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 140 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 6 }}>
+                        <div className="flex-1 min-w-[140px]">
+                          <label className="text-xs font-bold text-fx-text-secondary block mb-1.5">
                             Color oscuro / fondo
                           </label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div className="flex items-center gap-2.5">
                             <input type="color" value={customColor2} onChange={e => setCustomColor2(e.target.value)}
-                              style={{ width: 44, height: 44, borderRadius: 8, border: '2px solid #ddd', cursor: 'pointer', padding: 2 }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333', fontFamily: 'monospace' }}>{customColor2}</span>
+                              className="w-11 h-11 rounded-lg border-2 border-fx-border cursor-pointer p-0.5" />
+                            <span className="text-[13px] font-semibold text-fx-text font-mono">{customColor2}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Preview strip */}
-                      <div style={{ borderRadius: 8, overflow: 'hidden', display: 'flex', height: 36 }}>
-                        <div style={{ flex: 1, backgroundColor: customColor1 }} />
-                        <div style={{ flex: 1, background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
-                        <div style={{ flex: 1, backgroundColor: customColor2 }} />
+                      <div className="rounded-lg overflow-hidden flex h-9">
+                        <div className="flex-1" style={{ backgroundColor: customColor1 }} />
+                        <div className="flex-1" style={{ background: `linear-gradient(90deg, ${customColor1}, ${customColor2})` }} />
+                        <div className="flex-1" style={{ backgroundColor: customColor2 }} />
                       </div>
 
                       {/* Extract from image button */}
                       <button
                         onClick={handleExtractColors}
                         disabled={!centerImageUrl || extractingColors}
+                        className="py-2.5 px-4 rounded-lg bg-transparent text-[13px] font-bold transition-all duration-150"
                         style={{
-                          padding: '9px 16px', borderRadius: 8, border: `2px solid ${customColor1}`,
-                          backgroundColor: 'transparent', color: customColor1,
-                          fontSize: 13, fontWeight: 700, cursor: centerImageUrl ? 'pointer' : 'not-allowed',
+                          border: `2px solid ${customColor1}`, color: customColor1,
+                          cursor: centerImageUrl ? 'pointer' : 'not-allowed',
                           opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
-                          transition: 'all 0.15s',
                         }}
                       >
                         {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
                       </button>
                       {!centerImageUrl && (
-                        <p style={{ fontSize: 11, color: '#aaa', margin: '-8px 0 0' }}>
+                        <p className="text-[11px] text-fx-ink-300 -mt-2 mb-0">
                           Sube una imagen del centro para usar esta opción.
                         </p>
                       )}
@@ -3251,15 +3226,16 @@ export default function MedicsPanel() {
                   )}
 
                   {/* Save button always visible in palette section */}
-                  <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="mt-4 flex items-center gap-3">
                     <button onClick={handleSaveConfig} disabled={loading}
-                      style={{ ...ts.btnPrimary, width: 'auto', padding: '9px 24px', opacity: loading ? 0.5 : 1 }}>
+                      className="py-2.5 px-6 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+                      style={{ backgroundColor: th.dark, opacity: loading ? 0.5 : 1 }}>
                       {loading ? '...' : 'Guardar paleta'}
                     </button>
                     {configSaved && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div className="flex items-center gap-1.5">
                         <span>✅</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: '#27ae60' }}>Guardado</span>
+                        <span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                       </div>
                     )}
                   </div>
@@ -3268,9 +3244,9 @@ export default function MedicsPanel() {
 
             </div>
             {isMobile && (
-              <div style={{ textAlign: 'center', padding: '16px 0 4px', color: '#00000030', fontSize: 11 }}>{APP_VERSION}</div>
+              <div className="text-center py-4 pb-1 text-[11px] text-fx-ink-300/30">{APP_VERSION}</div>
             )}
-          </>
+          </div>
         )}
       </main>
 
