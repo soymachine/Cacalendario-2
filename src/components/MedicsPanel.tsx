@@ -3274,44 +3274,46 @@ export default function MedicsPanel() {
       {imageModal && (
         <div
           onClick={() => setImageModal(null)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          className="medics-image-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-6"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: 20, padding: 32, maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}
+            className="bg-white rounded-fx-lg p-8 max-w-[420px] w-full text-center shadow-fx-xl relative"
           >
             <button
               onClick={() => setImageModal(null)}
-              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}
+              className="absolute top-3.5 right-4 bg-transparent border-none text-xl cursor-pointer text-fx-ink-300 leading-none"
             >
               ×
             </button>
 
             {imageModal.type === 'success' ? (
               <>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                <div className="mb-4 flex justify-center">
                   <img
                     src={imageModal.url}
                     alt="Imagen del centro"
-                    style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 12, border: `3px solid ${th.primary}` }}
+                    className="w-[140px] h-[140px] object-cover rounded-xl"
+                    style={{ border: `3px solid ${th.primary}` }}
                   />
                 </div>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Imagen subida correctamente</p>
-                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>La imagen ya está visible para tus pacientes.</p>
+                <div className="text-[28px] mb-2">✅</div>
+                <p className="text-[17px] font-bold text-fx-text m-0 mb-2">Imagen subida correctamente</p>
+                <p className="text-[13px] text-fx-ink-400 m-0">La imagen ya está visible para tus pacientes.</p>
               </>
             ) : (
               <>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#1a0e0e', margin: '0 0 8px' }}>Error al subir la imagen</p>
-                <p style={{ fontSize: 13, color: '#e74c3c', margin: '0 0 20px', lineHeight: 1.5 }}>{imageModal.message}</p>
-                <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Asegúrate de que el bucket <strong>center-images</strong> existe y es público en Supabase Storage.</p>
+                <div className="text-[40px] mb-3">❌</div>
+                <p className="text-[17px] font-bold text-fx-text m-0 mb-2">Error al subir la imagen</p>
+                <p className="text-[13px] text-fx-error-500 m-0 mb-5 leading-relaxed">{imageModal.message}</p>
+                <p className="text-xs text-fx-ink-300 m-0">Asegúrate de que el bucket <strong>center-images</strong> existe y es público en Supabase Storage.</p>
               </>
             )}
 
             <button
               onClick={() => setImageModal(null)}
-              style={{ ...ts.btnPrimary, marginTop: 20, width: 'auto', padding: '10px 32px' }}
+              className="mt-5 py-2.5 px-8 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+              style={{ backgroundColor: th.dark }}
             >
               Cerrar
             </button>
@@ -3323,43 +3325,44 @@ export default function MedicsPanel() {
       {showUpgradeModal && (
         <div
           onClick={() => setShowUpgradeModal(false)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          className="medics-upgrade-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-6"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: 20, padding: 32, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', position: 'relative' }}
+            className="bg-white rounded-fx-lg p-8 max-w-[480px] w-full shadow-fx-xl relative"
           >
             <button
               onClick={() => setShowUpgradeModal(false)}
-              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}
+              className="absolute top-3.5 right-4 bg-transparent border-none text-xl cursor-pointer text-fx-ink-300 leading-none"
             >
               ×
             </button>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>⭐</div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', margin: '0 0 8px' }}>Pasa al plan Pro</h2>
-            <p style={{ fontSize: 14, color: '#666', margin: '0 0 20px', lineHeight: 1.5 }}>
+            <div className="text-4xl mb-2">⭐</div>
+            <h2 className="text-[22px] font-extrabold text-fx-text m-0 mb-2">Pasa al plan Pro</h2>
+            <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
               Has alcanzado el límite del plan gratuito ({FREE_PLAN_PATIENT_LIMIT} paciente). Con Pro podrás añadir pacientes ilimitados,
               acceder a alertas avanzadas y exportar informes PDF firmados.
             </p>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Hasta 200 pacientes en seguimiento</li>
-              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Dashboard con alertas y cohortes</li>
-              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Informes PDF firmados</li>
-              <li style={{ fontSize: 13.5, color: '#333', display: 'flex', gap: 8 }}><span style={{ color: '#27ae60' }}>✓</span> Soporte prioritario en 24h</li>
+            <ul className="list-none p-0 m-0 mb-6 flex flex-col gap-2">
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Hasta 200 pacientes en seguimiento</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Dashboard con alertas y cohortes</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Informes PDF firmados</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Soporte prioritario en 24h</li>
             </ul>
-            <div style={{ backgroundColor: '#f5f5f5', borderRadius: 12, padding: 16, marginBottom: 20, textAlign: 'center' as const }}>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#111' }}>49 €<span style={{ fontSize: 13, fontWeight: 500, color: '#888' }}>/mes</span></div>
-              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Facturación mensual · Cancela cuando quieras</div>
+            <div className="bg-fx-surface-2 rounded-xl p-4 mb-5 text-center">
+              <div className="text-[32px] font-extrabold text-fx-text">49 €<span className="text-[13px] font-medium text-fx-ink-400">/mes</span></div>
+              <div className="text-xs text-fx-ink-400 mt-0.5">Facturación mensual · Cancela cuando quieras</div>
             </div>
             <button
               onClick={() => { alert('Pronto: integración con Stripe para activar el plan Pro.'); }}
-              style={{ ...ts.btnPrimary, width: '100%' }}
+              className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+              style={{ backgroundColor: th.dark }}
             >
               Activar plan Pro
             </button>
             <button
               onClick={() => setShowUpgradeModal(false)}
-              style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer' }}
+              className="w-full mt-2.5 bg-transparent border-none text-fx-ink-400 text-[13px] cursor-pointer"
             >
               Quizás más tarde
             </button>
@@ -3375,71 +3378,72 @@ export default function MedicsPanel() {
         return (
           <div
             onClick={onboardingSkippable ? finishOnboarding : undefined}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+            className="medics-onboarding fixed inset-0 bg-black/65 z-[2000] flex items-center justify-center p-6"
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 620, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' as const, position: 'relative' as const }}
+              className="bg-white rounded-3xl w-full max-w-[620px] max-h-[90vh] overflow-hidden shadow-fx-xl flex flex-col relative"
             >
               {/* Close button — only when skippable */}
               {onboardingSkippable && (
                 <button
                   onClick={finishOnboarding}
-                  style={{ position: 'absolute' as const, top: 16, right: 18, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#aaa', lineHeight: 1, zIndex: 1 }}
+                  className="absolute top-4 right-4.5 bg-transparent border-none text-[22px] cursor-pointer text-fx-ink-300 leading-none z-[1]"
                 >×</button>
               )}
 
               {/* Progress bar */}
-              <div style={{ height: 4, backgroundColor: '#f0f0f0' }}>
-                <div style={{ height: '100%', width: `${progress}%`, backgroundColor: step.accent, transition: 'width 0.3s ease' }} />
+              <div className="h-1 bg-fx-surface-2">
+                <div className="h-full transition-[width] duration-300 ease-in-out" style={{ width: `${progress}%`, backgroundColor: step.accent }} />
               </div>
 
               {/* Content */}
-              <div style={{ padding: '40px 48px 32px', flex: 1, overflow: 'auto', backgroundColor: step.color }}>
-                <div style={{ textAlign: 'center' as const }}>
-                  <div style={{ fontSize: 72, lineHeight: 1, marginBottom: 24 }}>{step.icon}</div>
-                  <h2 style={{ fontSize: 26, fontWeight: 900, color: '#111', margin: '0 0 14px', lineHeight: 1.2 }}>{step.title}</h2>
-                  <p style={{ fontSize: 16, color: '#555', lineHeight: 1.65, margin: '0 auto', maxWidth: 460 }}>{step.body}</p>
+              <div className="px-12 pt-10 pb-8 flex-1 overflow-auto" style={{ backgroundColor: step.color }}>
+                <div className="text-center">
+                  <div className="text-7xl leading-none mb-6">{step.icon}</div>
+                  <h2 className="text-[26px] font-black text-fx-text m-0 mb-3.5 leading-tight">{step.title}</h2>
+                  <p className="text-base text-fx-text-secondary leading-relaxed mx-auto my-0 max-w-[460px]">{step.body}</p>
                 </div>
               </div>
 
               {/* Footer */}
-              <div style={{ padding: '20px 48px 28px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 20 }}>
+              <div className="px-12 pt-5 pb-7 bg-white flex flex-col items-center gap-5">
                 {/* Dots */}
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="flex gap-2">
                   {ONBOARDING_STEPS.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setOnboardingStep(i)}
+                      className="h-2 rounded border-none cursor-pointer p-0 transition-all duration-200 ease-in-out"
                       style={{
-                        width: i === onboardingStep ? 22 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+                        width: i === onboardingStep ? 22 : 8,
                         backgroundColor: i === onboardingStep ? step.accent : '#ddd',
-                        transition: 'all 0.2s ease',
                       }}
                     />
                   ))}
                 </div>
 
                 {/* Buttons */}
-                <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 380 }}>
+                <div className="flex gap-3 w-full max-w-[380px]">
                   {onboardingStep > 0 && (
                     <button
                       onClick={() => setOnboardingStep(s => s - 1)}
-                      style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: '1.5px solid #e0e0e0', background: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', color: '#555' }}
+                      className="flex-1 py-3 rounded-xl border-[1.5px] border-fx-border bg-white text-[15px] font-semibold cursor-pointer text-fx-text-secondary"
                     >
                       ← Anterior
                     </button>
                   )}
                   <button
                     onClick={isLast ? finishOnboarding : () => setOnboardingStep(s => s + 1)}
-                    style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: 'none', backgroundColor: step.accent, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                    className="flex-1 py-3 rounded-xl border-none text-white text-[15px] font-bold cursor-pointer"
+                    style={{ backgroundColor: step.accent }}
                   >
                     {isLast ? '¡Empezar!' : 'Siguiente →'}
                   </button>
                 </div>
 
                 {/* Step counter */}
-                <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>{onboardingStep + 1} de {ONBOARDING_STEPS.length}</p>
+                <p className="text-xs text-fx-ink-300 m-0">{onboardingStep + 1} de {ONBOARDING_STEPS.length}</p>
               </div>
             </div>
           </div>
