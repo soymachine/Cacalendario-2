@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as RadixTooltip from '@radix-ui/react-tooltip';
-import { supabase } from '../lib/supabase';
+import { supabaseMedics as supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';

@@ -1014,7 +1014,12 @@ import { asset } from '../lib/config';
     demoIframe.src = demoIframe.dataset.src;
   });
   function closeDemo() {
-    demoIframe.src = 'about:blank';
+    // Reemplazar el iframe por uno nuevo destruye su contexto de navegación
+    // y detiene inmediatamente cualquier audio/vídeo en reproducción
+    var fresh = demoIframe.cloneNode(false);
+    fresh.src = 'about:blank';
+    demoIframe.replaceWith(fresh);
+    demoIframe = fresh;
     demoModal.close();
   }
 
