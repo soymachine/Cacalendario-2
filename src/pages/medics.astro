@@ -10,7 +10,7 @@ import '../styles/fluxia-tokens.css';
     <title>Fluxia - Portal Médico</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: var(--font-sans); background: var(--color-bg); }
+      body { font-family: var(--font-sans); background: var(--gradient-page); background-attachment: fixed; }
 
       /* ── Semáforo range slider ── */
       .semaforo-range {
@@ -42,10 +42,10 @@ import '../styles/fluxia-tokens.css';
         cursor: pointer;
         border: none;
       }
-      .semaforo-range-green::-webkit-slider-thumb { border: 2px solid #27ae60; }
-      .semaforo-range-green::-moz-range-thumb    { border: 2px solid #27ae60; }
-      .semaforo-range-red::-webkit-slider-thumb  { border: 2px solid #e74c3c; }
-      .semaforo-range-red::-moz-range-thumb      { border: 2px solid #e74c3c; }
+      .semaforo-range-green::-webkit-slider-thumb { border: 2px solid var(--color-success); }
+      .semaforo-range-green::-moz-range-thumb    { border: 2px solid var(--color-success); }
+      .semaforo-range-red::-webkit-slider-thumb  { border: 2px solid var(--color-error); }
+      .semaforo-range-red::-moz-range-thumb      { border: 2px solid var(--color-error); }
     </style>
   </head>
   <body>

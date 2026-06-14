@@ -149,6 +149,22 @@
   --shadow-xl: 0 24px 60px rgba(34, 66, 100, 0.12);
   --shadow-primary: 0 10px 28px rgba(60, 125, 184, 0.28);
 
+  /* ---- Gradients ---- */
+  /* "Brand flow" — the signature logo gradient: yellow→green→teal→blue. Use sparingly for hero moments. */
+  --gradient-brand: linear-gradient(105deg, #D8DA56 0%, #78AD89 38%, #539D9F 64%, #3E78B5 100%);
+  --gradient-brand-soft: linear-gradient(105deg, #E9EA8E 0%, #9AC4A6 40%, #7FB7B9 66%, #6E9BCB 100%);
+  /* "Flow panel" — vertical fluid gradient for accent panels/headers */
+  --gradient-flow: linear-gradient(160deg, #5AA88B 0%, #4D9CA0 45%, #3E78B5 100%);
+  --gradient-primary: linear-gradient(135deg, #4A8CC4 0%, #3C7DB8 100%);
+  --gradient-secondary: linear-gradient(135deg, #5BB18A 0%, #4DA078 100%);
+  /* "Atmosphere" — soft blurred multi-stop wash used behind page content */
+  --gradient-atmosphere:
+    radial-gradient(120% 90% at 12% 8%, rgba(120,173,137,0.22) 0%, rgba(120,173,137,0) 48%),
+    radial-gradient(120% 90% at 96% 0%, rgba(207,211,60,0.16) 0%, rgba(207,211,60,0) 42%),
+    radial-gradient(130% 110% at 88% 100%, rgba(62,120,181,0.18) 0%, rgba(62,120,181,0) 52%),
+    radial-gradient(120% 120% at 50% 120%, rgba(148,143,214,0.12) 0%, rgba(148,143,214,0) 50%);
+  --gradient-page: var(--gradient-atmosphere), linear-gradient(180deg, #F6F8F4 0%, #F2F6F1 100%);
+
   /* ---- Fonts ---- */
   --font-sans: 'Lexend', system-ui, -apple-system, 'Segoe UI', sans-serif;
 

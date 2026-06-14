@@ -7,11 +7,15 @@ import 'rc-switch/assets/index.css';
 import { PALETTES } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
 import { initSentry } from '../lib/sentry';
+import {
+  Bell, BellSlash, Circle, CheckCircle, WarningCircle,
+  Trash, TrendUp, TrendDown, Minus, NotePencil, Image,
+} from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
 initSentry();
 
-const FLOATS_LABEL: Record<string, string> = { floats: '🫧 Flota', sinks: '⬇️ Hunde', both: '🫧⬇️ Ambos' };
+const FLOATS_LABEL: Record<string, string> = { floats: 'Flota', sinks: 'Hunde', both: 'Flota y hunde' };
 const DURATION_LABEL: Record<string, string> = { short: '< 3 min', medium: '3–5 min', long: '> 5 min' };
 const SYMPTOM_LABEL: Record<string, string> = {
   abdominal_pain: 'Dolor abdominal', bloating: 'Hinchazón', heartburn: 'Ardor', cramp: 'Calambre',
@@ -103,11 +107,11 @@ interface PatientDetail {
 
 type Section = 'inicio' | 'pacientes' | 'invitar' | 'config';
 
-const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
-  { id: 'inicio', icon: '\u{1F3E0}', label: 'Inicio' },
-  { id: 'pacientes', icon: '\u{1F465}', label: 'Pacientes' },
-  { id: 'invitar', icon: '\u{2795}', label: 'Invitar Paciente' },
-  { id: 'config', icon: '\u2699\uFE0F', label: 'Configuración' },
+const NAV_ITEMS: { id: Section; label: string }[] = [
+  { id: 'inicio', label: 'Inicio' },
+  { id: 'pacientes', label: 'Pacientes' },
+  { id: 'invitar', label: 'Invitar Paciente' },
+  { id: 'config', label: 'Configuración' },
 ];
 
 const TAG_COLORS: Record<string, string> = {};
@@ -122,37 +126,32 @@ const tagColor = (tag: string) => {
 
 const ONBOARDING_STEPS = [
   {
-    icon: '👋',
-    color: '#fff7f0',
-    accent: '#dd8273',
+    color: 'var(--fx-blue-50)',
+    accent: 'var(--color-primary)',
     title: '¡Bienvenido a Fluxia!',
     body: 'Este es tu portal médico. Desde aquí gestionarás a tus pacientes y harás un seguimiento en tiempo real de su salud digestiva.',
   },
   {
-    icon: '👥',
-    color: '#f0f7ff',
-    accent: '#3b82f6',
+    color: 'var(--fx-green-50)',
+    accent: 'var(--color-secondary)',
     title: 'Tus pacientes',
-    body: 'En la sección «Pacientes» verás todos los pacientes vinculados. El semáforo de cada uno indica cuántos días llevan sin registrar: 🟢 al día · 🟡 varios días · 🔴 inactivo.',
+    body: 'En la sección «Pacientes» verás todos los pacientes vinculados. El semáforo de cada uno indica cuántos días llevan sin registrar: verde al día, naranja varios días, rojo inactivo.',
   },
   {
-    icon: '✉️',
-    color: '#f0fff4',
-    accent: '#22c55e',
+    color: 'var(--fx-teal-50)',
+    accent: 'var(--color-accent)',
     title: 'Invita a un paciente',
     body: 'Ve a «Invitar Paciente» e introduce el email de tu paciente. Una vez que se registre en Fluxia, verá un botón para aceptar tu invitación en su apartado de configuración y quedará vinculado a tu cuenta automáticamente.',
   },
   {
-    icon: '📊',
-    color: '#fdf4ff',
-    accent: '#a855f7',
+    color: 'var(--fx-blue-50)',
+    accent: 'var(--color-primary)',
     title: 'Revisa los registros',
     body: 'Pulsa sobre cualquier paciente para ver sus registros detallados: tipo, consistencia, color, síntomas y más. Todo ordenado cronológicamente para facilitar el seguimiento.',
   },
   {
-    icon: '⚙️',
-    color: '#fffbeb',
-    accent: '#f59e0b',
+    color: 'var(--fx-green-50)',
+    accent: 'var(--color-secondary)',
     title: 'Personaliza tu portal',
     body: 'Desde «Configuración» actualiza tu nombre, el nombre de tu consulta, los umbrales del semáforo y el color del panel. ¡Hazlo tuyo!',
   },
@@ -163,7 +162,7 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
   onChange: (v: number) => void;
 }) {
   const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
-  const colorClass = color === '#e74c3c' ? 'semaforo-range-red' : 'semaforo-range-green';
+  const colorClass = color === 'var(--color-error)' ? 'semaforo-range-red' : 'semaforo-range-green';
   return (
     <input
       type="range"
@@ -174,7 +173,7 @@ function SemaforoSlider({ value, min, max, color, onChange }: {
       onChange={(e) => onChange(Number(e.target.value))}
       style={{
         width: '100%',
-        background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #e0e0e0 ${pct}%, #e0e0e0 100%)`,
+        background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, var(--fx-ink-200) ${pct}%, var(--fx-ink-200) 100%)`,
       }}
     />
   );
@@ -1136,7 +1135,7 @@ export default function MedicsPanel() {
       body: {
         patient_id: selectedPatient.patient_id,
         title: 'Fluxia — Mensaje de prueba',
-        body: 'Tu médico ha enviado una notificación de prueba 👋',
+        body: 'Tu médico ha enviado una notificación de prueba.',
       },
     });
     if (error || !data?.success) {
@@ -1205,12 +1204,12 @@ export default function MedicsPanel() {
 
   // ── Semáforo helper ──
   const getSemaforo = (daysSinceLast: number | null, overrideGreen?: number, overrideRed?: number) => {
-    if (daysSinceLast === null) return { color: '#aaa', icon: '\u{26AA}' };
+    if (daysSinceLast === null) return { color: 'var(--fx-ink-300)', key: 'gray' as const };
     const green = overrideGreen ?? doctorInfo?.semaforo_green ?? 1;
     const red = overrideRed ?? doctorInfo?.semaforo_red ?? 3;
-    if (daysSinceLast <= green) return { color: '#27ae60', icon: '\u{1F7E2}' };
-    if (daysSinceLast <= red) return { color: '#f39c12', icon: '\u{1F7E0}' };
-    return { color: '#e74c3c', icon: '\u{1F534}' };
+    if (daysSinceLast <= green) return { color: 'var(--color-success)', key: 'green' as const };
+    if (daysSinceLast <= red) return { color: 'var(--color-warning)', key: 'orange' as const };
+    return { color: 'var(--color-error)', key: 'red' as const };
   };
 
   const getSemaforoKey = (p: PatientLink): 'green' | 'orange' | 'red' | 'gray' => {
@@ -1285,7 +1284,7 @@ export default function MedicsPanel() {
 
         {/* ── Left branding panel (desktop only) ── */}
         {!isMobile && (
-          <div className="medics-auth__branding flex-none max-w-[450px] basis-[35%] bg-[#1a0e0e] flex flex-col items-center justify-center px-[52px] py-12 overflow-hidden">
+          <div className="medics-auth__branding flex-none max-w-[450px] basis-[35%] flex flex-col items-center justify-center px-[52px] py-12 overflow-hidden" style={{ background: 'var(--gradient-flow)' }}>
             <div className="max-w-[380px] w-full">
               <img src="/fluxia-logo.png" alt="Fluxia" className="h-[120px] object-contain object-left block mb-8 relative -left-[30px]" style={{ filter: 'brightness(0) invert(1)' }} />
               <h1 className="text-[42px] font-black text-white leading-[1.2] m-0 mb-5">
@@ -1309,7 +1308,7 @@ export default function MedicsPanel() {
               </div>
             )}
 
-            <h2 className={`medics-auth__title font-extrabold text-[#1a0e0e] m-0 mb-2 ${isMobile ? 'text-[22px]' : 'text-2xl'} ${(registerMode && registerStep === 'done') ? 'text-center' : 'text-left'}`}>{cardTitle}</h2>
+            <h2 className={`medics-auth__title font-extrabold text-fx-ink-800 m-0 mb-2 ${isMobile ? 'text-[22px]' : 'text-2xl'} ${(registerMode && registerStep === 'done') ? 'text-center' : 'text-left'}`}>{cardTitle}</h2>
             {cardSubtitle && <p className="medics-auth__subtitle text-sm text-fx-text-tertiary m-0 mb-7 leading-[1.55]">{cardSubtitle}</p>}
 
             {/* Google button + divider */}
@@ -1353,7 +1352,7 @@ export default function MedicsPanel() {
             {/* ── Forgot: sent ── */}
             {forgotMode === 'sent' && (
               <div className="medics-auth__sent text-center">
-                <span className="text-5xl">✅</span>
+                <CheckCircle size={48} weight="fill" color="var(--color-success)" style={{ display: 'inline-block' }} />
                 <p className="text-sm text-fx-text-secondary mt-4 leading-[1.55]">
                   Hemos enviado un enlace a <strong>{email}</strong>. Revisa tu bandeja de entrada (y la carpeta de spam).
                 </p>
@@ -1400,7 +1399,7 @@ export default function MedicsPanel() {
             {/* ── Register: done ── */}
             {registerMode && registerStep === 'done' && (
               <div className="medics-auth__sent text-center">
-                <span className="text-5xl">📧</span>
+                <CheckCircle size={48} weight="fill" color="var(--color-success)" style={{ display: 'inline-block' }} />
                 <p className="text-sm text-fx-text-secondary mt-4 leading-[1.55]">
                   Hemos enviado un enlace de confirmación a <strong>{registerEmail}</strong>. Confírmalo e inicia sesión aquí.
                 </p>
@@ -1435,12 +1434,12 @@ export default function MedicsPanel() {
                 {!registerMode ? (
                   <>¿Nuevo en Fluxia?{' '}
                     <button onClick={() => { setRegisterMode(true); setRegisterStep('email'); setError(''); setRegisterEmail(''); setRegisterPassword(''); setRegisterName(''); setRegisterCenterName(''); setRegisterSpecialty(''); setRegisterIsSelfService(false); }}
-                      className="bg-transparent border-none text-[#1a0e0e] font-bold cursor-pointer text-[13px] underline">Crear cuenta</button>
+                      className="bg-transparent border-none text-fx-ink-800 font-bold cursor-pointer text-[13px] underline">Crear cuenta</button>
                   </>
                 ) : (
                   <>¿Ya tienes cuenta?{' '}
                     <button onClick={() => { setRegisterMode(false); setError(''); }}
-                      className="bg-transparent border-none text-[#1a0e0e] font-bold cursor-pointer text-[13px] underline">Iniciar sesión</button>
+                      className="bg-transparent border-none text-fx-ink-800 font-bold cursor-pointer text-[13px] underline">Iniciar sesión</button>
                   </>
                 )}
               </p>
@@ -1456,7 +1455,7 @@ export default function MedicsPanel() {
 
   // ── Main layout with sidebar ──
   return (
-    <div className="medics-shell min-h-screen flex flex-col bg-fx-bg font-fx" style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}>
+    <div className="medics-shell min-h-screen flex flex-col bg-transparent font-fx" style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}>
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── TOP BAR ── */}
@@ -1490,7 +1489,6 @@ export default function MedicsPanel() {
                   onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'var(--fx-ink-100)'; }}
                   onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
-                  <span className="text-base">{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
               );
@@ -1529,26 +1527,26 @@ export default function MedicsPanel() {
                     onClick={() => { setShowUpgradeModal(true); setAccountMenuOpen(false); }}
                     className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
                   >
-                    ⭐ Pasar a Pro
+                    Pasar a Pro
                   </button>
                 )}
                 <button
                   onClick={() => { setSection('config'); setAccountMenuOpen(false); }}
                   className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
                 >
-                  ⚙️ Configuración
+                  Configuración
                 </button>
                 <button
                   onClick={() => { openGuide(); setAccountMenuOpen(false); }}
                   className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
                 >
-                  📖 Guía de uso
+                  Guía de uso
                 </button>
                 <button
                   onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
                   className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-error-600 hover:bg-fx-error-50"
                 >
-                  🚪 Cerrar sesión
+                  Cerrar sesión
                 </button>
                 <div className="medics-account-menu__version px-3 pt-2 text-[10px] text-fx-text-tertiary">{APP_VERSION}</div>
               </div>
@@ -1574,21 +1572,20 @@ export default function MedicsPanel() {
             const da = a.daysSinceLast ?? 9999, db = b.daysSinceLast ?? 9999;
             return ka === 'green' ? da - db : db - da;
           }).slice(0, 7);
-          const tile = (icon: string, value: string | number, label: string, bg: string, color: string, filter?: typeof semaforoFilter) => (
+          const tile = (value: string | number, label: string, bg: string, color: string, filter?: typeof semaforoFilter) => (
             <div key={label} onClick={filter !== undefined ? () => { setSemaforoFilter(filter); setSection('pacientes'); } : undefined}
               className={`medics-stat-tile flex-1 basis-[130px] rounded-fx-sm p-3.5 flex flex-col gap-1 ${filter !== undefined ? 'cursor-pointer' : 'cursor-default'}`}
               style={{ backgroundColor: bg }}>
-              <div className="text-[22px]">{icon}</div>
               <div className="text-[28px] font-black leading-none" style={{ color }}>{value}</div>
-              <div className="text-[11px]" style={{ color, opacity: 0.75 }}>{label}{filter !== undefined ? ' ↗' : ''}</div>
+              <div className="text-[11px]" style={{ color, opacity: 0.75 }}>{label}{filter !== undefined ? ' \u2197' : ''}</div>
             </div>
           );
           return (
             <div className="medics-inicio">
-              <SectionHeader
-                title={`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''} 👋`}
-                subtitle={patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
-              />
+              <div className="medics-inicio__hero rounded-fx-xl px-5 py-5 md:px-7 md:py-6 mb-5" style={{ background: 'var(--gradient-brand)' }}>
+                <h1 className="text-[22px] md:text-[28px] font-extrabold text-white m-0 tracking-tight">{`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''}`}</h1>
+                <p className="text-sm text-white/80 mt-1 mb-0">{patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos \u00B7 ${pending.length} invitaciones pendientes`}</p>
+              </div>
               {patientsLoading ? (
                 <div className="medics-inicio__loading flex justify-center items-center p-20">
                   <div className="w-10 h-10 rounded-full border-[3px] border-fx-ink-150" style={{ borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
@@ -1596,29 +1593,29 @@ export default function MedicsPanel() {
               ) : (<>
               {/* Stat tiles */}
               <div className="medics-stats flex gap-3 flex-wrap mb-4">
-                {tile('👥', accepted.length, 'Pacientes activos', '#f0f4ff', '#3b82f6')}
-                {tile('🟢', semCounts.green || 0, 'Al día', '#f0fdf4', '#16a34a', 'green')}
-                {tile('🟠', semCounts.orange || 0, 'Atención', '#fffbeb', '#d97706', 'orange')}
-                {tile('🔴', semCounts.red || 0, 'Inactivos', '#fff1f2', '#dc2626', 'red')}
-                {tile('📅', noDataWeek, 'Sin reg. 7d', '#faf5ff', '#7c3aed', noDataWeek > 0 ? 'no7d' : undefined)}
-                {pending.length > 0 && tile('⏳', pending.length, 'Invit. pendientes', '#f5f3ff', '#7c3aed')}
+                {tile(accepted.length, 'Pacientes activos', 'var(--fx-blue-50)', 'var(--color-primary)')}
+                {tile(semCounts.green || 0, 'Al d\u00eda', 'var(--color-success-soft)', 'var(--color-success)', 'green')}
+                {tile(semCounts.orange || 0, 'Atenci\u00f3n', 'var(--color-warning-soft)', 'var(--color-warning)', 'orange')}
+                {tile(semCounts.red || 0, 'Inactivos', 'var(--color-error-soft)', 'var(--color-error)', 'red')}
+                {tile(noDataWeek, 'Sin reg. 7d', 'var(--fx-teal-50)', 'var(--color-accent)', noDataWeek > 0 ? 'no7d' : undefined)}
+                {pending.length > 0 && tile(pending.length, 'Invit. pendientes', 'var(--fx-teal-50)', 'var(--color-accent)')}
               </div>
               {/* Semáforo bar */}
               {accepted.length > 0 && (
                 <div className="medics-semaforo-card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-3.5 mb-4">
                   <div className="text-xs font-bold text-fx-text-secondary mb-2.5">Estado de la lista</div>
                   <div className="medics-semaforo-bar flex rounded-lg overflow-hidden h-3.5">
-                    {(semCounts.green || 0) > 0 && <div style={{ flex: semCounts.green, backgroundColor: '#22c55e' }} title={`${semCounts.green} al día`} />}
-                    {(semCounts.orange || 0) > 0 && <div style={{ flex: semCounts.orange, backgroundColor: '#f59e0b' }} title={`${semCounts.orange} atención`} />}
-                    {(semCounts.red || 0) > 0 && <div style={{ flex: semCounts.red, backgroundColor: '#ef4444' }} title={`${semCounts.red} inactivos`} />}
-                    {(semCounts.gray || 0) > 0 && <div style={{ flex: semCounts.gray, backgroundColor: '#e5e7eb' }} title={`${semCounts.gray} sin datos`} />}
+                    {(semCounts.green || 0) > 0 && <div style={{ flex: semCounts.green, backgroundColor: 'var(--color-success)' }} title={`${semCounts.green} al día`} />}
+                    {(semCounts.orange || 0) > 0 && <div style={{ flex: semCounts.orange, backgroundColor: 'var(--color-warning)' }} title={`${semCounts.orange} atención`} />}
+                    {(semCounts.red || 0) > 0 && <div style={{ flex: semCounts.red, backgroundColor: 'var(--color-error)' }} title={`${semCounts.red} inactivos`} />}
+                    {(semCounts.gray || 0) > 0 && <div style={{ flex: semCounts.gray, backgroundColor: 'var(--fx-ink-200)' }} title={`${semCounts.gray} sin datos`} />}
                   </div>
                   <div className="medics-semaforo-legend flex gap-4 mt-2">
                     {[
-                      { c: '#16a34a', label: `${semCounts.green || 0} al día` },
-                      { c: '#d97706', label: `${semCounts.orange || 0} atención` },
-                      { c: '#dc2626', label: `${semCounts.red || 0} inactivos` },
-                      { c: '#9ca3af', label: `${semCounts.gray || 0} sin datos` },
+                      { c: 'var(--color-success)', label: `${semCounts.green || 0} al día` },
+                      { c: 'var(--color-warning)', label: `${semCounts.orange || 0} atención` },
+                      { c: 'var(--color-error)', label: `${semCounts.red || 0} inactivos` },
+                      { c: 'var(--fx-ink-300)', label: `${semCounts.gray || 0} sin datos` },
                     ].map(({ c, label }) => (
                       <div key={label} className="flex items-center gap-[5px] text-[11px] text-fx-text-secondary">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
@@ -1632,17 +1629,17 @@ export default function MedicsPanel() {
               {practiceStats !== null && accepted.length > 0 && (
                 <div className="medics-practice-stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
                   <div>
-                    <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">📝 REGISTROS ESTA SEMANA</div>
+                    <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">REGISTROS ESTA SEMANA</div>
                     <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekEntries}</div>
                     {practiceStats.lastWeekEntries > 0 && (
-                      <div className="text-[11px] mt-[3px]" style={{ color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '#16a34a' : '#dc2626' }}>
-                        {practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? '↑' : '↓'} vs {practiceStats.lastWeekEntries} sem. anterior
+                      <div className="text-[11px] mt-[3px] flex items-center gap-1" style={{ color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? 'var(--color-success)' : 'var(--color-error)' }}>
+                        {practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? <TrendUp size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />} vs {practiceStats.lastWeekEntries} sem. anterior
                       </div>
                     )}
                   </div>
                   {practiceStats.thisWeekBristol !== null && (
                     <div>
-                      <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">🔬 BRISTOL MEDIO (7 DÍAS)</div>
+                      <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">BRISTOL MEDIO (7 DÍAS)</div>
                       <div className="flex items-baseline gap-1">
                         <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekBristol.toFixed(1)}</div>
                         <div className="text-xs text-fx-text-tertiary">/ 7</div>
@@ -1652,8 +1649,8 @@ export default function MedicsPanel() {
                         const prev = practiceStats.lastWeekBristol!;
                         const improving = Math.abs(curr - 4) < Math.abs(prev - 4);
                         return (
-                          <div className="text-[11px] mt-[3px]" style={{ color: improving ? '#16a34a' : '#dc2626' }}>
-                            {improving ? '↑ mejorando' : '↓ empeorando'} vs sem. anterior
+                          <div className="text-[11px] mt-[3px] flex items-center gap-1" style={{ color: improving ? 'var(--color-success)' : 'var(--color-error)' }}>
+                            {improving ? <TrendUp size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />} {improving ? 'mejorando' : 'empeorando'} vs sem. anterior
                           </div>
                         );
                       })()}
@@ -1667,18 +1664,18 @@ export default function MedicsPanel() {
                   .filter(p => p.daysSinceLast === null || p.daysSinceLast >= 10)
                   .sort((a, b) => (b.daysSinceLast ?? 999) - (a.daysSinceLast ?? 999))
                   .slice(0, 3)
-                  .map(p => ({ p, msg: p.daysSinceLast === null ? 'Nunca ha registrado ninguna entrada' : `Sin registro hace ${p.daysSinceLast} días`, color: '#dc2626' }));
+                  .map(p => ({ p, msg: p.daysSinceLast === null ? 'Nunca ha registrado ninguna entrada' : `Sin registro hace ${p.daysSinceLast} días`, color: 'var(--color-error)' }));
                 const bristolItems = bristolAlerts.slice(0, 2).map(a => {
                   const p = accepted.find(pt => pt.patient_id === a.patientId);
                   if (!p) return null;
                   const dir = a.curr > 4 ? 'Bristol alto' : 'Bristol bajo';
-                  return { p, msg: `📉 ${dir}: T${a.prev.toFixed(1)}→T${a.curr.toFixed(1)} esta semana`, color: '#d97706' };
+                  return { p, msg: `${dir}: T${a.prev.toFixed(1)}→T${a.curr.toFixed(1)} esta semana`, color: 'var(--color-warning)' };
                 }).filter(Boolean) as { p: PatientLink; msg: string; color: string }[];
                 const all = [...noAct, ...bristolItems].slice(0, 5);
                 if (all.length === 0) return null;
                 return (
                   <div className="medics-alerts bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mb-4">
-                    <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">🔔 Alertas proactivas</div>
+                    <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">Alertas proactivas</div>
                     {all.map(({ p, msg, color }, i) => (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
                         className={`medics-alerts__item flex items-center gap-3 px-4 py-2.5 cursor-pointer ${i < all.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
@@ -1697,7 +1694,7 @@ export default function MedicsPanel() {
               {attentionList.length > 0 && (
                 <div className="medics-attention-list bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
                   <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex justify-between items-center">
-                    <span>⚠️ Requieren atención</span>
+                    <span>Requieren atención</span>
                     <button onClick={() => { setSemaforoFilter('all'); setSection('pacientes'); }}
                       className="text-[11px] text-fx-text-tertiary bg-transparent border-none cursor-pointer p-0">Ver todos →</button>
                   </div>
@@ -1708,7 +1705,7 @@ export default function MedicsPanel() {
                     return (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
                         className={`medics-attention-list__item flex items-center gap-3 px-4 py-[11px] cursor-pointer ${i < attentionList.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
-                        <span className="text-lg">{sem.icon}</span>
+                        <Circle size={14} weight="fill" color={sem.color} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap">{patientLabel(p)}</div>
                           <div className="text-[11px] text-fx-text-tertiary">
@@ -1727,7 +1724,6 @@ export default function MedicsPanel() {
               )}
               {accepted.length === 0 && (
                 <div className="medics-empty-state bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-8 text-center">
-                  <div className="text-4xl mb-3">👥</div>
                   <div className="text-[15px] font-bold text-fx-text mb-2">Aún no tienes pacientes</div>
                   <div className="text-[13px] text-fx-text-tertiary mb-5">Invita a tu primer paciente para empezar el seguimiento.</div>
                   <button onClick={() => setSection('invitar')} className="w-full px-6 py-2.5 rounded-fx-pill text-white font-semibold text-[15px] border-none cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>
@@ -1746,7 +1742,7 @@ export default function MedicsPanel() {
             <SectionHeader
               title="Mis Pacientes"
               subtitle={`${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
-              actions={<button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">{'\u{1F504}'} Actualizar</button>}
+              actions={<button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">Actualizar</button>}
             />
             <div className="medics-pacientes__card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
               {/* Semáforo quick-filter pills */}
@@ -1755,17 +1751,17 @@ export default function MedicsPanel() {
                 const sc = acc.reduce((a, p) => { const k = getSemaforoKey(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
                 const no7d = acc.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
                 const g = doctorInfo?.semaforo_green ?? 1, r = doctorInfo?.semaforo_red ?? 3;
-                const pills: { key: typeof semaforoFilter; icon: string; label: string; desc: string; count: number; color: string }[] = [
-                  { key: 'all',    icon: '👥', label: 'Todos',        desc: 'Todos los pacientes vinculados',                                          count: acc.length,     color: '#333' },
-                  { key: 'green',  icon: '🟢', label: 'Al día',       desc: `Último registro hace ≤ ${g} día${g === 1 ? '' : 's'}`,                   count: sc.green || 0,  color: '#16a34a' },
-                  { key: 'orange', icon: '🟠', label: 'Atención',     desc: `Último registro hace ${g + 1}–${r} días`,                                count: sc.orange || 0, color: '#d97706' },
-                  { key: 'red',    icon: '🔴', label: 'Inactivos',    desc: `Sin registrar hace más de ${r} días`,                                    count: sc.red || 0,    color: '#dc2626' },
-                  { key: 'gray',   icon: '⚪', label: 'Sin datos',    desc: 'Nunca han registrado ninguna entrada',                                   count: sc.gray || 0,   color: '#9ca3af' },
-                  { key: 'no7d',   icon: '📅', label: 'Sin reg. 7d', desc: 'Sin ningún registro en los últimos 7 días (incluye sin datos)',           count: no7d,           color: '#7c3aed' },
+                const pills: { key: typeof semaforoFilter; label: string; desc: string; count: number; color: string; soft: string }[] = [
+                  { key: 'all',    label: 'Todos',        desc: 'Todos los pacientes vinculados',                                          count: acc.length,     color: 'var(--color-secondary)', soft: 'var(--color-secondary-soft)' },
+                  { key: 'green',  label: 'Al día',       desc: `Último registro hace ≤ ${g} día${g === 1 ? '' : 's'}`,                   count: sc.green || 0,  color: 'var(--color-success)',   soft: 'var(--color-success-soft)' },
+                  { key: 'orange', label: 'Atención',     desc: `Último registro hace ${g + 1}–${r} días`,                                count: sc.orange || 0, color: 'var(--color-warning)',   soft: 'var(--color-warning-soft)' },
+                  { key: 'red',    label: 'Inactivos',    desc: `Sin registrar hace más de ${r} días`,                                    count: sc.red || 0,    color: 'var(--color-error)',     soft: 'var(--color-error-soft)' },
+                  { key: 'gray',   label: 'Sin datos',    desc: 'Nunca han registrado ninguna entrada',                                   count: sc.gray || 0,   color: 'var(--fx-ink-400)',      soft: 'var(--fx-ink-100)' },
+                  { key: 'no7d',   label: 'Sin reg. 7d', desc: 'Sin ningún registro en los últimos 7 días (incluye sin datos)',           count: no7d,           color: 'var(--color-accent)',    soft: 'var(--color-accent-soft)' },
                 ];
                 const activePill = pills.find(p => p.key === semaforoFilter);
                 const tooltipContent: React.CSSProperties = {
-                  backgroundColor: '#1c1c1e', color: '#fff', borderRadius: 10, padding: '8px 12px',
+                  backgroundColor: 'var(--fx-ink-900)', color: '#fff', borderRadius: 10, padding: '8px 12px',
                   fontSize: 12, lineHeight: 1.45, maxWidth: 230, boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
                   zIndex: 9999,
                 };
@@ -1773,7 +1769,7 @@ export default function MedicsPanel() {
                   <div className="medics-pacientes__pills border-b border-fx-border-soft">
                     <RadixTooltip.Provider delayDuration={250} skipDelayDuration={100}>
                       <div className="flex gap-1.5 px-4 py-2.5 flex-wrap">
-                        {pills.map(({ key, icon, label, desc, count, color }) => {
+                        {pills.map(({ key, label, desc, count, color, soft }) => {
                           const active = semaforoFilter === key;
                           return (
                             <RadixTooltip.Root key={key}>
@@ -1782,17 +1778,17 @@ export default function MedicsPanel() {
                                   className="medics-pacientes__pill flex items-center gap-1 text-[11px] px-2.5 py-[3px] rounded-[20px] cursor-pointer"
                                   style={{
                                     border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
-                                    backgroundColor: active ? color + '18' : '#00000008',
-                                    color: active ? color : '#666', fontWeight: active ? 700 : 500,
+                                    backgroundColor: active ? soft : 'var(--fx-ink-50)',
+                                    color: active ? color : 'var(--text-secondary)', fontWeight: active ? 700 : 500,
                                   }}>
-                                  {icon} {label} <span style={{ opacity: 0.7 }}>{count}</span>
+                                  {label} <span style={{ opacity: 0.7 }}>{count}</span>
                                 </button>
                               </RadixTooltip.Trigger>
                               <RadixTooltip.Portal>
                                 <RadixTooltip.Content side="top" sideOffset={6} style={tooltipContent}>
-                                  <div style={{ fontWeight: 600, marginBottom: 3 }}>{icon} {label}</div>
+                                  <div style={{ fontWeight: 600, marginBottom: 3 }}>{label}</div>
                                   <div style={{ opacity: 0.8 }}>{desc}</div>
-                                  <RadixTooltip.Arrow style={{ fill: '#1c1c1e' }} />
+                                  <RadixTooltip.Arrow style={{ fill: 'var(--fx-ink-900)' }} />
                                 </RadixTooltip.Content>
                               </RadixTooltip.Portal>
                             </RadixTooltip.Root>
@@ -1802,7 +1798,7 @@ export default function MedicsPanel() {
                     </RadixTooltip.Provider>
                     {activePill && activePill.key !== 'all' && (
                       <div className="px-4 pb-2 text-[11px] text-fx-text-tertiary italic">
-                        {activePill.icon} {activePill.desc}
+                        {activePill.desc}
                       </div>
                     )}
                   </div>
@@ -1813,8 +1809,8 @@ export default function MedicsPanel() {
                 <div className="medics-pacientes__tag-filters flex gap-1.5 px-4 py-2 flex-wrap border-b border-fx-border-soft bg-fx-surface-2">
                   <span className="text-[10px] font-bold text-fx-text-tertiary self-center mr-0.5">FILTRAR:</span>
                   <button onClick={() => setTagFilter(null)} className="text-[11px] px-2.5 py-0.5 rounded-[20px] border-none cursor-pointer font-semibold" style={{
-                    backgroundColor: tagFilter === null ? '#333' : '#00000010',
-                    color: tagFilter === null ? '#fff' : '#555',
+                    backgroundColor: tagFilter === null ? 'var(--fx-ink-800)' : 'var(--fx-ink-100)',
+                    color: tagFilter === null ? '#fff' : 'var(--text-secondary)',
                   }}>Todos</button>
                   {globalTags.map(t => (
                     <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} className="text-[11px] px-2.5 py-0.5 rounded-[20px] border-none cursor-pointer font-semibold" style={{
@@ -1829,8 +1825,8 @@ export default function MedicsPanel() {
                 <span className="text-[11px] font-bold text-fx-text-tertiary">Ordenar por:</span>
                 {(['estado', 'nombre'] as const).map(opt => (
                   <button key={opt} onClick={() => setSortBy(opt)} className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl border-none cursor-pointer" style={{
-                    backgroundColor: sortBy === opt ? th.dark : '#00000010',
-                    color: sortBy === opt ? '#fff' : '#666',
+                    backgroundColor: sortBy === opt ? th.dark : 'var(--fx-ink-100)',
+                    color: sortBy === opt ? '#fff' : 'var(--text-secondary)',
                   }}>
                     {opt === 'estado' ? 'Estado' : 'Nombre'}
                   </button>
@@ -1838,7 +1834,7 @@ export default function MedicsPanel() {
                 <div className="flex-1 min-w-[140px] ml-2">
                   <input
                     type="text"
-                    placeholder="🔍 Buscar paciente…"
+                    placeholder="Buscar paciente…"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     className="medics-pacientes__search w-full px-2.5 py-1 rounded-xl border border-fx-border text-xs outline-none box-border bg-fx-surface"
@@ -1849,7 +1845,7 @@ export default function MedicsPanel() {
                 <span className="w-10"></span>
                 <span className="flex-[2]">Paciente</span>
                 {!isMobile && <span className="flex-1">Último registro / Código</span>}
-                {!isMobile && <span className="w-11 text-center">🔔</span>}
+                {!isMobile && <span className="w-11 text-center flex items-center justify-center"><Bell size={14} /></span>}
                 <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
               {patientsLoading ? (
@@ -1898,7 +1894,7 @@ export default function MedicsPanel() {
                       {/* Semáforo */}
                       <div className="w-10">
                         {isAccepted ? (
-                          <span className="text-lg">{semaforo.icon}</span>
+                          <Circle size={14} weight="fill" color={semaforo.color} />
                         ) : (
                           <span className="text-xs text-fx-text-tertiary">—</span>
                         )}
@@ -1942,28 +1938,28 @@ export default function MedicsPanel() {
                         )}
                       </div>}
                       {/* Push notification status — hidden on mobile */}
-                      {!isMobile && <div className="w-11 text-center text-base">
-                        {isAccepted && patient.hasPushSub === true && <span title="Notificaciones activas">🔔</span>}
-                        {isAccepted && patient.hasPushSub === false && <span title="Sin notificaciones" className="opacity-30">🔕</span>}
+                      {!isMobile && <div className="w-11 text-center flex items-center justify-center">
+                        {isAccepted && patient.hasPushSub === true && <Bell size={16} title="Notificaciones activas" color="var(--color-secondary)" />}
+                        {isAccepted && patient.hasPushSub === false && <BellSlash size={16} title="Sin notificaciones" color="var(--fx-ink-300)" />}
                         {isAccepted && patient.hasPushSub === null && <span title="Sin datos" className="opacity-20 text-xs">—</span>}
                       </div>}
                       {/* Status badge + actions */}
                       <div className="flex items-center gap-1.5" style={{ width: isMobile ? 90 : 140 }}>
                         <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl" style={{
-                          backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
-                          color: isAccepted ? '#27ae60' : '#e67e22',
+                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : 'var(--color-warning-soft)',
+                          color: isAccepted ? 'var(--color-secondary)' : 'var(--color-warning)',
                         }}>
-                          {isAccepted ? (isMobile ? '✅' : '✅ Vinculado') : (isMobile ? '⏳' : '⏳ Pendiente')}
+                          {isAccepted ? 'Vinculado' : 'Pendiente'}
                         </span>
                         {!isAccepted && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRevokeInvite(patient); }}
                             title="Eliminar invitación"
-                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-sm text-fx-ink-300 px-1 py-0.5 rounded"
-                            onMouseEnter={(e) => (e.currentTarget.style.color = '#e74c3c')}
+                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-fx-ink-300 px-1 py-0.5 rounded flex items-center"
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
                             onMouseLeave={(e) => (e.currentTarget.style.color = '')}
                           >
-                            🗑️
+                            <Trash size={15} />
                           </button>
                         )}
                       </div>
@@ -1988,10 +1984,10 @@ export default function MedicsPanel() {
                 <span className="inline-flex items-center gap-2.5">
                   {patientLabel(selectedPatient)}
                   {selectedPatient.hasPushSub === true && (
-                    <span title="Notificaciones activas" className="text-lg leading-none">🔔</span>
+                    <Bell size={18} title="Notificaciones activas" color="var(--color-secondary)" />
                   )}
                   {selectedPatient.hasPushSub === false && (
-                    <span title="Sin notificaciones" className="text-lg leading-none opacity-35">🔕</span>
+                    <BellSlash size={18} title="Sin notificaciones" color="var(--fx-ink-300)" />
                   )}
                 </span>
               }
@@ -1999,10 +1995,10 @@ export default function MedicsPanel() {
               actions={
                 <div className="flex gap-2">
                   <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.dark }}>
-                    📄 Exportar PDF
+                    Exportar PDF
                   </button>
                   <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
-                    ⚙️ Configuración
+                    Configuración
                   </button>
                   <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">
                     ← Volver
@@ -2013,7 +2009,7 @@ export default function MedicsPanel() {
 
             {/* Row 1: Semáforo — all inline */}
             <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap">
-              <span className="text-[28px]">{getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).icon}</span>
+              <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
               <span className="text-[15px] font-bold text-fx-text">
                 {patientDetail.daysSinceLast === null
                   ? 'Sin registros'
@@ -2025,14 +2021,14 @@ export default function MedicsPanel() {
                 <span className="text-xs text-fx-text-tertiary">· {shortDate(patientDetail.lastEntryDate)}</span>
               )}
               {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                <span className="text-[11px] font-semibold ml-1" style={{ color: '#c0392b' }}>⚠️ Varios días sin registrar</span>
+                <span className="text-[11px] font-semibold ml-1 inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
               )}
             </div>
 
             {/* Tags bar — global catalog, click to assign/unassign, input to create new */}
             <div className="medics-patient-detail__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-2.5">
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                <span className="text-[11px] font-bold text-fx-text-tertiary whitespace-nowrap">🏷️ ETIQUETAS</span>
+                <span className="text-[11px] font-bold text-fx-text-tertiary whitespace-nowrap">ETIQUETAS</span>
                 {(patientTagsSaving || globalTagsSaving) && <span className="text-[10px] text-fx-ink-300">Guardando…</span>}
               </div>
               {globalTags.length > 0 ? (
@@ -2050,7 +2046,7 @@ export default function MedicsPanel() {
                         style={{
                           border: assigned ? 'none' : `1px solid ${tagColor(t)}40`,
                           backgroundColor: assigned ? tagColor(t) + '22' : 'transparent',
-                          color: assigned ? tagColor(t) : '#bbb',
+                          color: assigned ? tagColor(t) : 'var(--fx-ink-300)',
                           fontWeight: assigned ? 700 : 400,
                         }}>
                         {assigned && <span className="text-[9px] leading-none">✓</span>}
@@ -2149,9 +2145,9 @@ export default function MedicsPanel() {
                             borderRadius: isMobile ? 6 : 4,
                             backgroundColor: hasEntry ? th.primary : isToday ? `${th.primary}20` : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
-                            border: isToday ? `1px solid ${th.primary}` : '1px solid #00000008',
+                            border: isToday ? `1px solid ${th.primary}` : '1px solid var(--fx-ink-100)',
                           }}>
-                            <span className="font-semibold" style={{ fontSize: isMobile ? 12 : 9, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                            <span className="font-semibold" style={{ fontSize: isMobile ? 12 : 9, color: hasEntry ? '#fff' : 'var(--fx-ink-500)' }}>{day}</span>
                           </div>
                         );
                       }
@@ -2164,7 +2160,7 @@ export default function MedicsPanel() {
               {/* Stats + Charts card */}
               <div className="medics-patient-detail__stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
                 <div className="px-3.5 py-2 border-b border-fx-border-soft text-xs font-bold text-fx-text">
-                  📊 Estadísticas
+                  Estadísticas
                 </div>
                 <div className="px-3.5 py-2.5 flex flex-col gap-3">
                   {/* 3 compact stats + trend */}
@@ -2180,11 +2176,11 @@ export default function MedicsPanel() {
                       trend = rDist < oDist - 0.4 ? 'up' : rDist > oDist + 0.4 ? 'down' : 'stable';
                     }
                     const trendCfg = trend === 'up'
-                      ? { label: '📈 Mejorando', bg: '#f0fdf4', color: '#16a34a' }
+                      ? { label: 'Mejorando', icon: TrendUp, bg: 'var(--color-success-soft)', color: 'var(--color-success)' }
                       : trend === 'down'
-                      ? { label: '📉 Empeorando', bg: '#fff1f2', color: '#dc2626' }
+                      ? { label: 'Empeorando', icon: TrendDown, bg: 'var(--color-error-soft)', color: 'var(--color-error)' }
                       : trend === 'stable'
-                      ? { label: '➡️ Estable', bg: '#f8fafc', color: '#64748b' }
+                      ? { label: 'Estable', icon: Minus, bg: 'var(--fx-ink-100)', color: 'var(--fx-ink-500)' }
                       : null;
                     return (
                       <div className="flex gap-1.5 flex-wrap">
@@ -2193,14 +2189,14 @@ export default function MedicsPanel() {
                           { label: 'Bristol medio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
                           { label: 'Días sin reg.', value: patientDetail.daysSinceLast ?? '—' },
                         ].map(st => (
-                          <div key={st.label} className="flex-1 text-center rounded-lg py-1.5 px-1" style={{ backgroundColor: '#00000005' }}>
+                          <div key={st.label} className="flex-1 text-center rounded-lg py-1.5 px-1" style={{ backgroundColor: 'var(--fx-ink-50)' }}>
                             <div className="text-[17px] font-black text-fx-text leading-none">{st.value}</div>
                             <div className="text-[9px] text-fx-text-tertiary mt-[3px]">{st.label}</div>
                           </div>
                         ))}
                         {trendCfg && (
-                          <div className="rounded-lg py-[5px] px-2 text-center" style={{ flexBasis: '100%', backgroundColor: trendCfg.bg }}>
-                            <span className="text-[11px] font-bold" style={{ color: trendCfg.color }}>{trendCfg.label}</span>
+                          <div className="rounded-lg py-[5px] px-2 text-center flex items-center justify-center gap-1.5" style={{ flexBasis: '100%', backgroundColor: trendCfg.bg }}>
+                            <span className="text-[11px] font-bold inline-flex items-center gap-1" style={{ color: trendCfg.color }}><trendCfg.icon size={12} weight="bold" /> {trendCfg.label}</span>
                             <span className="text-[9px] text-fx-text-tertiary ml-1.5">últimas 10 deposiciones</span>
                           </div>
                         )}
@@ -2212,7 +2208,7 @@ export default function MedicsPanel() {
                   <div>
                     <div className="text-[9px] font-extrabold text-fx-ink-300 tracking-wide mb-1">TENDENCIA BRISTOL (últimas 30 deposiciones)</div>
                     {(() => {
-                      const bColor = (b: number) => b >= 3 && b <= 5 ? '#27ae60' : b < 3 ? '#f39c12' : '#e74c3c';
+                      const bColor = (b: number) => b >= 3 && b <= 5 ? 'var(--color-success)' : b < 3 ? 'var(--color-warning)' : 'var(--color-error)';
                       const data = patientDetail.entries
                         .filter(e => e.entry_type === 'poop' && e.bristol != null)
                         .slice(0, 30).reverse();
@@ -2230,27 +2226,27 @@ export default function MedicsPanel() {
                       return (
                         <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[150px] block overflow-visible">
                           {/* Zone backgrounds */}
-                          <rect x={XL} y={yOf(7)} width={CW} height={yOf(5) - yOf(7)} fill="#e74c3c08" />
-                          <rect x={XL} y={yOf(5)} width={CW} height={yOf(3) - yOf(5)} fill="#2ecc7110" />
-                          <rect x={XL} y={yOf(3)} width={CW} height={yOf(1) - yOf(3)} fill="#f39c1208" />
+                          <rect x={XL} y={yOf(7)} width={CW} height={yOf(5) - yOf(7)} fill="rgba(210,100,100,0.03)" />
+                          <rect x={XL} y={yOf(5)} width={CW} height={yOf(3) - yOf(5)} fill="rgba(63,158,110,0.04)" />
+                          <rect x={XL} y={yOf(3)} width={CW} height={yOf(1) - yOf(3)} fill="rgba(224,159,60,0.03)" />
                           {/* Zone boundary lines */}
                           {[3, 5].map(b => (
                             <line key={b} x1={XL} y1={yOf(b)} x2={XL + CW} y2={yOf(b)}
-                              stroke="#00000018" strokeWidth={0.6} strokeDasharray="3,2" />
+                              stroke="rgba(34,42,46,0.12)" strokeWidth={0.6} strokeDasharray="3,2" />
                           ))}
                           {/* Y-axis labels */}
                           {[1, 2, 3, 4, 5, 6, 7].map(b => (
                             <text key={b} x={XL - 3} y={yOf(b) + 3.5}
                               textAnchor="end" fontSize={7}
-                              fill={b === 4 ? '#888' : '#ccc'}
+                              fill={b === 4 ? 'var(--fx-ink-500)' : 'var(--fx-ink-250)'}
                               fontWeight={b === 4 ? 700 : 400}>T{b}</text>
                           ))}
                           {/* Zone labels (right side) */}
-                          <text x={XL + CW + 4} y={yOf(6) + 3.5} fontSize={7} fill="#e74c3c99">Suelto</text>
-                          <text x={XL + CW + 4} y={yOf(4) + 3.5} fontSize={7} fill="#27ae6099" fontWeight={700}>Normal</text>
-                          <text x={XL + CW + 4} y={yOf(1.5) + 3.5} fontSize={7} fill="#f39c1299">Duro</text>
+                          <text x={XL + CW + 4} y={yOf(6) + 3.5} fontSize={7} fill="rgba(210,100,100,0.6)">Suelto</text>
+                          <text x={XL + CW + 4} y={yOf(4) + 3.5} fontSize={7} fill="rgba(63,158,110,0.6)" fontWeight={700}>Normal</text>
+                          <text x={XL + CW + 4} y={yOf(1.5) + 3.5} fontSize={7} fill="rgba(224,159,60,0.6)">Duro</text>
                           {/* Trend line */}
-                          <path d={pathD} fill="none" stroke="#33333328" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                          <path d={pathD} fill="none" stroke="rgba(34,42,46,0.16)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
                           {/* Dots + hit areas */}
                           {pts.map((p, i) => (
                             <g key={i}>
@@ -2277,11 +2273,11 @@ export default function MedicsPanel() {
                             return (
                               <g className="pointer-events-none">
                                 <rect x={tx} y={ty} width={tipW} height={tipH} rx={4}
-                                  fill="white" stroke="#e0e0e0" strokeWidth={0.8} />
+                                  fill="white" stroke="var(--fx-ink-200)" strokeWidth={0.8} />
                                 <rect x={tx} y={ty} width={4} height={tipH} rx={2} fill={bc} />
                                 <text x={tx + 9} y={ty + 12} fontSize={10} fontWeight={700} fill={bc}>T{bristolHover.b}</text>
-                                <text x={tx + 9} y={ty + 23} fontSize={8} fill="#555">{BRISTOL_LABEL[bristolHover.b]}</text>
-                                <text x={tx + 9} y={ty + 33} fontSize={7} fill="#aaa">{bristolHover.date}</text>
+                                <text x={tx + 9} y={ty + 23} fontSize={8} fill="var(--fx-ink-600)">{BRISTOL_LABEL[bristolHover.b]}</text>
+                                <text x={tx + 9} y={ty + 33} fontSize={7} fill="var(--fx-ink-300)">{bristolHover.date}</text>
                               </g>
                             );
                           })()}
@@ -2317,14 +2313,14 @@ export default function MedicsPanel() {
                             const y = H2 - 12 - bh;
                             return (
                               <g key={i}>
-                                <rect x={x} y={H2 - 12 - (H2 - 18)} width={BW} height={H2 - 18} rx={3} fill="#00000005" />
+                                <rect x={x} y={H2 - 12 - (H2 - 18)} width={BW} height={H2 - 18} rx={3} fill="var(--fx-ink-50)" />
                                 <rect x={x} y={y} width={BW} height={bh} rx={3}
-                                  fill={wk.count > 0 ? '#27ae60' : '#e0e0e0'}
+                                  fill={wk.count > 0 ? 'var(--color-success)' : 'var(--fx-ink-200)'}
                                   opacity={wk.count > 0 ? 0.7 : 0.2} />
                                 {wk.count > 0 && (
-                                  <text x={x + BW / 2} y={y - 2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={600}>{wk.count}</text>
+                                  <text x={x + BW / 2} y={y - 2} textAnchor="middle" fontSize={8} fill="var(--fx-ink-600)" fontWeight={600}>{wk.count}</text>
                                 )}
-                                <text x={x + BW / 2} y={H2 - 1} textAnchor="middle" fontSize={7} fill="#bbb">{wk.label}</text>
+                                <text x={x + BW / 2} y={H2 - 1} textAnchor="middle" fontSize={7} fill="var(--fx-ink-300)">{wk.label}</text>
                               </g>
                             );
                           })}
@@ -2344,7 +2340,7 @@ export default function MedicsPanel() {
                         <div className="text-[9px] font-extrabold text-fx-ink-300 tracking-wide mb-1.5">SÍNTOMAS MÁS FRECUENTES</div>
                         <div className="flex gap-1 flex-wrap">
                           {top.map(([sym, count]) => (
-                            <span key={sym} className="text-[11px] px-2 py-0.5 rounded-md font-semibold" style={{ backgroundColor: '#e74c3c0e', color: '#c0392b' }}>
+                            <span key={sym} className="text-[11px] px-2 py-0.5 rounded-md font-semibold" style={{ backgroundColor: 'rgba(210,100,100,0.055)', color: 'var(--fx-error-700)' }}>
                               {SYMPTOM_LABEL[sym] || sym} <span className="font-normal opacity-55">×{count}</span>
                             </span>
                           ))}
@@ -2358,7 +2354,7 @@ export default function MedicsPanel() {
               {/* Clinical notes card */}
               <div className="medics-patient-detail__notes bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
                 <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
-                  📝 Notas clínicas
+                  Notas clínicas
                 </div>
                 <div className="px-4 py-3 flex flex-col gap-2">
                   <textarea
@@ -2405,7 +2401,7 @@ export default function MedicsPanel() {
                         </span>
                         {hasFilter && (
                           <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryPage(0); }}
-                            className="text-[11px] bg-transparent border-none cursor-pointer font-semibold" style={{ color: '#e74c3c' }}>
+                            className="text-[11px] bg-transparent border-none cursor-pointer font-semibold" style={{ color: 'var(--color-error)' }}>
                             ✕ Limpiar filtro
                           </button>
                         )}
@@ -2429,14 +2425,15 @@ export default function MedicsPanel() {
                     ) : (
                       <div className="flex flex-col">
                         {/* Header row */}
-                        <div className="flex items-center px-4 py-[7px] border-b border-fx-border-soft" style={{ backgroundColor: '#00000008' }}>
+                        <div className="flex items-center px-4 py-[7px] border-b border-fx-border-soft" style={{ backgroundColor: 'var(--fx-ink-50)' }}>
                           <span className="w-8 text-[10px] font-bold text-fx-text-tertiary uppercase"></span>
                           <span className="w-[130px] text-[10px] font-bold text-fx-text-tertiary uppercase">Fecha / Hora</span>
                           <span className="flex-1 text-[10px] font-bold text-fx-text-tertiary uppercase">Datos</span>
                         </div>
                         {pagedEntries.map((entry, i) => {
                           const isUrine = entry.entry_type === 'urine';
-                          const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
+                          const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? 'var(--color-success)' : entry.bristol < 3 ? 'var(--color-warning)' : 'var(--color-error)';
+                          const bristolBg = bristolColor === 'var(--color-success)' ? 'var(--color-success-soft)' : bristolColor === 'var(--color-warning)' ? 'var(--color-warning-soft)' : 'var(--color-error-soft)';
                           const chip = (label: string, bg: string, color: string) => (
                             <span className="text-[11px] px-1.5 py-0.5 rounded-md font-semibold whitespace-nowrap" style={{ backgroundColor: bg, color }}>{label}</span>
                           );
@@ -2445,7 +2442,7 @@ export default function MedicsPanel() {
                               <div className="flex items-start px-4 py-2.5 relative">
                                 {/* Type icon */}
                                 <div className="w-8 pt-0.5">
-                                  <span className="text-base">{isUrine ? '💧' : '💩'}</span>
+                                  <Circle size={10} weight="fill" color={isUrine ? 'var(--color-accent)' : 'var(--color-secondary)'} />
                                 </div>
                                 {/* Date / time */}
                                 <div className="w-[130px]">
@@ -2456,27 +2453,27 @@ export default function MedicsPanel() {
                                 <div className="flex-1 flex flex-wrap gap-1 items-center pr-7">
                                   {isUrine ? (
                                     <>
-                                      {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, '#3498db15', '#2980b9')}
-                                      {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, '#9b59b615', '#8e44ad')}
-                                      {entry.urine_color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.urine_color, border: '1px solid #00000020' }} />}
+                                      {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, 'var(--fx-blue-50)', 'var(--color-primary)')}
+                                      {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, 'var(--fx-teal-50)', 'var(--color-accent)')}
+                                      {entry.urine_color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.urine_color, border: '1px solid var(--border)' }} />}
                                       {entry.urine_characteristics.length > 0
-                                        ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, '#e74c3c12', '#c0392b'))
+                                        ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
                                         : null}
-                                      {entry.urine_urgency != null && chip(`Urgencia ${entry.urine_urgency}/5`, '#f59e0b18', '#b45309')}
-                                      {entry.during_sleep === true && chip('Durante sueño', '#8b5cf618', '#6d28d9')}
-                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && entry.urine_urgency == null && <span className="text-xs" style={{ color: '#ddd' }}>—</span>}
+                                      {entry.urine_urgency != null && chip(`Urgencia ${entry.urine_urgency}/5`, 'var(--color-warning-soft)', 'var(--fx-warning-700)')}
+                                      {entry.during_sleep === true && chip('Durante sueño', 'var(--color-secondary-soft)', 'var(--color-secondary)')}
+                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && entry.urine_urgency == null && <span className="text-xs" style={{ color: 'var(--fx-ink-300)' }}>—</span>}
                                     </>
                                   ) : (
                                     <>
-                                      {entry.bristol != null && chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!)}
-                                      {entry.floats != null && chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9')}
-                                      {entry.color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.color, border: '1px solid #00000020' }} />}
-                                      {entry.quantity != null && chip(`${entry.quantity}`, '#9b59b615', '#8e44ad')}
-                                      {entry.duration != null && chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22')}
+                                      {entry.bristol != null && chip(`T${entry.bristol}`, bristolBg, bristolColor!)}
+                                      {entry.floats != null && chip(FLOATS_LABEL[entry.floats], 'var(--fx-blue-50)', 'var(--color-primary)')}
+                                      {entry.color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.color, border: '1px solid var(--border)' }} />}
+                                      {entry.quantity != null && chip(`${entry.quantity}`, 'var(--fx-teal-50)', 'var(--color-accent)')}
+                                      {entry.duration != null && chip(DURATION_LABEL[entry.duration], 'rgba(224,159,60,0.08)', 'var(--color-warning)')}
                                       {entry.symptoms.length > 0
-                                        ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
+                                        ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
                                         : null}
-                                      {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span className="text-xs" style={{ color: '#ddd' }}>—</span>}
+                                      {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span className="text-xs" style={{ color: 'var(--fx-ink-300)' }}>—</span>}
                                     </>
                                   )}
                                 </div>
@@ -2488,7 +2485,7 @@ export default function MedicsPanel() {
                                   style={{ opacity: entry.doctor_note ? 1 : 0.2 }}
                                   onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                                   onMouseLeave={e => (e.currentTarget.style.opacity = entry.doctor_note ? '1' : '0.2')}
-                                >📝</button>
+                                ><NotePencil size={15} /></button>
                               </div>
                               {/* Patient notes (from patient app) */}
                               {entry.notes && (
@@ -2498,8 +2495,8 @@ export default function MedicsPanel() {
                               )}
                               {/* Doctor annotation */}
                               {entry.doctor_note && noteEditing?.entryId !== entry.entry_id && (
-                                <div className="ml-[178px] mr-4 mb-2 px-2.5 py-1.5 rounded-r-md" style={{ backgroundColor: '#fffbeb', borderLeft: '3px solid #f59e0b' }}>
-                                  <p className="text-xs m-0 leading-snug" style={{ color: '#78350f' }}>🩺 {entry.doctor_note}</p>
+                                <div className="ml-[178px] mr-4 mb-2 px-2.5 py-1.5 rounded-r-md" style={{ backgroundColor: 'var(--color-warning-soft)', borderLeft: '3px solid var(--color-warning)' }}>
+                                  <p className="text-xs m-0 leading-snug" style={{ color: 'var(--fx-warning-700)' }}>{entry.doctor_note}</p>
                                 </div>
                               )}
                               {/* Inline annotation editor */}
@@ -2512,11 +2509,11 @@ export default function MedicsPanel() {
                                     placeholder="Anotación médica (ej: inicio de omeprazol, coincide con brote…)"
                                     rows={2}
                                     className="w-full px-2.5 py-1.5 rounded-lg border text-xs font-sans resize-none outline-none box-border"
-                                    style={{ border: '1px solid #fbbf24', backgroundColor: '#fffbeb' }}
+                                    style={{ border: '1px solid var(--color-warning)', backgroundColor: 'var(--color-warning-soft)' }}
                                   />
                                   <div className="flex gap-1.5">
                                     <button onClick={() => handleSaveEntryNote(entry.entry_id, noteEditing.draft)}
-                                      className="px-3.5 py-1 rounded-md border-none text-white text-xs font-bold cursor-pointer" style={{ backgroundColor: '#f59e0b' }}>
+                                      className="px-3.5 py-1 rounded-md border-none text-white text-xs font-bold cursor-pointer" style={{ backgroundColor: 'var(--color-warning)' }}>
                                       Guardar
                                     </button>
                                     <button onClick={() => setNoteEditing(null)}
@@ -2525,7 +2522,7 @@ export default function MedicsPanel() {
                                     </button>
                                     {entry.doctor_note && (
                                       <button onClick={() => handleSaveEntryNote(entry.entry_id, '')}
-                                        className="px-2.5 py-1 rounded-md border-none text-xs cursor-pointer ml-auto" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
+                                        className="px-2.5 py-1 rounded-md border-none text-xs cursor-pointer ml-auto" style={{ backgroundColor: 'var(--color-error-soft)', color: 'var(--color-error)' }}>
                                         Eliminar
                                       </button>
                                     )}
@@ -2540,7 +2537,7 @@ export default function MedicsPanel() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-fx-border-soft" style={{ backgroundColor: '#00000005' }}>
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-fx-border-soft" style={{ backgroundColor: 'var(--fx-ink-50)' }}>
                         <button onClick={() => setEntryPage(p => Math.max(0, p - 1))} disabled={entryPage === 0}
                           className="px-3.5 py-[5px] rounded-lg border border-fx-border bg-fx-surface text-[13px]" style={{ cursor: entryPage === 0 ? 'default' : 'pointer', opacity: entryPage === 0 ? 0.4 : 1 }}>
                           ← Anterior
@@ -2572,12 +2569,12 @@ export default function MedicsPanel() {
                 <div
                   onClick={e => e.stopPropagation()}
                   className="medics-patient-config fixed top-0 right-0 bottom-0 z-[201] w-full flex flex-col"
-                  style={{ maxWidth: 420, backgroundColor: '#F5F5F5', boxShadow: '-4px 0 24px rgba(0,0,0,0.18)' }}
+                  style={{ maxWidth: 420, backgroundColor: 'var(--color-bg-elevated)', boxShadow: '-4px 0 24px rgba(0,0,0,0.18)' }}
                 >
                   {/* Modal header */}
                   <div className="medics-patient-config__header flex items-center justify-between px-5 py-4 text-white flex-shrink-0" style={{ backgroundColor: th.dark }}>
                     <span className="text-base font-bold">
-                      ⚙️ Configuración — {selectedPatient.display_name || selectedPatient.patient_email}
+                      Configuración — {selectedPatient.display_name || selectedPatient.patient_email}
                     </span>
                     <button
                       onClick={() => setPatientConfigOpen(false)}
@@ -2598,7 +2595,7 @@ export default function MedicsPanel() {
                           onChange={setPatientSemaforoOverride}
                           style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
                         />
-                        <span className="text-[13px] font-semibold text-fx-text-secondary">🚦 Semáforo personalizado</span>
+                        <span className="text-[13px] font-semibold text-fx-text-secondary">Semáforo personalizado</span>
                         {!patientSemaforoOverride && (
                           <span className="text-[11px] text-fx-ink-300">usa valores generales</span>
                         )}
@@ -2606,26 +2603,26 @@ export default function MedicsPanel() {
 
                       {patientSemaforoOverride && (
                         <div className="flex gap-1.5">
-                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: '#2ecc7115', borderLeft: '3px solid #27ae60' }}>
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: 'rgba(63,158,110,0.08)', borderLeft: '3px solid var(--color-success)' }}>
                             <div className="flex items-center gap-[3px]">
-                              <span className="text-xs">🟢</span>
-                              <span className="text-[10px] font-bold" style={{ color: '#27ae60' }}>≤ {patientSemaforoGreen}d</span>
+                              <Circle size={10} weight="fill" color="var(--color-success)" />
+                              <span className="text-[10px] font-bold" style={{ color: 'var(--color-success)' }}>≤ {patientSemaforoGreen}d</span>
                             </div>
-                            <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
+                            <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="var(--color-success)"
                               onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
                           </div>
-                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col justify-center" style={{ backgroundColor: '#f39c1215', borderLeft: '3px solid #f39c12' }}>
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col justify-center" style={{ backgroundColor: 'rgba(224,159,60,0.08)', borderLeft: '3px solid var(--color-warning)' }}>
                             <div className="flex items-center gap-[3px]">
-                              <span className="text-xs">🟠</span>
-                              <span className="text-[10px] font-bold" style={{ color: '#e67e22' }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
+                              <Circle size={10} weight="fill" color="var(--color-warning)" />
+                              <span className="text-[10px] font-bold" style={{ color: 'var(--color-warning)' }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
                             </div>
                           </div>
-                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: '#e74c3c15', borderLeft: '3px solid #e74c3c' }}>
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: 'rgba(210,100,100,0.08)', borderLeft: '3px solid var(--color-error)' }}>
                             <div className="flex items-center gap-[3px]">
-                              <span className="text-xs">🔴</span>
-                              <span className="text-[10px] font-bold" style={{ color: '#e74c3c' }}>&gt; {patientSemaforoRed}d</span>
+                              <Circle size={10} weight="fill" color="var(--color-error)" />
+                              <span className="text-[10px] font-bold" style={{ color: 'var(--color-error)' }}>&gt; {patientSemaforoRed}d</span>
                             </div>
-                            <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
+                            <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="var(--color-error)"
                               onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
                           </div>
                         </div>
@@ -2635,7 +2632,7 @@ export default function MedicsPanel() {
                     {/* Campos del formulario */}
                     <div className="medics-patient-config__fields bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
                       <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
-                        📋 Campos del formulario
+                        Campos del formulario
                       </div>
                       <div className="p-3 px-4 flex flex-col gap-0">
                         <div className="mb-3.5">
@@ -2651,8 +2648,8 @@ export default function MedicsPanel() {
                                 onClick={() => setPatientEntryTypeMode(opt.value)}
                                 className="flex-1 py-1.5 px-1 rounded-lg border-none cursor-pointer text-[11px] font-bold leading-tight transition-all duration-150"
                                 style={{
-                                  backgroundColor: patientEntryTypeMode === opt.value ? th.primary : '#f0f0f0',
-                                  color: patientEntryTypeMode === opt.value ? '#fff' : '#555',
+                                  backgroundColor: patientEntryTypeMode === opt.value ? th.primary : 'var(--fx-ink-100)',
+                                  color: patientEntryTypeMode === opt.value ? '#fff' : 'var(--text-secondary)',
                                 }}
                               >
                                 {opt.label}
@@ -2664,13 +2661,13 @@ export default function MedicsPanel() {
                           Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                         </p>
                         {[
-                          { id: 'bristol', label: '🪷 Bristol', group: '💩 Deposición' },
-                          { id: 'color', label: '🎨 Color', group: null },
-                          { id: 'floats', label: '🫧 Flotación', group: null },
-                          { id: 'quantity', label: '⚖️ Cantidad', group: null },
-                          { id: 'duration', label: '⏱️ Duración', group: null },
-                          { id: 'symptoms', label: '🤒 Síntomas', group: null },
-                          { id: 'urine_type', label: 'Tipo de micción', group: '💧 Micción' },
+                          { id: 'bristol', label: 'Bristol', group: 'Deposición' },
+                          { id: 'color', label: 'Color', group: null },
+                          { id: 'floats', label: 'Flotación', group: null },
+                          { id: 'quantity', label: 'Cantidad', group: null },
+                          { id: 'duration', label: 'Duración', group: null },
+                          { id: 'symptoms', label: 'Síntomas', group: null },
+                          { id: 'urine_type', label: 'Tipo de micción', group: 'Micción' },
                           { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
                           { id: 'urine_color', label: 'Color', group: null },
                           { id: 'urine_characteristics', label: 'Características', group: null },
@@ -2703,8 +2700,9 @@ export default function MedicsPanel() {
 
                     {/* Notificaciones push */}
                     <div className="medics-patient-config__push bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
-                      <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
-                        🔔 Notificaciones push
+                      <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex items-center gap-1.5">
+                        <Bell size={15} />
+                        Notificaciones push
                       </div>
                       <div className="p-3 px-4 flex flex-col gap-3">
                         <p className="text-xs text-fx-ink-400 leading-relaxed">
@@ -2739,22 +2737,23 @@ export default function MedicsPanel() {
                           <button
                             onClick={handleSendTestPush}
                             disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
-                            className="w-full py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent"
+                            className="w-full py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent flex items-center justify-center gap-1.5"
                             style={{
                               border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
                               color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
                             }}
                           >
-                            {pushTestStatus === 'sending' ? '⏳ Enviando...' : '🔔 Enviar notificación de prueba'}
+                            <Bell size={14} />
+                            {pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}
                           </button>
                           {!selectedPatient?.hasPushSub && (
                             <p className="text-[11px] text-fx-ink-300 mt-1.5">El paciente no tiene notificaciones activadas.</p>
                           )}
                           {pushTestStatus === 'ok' && (
-                            <p className="text-xs text-fx-success-500 font-semibold mt-2">✅ Notificación enviada</p>
+                            <p className="text-xs text-fx-success-500 font-semibold mt-2 flex items-center gap-1"><CheckCircle size={14} weight="fill" />Notificación enviada</p>
                           )}
                           {pushTestStatus === 'error' && (
-                            <p className="text-xs text-fx-error-500 font-semibold mt-2">❌ {pushTestError}</p>
+                            <p className="text-xs text-fx-error-500 font-semibold mt-2 flex items-center gap-1"><WarningCircle size={14} weight="fill" />{pushTestError}</p>
                           )}
                         </div>
                       </div>
@@ -2763,10 +2762,10 @@ export default function MedicsPanel() {
                     {/* Single save button for all sections */}
                     <div className="medics-patient-config__save pb-2">
                       {patientConfigSaved && (
-                        <div className="text-[13px] text-fx-success-500 font-semibold mb-2 text-center">✅ Configuración guardada</div>
+                        <div className="text-[13px] text-fx-success-500 font-semibold mb-2 text-center flex items-center justify-center gap-1.5"><CheckCircle size={15} weight="fill" />Configuración guardada</div>
                       )}
                       {patientConfigError && (
-                        <div className="text-xs text-fx-error-500 font-semibold mb-2">❌ {patientConfigError}</div>
+                        <div className="text-xs text-fx-error-500 font-semibold mb-2 flex items-center gap-1.5"><WarningCircle size={14} weight="fill" />{patientConfigError}</div>
                       )}
                       <button onClick={handleSavePatientConfig} className="w-full py-3.5 text-sm rounded-fx-md text-white border-none font-semibold font-sans cursor-pointer" style={{ backgroundColor: th.dark }}>
                         Guardar configuración
@@ -2792,7 +2791,6 @@ export default function MedicsPanel() {
             {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
               <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-4.5 mb-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl">{doctorInfo?.plan === 'beta' ? '🧪' : '⭐'}</span>
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
                       {doctorInfo?.plan === 'beta'
@@ -2851,7 +2849,7 @@ export default function MedicsPanel() {
                       </div>
                       {atLimit && (
                         <p className="text-xs text-fx-warning-600 mt-2 flex items-center gap-1.5">
-                          <span>⚠️</span> Límite del plan Free alcanzado.{' '}
+                          <WarningCircle size={14} weight="fill" /> Límite del plan Free alcanzado.{' '}
                           <button onClick={() => setShowUpgradeModal(true)} className="bg-transparent border-none font-bold text-xs cursor-pointer underline p-0" style={{ color: th.dark }}>
                             Pasa a Pro
                           </button>{' '}
@@ -2867,14 +2865,14 @@ export default function MedicsPanel() {
                 {inviteSuccess && (
                   <div className="bg-fx-success-50 rounded-[10px] py-3 px-4 flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
+                      <CheckCircle size={16} weight="fill" color="var(--color-success)" />
                       <span className="text-[13px] font-bold text-fx-success-500">Invitación enviada</span>
                     </div>
                     {emailSent && (
                       <p className="text-xs text-fx-text-secondary m-0">El paciente recibirá un email con las instrucciones.</p>
                     )}
                     {emailError && (
-                      <p className="text-xs text-fx-warning-600 m-0">⚠️ {emailError}</p>
+                      <p className="text-xs text-fx-warning-600 m-0 flex items-center gap-1.5"><WarningCircle size={14} weight="fill" />{emailError}</p>
                     )}
                     <p className="text-xs text-fx-ink-400 m-0">
                       El paciente verá la invitación en su cuenta al iniciar sesión.
@@ -2887,7 +2885,7 @@ export default function MedicsPanel() {
             {/* Instructions */}
             <div className="medics-invitar__instructions bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mt-4">
               <div className="p-6">
-                <div className="text-base font-bold text-fx-text mb-3">{'\u{1F4D6}'} Instrucciones para el paciente</div>
+                <div className="text-base font-bold text-fx-text mb-3">Instrucciones para el paciente</div>
                 <div className="text-sm text-fx-text-secondary leading-loose">
                   <p className="m-0 mb-2">El paciente debe seguir estos pasos:</p>
                   <ol className="m-0 pl-5">
@@ -2918,7 +2916,7 @@ export default function MedicsPanel() {
               {/* Col 1 Row 1 — Datos del médico */}
               <div className="medics-config__doctor-info bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-1">
                 <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
-                  <span className="text-[15px] font-bold text-fx-text">👤 Datos del médico</span>
+                  <span className="text-[15px] font-bold text-fx-text">Datos del médico</span>
                 </div>
                 <div className="p-4.5 flex flex-col gap-3.5">
                   <div>
@@ -2943,7 +2941,7 @@ export default function MedicsPanel() {
                   </div>
                   {configSaved && (
                     <div className="bg-fx-success-100 rounded-lg py-2 px-3 flex items-center gap-2">
-                      <span>✅</span>
+                      <CheckCircle size={14} weight="fill" color="var(--color-success)" />
                       <span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                     </div>
                   )}
@@ -2958,14 +2956,14 @@ export default function MedicsPanel() {
               {/* Col 2 Rows 1–2 — Imagen del centro */}
               <div className="medics-config__center-image bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-2 md:row-start-1 md:row-span-2">
                 <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
-                  <span className="text-[15px] font-bold text-fx-text">🏥 Imagen del centro</span>
+                  <span className="text-[15px] font-bold text-fx-text">Imagen del centro</span>
                 </div>
                 <div className="p-4.5 flex flex-col gap-3.5 items-center">
                   <div className="w-full aspect-video rounded-xl border-2 border-dashed border-fx-border overflow-hidden flex items-center justify-center bg-fx-ink-50">
                     {centerImageUrl ? (
                       <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-scale-down" />
                     ) : (
-                      <span className="text-[32px]">🏥</span>
+                      <Image size={32} color="var(--fx-ink-300)" />
                     )}
                   </div>
                   <p className="text-xs text-fx-ink-400 m-0 text-center leading-relaxed">
@@ -2975,7 +2973,7 @@ export default function MedicsPanel() {
                     className="w-full inline-flex items-center gap-2 py-2.5 px-4.5 rounded-fx-pill text-white text-[15px] font-semibold font-sans cursor-pointer"
                     style={{ backgroundColor: th.dark, opacity: uploadingImage ? 0.5 : 1 }}
                   >
-                    {uploadingImage ? 'Subiendo...' : '📤 Subir imagen'}
+                    {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
                     <input type="file" accept="image/*" disabled={uploadingImage} className="hidden"
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
                   </label>
@@ -2986,41 +2984,41 @@ export default function MedicsPanel() {
               {/* Col 1 Row 2 — Semáforo */}
               <div className="medics-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-2">
                 <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
-                  <span className="text-[15px] font-bold text-fx-text">🚦 Semáforo</span>
+                  <span className="text-[15px] font-bold text-fx-text">Semáforo</span>
                 </div>
                 <div className="p-4.5 flex flex-col gap-4">
                   <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
-                    Define cuántos días sin registro se consideran normales (🟢), en vigilancia (🟠) o en alerta (🔴).
+                    Define cuántos días sin registro se consideran normales, en vigilancia o en alerta.
                     Este umbral se aplica a todos tus pacientes como valor por defecto; puedes personalizarlo individualmente
                     en la ficha de cada paciente.
                   </p>
                   <div className="flex gap-1.5">
-                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: '#2ecc7115', borderLeft: '3px solid #27ae60' }}>
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: 'rgba(63,158,110,0.08)', borderLeft: '3px solid var(--color-success)' }}>
                       <div className="flex items-center gap-1">
-                        <span className="text-sm">🟢</span>
-                        <span className="text-[11px] font-bold" style={{ color: '#27ae60' }}>≤ {configGreen}d</span>
+                        <Circle size={10} weight="fill" color="var(--color-success)" />
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--color-success)' }}>≤ {configGreen}d</span>
                       </div>
-                      <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="#27ae60"
+                      <SemaforoSlider value={configGreen} min={0} max={Math.max(configRed - 1, 1)} color="var(--color-success)"
                         onChange={(val) => { setConfigGreen(val); if (val >= configRed) setConfigRed(val + 1); }} />
                     </div>
-                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col justify-center" style={{ backgroundColor: '#f39c1215', borderLeft: '3px solid #f39c12' }}>
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col justify-center" style={{ backgroundColor: 'rgba(224,159,60,0.08)', borderLeft: '3px solid var(--color-warning)' }}>
                       <div className="flex items-center gap-1">
-                        <span className="text-sm">🟠</span>
-                        <span className="text-[11px] font-bold" style={{ color: '#e67e22' }}>{configGreen + 1}–{configRed}d</span>
+                        <Circle size={10} weight="fill" color="var(--color-warning)" />
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--color-warning)' }}>{configGreen + 1}–{configRed}d</span>
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: '#e74c3c15', borderLeft: '3px solid #e74c3c' }}>
+                    <div className="flex-1 min-w-0 rounded-lg py-2 px-2.5 flex flex-col gap-1.5" style={{ backgroundColor: 'rgba(210,100,100,0.08)', borderLeft: '3px solid var(--color-error)' }}>
                       <div className="flex items-center gap-1">
-                        <span className="text-sm">🔴</span>
-                        <span className="text-[11px] font-bold" style={{ color: '#e74c3c' }}>&gt;{configRed}d</span>
+                        <Circle size={10} weight="fill" color="var(--color-error)" />
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--color-error)' }}>&gt;{configRed}d</span>
                       </div>
-                      <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="#e74c3c"
+                      <SemaforoSlider value={configRed} min={Math.max(configGreen + 1, 1)} max={30} color="var(--color-error)"
                         onChange={(val) => { setConfigRed(val); if (val <= configGreen) setConfigGreen(val - 1); }} />
                     </div>
                   </div>
                   {configSaved && (
                     <div className="bg-fx-success-100 rounded-lg py-2 px-3 flex items-center gap-2">
-                      <span>✅</span><span className="text-xs font-semibold text-fx-success-500">Guardado</span>
+                      <CheckCircle size={14} weight="fill" color="var(--color-success)" /><span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                     </div>
                   )}
                   <button onClick={handleSaveConfig} disabled={loading}
@@ -3034,7 +3032,7 @@ export default function MedicsPanel() {
               {/* Cols 1–2 Row 3 — Etiquetas globales */}
               <div className="medics-config__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-3">
                 <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
-                  <span className="text-[15px] font-bold text-fx-text">🏷️ Etiquetas globales</span>
+                  <span className="text-[15px] font-bold text-fx-text">Etiquetas globales</span>
                 </div>
                 <div className="p-4.5 flex flex-col gap-3.5">
                   <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
@@ -3124,7 +3122,7 @@ export default function MedicsPanel() {
               {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
               {false && <div className="medics-config__palette bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
                 <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
-                  <span className="text-[15px] font-bold text-fx-text">🎨 Paleta de colores</span>
+                  <span className="text-[15px] font-bold text-fx-text">Paleta de colores</span>
                 </div>
                 <div className="p-4.5">
                   <p className="text-[13px] text-fx-text-secondary mb-3.5 leading-relaxed">
@@ -3137,7 +3135,7 @@ export default function MedicsPanel() {
                         <button key={p.id} onClick={() => setConfigPalette(p.id)} title={p.name}
                           className="flex flex-col items-center gap-1.5 py-2 px-3 rounded-xl border-none cursor-pointer transition-all duration-150"
                           style={{
-                            backgroundColor: isActive ? '#00000012' : 'transparent',
+                            backgroundColor: isActive ? 'var(--fx-ink-100)' : 'transparent',
                             outline: isActive ? `2px solid ${p.theme.primary}` : '2px solid transparent',
                           }}>
                           <div className="w-8 h-8 rounded-full" style={{
@@ -3153,8 +3151,8 @@ export default function MedicsPanel() {
                     <button onClick={() => setConfigPalette('custom')} title="Personalizable"
                       className="flex flex-col items-center gap-1.5 py-2 px-3 rounded-xl border-none cursor-pointer transition-all duration-150"
                       style={{
-                        backgroundColor: configPalette === 'custom' ? '#00000012' : 'transparent',
-                        outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed #ccc',
+                        backgroundColor: configPalette === 'custom' ? 'var(--fx-ink-100)' : 'transparent',
+                        outline: configPalette === 'custom' ? `2px solid ${customColor1}` : '2px dashed var(--fx-ink-250)',
                       }}>
                       <div className="w-8 h-8 rounded-full" style={{
                         background: configPalette === 'custom'
@@ -3210,7 +3208,7 @@ export default function MedicsPanel() {
                           opacity: !centerImageUrl || extractingColors ? 0.5 : 1,
                         }}
                       >
-                        {extractingColors ? '⏳ Analizando...' : '🎨 Colores automáticos desde la imagen'}
+                        {extractingColors ? 'Analizando...' : 'Colores automáticos desde la imagen'}
                       </button>
                       {!centerImageUrl && (
                         <p className="text-[11px] text-fx-ink-300 -mt-2 mb-0">
@@ -3229,7 +3227,7 @@ export default function MedicsPanel() {
                     </button>
                     {configSaved && (
                       <div className="flex items-center gap-1.5">
-                        <span>✅</span>
+                        <CheckCircle size={14} weight="fill" color="var(--color-success)" />
                         <span className="text-xs font-semibold text-fx-success-500">Guardado</span>
                       </div>
                     )}
@@ -3257,8 +3255,7 @@ export default function MedicsPanel() {
                 className="medics-bottomnav__item flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 border-t-2"
                 style={{ borderTopColor: active ? th.primary : 'transparent', color: active ? th.primary : 'var(--text-tertiary)' }}
               >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-[10px] font-semibold">{item.label}</span>
+                <span className="text-[11px] font-semibold">{item.label}</span>
               </button>
             );
           })}
@@ -3292,13 +3289,13 @@ export default function MedicsPanel() {
                     style={{ border: `3px solid ${th.primary}` }}
                   />
                 </div>
-                <div className="text-[28px] mb-2">✅</div>
+                <div className="mb-2 flex justify-center"><CheckCircle size={32} weight="fill" color="var(--color-success)" /></div>
                 <p className="text-[17px] font-bold text-fx-text m-0 mb-2">Imagen subida correctamente</p>
                 <p className="text-[13px] text-fx-ink-400 m-0">La imagen ya está visible para tus pacientes.</p>
               </>
             ) : (
               <>
-                <div className="text-[40px] mb-3">❌</div>
+                <div className="mb-3 flex justify-center"><WarningCircle size={40} weight="fill" color="var(--color-error)" /></div>
                 <p className="text-[17px] font-bold text-fx-text m-0 mb-2">Error al subir la imagen</p>
                 <p className="text-[13px] text-fx-error-500 m-0 mb-5 leading-relaxed">{imageModal.message}</p>
                 <p className="text-xs text-fx-ink-300 m-0">Asegúrate de que el bucket <strong>center-images</strong> existe y es público en Supabase Storage.</p>
@@ -3332,7 +3329,6 @@ export default function MedicsPanel() {
             >
               ×
             </button>
-            <div className="text-4xl mb-2">⭐</div>
             <h2 className="text-[22px] font-extrabold text-fx-text m-0 mb-2">Pasa al plan Pro</h2>
             <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
               Has alcanzado el límite del plan gratuito ({FREE_PLAN_PATIENT_LIMIT} paciente). Con Pro podrás añadir pacientes ilimitados,
@@ -3395,7 +3391,6 @@ export default function MedicsPanel() {
               {/* Content */}
               <div className="px-12 pt-10 pb-8 flex-1 overflow-auto" style={{ backgroundColor: step.color }}>
                 <div className="text-center">
-                  <div className="text-7xl leading-none mb-6">{step.icon}</div>
                   <h2 className="text-[26px] font-black text-fx-text m-0 mb-3.5 leading-tight">{step.title}</h2>
                   <p className="text-base text-fx-text-secondary leading-relaxed mx-auto my-0 max-w-[460px]">{step.body}</p>
                 </div>
@@ -3412,7 +3407,7 @@ export default function MedicsPanel() {
                       className="h-2 rounded border-none cursor-pointer p-0 transition-all duration-200 ease-in-out"
                       style={{
                         width: i === onboardingStep ? 22 : 8,
-                        backgroundColor: i === onboardingStep ? step.accent : '#ddd',
+                        backgroundColor: i === onboardingStep ? step.accent : 'var(--fx-ink-200)',
                       }}
                     />
                   ))}
@@ -3584,8 +3579,8 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   .stat { flex: 1; background: #f9f5f4; border-radius: 8px; padding: 12px; text-align: center; }
   .stat-value { font-size: 24px; font-weight: 900; color: #1a0e0e; }
   .stat-label { font-size: 10px; color: #888; text-transform: uppercase; margin-top: 4px; }
-  .alert { background: #fff3cd; border-left: 4px solid #f39c12; padding: 8px 12px; margin: 8px 0; font-size: 12px; border-radius: 4px; }
-  .alert-red { background: #fde8e8; border-left-color: #e74c3c; }
+  .alert { background: #FCF4E7; border-left: 4px solid #E09F3C; padding: 8px 12px; margin: 8px 0; font-size: 12px; border-radius: 4px; }
+  .alert-red { background: #FBEDED; border-left-color: #D26464; }
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
   th { background: #f5f0ef; text-align: left; padding: 6px 8px; font-weight: 700; color: #555; font-size: 10px; text-transform: uppercase; }
   td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
@@ -3596,7 +3591,7 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
 <body>
 <div class="header">
   <div class="header-left">
-    <h1>💩 Informe de Seguimiento Intestinal</h1>
+    <h1>Informe de Seguimiento Intestinal</h1>
     <p style="color:#888;margin-top:4px">Paciente: <strong>${patientName}</strong></p>
   </div>
   <div class="header-right">
@@ -3614,8 +3609,8 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   <div class="stat"><div class="stat-value">${frequency}</div><div class="stat-label">Registros/día</div></div>
 </div>
 
-${detail.daysSinceLast !== null && detail.daysSinceLast >= 3 ? `<div class="alert alert-red">⚠️ El paciente lleva <strong>${detail.daysSinceLast} días</strong> sin registrar actividad.</div>` : ''}
-${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5) ? `<div class="alert">🔬 Bristol medio fuera de rango normal (3-5): <strong>${detail.bristolAvg.toFixed(1)}</strong> — ${getBristolLabel(detail.bristolAvg)}</div>` : ''}
+${detail.daysSinceLast !== null && detail.daysSinceLast >= 3 ? `<div class="alert alert-red">El paciente lleva <strong>${detail.daysSinceLast} días</strong> sin registrar actividad.</div>` : ''}
+${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5) ? `<div class="alert">Bristol medio fuera de rango normal (3-5): <strong>${detail.bristolAvg.toFixed(1)}</strong> — ${getBristolLabel(detail.bristolAvg)}</div>` : ''}
 
 <h2>Distribución Escala de Bristol</h2>
 <table>
@@ -3623,7 +3618,7 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
     ${[1, 2, 3, 4, 5, 6, 7].map(t => `<th style="text-align:center">Tipo ${t}</th>`).join('')}
   </tr>
   <tr>
-    ${bristolCounts.map((c, i) => `<td style="text-align:center;font-weight:700;color:${i < 2 ? '#f39c12' : i < 5 ? '#27ae60' : '#e74c3c'}">${c}</td>`).join('')}
+    ${bristolCounts.map((c, i) => `<td style="text-align:center;font-weight:700;color:${i < 2 ? '#E09F3C' : i < 5 ? '#3F9E6E' : '#D26464'}">${c}</td>`).join('')}
   </tr>
 </table>
 <p style="font-size:10px;color:#999;margin-top:4px">Tipos 1-2: Estreñimiento · Tipos 3-5: Normal · Tipos 6-7: Diarrea</p>
@@ -3662,29 +3657,6 @@ function SectionHeader({ title, subtitle, actions }: { title: React.ReactNode; s
         <p className="text-sm text-fx-text-secondary mt-1 mb-0">{subtitle}</p>
       </div>
       {actions && <div className="medics-section-header__actions flex gap-2 flex-wrap">{actions}</div>}
-    </div>
-  );
-}
-
-// ── Stat Card ──
-function StatCard({ emoji, label, value, sub, dark }: {
-  emoji: string; label: string; value: string; sub?: string; dark?: boolean;
-}) {
-  return (
-    <div style={{
-      backgroundColor: dark ? '#000' : '#fff',
-      borderRadius: 16,
-      padding: 20,
-      flex: 1,
-      minWidth: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8,
-    }}>
-      <span style={{ fontSize: 11, fontWeight: 900, color: dark ? '#ffffff66' : '#00000066', letterSpacing: 0.5 }}>{label}</span>
-      <span style={{ fontSize: 28 }}>{emoji}</span>
-      <span style={{ fontSize: 32, fontWeight: 900, color: dark ? '#fff' : '#000' }}>{value}</span>
-      {sub && <span style={{ fontSize: 13, color: dark ? '#ffffff66' : '#00000066' }}>{sub}</span>}
     </div>
   );
 }
