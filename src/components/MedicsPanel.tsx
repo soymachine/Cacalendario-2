@@ -322,9 +322,7 @@ export default function MedicsPanel() {
       });
     }
 
-    setCustomColor1('#a84a38');
-    setCustomColor2('#141414');
-    setConfigPalette('custom');
+    setConfigPalette(info.palette);
   };
 
   // ── Recover session on mount + handle Google OAuth callback ──
@@ -2789,7 +2787,7 @@ export default function MedicsPanel() {
 
             {/* Plan banner */}
             {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
-              <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-4.5 mb-4 flex items-center justify-between gap-4 flex-wrap">
+              <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-5 mb-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
@@ -2915,10 +2913,10 @@ export default function MedicsPanel() {
 
               {/* Col 1 Row 1 — Datos del médico */}
               <div className="medics-config__doctor-info bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-1">
-                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Datos del médico</span>
                 </div>
-                <div className="p-4.5 flex flex-col gap-3.5">
+                <div className="p-5 flex flex-col gap-3.5">
                   <div>
                     <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Nombre</label>
                     <input
@@ -2955,10 +2953,10 @@ export default function MedicsPanel() {
 
               {/* Col 2 Rows 1–2 — Imagen del centro */}
               <div className="medics-config__center-image bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-2 md:row-start-1 md:row-span-2">
-                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Imagen del centro</span>
                 </div>
-                <div className="p-4.5 flex flex-col gap-3.5 items-center">
+                <div className="p-5 flex flex-col gap-3.5 items-center">
                   <div className="w-full aspect-video rounded-xl border-2 border-dashed border-fx-border overflow-hidden flex items-center justify-center bg-fx-ink-50">
                     {centerImageUrl ? (
                       <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-scale-down" />
@@ -2970,7 +2968,7 @@ export default function MedicsPanel() {
                     Aparecerá en la app de los pacientes vinculados.
                   </p>
                   <label
-                    className="w-full inline-flex items-center gap-2 py-2.5 px-4.5 rounded-fx-pill text-white text-[15px] font-semibold font-sans cursor-pointer"
+                    className="w-full inline-flex items-center gap-2 py-2.5 px-5 rounded-fx-pill text-white text-[15px] font-semibold font-sans cursor-pointer"
                     style={{ backgroundColor: th.dark, opacity: uploadingImage ? 0.5 : 1 }}
                   >
                     {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
@@ -2983,10 +2981,10 @@ export default function MedicsPanel() {
 
               {/* Col 1 Row 2 — Semáforo */}
               <div className="medics-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-2">
-                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Semáforo</span>
                 </div>
-                <div className="p-4.5 flex flex-col gap-4">
+                <div className="p-5 flex flex-col gap-4">
                   <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
                     Define cuántos días sin registro se consideran normales, en vigilancia o en alerta.
                     Este umbral se aplica a todos tus pacientes como valor por defecto; puedes personalizarlo individualmente
@@ -3031,10 +3029,10 @@ export default function MedicsPanel() {
 
               {/* Cols 1–2 Row 3 — Etiquetas globales */}
               <div className="medics-config__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-3">
-                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Etiquetas globales</span>
                 </div>
-                <div className="p-4.5 flex flex-col gap-3.5">
+                <div className="p-5 flex flex-col gap-3.5">
                   <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
                     Define las etiquetas de tu consulta. Desde la ficha de cada paciente puedes asignar una o varias.
                     Eliminar una etiqueta la borra también de todos los pacientes.
@@ -3121,10 +3119,10 @@ export default function MedicsPanel() {
 
               {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
               {false && <div className="medics-config__palette bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
-                <div className="py-3.5 px-4.5 border-b border-fx-border-soft">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Paleta de colores</span>
                 </div>
-                <div className="p-4.5">
+                <div className="p-5">
                   <p className="text-[13px] text-fx-text-secondary mb-3.5 leading-relaxed">
                     Elige la paleta del portal. El cambio se aplica al instante y se guarda con la configuración.
                   </p>
@@ -3379,7 +3377,7 @@ export default function MedicsPanel() {
               {onboardingSkippable && (
                 <button
                   onClick={finishOnboarding}
-                  className="absolute top-4 right-4.5 bg-transparent border-none text-[22px] cursor-pointer text-fx-ink-300 leading-none z-[1]"
+                  className="absolute top-4 right-5 bg-transparent border-none text-[22px] cursor-pointer text-fx-ink-300 leading-none z-[1]"
                 >×</button>
               )}
 
