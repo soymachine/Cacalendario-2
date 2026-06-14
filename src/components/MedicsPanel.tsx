@@ -276,11 +276,6 @@ export default function MedicsPanel() {
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
-  const ts = {
-    loginContainer: { ...s.loginContainer, backgroundColor: th.primary },
-    btnPrimary: { ...s.btnPrimary, backgroundColor: th.dark },
-    linkBtn: { ...s.linkBtn, color: th.primary },
-  };
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -2773,7 +2768,7 @@ export default function MedicsPanel() {
                       {patientConfigError && (
                         <div className="text-xs text-fx-error-500 font-semibold mb-2">❌ {patientConfigError}</div>
                       )}
-                      <button onClick={handleSavePatientConfig} className="w-full py-3.5 text-sm rounded-fx-md" style={{ ...ts.btnPrimary }}>
+                      <button onClick={handleSavePatientConfig} className="w-full py-3.5 text-sm rounded-fx-md text-white border-none font-semibold font-sans cursor-pointer" style={{ backgroundColor: th.dark }}>
                         Guardar configuración
                       </button>
                     </div>
@@ -3694,40 +3689,3 @@ function StatCard({ emoji, label, value, sub, dark }: {
   );
 }
 
-// ── Styles ──
-const s: Record<string, React.CSSProperties> = {
-  loginContainer: {
-    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#dd8273', fontFamily: 'var(--font-sans)',
-  },
-  loginCard: {
-    width: '100%', maxWidth: 380, padding: 24, backgroundColor: 'var(--color-surface)',
-    borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)',
-    margin: '0 16px',
-  },
-  label: {
-    display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)',
-  },
-  input: {
-    width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
-    marginBottom: 16, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const,
-    backgroundColor: 'var(--color-surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
-  },
-  btnPrimary: {
-    width: '100%', padding: 14, borderRadius: 'var(--radius-pill)', backgroundColor: '#1a0e0e',
-    color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-  },
-  card: {
-    backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-xl)',
-    boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-soft)',
-  },
-  headerBtn: {
-    padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)',
-    backgroundColor: 'var(--color-surface)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)',
-  },
-  linkBtn: {
-    background: 'none', border: 'none', color: '#dd8273', fontSize: 13,
-    fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-  },
-};
