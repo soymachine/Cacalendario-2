@@ -2331,7 +2331,7 @@ export default function MedicsPanel() {
                 const hasFilter = entryFilterFrom || entryFilterTo;
 
                 return (
-                  <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border" style={{ width: isMobile ? '100%' : undefined }}>
+                  <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border overflow-hidden" style={{ width: isMobile ? '100%' : undefined }}>
                     {/* Header + filter bar */}
                     <div className="px-4 py-3 border-b border-fx-border-soft">
                       <div className="flex items-center justify-between mb-2.5">
