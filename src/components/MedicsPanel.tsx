@@ -1598,31 +1598,6 @@ export default function MedicsPanel() {
                 {tile(noDataWeek, 'Sin reg. 7d', 'var(--fx-teal-50)', 'var(--color-accent)', noDataWeek > 0 ? 'no7d' : undefined)}
                 {pending.length > 0 && tile(pending.length, 'Invit. pendientes', 'var(--fx-teal-50)', 'var(--color-accent)')}
               </div>
-              {/* Semáforo bar */}
-              {accepted.length > 0 && (
-                <div className="medics-semaforo-card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-3.5 mb-4">
-                  <div className="text-xs font-bold text-fx-text-secondary mb-2.5">Estado de la lista</div>
-                  <div className="medics-semaforo-bar flex rounded-lg overflow-hidden h-3.5">
-                    {(semCounts.green || 0) > 0 && <div style={{ flex: semCounts.green, backgroundColor: 'var(--color-success)' }} title={`${semCounts.green} al día`} />}
-                    {(semCounts.orange || 0) > 0 && <div style={{ flex: semCounts.orange, backgroundColor: 'var(--color-warning)' }} title={`${semCounts.orange} atención`} />}
-                    {(semCounts.red || 0) > 0 && <div style={{ flex: semCounts.red, backgroundColor: 'var(--color-error)' }} title={`${semCounts.red} inactivos`} />}
-                    {(semCounts.gray || 0) > 0 && <div style={{ flex: semCounts.gray, backgroundColor: 'var(--fx-ink-200)' }} title={`${semCounts.gray} sin datos`} />}
-                  </div>
-                  <div className="medics-semaforo-legend flex gap-4 mt-2">
-                    {[
-                      { c: 'var(--color-success)', label: `${semCounts.green || 0} al día` },
-                      { c: 'var(--color-warning)', label: `${semCounts.orange || 0} atención` },
-                      { c: 'var(--color-error)', label: `${semCounts.red || 0} inactivos` },
-                      { c: 'var(--fx-ink-300)', label: `${semCounts.gray || 0} sin datos` },
-                    ].map(({ c, label }) => (
-                      <div key={label} className="flex items-center gap-[5px] text-[11px] text-fx-text-secondary">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               {/* Practice stats */}
               {practiceStats !== null && accepted.length > 0 && (
                 <div className="medics-practice-stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
