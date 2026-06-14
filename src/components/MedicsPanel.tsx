@@ -1747,13 +1747,13 @@ export default function MedicsPanel() {
 
         {/* ── PACIENTES ── */}
         {section === 'pacientes' && !selectedPatient && (
-          <>
+          <div className="medics-pacientes">
             <SectionHeader
               title="Mis Pacientes"
               subtitle={`${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
-              actions={<button onClick={loadPatients} style={s.headerBtn}>{'\u{1F504}'} Actualizar</button>}
+              actions={<button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">{'\u{1F504}'} Actualizar</button>}
             />
-            <div style={s.card}>
+            <div className="medics-pacientes__card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
               {/* Semáforo quick-filter pills */}
               {(() => {
                 const acc = patients.filter(p => p.status === 'accepted');
@@ -1775,21 +1775,21 @@ export default function MedicsPanel() {
                   zIndex: 9999,
                 };
                 return (
-                  <div style={{ borderBottom: '1px solid #00000008' }}>
+                  <div className="medics-pacientes__pills border-b border-fx-border-soft">
                     <RadixTooltip.Provider delayDuration={250} skipDelayDuration={100}>
-                      <div style={{ display: 'flex', gap: 6, padding: '10px 16px', flexWrap: 'wrap' as const }}>
+                      <div className="flex gap-1.5 px-4 py-2.5 flex-wrap">
                         {pills.map(({ key, icon, label, desc, count, color }) => {
                           const active = semaforoFilter === key;
                           return (
                             <RadixTooltip.Root key={key}>
                               <RadixTooltip.Trigger asChild>
-                                <button onClick={() => setSemaforoFilter(key)} style={{
-                                  fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer',
-                                  border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
-                                  backgroundColor: active ? color + '18' : '#00000008',
-                                  color: active ? color : '#666', fontWeight: active ? 700 : 500,
-                                  display: 'flex', alignItems: 'center', gap: 4,
-                                }}>
+                                <button onClick={() => setSemaforoFilter(key)}
+                                  className="medics-pacientes__pill flex items-center gap-1 text-[11px] px-2.5 py-[3px] rounded-[20px] cursor-pointer"
+                                  style={{
+                                    border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
+                                    backgroundColor: active ? color + '18' : '#00000008',
+                                    color: active ? color : '#666', fontWeight: active ? 700 : 500,
+                                  }}>
                                   {icon} {label} <span style={{ opacity: 0.7 }}>{count}</span>
                                 </button>
                               </RadixTooltip.Trigger>
@@ -1806,7 +1806,7 @@ export default function MedicsPanel() {
                       </div>
                     </RadixTooltip.Provider>
                     {activePill && activePill.key !== 'all' && (
-                      <div style={{ padding: '0 16px 8px', fontSize: 11, color: '#999', fontStyle: 'italic' as const }}>
+                      <div className="px-4 pb-2 text-[11px] text-fx-text-tertiary italic">
                         {activePill.icon} {activePill.desc}
                       </div>
                     )}
@@ -1815,57 +1815,54 @@ export default function MedicsPanel() {
               })()}
               {/* Tag filter bar */}
               {globalTags.length > 0 && (
-                <div style={{ display: 'flex', gap: 6, padding: '8px 16px', flexWrap: 'wrap' as const, borderBottom: '1px solid #00000008', backgroundColor: '#00000004' }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#aaa', alignSelf: 'center', marginRight: 2 }}>FILTRAR:</span>
-                  <button onClick={() => setTagFilter(null)} style={{
-                    fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                <div className="medics-pacientes__tag-filters flex gap-1.5 px-4 py-2 flex-wrap border-b border-fx-border-soft bg-fx-surface-2">
+                  <span className="text-[10px] font-bold text-fx-text-tertiary self-center mr-0.5">FILTRAR:</span>
+                  <button onClick={() => setTagFilter(null)} className="text-[11px] px-2.5 py-0.5 rounded-[20px] border-none cursor-pointer font-semibold" style={{
                     backgroundColor: tagFilter === null ? '#333' : '#00000010',
-                    color: tagFilter === null ? '#fff' : '#555', fontWeight: 600,
+                    color: tagFilter === null ? '#fff' : '#555',
                   }}>Todos</button>
                   {globalTags.map(t => (
-                    <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} style={{
-                      fontSize: 11, padding: '2px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                    <button key={t} onClick={() => setTagFilter(tagFilter === t ? null : t)} className="text-[11px] px-2.5 py-0.5 rounded-[20px] border-none cursor-pointer font-semibold" style={{
                       backgroundColor: tagFilter === t ? tagColor(t) : tagColor(t) + '20',
-                      color: tagFilter === t ? '#fff' : tagColor(t), fontWeight: 600,
+                      color: tagFilter === t ? '#fff' : tagColor(t),
                     }}>{t}</button>
                   ))}
                 </div>
               )}
               {/* Sort controls + Search */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', backgroundColor: '#00000008', gap: 8, flexWrap: 'wrap' as const }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#888' }}>Ordenar por:</span>
+              <div className="medics-pacientes__toolbar flex items-center px-5 py-2.5 bg-fx-surface-2 gap-2 flex-wrap">
+                <span className="text-[11px] font-bold text-fx-text-tertiary">Ordenar por:</span>
                 {(['estado', 'nombre'] as const).map(opt => (
-                  <button key={opt} onClick={() => setSortBy(opt)} style={{
-                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  <button key={opt} onClick={() => setSortBy(opt)} className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl border-none cursor-pointer" style={{
                     backgroundColor: sortBy === opt ? th.dark : '#00000010',
                     color: sortBy === opt ? '#fff' : '#666',
                   }}>
                     {opt === 'estado' ? 'Estado' : 'Nombre'}
                   </button>
                 ))}
-                <div style={{ flex: 1, minWidth: 140, marginLeft: 8 }}>
+                <div className="flex-1 min-w-[140px] ml-2">
                   <input
                     type="text"
                     placeholder="🔍 Buscar paciente…"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    style={{ width: '100%', padding: '4px 10px', borderRadius: 12, border: '1px solid #e0e0e0', fontSize: 12, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}
+                    className="medics-pacientes__search w-full px-2.5 py-1 rounded-xl border border-fx-border text-xs outline-none box-border bg-fx-surface"
                   />
                 </div>
               </div>
-              <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const, borderBottom: '1px solid #00000010' }}>
-                <span style={{ width: 40 }}></span>
-                <span style={{ flex: 2 }}>Paciente</span>
-                {!isMobile && <span style={{ flex: 1 }}>Último registro / Código</span>}
-                {!isMobile && <span style={{ width: 44, textAlign: 'center' as const }}>🔔</span>}
+              <div className="flex px-4 py-2 text-[11px] font-bold text-fx-text-tertiary uppercase border-b border-fx-border-soft">
+                <span className="w-10"></span>
+                <span className="flex-[2]">Paciente</span>
+                {!isMobile && <span className="flex-1">Último registro / Código</span>}
+                {!isMobile && <span className="w-11 text-center">🔔</span>}
                 <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
               </div>
               {patientsLoading ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                <div className="p-10 text-center text-fx-text-tertiary text-sm">
                   Cargando pacientes…
                 </div>
               ) : patients.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                <div className="p-10 text-center text-fx-text-tertiary text-sm">
                   No hay pacientes. Invita a tu primer paciente desde la sección "Invitar Paciente".
                 </div>
               ) : (() => {
@@ -1889,7 +1886,7 @@ export default function MedicsPanel() {
                   const filterLabels: Record<string, string> = { green: 'Al día', orange: 'Atención', red: 'Inactivos', gray: 'Sin datos', no7d: 'Sin reg. 7d' };
                   const what = q ? `"${q}"` : semaforoFilter !== 'all' ? `"${filterLabels[semaforoFilter] || semaforoFilter}"` : null;
                   return (
-                    <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                    <div className="p-10 text-center text-fx-text-tertiary text-sm">
                       Sin resultados{what ? ` para ${what}` : ''}
                     </div>
                   );
@@ -1900,66 +1897,64 @@ export default function MedicsPanel() {
                   const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)} style={{ display: 'flex', alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: i < displayed.length - 1 ? '1px solid #00000010' : 'none', cursor: isAccepted ? 'pointer' : 'default' }}>
+                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)}
+                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${isAccepted ? 'cursor-pointer' : 'cursor-default'}`}
+                      style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
                       {/* Semáforo */}
-                      <div style={{ width: 40 }}>
+                      <div className="w-10">
                         {isAccepted ? (
-                          <span style={{ fontSize: 18 }}>{semaforo.icon}</span>
+                          <span className="text-lg">{semaforo.icon}</span>
                         ) : (
-                          <span style={{ fontSize: 12, color: '#aaa' }}>—</span>
+                          <span className="text-xs text-fx-text-tertiary">—</span>
                         )}
                       </div>
                       {/* Patient name */}
-                      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isAccepted ? th.primary : th.dark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                      <div className="flex-[2] flex items-center gap-2 min-w-0">
+                        <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ backgroundColor: isAccepted ? th.primary : th.dark }}>
                           {patientInitial(patient)}
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="min-w-0">
+                          <div className={`font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap ${isMobile ? 'text-[13px]' : 'text-sm'}`}>
                             {patientLabel(patient)}
                           </div>
                           {!isMobile && patient.display_name && patient.patient_email && (
-                            <div style={{ fontSize: 11, color: '#999' }}>{patient.patient_email}</div>
+                            <div className="text-[11px] text-fx-text-tertiary">{patient.patient_email}</div>
                           )}
                           {(patient.tags || []).length > 0 && (
-                            <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' as const }}>
+                            <div className="flex gap-1 mt-[3px] flex-wrap">
                               {(patient.tags || []).map(t => (
-                                <span key={t} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 20, backgroundColor: tagColor(t) + '20', color: tagColor(t), fontWeight: 700 }}>{t}</span>
+                                <span key={t} className="text-[10px] px-1.5 py-px rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '20', color: tagColor(t) }}>{t}</span>
                               ))}
                             </div>
                           )}
                         </div>
                       </div>
                       {/* Last entry / invite code — hidden on mobile */}
-                      {!isMobile && <div style={{ flex: 1 }}>
+                      {!isMobile && <div className="flex-1">
                         {isAccepted && patient.lastEntryDate ? (
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
+                            <div className="text-[13px] font-semibold text-fx-text">
                               {patient.daysSinceLast === 0 ? 'Hoy' : `hace ${patient.daysSinceLast} día${patient.daysSinceLast !== 1 ? 's' : ''}`}
                             </div>
-                            <div style={{ fontSize: 11, color: '#999' }}>{shortDate(patient.lastEntryDate)}</div>
+                            <div className="text-[11px] text-fx-text-tertiary">{shortDate(patient.lastEntryDate)}</div>
                           </div>
                         ) : isAccepted ? (
-                          <span style={{ fontSize: 12, color: '#aaa' }}>Sin registros</span>
+                          <span className="text-xs text-fx-text-tertiary">Sin registros</span>
                         ) : (
-                          <span style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic' }}>
+                          <span className="text-xs text-fx-text-tertiary italic">
                             Invitación pendiente
                           </span>
                         )}
                       </div>}
                       {/* Push notification status — hidden on mobile */}
-                      {!isMobile && <div style={{ width: 44, textAlign: 'center' as const, fontSize: 16 }}>
+                      {!isMobile && <div className="w-11 text-center text-base">
                         {isAccepted && patient.hasPushSub === true && <span title="Notificaciones activas">🔔</span>}
-                        {isAccepted && patient.hasPushSub === false && <span title="Sin notificaciones" style={{ opacity: 0.3 }}>🔕</span>}
-                        {isAccepted && patient.hasPushSub === null && <span title="Sin datos" style={{ opacity: 0.2, fontSize: 12 }}>—</span>}
+                        {isAccepted && patient.hasPushSub === false && <span title="Sin notificaciones" className="opacity-30">🔕</span>}
+                        {isAccepted && patient.hasPushSub === null && <span title="Sin datos" className="opacity-20 text-xs">—</span>}
                       </div>}
                       {/* Status badge + actions */}
-                      <div style={{ width: isMobile ? 90 : 140, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: '3px 10px',
-                          borderRadius: 12,
+                      <div className="flex items-center gap-1.5" style={{ width: isMobile ? 90 : 140 }}>
+                        <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl" style={{
                           backgroundColor: isAccepted ? '#2ecc7130' : '#f39c1230',
                           color: isAccepted ? '#27ae60' : '#e67e22',
                         }}>
@@ -1969,9 +1964,9 @@ export default function MedicsPanel() {
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRevokeInvite(patient); }}
                             title="Eliminar invitación"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#ccc', padding: '2px 4px', borderRadius: 4 }}
+                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-sm text-fx-ink-300 px-1 py-0.5 rounded"
                             onMouseEnter={(e) => (e.currentTarget.style.color = '#e74c3c')}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = '#ccc')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '')}
                           >
                             🗑️
                           </button>
@@ -1982,39 +1977,39 @@ export default function MedicsPanel() {
                 });
               })()}
             </div>
-          </>
+          </div>
         )}
 
         {/* ── PATIENT DETAIL ── */}
         {section === 'pacientes' && selectedPatient && detailLoading && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid #e8e8e8`, borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
+          <div className="medics-detail__loading flex justify-center items-center min-h-[300px]">
+            <div className="w-11 h-11 rounded-full border-[3px] border-fx-ink-150" style={{ borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
           </div>
         )}
         {section === 'pacientes' && selectedPatient && patientDetail && !detailLoading && (
-          <>
+          <div className="medics-patient-detail">
             <SectionHeader
               title={
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <span className="inline-flex items-center gap-2.5">
                   {patientLabel(selectedPatient)}
                   {selectedPatient.hasPushSub === true && (
-                    <span title="Notificaciones activas" style={{ fontSize: 18, lineHeight: 1 }}>🔔</span>
+                    <span title="Notificaciones activas" className="text-lg leading-none">🔔</span>
                   )}
                   {selectedPatient.hasPushSub === false && (
-                    <span title="Sin notificaciones" style={{ fontSize: 18, lineHeight: 1, opacity: 0.35 }}>🔕</span>
+                    <span title="Sin notificaciones" className="text-lg leading-none opacity-35">🔕</span>
                   )}
                 </span>
               }
               subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
               actions={
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} style={{ ...s.headerBtn, backgroundColor: th.dark, color: '#fff' }}>
+                <div className="flex gap-2">
+                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.dark }}>
                     📄 Exportar PDF
                   </button>
-                  <button onClick={() => setPatientConfigOpen(true)} style={{ ...s.headerBtn, backgroundColor: th.navActive, color: '#fff' }}>
+                  <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
                     ⚙️ Configuración
                   </button>
-                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} style={s.headerBtn}>
+                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">
                     ← Volver
                   </button>
                 </div>
@@ -2022,9 +2017,9 @@ export default function MedicsPanel() {
             />
 
             {/* Row 1: Semáforo — all inline */}
-            <div style={{ ...s.card, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-              <span style={{ fontSize: 28 }}>{getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).icon}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+            <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap">
+              <span className="text-[28px]">{getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).icon}</span>
+              <span className="text-[15px] font-bold text-fx-text">
                 {patientDetail.daysSinceLast === null
                   ? 'Sin registros'
                   : patientDetail.daysSinceLast === 0
@@ -2032,21 +2027,21 @@ export default function MedicsPanel() {
                     : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
               </span>
               {patientDetail.lastEntryDate && (
-                <span style={{ fontSize: 12, color: '#888' }}>· {shortDate(patientDetail.lastEntryDate)}</span>
+                <span className="text-xs text-fx-text-tertiary">· {shortDate(patientDetail.lastEntryDate)}</span>
               )}
               {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                <span style={{ fontSize: 11, color: '#c0392b', fontWeight: 600, marginLeft: 4 }}>⚠️ Varios días sin registrar</span>
+                <span className="text-[11px] font-semibold ml-1" style={{ color: '#c0392b' }}>⚠️ Varios días sin registrar</span>
               )}
             </div>
 
             {/* Tags bar — global catalog, click to assign/unassign, input to create new */}
-            <div style={{ ...s.card, padding: '10px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' as const }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#aaa', whiteSpace: 'nowrap' as const }}>🏷️ ETIQUETAS</span>
-                {(patientTagsSaving || globalTagsSaving) && <span style={{ fontSize: 10, color: '#bbb' }}>Guardando…</span>}
+            <div className="medics-patient-detail__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-2.5">
+              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                <span className="text-[11px] font-bold text-fx-text-tertiary whitespace-nowrap">🏷️ ETIQUETAS</span>
+                {(patientTagsSaving || globalTagsSaving) && <span className="text-[10px] text-fx-ink-300">Guardando…</span>}
               </div>
               {globalTags.length > 0 ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 8 }}>
+                <div className="flex flex-wrap gap-1.5 mb-2">
                   {globalTags.map(t => {
                     const assigned = patientTagsDraft.includes(t);
                     return (
@@ -2056,24 +2051,21 @@ export default function MedicsPanel() {
                           : savePatientTags([...patientTagsDraft, t])
                         }
                         title={assigned ? `Quitar "${t}"` : `Asignar "${t}"`}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-[3px] rounded-[20px] cursor-pointer transition-all duration-150"
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          fontSize: 12, padding: '3px 10px', borderRadius: 20,
                           border: assigned ? 'none' : `1px solid ${tagColor(t)}40`,
-                          cursor: 'pointer',
                           backgroundColor: assigned ? tagColor(t) + '22' : 'transparent',
                           color: assigned ? tagColor(t) : '#bbb',
                           fontWeight: assigned ? 700 : 400,
-                          transition: 'all 0.15s',
                         }}>
-                        {assigned && <span style={{ fontSize: 9, lineHeight: 1 }}>✓</span>}
+                        {assigned && <span className="text-[9px] leading-none">✓</span>}
                         {t}
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <p style={{ fontSize: 12, color: '#ccc', margin: '0 0 8px', fontStyle: 'italic' as const }}>
+                <p className="text-xs text-fx-ink-300 mb-2 italic">
                   Sin etiquetas. Créalas desde Configuración o escribe una nueva abajo.
                 </p>
               )}
@@ -2094,12 +2086,12 @@ export default function MedicsPanel() {
                   }
                   if (!patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]);
                 }}
-                style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                className="flex gap-1.5 items-center">
                 <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
                   placeholder="Nueva etiqueta global…"
-                  style={{ padding: '4px 10px', borderRadius: 20, border: '1px solid #ddd', fontSize: 11, outline: 'none', flex: 1, minWidth: 0 }} />
+                  className="px-2.5 py-1 rounded-[20px] border border-fx-border text-[11px] outline-none flex-1 min-w-0" />
                 <button type="submit"
-                  style={{ padding: '4px 12px', borderRadius: 20, border: 'none', backgroundColor: '#f0f0f0', fontSize: 11, color: '#555', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' as const }}>
+                  className="px-3 py-1 rounded-[20px] border-none bg-fx-surface-2 text-[11px] text-fx-text-secondary cursor-pointer font-semibold whitespace-nowrap">
                   Crear y asignar
                 </button>
               </form>
@@ -2108,28 +2100,28 @@ export default function MedicsPanel() {
             {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Left column: calendar + semáforo override */}
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
-              <div style={{ ...s.card }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="medics-patient-detail__sidebar flex flex-col gap-4" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
+              <div className="medics-patient-detail__calendar bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                <div className="px-4 py-2.5 border-b border-fx-border-soft flex justify-between items-center">
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
                     else setCalendarMonth(calendarMonth - 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>←</button>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111', textTransform: 'capitalize' as const }}>
+                  }} className="bg-transparent border-none text-lg cursor-pointer px-2.5 py-1 text-fx-text-secondary">←</button>
+                  <span className="text-[13px] font-bold text-fx-text capitalize">
                     {new Date(calendarYear, calendarMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                   </span>
                   <button onClick={() => {
                     if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
                     else setCalendarMonth(calendarMonth + 1);
-                  }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', padding: '4px 10px', color: '#555' }}>→</button>
+                  }} className="bg-transparent border-none text-lg cursor-pointer px-2.5 py-1 text-fx-text-secondary">→</button>
                 </div>
                 <div style={{ padding: isMobile ? '10px 12px' : '6px 8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2, marginBottom: isMobile ? 4 : 2 }}>
+                  <div className="grid grid-cols-7" style={{ gap: isMobile ? 4 : 2, marginBottom: isMobile ? 4 : 2 }}>
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                      <div key={d} style={{ textAlign: 'center', fontSize: isMobile ? 11 : 8, fontWeight: 700, color: '#aaa', paddingBottom: 2 }}>{d}</div>
+                      <div key={d} className="text-center font-bold text-fx-text-tertiary pb-0.5" style={{ fontSize: isMobile ? 11 : 8 }}>{d}</div>
                     ))}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 2 }}>
+                  <div className="grid grid-cols-7" style={{ gap: isMobile ? 4 : 2 }}>
                     {(() => {
                       const firstDay = new Date(calendarYear, calendarMonth, 1);
                       const startDay = (firstDay.getDay() + 6) % 7;
@@ -2157,17 +2149,14 @@ export default function MedicsPanel() {
                         const hasEntry = count > 0;
 
                         cells.push(
-                          <div key={dateStr} title={`${dateStr}: ${count} registros`} style={{
+                          <div key={dateStr} title={`${dateStr}: ${count} registros`} className="flex items-center justify-center" style={{
                             aspectRatio: '1',
                             borderRadius: isMobile ? 6 : 4,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             backgroundColor: hasEntry ? th.primary : isToday ? `${th.primary}20` : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
                             border: isToday ? `1px solid ${th.primary}` : '1px solid #00000008',
                           }}>
-                            <span style={{ fontSize: isMobile ? 12 : 9, fontWeight: 600, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
+                            <span className="font-semibold" style={{ fontSize: isMobile ? 12 : 9, color: hasEntry ? '#fff' : '#888' }}>{day}</span>
                           </div>
                         );
                       }
@@ -2178,11 +2167,11 @@ export default function MedicsPanel() {
               </div>
 
               {/* Stats + Charts card */}
-              <div style={{ ...s.card }}>
-                <div style={{ padding: '8px 14px', borderBottom: '1px solid #00000010', fontSize: 12, fontWeight: 700, color: '#111' }}>
+              <div className="medics-patient-detail__stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                <div className="px-3.5 py-2 border-b border-fx-border-soft text-xs font-bold text-fx-text">
                   📊 Estadísticas
                 </div>
-                <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                <div className="px-3.5 py-2.5 flex flex-col gap-3">
                   {/* 3 compact stats + trend */}
                   {(() => {
                     const bVals = patientDetail.entries
@@ -2203,21 +2192,21 @@ export default function MedicsPanel() {
                       ? { label: '➡️ Estable', bg: '#f8fafc', color: '#64748b' }
                       : null;
                     return (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                      <div className="flex gap-1.5 flex-wrap">
                         {[
                           { label: 'Registros', value: patientDetail.totalEntries },
                           { label: 'Bristol medio', value: patientDetail.bristolAvg != null ? patientDetail.bristolAvg.toFixed(1) : '—' },
                           { label: 'Días sin reg.', value: patientDetail.daysSinceLast ?? '—' },
                         ].map(st => (
-                          <div key={st.label} style={{ flex: 1, textAlign: 'center' as const, backgroundColor: '#00000005', borderRadius: 8, padding: '6px 4px' }}>
-                            <div style={{ fontSize: 17, fontWeight: 900, color: '#111', lineHeight: 1 }}>{st.value}</div>
-                            <div style={{ fontSize: 9, color: '#999', marginTop: 3 }}>{st.label}</div>
+                          <div key={st.label} className="flex-1 text-center rounded-lg py-1.5 px-1" style={{ backgroundColor: '#00000005' }}>
+                            <div className="text-[17px] font-black text-fx-text leading-none">{st.value}</div>
+                            <div className="text-[9px] text-fx-text-tertiary mt-[3px]">{st.label}</div>
                           </div>
                         ))}
                         {trendCfg && (
-                          <div style={{ flexBasis: '100%', backgroundColor: trendCfg.bg, borderRadius: 8, padding: '5px 8px', textAlign: 'center' as const }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: trendCfg.color }}>{trendCfg.label}</span>
-                            <span style={{ fontSize: 9, color: '#999', marginLeft: 6 }}>últimas 10 deposiciones</span>
+                          <div className="rounded-lg py-[5px] px-2 text-center" style={{ flexBasis: '100%', backgroundColor: trendCfg.bg }}>
+                            <span className="text-[11px] font-bold" style={{ color: trendCfg.color }}>{trendCfg.label}</span>
+                            <span className="text-[9px] text-fx-text-tertiary ml-1.5">últimas 10 deposiciones</span>
                           </div>
                         )}
                       </div>
@@ -2226,14 +2215,14 @@ export default function MedicsPanel() {
 
                   {/* Bristol trend chart */}
                   <div>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 4 }}>TENDENCIA BRISTOL (últimas 30 deposiciones)</div>
+                    <div className="text-[9px] font-extrabold text-fx-ink-300 tracking-wide mb-1">TENDENCIA BRISTOL (últimas 30 deposiciones)</div>
                     {(() => {
                       const bColor = (b: number) => b >= 3 && b <= 5 ? '#27ae60' : b < 3 ? '#f39c12' : '#e74c3c';
                       const data = patientDetail.entries
                         .filter(e => e.entry_type === 'poop' && e.bristol != null)
                         .slice(0, 30).reverse();
                       if (data.length < 2) return (
-                        <div style={{ fontSize: 11, color: '#ccc', padding: '10px 0', textAlign: 'center' as const }}>Sin suficientes datos de Bristol</div>
+                        <div className="text-[11px] text-fx-ink-300 py-2.5 text-center">Sin suficientes datos de Bristol</div>
                       );
                       const W = 360, H = 120;
                       const XL = 24, XR = 52, YT = 10, YB = 8;
@@ -2244,7 +2233,7 @@ export default function MedicsPanel() {
                       const pts = data.map((e, i) => ({ x: xOf(i), y: yOf(e.bristol!), b: e.bristol!, date: shortDate(e.date) }));
                       const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
                       return (
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 150, display: 'block' as const, overflow: 'visible' as const }}>
+                        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[150px] block overflow-visible">
                           {/* Zone backgrounds */}
                           <rect x={XL} y={yOf(7)} width={CW} height={yOf(5) - yOf(7)} fill="#e74c3c08" />
                           <rect x={XL} y={yOf(5)} width={CW} height={yOf(3) - yOf(5)} fill="#2ecc7110" />
@@ -2271,7 +2260,7 @@ export default function MedicsPanel() {
                           {pts.map((p, i) => (
                             <g key={i}>
                               {/* Transparent hit area */}
-                              <circle cx={p.x} cy={p.y} r={9} fill="transparent" style={{ cursor: 'crosshair' }}
+                              <circle cx={p.x} cy={p.y} r={9} fill="transparent" className="cursor-crosshair"
                                 onMouseEnter={() => setBristolHover({ idx: i, b: p.b, date: p.date, svgX: p.x, svgY: p.y })}
                                 onMouseLeave={() => setBristolHover(null)} />
                               {/* Visible dot */}
@@ -2279,7 +2268,7 @@ export default function MedicsPanel() {
                                 r={bristolHover?.idx === i ? 5 : 3.5}
                                 fill={bColor(p.b)}
                                 stroke="white" strokeWidth={bristolHover?.idx === i ? 1.5 : 0}
-                                style={{ pointerEvents: 'none' as const }} />
+                                className="pointer-events-none" />
                             </g>
                           ))}
                           {/* Tooltip */}
@@ -2291,7 +2280,7 @@ export default function MedicsPanel() {
                             const ty = Math.max(YT, Math.min(bristolHover.svgY - tipH / 2, H - YB - tipH));
                             const bc = bColor(bristolHover.b);
                             return (
-                              <g style={{ pointerEvents: 'none' as const }}>
+                              <g className="pointer-events-none">
                                 <rect x={tx} y={ty} width={tipW} height={tipH} rx={4}
                                   fill="white" stroke="#e0e0e0" strokeWidth={0.8} />
                                 <rect x={tx} y={ty} width={4} height={tipH} rx={2} fill={bc} />
@@ -2308,7 +2297,7 @@ export default function MedicsPanel() {
 
                   {/* Weekly bars */}
                   <div>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 4 }}>FRECUENCIA SEMANAL (8 semanas)</div>
+                    <div className="text-[9px] font-extrabold text-fx-ink-300 tracking-wide mb-1">FRECUENCIA SEMANAL (8 semanas)</div>
                     {(() => {
                       const now = new Date();
                       const weeks = Array.from({ length: 8 }, (_, w) => {
@@ -2326,7 +2315,7 @@ export default function MedicsPanel() {
                       const total = weeks.length * (BW + GAP) - GAP;
                       const ox = (W2 - total) / 2;
                       return (
-                        <svg viewBox={`0 0 ${W2} ${H2}`} style={{ width: '100%', height: 96, display: 'block' as const, overflow: 'visible' as const }}>
+                        <svg viewBox={`0 0 ${W2} ${H2}`} className="w-full h-24 block overflow-visible">
                           {weeks.map((wk, i) => {
                             const bh = Math.max((wk.count / maxC) * (H2 - 18), wk.count > 0 ? 4 : 0);
                             const x = ox + i * (BW + GAP);
@@ -2357,11 +2346,11 @@ export default function MedicsPanel() {
                     if (top.length === 0) return null;
                     return (
                       <div>
-                        <div style={{ fontSize: 9, fontWeight: 800, color: '#bbb', letterSpacing: 0.5, marginBottom: 6 }}>SÍNTOMAS MÁS FRECUENTES</div>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                        <div className="text-[9px] font-extrabold text-fx-ink-300 tracking-wide mb-1.5">SÍNTOMAS MÁS FRECUENTES</div>
+                        <div className="flex gap-1 flex-wrap">
                           {top.map(([sym, count]) => (
-                            <span key={sym} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, backgroundColor: '#e74c3c0e', color: '#c0392b', fontWeight: 600 }}>
-                              {SYMPTOM_LABEL[sym] || sym} <span style={{ fontWeight: 400, opacity: 0.55 }}>×{count}</span>
+                            <span key={sym} className="text-[11px] px-2 py-0.5 rounded-md font-semibold" style={{ backgroundColor: '#e74c3c0e', color: '#c0392b' }}>
+                              {SYMPTOM_LABEL[sym] || sym} <span className="font-normal opacity-55">×{count}</span>
                             </span>
                           ))}
                         </div>
@@ -2372,30 +2361,23 @@ export default function MedicsPanel() {
               </div>
 
               {/* Clinical notes card */}
-              <div style={{ ...s.card }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+              <div className="medics-patient-detail__notes bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
                   📝 Notas clínicas
                 </div>
-                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                <div className="px-4 py-3 flex flex-col gap-2">
                   <textarea
                     value={notesDraft}
                     onChange={e => setNotesDraft(e.target.value)}
                     placeholder="Observaciones, diagnóstico, próxima cita…"
                     rows={5}
-                    style={{
-                      width: '100%', padding: '10px 12px', borderRadius: 10,
-                      border: '1px solid #e0e0e0', fontSize: 13, color: '#333',
-                      resize: 'vertical' as const, fontFamily: 'inherit',
-                      lineHeight: 1.5, boxSizing: 'border-box' as const, outline: 'none',
-                    }}
+                    className="w-full px-3 py-2.5 rounded-[10px] border border-fx-border text-[13px] text-fx-text-secondary resize-y font-sans leading-relaxed box-border outline-none"
                   />
                   <button
                     onClick={handleSaveNotes}
                     disabled={notesSaving}
-                    style={{
-                      ...ts.btnPrimary, padding: '8px 0', fontSize: 13,
-                      opacity: notesSaving ? 0.5 : 1,
-                    }}
+                    className="w-full py-2 rounded-fx-pill text-white text-[13px] font-semibold border-none cursor-pointer font-fx"
+                    style={{ backgroundColor: th.dark, opacity: notesSaving ? 0.5 : 1 }}
                   >
                     {notesSaving ? 'Guardando…' : 'Guardar nota'}
                   </button>
@@ -2416,11 +2398,11 @@ export default function MedicsPanel() {
                 const hasFilter = entryFilterFrom || entryFilterTo;
 
                 return (
-                  <div style={{ ...s.card, flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, boxSizing: 'border-box' as const }}>
+                  <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border" style={{ width: isMobile ? '100%' : undefined }}>
                     {/* Header + filter bar */}
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #00000015' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+                    <div className="px-4 py-3 border-b border-fx-border-soft">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className="text-[15px] font-bold text-fx-text">
                           Historial
                           {hasFilter
                             ? ` (${filteredEntries.length} de ${patientDetail.totalEntries})`
@@ -2428,78 +2410,78 @@ export default function MedicsPanel() {
                         </span>
                         {hasFilter && (
                           <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryPage(0); }}
-                            style={{ fontSize: 11, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                            className="text-[11px] bg-transparent border-none cursor-pointer font-semibold" style={{ color: '#e74c3c' }}>
                             ✕ Limpiar filtro
                           </button>
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>De</span>
+                      <div className="flex gap-2 items-center flex-wrap">
+                        <span className="text-[11px] font-semibold text-fx-text-tertiary">De</span>
                         <input type="date" value={entryFilterFrom}
                           onChange={(e) => { setEntryFilterFrom(e.target.value); setEntryPage(0); }}
-                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
-                        <span style={{ fontSize: 11, fontWeight: 600, color: '#888' }}>a</span>
+                          className="text-xs px-2 py-1 rounded-md border border-fx-border text-fx-text-secondary" />
+                        <span className="text-[11px] font-semibold text-fx-text-tertiary">a</span>
                         <input type="date" value={entryFilterTo}
                           onChange={(e) => { setEntryFilterTo(e.target.value); setEntryPage(0); }}
-                          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', color: '#333' }} />
+                          className="text-xs px-2 py-1 rounded-md border border-fx-border text-fx-text-secondary" />
                       </div>
                     </div>
 
                     {filteredEntries.length === 0 ? (
-                      <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                      <div className="p-10 text-center text-fx-text-tertiary text-sm">
                         {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                      <div className="flex flex-col">
                         {/* Header row */}
-                        <div style={{ display: 'flex', alignItems: 'center', padding: '7px 16px', backgroundColor: '#00000008', borderBottom: '1px solid #00000010' }}>
-                          <span style={{ width: 32, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}></span>
-                          <span style={{ width: 130, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Fecha / Hora</span>
-                          <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: '#aaa', textTransform: 'uppercase' as const }}>Datos</span>
+                        <div className="flex items-center px-4 py-[7px] border-b border-fx-border-soft" style={{ backgroundColor: '#00000008' }}>
+                          <span className="w-8 text-[10px] font-bold text-fx-text-tertiary uppercase"></span>
+                          <span className="w-[130px] text-[10px] font-bold text-fx-text-tertiary uppercase">Fecha / Hora</span>
+                          <span className="flex-1 text-[10px] font-bold text-fx-text-tertiary uppercase">Datos</span>
                         </div>
                         {pagedEntries.map((entry, i) => {
                           const isUrine = entry.entry_type === 'urine';
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? '#27ae60' : entry.bristol < 3 ? '#f39c12' : '#e74c3c';
                           const chip = (label: string, bg: string, color: string) => (
-                            <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 6, backgroundColor: bg, color, fontWeight: 600, whiteSpace: 'nowrap' as const }}>{label}</span>
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-md font-semibold whitespace-nowrap" style={{ backgroundColor: bg, color }}>{label}</span>
                           );
                           return (
-                            <div key={entry.entry_id || i} style={{ borderBottom: i < pagedEntries.length - 1 ? '1px solid #00000008' : 'none' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 16px', gap: 0, position: 'relative' as const }}>
+                            <div key={entry.entry_id || i} className={i < pagedEntries.length - 1 ? 'border-b border-fx-border-soft' : ''}>
+                              <div className="flex items-start px-4 py-2.5 relative">
                                 {/* Type icon */}
-                                <div style={{ width: 32, paddingTop: 2 }}>
-                                  <span style={{ fontSize: 16 }}>{isUrine ? '💧' : '💩'}</span>
+                                <div className="w-8 pt-0.5">
+                                  <span className="text-base">{isUrine ? '💧' : '💩'}</span>
                                 </div>
                                 {/* Date / time */}
-                                <div style={{ width: 130 }}>
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{shortDate(entry.date)}</span>
-                                  {entry.time && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 6 }}>{entry.time}</span>}
+                                <div className="w-[130px]">
+                                  <span className="text-[13px] font-bold text-fx-text">{shortDate(entry.date)}</span>
+                                  {entry.time && <span className="text-[11px] text-fx-ink-300 ml-1.5">{entry.time}</span>}
                                 </div>
                                 {/* Type-specific data */}
-                                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap' as const, gap: 4, alignItems: 'center', paddingRight: 28 }}>
+                                <div className="flex-1 flex flex-wrap gap-1 items-center pr-7">
                                   {isUrine ? (
                                     <>
                                       {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, '#3498db15', '#2980b9')}
                                       {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, '#9b59b615', '#8e44ad')}
-                                      {entry.urine_color && <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', backgroundColor: entry.urine_color, border: '1px solid #00000020', verticalAlign: 'middle' }} />}
+                                      {entry.urine_color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.urine_color, border: '1px solid #00000020' }} />}
                                       {entry.urine_characteristics.length > 0
                                         ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, '#e74c3c12', '#c0392b'))
                                         : null}
                                       {entry.urine_urgency != null && chip(`Urgencia ${entry.urine_urgency}/5`, '#f59e0b18', '#b45309')}
                                       {entry.during_sleep === true && chip('Durante sueño', '#8b5cf618', '#6d28d9')}
-                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && entry.urine_urgency == null && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                      {entry.urine_type == null && entry.urine_quantity === 0 && entry.urine_characteristics.length === 0 && entry.urine_urgency == null && <span className="text-xs" style={{ color: '#ddd' }}>—</span>}
                                     </>
                                   ) : (
                                     <>
                                       {entry.bristol != null && chip(`T${entry.bristol}`, `${bristolColor}20`, bristolColor!)}
                                       {entry.floats != null && chip(FLOATS_LABEL[entry.floats], '#3498db15', '#2980b9')}
-                                      {entry.color && <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', backgroundColor: entry.color, border: '1px solid #00000020', verticalAlign: 'middle' }} />}
+                                      {entry.color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.color, border: '1px solid #00000020' }} />}
                                       {entry.quantity != null && chip(`${entry.quantity}`, '#9b59b615', '#8e44ad')}
                                       {entry.duration != null && chip(DURATION_LABEL[entry.duration], '#f39c1215', '#e67e22')}
                                       {entry.symptoms.length > 0
                                         ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, '#e74c3c12', '#c0392b'))
                                         : null}
-                                      {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span style={{ color: '#ddd', fontSize: 12 }}>—</span>}
+                                      {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span className="text-xs" style={{ color: '#ddd' }}>—</span>}
                                     </>
                                   )}
                                 </div>
@@ -2507,46 +2489,48 @@ export default function MedicsPanel() {
                                 <button
                                   onClick={() => setNoteEditing(ne => ne?.entryId === entry.entry_id ? null : { entryId: entry.entry_id, draft: entry.doctor_note || '' })}
                                   title={entry.doctor_note ? 'Ver / editar anotación' : 'Añadir anotación'}
-                                  style={{ position: 'absolute' as const, right: 10, top: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: entry.doctor_note ? 1 : 0.2, padding: '3px 5px', borderRadius: 4 }}
+                                  className="absolute right-2.5 top-2 bg-transparent border-none cursor-pointer text-sm px-1.5 py-0.5 rounded"
+                                  style={{ opacity: entry.doctor_note ? 1 : 0.2 }}
                                   onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                                   onMouseLeave={e => (e.currentTarget.style.opacity = entry.doctor_note ? '1' : '0.2')}
                                 >📝</button>
                               </div>
                               {/* Patient notes (from patient app) */}
                               {entry.notes && (
-                                <div style={{ padding: '0 16px 6px 178px' }}>
-                                  <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>{entry.notes}</p>
+                                <div className="pl-[178px] pr-4 pb-1.5">
+                                  <p className="text-xs text-fx-text-secondary m-0 leading-snug">{entry.notes}</p>
                                 </div>
                               )}
                               {/* Doctor annotation */}
                               {entry.doctor_note && noteEditing?.entryId !== entry.entry_id && (
-                                <div style={{ margin: '0 16px 8px 178px', padding: '6px 10px', backgroundColor: '#fffbeb', borderLeft: '3px solid #f59e0b', borderRadius: '0 6px 6px 0' }}>
-                                  <p style={{ fontSize: 12, color: '#78350f', margin: 0, lineHeight: 1.4 }}>🩺 {entry.doctor_note}</p>
+                                <div className="ml-[178px] mr-4 mb-2 px-2.5 py-1.5 rounded-r-md" style={{ backgroundColor: '#fffbeb', borderLeft: '3px solid #f59e0b' }}>
+                                  <p className="text-xs m-0 leading-snug" style={{ color: '#78350f' }}>🩺 {entry.doctor_note}</p>
                                 </div>
                               )}
                               {/* Inline annotation editor */}
                               {noteEditing?.entryId === entry.entry_id && (
-                                <div style={{ margin: '0 16px 10px 178px', display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                                <div className="ml-[178px] mr-4 mb-2.5 flex flex-col gap-1.5">
                                   <textarea
                                     autoFocus
                                     value={noteEditing.draft}
                                     onChange={e => setNoteEditing({ ...noteEditing, draft: e.target.value })}
                                     placeholder="Anotación médica (ej: inicio de omeprazol, coincide con brote…)"
                                     rows={2}
-                                    style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #fbbf24', fontSize: 12, fontFamily: 'inherit', resize: 'none' as const, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fffbeb' }}
+                                    className="w-full px-2.5 py-1.5 rounded-lg border text-xs font-sans resize-none outline-none box-border"
+                                    style={{ border: '1px solid #fbbf24', backgroundColor: '#fffbeb' }}
                                   />
-                                  <div style={{ display: 'flex', gap: 6 }}>
+                                  <div className="flex gap-1.5">
                                     <button onClick={() => handleSaveEntryNote(entry.entry_id, noteEditing.draft)}
-                                      style={{ padding: '4px 14px', borderRadius: 6, border: 'none', backgroundColor: '#f59e0b', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                      className="px-3.5 py-1 rounded-md border-none text-white text-xs font-bold cursor-pointer" style={{ backgroundColor: '#f59e0b' }}>
                                       Guardar
                                     </button>
                                     <button onClick={() => setNoteEditing(null)}
-                                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #e0e0e0', backgroundColor: '#fff', fontSize: 12, color: '#666', cursor: 'pointer' }}>
+                                      className="px-2.5 py-1 rounded-md border border-fx-border bg-fx-surface text-xs text-fx-text-secondary cursor-pointer">
                                       Cancelar
                                     </button>
                                     {entry.doctor_note && (
                                       <button onClick={() => handleSaveEntryNote(entry.entry_id, '')}
-                                        style={{ padding: '4px 10px', borderRadius: 6, border: 'none', backgroundColor: '#fee2e2', fontSize: 12, color: '#dc2626', cursor: 'pointer', marginLeft: 'auto' as const }}>
+                                        className="px-2.5 py-1 rounded-md border-none text-xs cursor-pointer ml-auto" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
                                         Eliminar
                                       </button>
                                     )}
@@ -2561,17 +2545,17 @@ export default function MedicsPanel() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid #00000010', backgroundColor: '#00000005' }}>
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-fx-border-soft" style={{ backgroundColor: '#00000005' }}>
                         <button onClick={() => setEntryPage(p => Math.max(0, p - 1))} disabled={entryPage === 0}
-                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === 0 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === 0 ? 0.4 : 1 }}>
+                          className="px-3.5 py-[5px] rounded-lg border border-fx-border bg-fx-surface text-[13px]" style={{ cursor: entryPage === 0 ? 'default' : 'pointer', opacity: entryPage === 0 ? 0.4 : 1 }}>
                           ← Anterior
                         </button>
-                        <span style={{ fontSize: 12, color: '#666' }}>
+                        <span className="text-xs text-fx-text-secondary">
                           Página <strong>{entryPage + 1}</strong> de <strong>{totalPages}</strong>
-                          <span style={{ color: '#aaa' }}> · {filteredEntries.length} registros</span>
+                          <span className="text-fx-ink-300"> · {filteredEntries.length} registros</span>
                         </span>
                         <button onClick={() => setEntryPage(p => Math.min(totalPages - 1, p + 1))} disabled={entryPage === totalPages - 1}
-                          style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid #e0e0e0', backgroundColor: '#fff', cursor: entryPage === totalPages - 1 ? 'default' : 'pointer', fontSize: 13, opacity: entryPage === totalPages - 1 ? 0.4 : 1 }}>
+                          className="px-3.5 py-[5px] rounded-lg border border-fx-border bg-fx-surface text-[13px]" style={{ cursor: entryPage === totalPages - 1 ? 'default' : 'pointer', opacity: entryPage === totalPages - 1 ? 0.4 : 1 }}>
                           Siguiente →
                         </button>
                       </div>
@@ -2587,72 +2571,64 @@ export default function MedicsPanel() {
                 {/* Backdrop */}
                 <div
                   onClick={() => setPatientConfigOpen(false)}
-                  style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: 'rgba(0,0,0,0.45)' }}
+                  className="medics-patient-config__backdrop fixed inset-0 z-[200] bg-black/45"
                 />
                 {/* Panel */}
                 <div
                   onClick={e => e.stopPropagation()}
-                  style={{
-                    position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 201,
-                    width: '100%', maxWidth: 420,
-                    backgroundColor: '#F5F5F5',
-                    boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
-                    display: 'flex', flexDirection: 'column' as const,
-                  }}
+                  className="medics-patient-config fixed top-0 right-0 bottom-0 z-[201] w-full flex flex-col"
+                  style={{ maxWidth: 420, backgroundColor: '#F5F5F5', boxShadow: '-4px 0 24px rgba(0,0,0,0.18)' }}
                 >
                   {/* Modal header */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 20px', backgroundColor: th.dark, color: '#fff', flexShrink: 0,
-                  }}>
-                    <span style={{ fontSize: 16, fontWeight: 700 }}>
+                  <div className="medics-patient-config__header flex items-center justify-between px-5 py-4 text-white flex-shrink-0" style={{ backgroundColor: th.dark }}>
+                    <span className="text-base font-bold">
                       ⚙️ Configuración — {selectedPatient.display_name || selectedPatient.patient_email}
                     </span>
                     <button
                       onClick={() => setPatientConfigOpen(false)}
-                      style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+                      className="bg-transparent border-none text-white text-[22px] cursor-pointer leading-none px-1"
                     >
                       ×
                     </button>
                   </div>
 
                   {/* Modal content */}
-                  <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+                  <div className="medics-patient-config__content flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
 
                     {/* Semáforo personalizado */}
-                    <div style={{ ...s.card, padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: patientSemaforoOverride ? 14 : 0 }}>
+                    <div className="medics-patient-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-3.5">
+                      <div className="flex items-center gap-2.5" style={{ marginBottom: patientSemaforoOverride ? 14 : 0 }}>
                         <Switch
                           checked={patientSemaforoOverride}
                           onChange={setPatientSemaforoOverride}
                           style={{ backgroundColor: patientSemaforoOverride ? th.primary : undefined }}
                         />
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>🚦 Semáforo personalizado</span>
+                        <span className="text-[13px] font-semibold text-fx-text-secondary">🚦 Semáforo personalizado</span>
                         {!patientSemaforoOverride && (
-                          <span style={{ fontSize: 11, color: '#aaa' }}>usa valores generales</span>
+                          <span className="text-[11px] text-fx-ink-300">usa valores generales</span>
                         )}
                       </div>
 
                       {patientSemaforoOverride && (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#2ecc7115', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #27ae60', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <span style={{ fontSize: 12 }}>🟢</span>
-                              <span style={{ fontSize: 10, color: '#27ae60', fontWeight: 700 }}>≤ {patientSemaforoGreen}d</span>
+                        <div className="flex gap-1.5">
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: '#2ecc7115', borderLeft: '3px solid #27ae60' }}>
+                            <div className="flex items-center gap-[3px]">
+                              <span className="text-xs">🟢</span>
+                              <span className="text-[10px] font-bold" style={{ color: '#27ae60' }}>≤ {patientSemaforoGreen}d</span>
                             </div>
                             <SemaforoSlider value={patientSemaforoGreen} min={0} max={Math.max(patientSemaforoRed - 1, 1)} color="#27ae60"
                               onChange={(v) => { setPatientSemaforoGreen(v); if (v >= patientSemaforoRed) setPatientSemaforoRed(v + 1); }} />
                           </div>
-                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#f39c1215', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #f39c12', display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <span style={{ fontSize: 12 }}>🟠</span>
-                              <span style={{ fontSize: 10, color: '#e67e22', fontWeight: 700 }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col justify-center" style={{ backgroundColor: '#f39c1215', borderLeft: '3px solid #f39c12' }}>
+                            <div className="flex items-center gap-[3px]">
+                              <span className="text-xs">🟠</span>
+                              <span className="text-[10px] font-bold" style={{ color: '#e67e22' }}>{patientSemaforoGreen + 1}–{patientSemaforoRed}d</span>
                             </div>
                           </div>
-                          <div style={{ flex: 1, minWidth: 0, backgroundColor: '#e74c3c15', borderRadius: 8, padding: '6px 8px', borderLeft: '3px solid #e74c3c', display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <span style={{ fontSize: 12 }}>🔴</span>
-                              <span style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>&gt; {patientSemaforoRed}d</span>
+                          <div className="flex-1 min-w-0 rounded-lg px-2 py-1.5 flex flex-col gap-1.5" style={{ backgroundColor: '#e74c3c15', borderLeft: '3px solid #e74c3c' }}>
+                            <div className="flex items-center gap-[3px]">
+                              <span className="text-xs">🔴</span>
+                              <span className="text-[10px] font-bold" style={{ color: '#e74c3c' }}>&gt; {patientSemaforoRed}d</span>
                             </div>
                             <SemaforoSlider value={patientSemaforoRed} min={Math.max(patientSemaforoGreen + 1, 1)} max={30} color="#e74c3c"
                               onChange={(v) => { setPatientSemaforoRed(v); if (v <= patientSemaforoGreen) setPatientSemaforoGreen(v - 1); }} />
@@ -2662,14 +2638,14 @@ export default function MedicsPanel() {
                     </div>
 
                     {/* Campos del formulario */}
-                    <div style={{ ...s.card }}>
-                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                    <div className="medics-patient-config__fields bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                      <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
                         📋 Campos del formulario
                       </div>
-                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
-                        <div style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Tipo de registro permitido</div>
-                          <div style={{ display: 'flex', gap: 6 }}>
+                      <div className="p-3 px-4 flex flex-col gap-0">
+                        <div className="mb-3.5">
+                          <div className="text-xs font-bold text-fx-text-secondary mb-2">Tipo de registro permitido</div>
+                          <div className="flex gap-1.5">
                             {[
                               { value: 'both', label: 'Ambas opciones' },
                               { value: 'poop_only', label: 'Solo deposición' },
@@ -2678,12 +2654,10 @@ export default function MedicsPanel() {
                               <button
                                 key={opt.value}
                                 onClick={() => setPatientEntryTypeMode(opt.value)}
+                                className="flex-1 py-1.5 px-1 rounded-lg border-none cursor-pointer text-[11px] font-bold leading-tight transition-all duration-150"
                                 style={{
-                                  flex: 1, padding: '7px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                                  fontSize: 11, fontWeight: 700, lineHeight: 1.3,
                                   backgroundColor: patientEntryTypeMode === opt.value ? th.primary : '#f0f0f0',
                                   color: patientEntryTypeMode === opt.value ? '#fff' : '#555',
-                                  transition: 'all 0.15s',
                                 }}
                               >
                                 {opt.label}
@@ -2691,7 +2665,7 @@ export default function MedicsPanel() {
                             ))}
                           </div>
                         </div>
-                        <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                        <p className="text-xs text-fx-ink-400 mb-2.5 leading-relaxed">
                           Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                         </p>
                         {[
@@ -2711,12 +2685,12 @@ export default function MedicsPanel() {
                           return (
                             <div key={field.id}>
                               {showGroupHeader && (
-                                <div style={{ fontSize: 10, fontWeight: 800, color: '#aaa', letterSpacing: 0.5, textTransform: 'uppercase' as const, padding: i === 0 ? '4px 0 6px' : '12px 0 6px', borderTop: i !== 0 ? '1px solid #00000010' : 'none' }}>
+                                <div className={`text-[10px] font-extrabold text-fx-ink-300 tracking-wide uppercase ${i === 0 ? 'py-1 pb-1.5' : 'pt-3 pb-1.5'} ${i !== 0 ? 'border-t border-fx-border-soft' : ''}`}>
                                   {field.group}
                                 </div>
                               )}
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid #00000008' : 'none' }}>
-                                <span style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>{field.label}</span>
+                              <div className={`flex items-center justify-between py-2 ${i < arr.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
+                                <span className="text-[13px] font-medium text-fx-text">{field.label}</span>
                                 <Switch
                                   checked={isVisible}
                                   onChange={(checked) =>
@@ -2733,73 +2707,73 @@ export default function MedicsPanel() {
                     </div>
 
                     {/* Notificaciones push */}
-                    <div style={{ ...s.card }}>
-                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #00000010', fontSize: 13, fontWeight: 700, color: '#111' }}>
+                    <div className="medics-patient-config__push bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                      <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
                         🔔 Notificaciones push
                       </div>
-                      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                        <p style={{ fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>
+                      <div className="p-3 px-4 flex flex-col gap-3">
+                        <p className="text-xs text-fx-ink-400 leading-relaxed">
                           Recordatorio automático cuando el paciente lleva X horas sin registrar.
                         </p>
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                          <label className="text-xs font-bold text-fx-text-secondary block mb-1">
                             Horas sin registrar antes de notificar
                           </label>
                           <input
                             type="number" min={1} max={168} value={patientPushMinHours}
                             onChange={e => setPatientPushMinHours(Number(e.target.value))}
-                            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                            className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
                           />
-                          <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 24h</span>
+                          <span className="text-[11px] text-fx-ink-300">Por defecto: 24h</span>
                         </div>
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+                          <label className="text-xs font-bold text-fx-text-secondary block mb-1">
                             Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
                           </label>
                           <input
                             type="number" min={1} max={24} value={patientPushFrequency}
                             onChange={e => setPatientPushFrequency(Number(e.target.value))}
-                            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 13, color: '#333', boxSizing: 'border-box' as const }}
+                            className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
                           />
-                          <span style={{ fontSize: 11, color: '#aaa' }}>Por defecto: 2 (cada 12h)</span>
+                          <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>
                         </div>
-                        <div style={{ borderTop: '1px solid #00000010', paddingTop: 12 }}>
-                          <p style={{ fontSize: 12, color: '#888', margin: '0 0 10px', lineHeight: 1.5 }}>
+                        <div className="border-t border-fx-border-soft pt-3">
+                          <p className="text-xs text-fx-ink-400 mb-2.5 leading-relaxed">
                             Envía una notificación ahora para verificar que funciona correctamente.
                           </p>
                           <button
                             onClick={handleSendTestPush}
                             disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
+                            className="w-full py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent"
                             style={{
-                              width: '100%', padding: '8px 14px', fontSize: 12, fontWeight: 700,
-                              borderRadius: 8, border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
-                              backgroundColor: 'transparent', color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
+                              border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
+                              color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
                             }}
                           >
                             {pushTestStatus === 'sending' ? '⏳ Enviando...' : '🔔 Enviar notificación de prueba'}
                           </button>
                           {!selectedPatient?.hasPushSub && (
-                            <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>El paciente no tiene notificaciones activadas.</p>
+                            <p className="text-[11px] text-fx-ink-300 mt-1.5">El paciente no tiene notificaciones activadas.</p>
                           )}
                           {pushTestStatus === 'ok' && (
-                            <p style={{ fontSize: 12, color: '#27ae60', fontWeight: 600, marginTop: 8 }}>✅ Notificación enviada</p>
+                            <p className="text-xs text-fx-success-500 font-semibold mt-2">✅ Notificación enviada</p>
                           )}
                           {pushTestStatus === 'error' && (
-                            <p style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginTop: 8 }}>❌ {pushTestError}</p>
+                            <p className="text-xs text-fx-error-500 font-semibold mt-2">❌ {pushTestError}</p>
                           )}
                         </div>
                       </div>
                     </div>
 
                     {/* Single save button for all sections */}
-                    <div style={{ paddingBottom: 8 }}>
+                    <div className="medics-patient-config__save pb-2">
                       {patientConfigSaved && (
-                        <div style={{ fontSize: 13, color: '#27ae60', fontWeight: 600, marginBottom: 8, textAlign: 'center' as const }}>✅ Configuración guardada</div>
+                        <div className="text-[13px] text-fx-success-500 font-semibold mb-2 text-center">✅ Configuración guardada</div>
                       )}
                       {patientConfigError && (
-                        <div style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600, marginBottom: 8 }}>❌ {patientConfigError}</div>
+                        <div className="text-xs text-fx-error-500 font-semibold mb-2">❌ {patientConfigError}</div>
                       )}
-                      <button onClick={handleSavePatientConfig} style={{ ...ts.btnPrimary, width: '100%', padding: '13px 0', fontSize: 14, borderRadius: 12 }}>
+                      <button onClick={handleSavePatientConfig} className="w-full py-3.5 text-sm rounded-fx-md" style={{ ...ts.btnPrimary }}>
                         Guardar configuración
                       </button>
                     </div>
@@ -2808,7 +2782,7 @@ export default function MedicsPanel() {
                 </div>
               </>
             )}
-          </>
+          </div>
         )}
 
         {/* ── INVITAR PACIENTE ── */}
