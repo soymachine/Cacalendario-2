@@ -11,6 +11,55 @@ interface AuthScreenProps {
 
 type Mode = 'login' | 'signup' | 'forgot' | 'forgot-sent' | 'reset';
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  backgroundColor: D.chip,
+  border: 'none',
+  borderRadius: 12,
+  padding: '14px 16px',
+  fontSize: 16,
+  color: D.text,
+  outline: 'none',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+  marginTop: 8,
+};
+
+const EyeIcon = ({ open }: { open: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={D.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {open ? (
+      <>
+        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ) : (
+      <>
+        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </>
+    )}
+  </svg>
+);
+
+interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  showPassword: boolean;
+  onToggle: () => void;
+}
+
+const PasswordInput = ({ showPassword, onToggle, ...props }: PasswordInputProps) => (
+  <div style={{ position: 'relative', marginTop: 8 }}>
+    <input {...props} type={showPassword ? 'text' : 'password'} style={{ ...inputStyle, marginTop: 0, paddingRight: 44 }} />
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+      style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}
+    >
+      <EyeIcon open={showPassword} />
+    </button>
+  </div>
+);
+
 export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthScreenProps) {
   const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecovery, clearRecovery } = useAuth();
   const [mode, setMode] = useState<Mode>(isRecovery ? 'reset' : 'login');
@@ -60,54 +109,10 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
     setLoading(false);
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    backgroundColor: D.chip,
-    border: 'none',
-    borderRadius: 12,
-    padding: '14px 16px',
-    fontSize: 16,
-    color: D.text,
-    outline: 'none',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    marginTop: 8,
-  };
-
   const labelStyle: React.CSSProperties = {
     fontSize: 11, fontWeight: 900, color: D.textMuted,
     letterSpacing: 0.5, marginTop: 16, display: 'block',
   };
-
-  const EyeIcon = ({ open }: { open: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={D.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      {open ? (
-        <>
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
-          <circle cx="12" cy="12" r="3" />
-        </>
-      ) : (
-        <>
-          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </>
-      )}
-    </svg>
-  );
-
-  const PasswordInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div style={{ position: 'relative', marginTop: 8 }}>
-      <input {...props} type={showPassword ? 'text' : 'password'} style={{ ...inputStyle, marginTop: 0, paddingRight: 44 }} />
-      <button
-        type="button"
-        onClick={() => setShowPassword(s => !s)}
-        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-        style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}
-      >
-        <EyeIcon open={showPassword} />
-      </button>
-    </div>
-  );
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, overflow: 'hidden', backgroundColor: D.bg }}>
@@ -136,9 +141,9 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
               <p style={{ fontSize: 22, fontWeight: 900, color: D.text, textAlign: 'center' }}>Nueva contraseña</p>
               <p style={{ fontSize: 13, color: D.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 8 }}>Introduce tu nueva contraseña</p>
               <span style={labelStyle}>NUEVA CONTRASEÑA</span>
-              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+              <PasswordInput showPassword={showPassword} onToggle={() => setShowPassword(s => !s)} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
               <span style={labelStyle}>CONFIRMAR CONTRASEÑA</span>
-              <PasswordInput value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" autoComplete="new-password" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} />
+              <PasswordInput showPassword={showPassword} onToggle={() => setShowPassword(s => !s)} value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" autoComplete="new-password" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} />
               {error && <p style={{ fontSize: 13, color: D.danger, marginTop: 8 }}>{error}</p>}
               <button onClick={handleResetPassword} disabled={loading} style={{ width: '100%', marginTop: 20, padding: '14px 0', borderRadius: 99, border: 'none', cursor: 'pointer', backgroundColor: D.primary, color: D.primaryText, fontSize: 16, fontWeight: 700, opacity: loading ? 0.5 : 1 }}>
                 {loading ? '...' : 'Cambiar contraseña'}
@@ -213,7 +218,7 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" autoComplete="email" style={inputStyle} />
 
               <span style={labelStyle}>CONTRASEÑA</span>
-              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} />
+              <PasswordInput showPassword={showPassword} onToggle={() => setShowPassword(s => !s)} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} onKeyDown={(e) => e.key === 'Enter' && handleSubmit()} />
 
               {error && <p style={{ fontSize: 13, color: D.danger, marginTop: 8 }}>{error}</p>}
 
