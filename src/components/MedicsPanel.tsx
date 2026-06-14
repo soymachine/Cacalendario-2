@@ -1580,9 +1580,9 @@ export default function MedicsPanel() {
           );
           return (
             <div className="medics-inicio">
-              <div className="medics-inicio__hero rounded-fx-xl px-5 py-5 md:px-7 md:py-6 mb-5" style={{ background: 'var(--gradient-brand)' }}>
-                <h1 className="text-[22px] md:text-[28px] font-extrabold text-white m-0 tracking-tight">{`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''}`}</h1>
-                <p className="text-sm text-white/80 mt-1 mb-0">{patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos \u00B7 ${pending.length} invitaciones pendientes`}</p>
+              <div className="medics-inicio__hero mb-5">
+                <h1 className="text-[22px] md:text-[28px] font-extrabold text-fx-text m-0 tracking-tight">{`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''}`}</h1>
+                <p className="text-sm text-fx-text-secondary mt-1 mb-0">{patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos \u00B7 ${pending.length} invitaciones pendientes`}</p>
               </div>
               {patientsLoading ? (
                 <div className="medics-inicio__loading flex justify-center items-center p-20">
