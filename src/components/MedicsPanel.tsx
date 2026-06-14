@@ -9,7 +9,7 @@ import type { MedicsTheme } from '../lib/palettes';
 import { initSentry } from '../lib/sentry';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
-  Trash, TrendUp, TrendDown, Minus, NotePencil, Image,
+  Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
 } from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
@@ -223,6 +223,7 @@ export default function MedicsPanel() {
   const [googleProfileMode, setGoogleProfileMode] = useState(false);
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
@@ -1600,7 +1601,7 @@ export default function MedicsPanel() {
               </div>
               {/* Practice stats */}
               {practiceStats !== null && accepted.length > 0 && (
-                <div className="medics-practice-stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
+                <div className="medics-practice-stats bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
                   <div>
                     <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">REGISTROS ESTA SEMANA</div>
                     <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekEntries}</div>
@@ -1633,7 +1634,7 @@ export default function MedicsPanel() {
               )}
               {/* Attention list */}
               {attentionList.length > 0 && (
-                <div className="medics-attention-list bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                <div className="medics-attention-list bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                   <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex justify-between items-center">
                     <span>Requieren atención</span>
                     <button onClick={() => { setSemaforoFilter('all'); setSection('pacientes'); }}
@@ -1664,7 +1665,7 @@ export default function MedicsPanel() {
                 </div>
               )}
               {accepted.length === 0 && (
-                <div className="medics-empty-state bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft p-8 text-center">
+                <div className="medics-empty-state bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft p-8 text-center">
                   <div className="text-[15px] font-bold text-fx-text mb-2">Aún no tienes pacientes</div>
                   <div className="text-[13px] text-fx-text-tertiary mb-5">Invita a tu primer paciente para empezar el seguimiento.</div>
                   <button onClick={() => setSection('invitar')} className="w-full px-6 py-2.5 rounded-fx-pill text-white font-semibold text-[15px] border-none cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>
@@ -1685,7 +1686,7 @@ export default function MedicsPanel() {
               subtitle={`${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
               actions={<button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">Actualizar</button>}
             />
-            <div className="medics-pacientes__card bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+            <div className="medics-pacientes__card bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
               {/* Semáforo quick-filter pills */}
               {(() => {
                 const acc = patients.filter(p => p.status === 'accepted');
@@ -1949,7 +1950,7 @@ export default function MedicsPanel() {
             />
 
             {/* Row 1: Semáforo — all inline */}
-            <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap">
+            <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap mb-4">
               <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
               <span className="text-[15px] font-bold text-fx-text">
                 {patientDetail.daysSinceLast === null
@@ -1967,7 +1968,7 @@ export default function MedicsPanel() {
             </div>
 
             {/* Tags bar — global catalog, click to assign/unassign, input to create new */}
-            <div className="medics-patient-detail__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-2.5">
+            <div className="medics-patient-detail__tags bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-2.5 mb-4">
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                 <span className="text-[11px] font-bold text-fx-text-tertiary whitespace-nowrap">ETIQUETAS</span>
                 {(patientTagsSaving || globalTagsSaving) && <span className="text-[10px] text-fx-ink-300">Guardando…</span>}
@@ -2033,7 +2034,7 @@ export default function MedicsPanel() {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
               {/* Left column: calendar + semáforo override */}
               <div className="medics-patient-detail__sidebar flex flex-col gap-4" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
-              <div className="medics-patient-detail__calendar bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+              <div className="medics-patient-detail__calendar bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                 <div className="px-4 py-2.5 border-b border-fx-border-soft flex justify-between items-center">
                   <button onClick={() => {
                     if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
@@ -2099,7 +2100,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Stats + Charts card */}
-              <div className="medics-patient-detail__stats bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+              <div className="medics-patient-detail__stats bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                 <div className="px-3.5 py-2 border-b border-fx-border-soft text-xs font-bold text-fx-text">
                   Estadísticas
                 </div>
@@ -2293,7 +2294,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Clinical notes card */}
-              <div className="medics-patient-detail__notes bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+              <div className="medics-patient-detail__notes bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                 <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
                   Notas clínicas
                 </div>
@@ -2330,7 +2331,7 @@ export default function MedicsPanel() {
                 const hasFilter = entryFilterFrom || entryFilterTo;
 
                 return (
-                  <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border" style={{ width: isMobile ? '100%' : undefined }}>
+                  <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border" style={{ width: isMobile ? '100%' : undefined }}>
                     {/* Header + filter bar */}
                     <div className="px-4 py-3 border-b border-fx-border-soft">
                       <div className="flex items-center justify-between mb-2.5">
@@ -2529,7 +2530,7 @@ export default function MedicsPanel() {
                   <div className="medics-patient-config__content flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
 
                     {/* Semáforo personalizado */}
-                    <div className="medics-patient-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft px-4 py-3.5">
+                    <div className="medics-patient-config__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3.5">
                       <div className="flex items-center gap-2.5" style={{ marginBottom: patientSemaforoOverride ? 14 : 0 }}>
                         <Switch
                           checked={patientSemaforoOverride}
@@ -2571,7 +2572,7 @@ export default function MedicsPanel() {
                     </div>
 
                     {/* Campos del formulario */}
-                    <div className="medics-patient-config__fields bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                    <div className="medics-patient-config__fields bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                       <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
                         Campos del formulario
                       </div>
@@ -2640,7 +2641,7 @@ export default function MedicsPanel() {
                     </div>
 
                     {/* Notificaciones push */}
-                    <div className="medics-patient-config__push bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+                    <div className="medics-patient-config__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                       <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex items-center gap-1.5">
                         <Bell size={15} />
                         Notificaciones push
@@ -2755,7 +2756,7 @@ export default function MedicsPanel() {
               </div>
             )}
 
-            <div className="medics-invitar__form bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
+            <div className="medics-invitar__form bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
               <div className="p-6 flex flex-col gap-4">
                 {(() => {
                   const atLimit = doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT;
@@ -2824,9 +2825,17 @@ export default function MedicsPanel() {
             </div>
 
             {/* Instructions */}
-            <div className="medics-invitar__instructions bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mt-4">
+            <div className="medics-invitar__instructions bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft mt-4">
               <div className="p-6">
-                <div className="text-base font-bold text-fx-text mb-3">Instrucciones para el paciente</div>
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div className="text-base font-bold text-fx-text">Instrucciones para el paciente</div>
+                  <button
+                    onClick={() => setShowDemoModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer text-fx-text font-fx"
+                  >
+                    <Play size={14} weight="fill" color="var(--color-primary)" /> Ver demo en vídeo
+                  </button>
+                </div>
                 <div className="text-sm text-fx-text-secondary leading-loose">
                   <p className="m-0 mb-2">El paciente debe seguir estos pasos:</p>
                   <ol className="m-0 pl-5">
@@ -2855,7 +2864,7 @@ export default function MedicsPanel() {
             <div className="medics-config__grid grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[1550px]">
 
               {/* Col 1 Row 1 — Datos del médico */}
-              <div className="medics-config__doctor-info bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-1">
+              <div className="medics-config__doctor-info bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-1">
                 <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Datos del médico</span>
                 </div>
@@ -2895,7 +2904,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Col 2 Rows 1–2 — Imagen del centro */}
-              <div className="medics-config__center-image bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-2 md:row-start-1 md:row-span-2">
+              <div className="medics-config__center-image bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-start-2 md:row-start-1 md:row-span-2">
                 <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Imagen del centro</span>
                 </div>
@@ -2923,7 +2932,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Col 1 Row 2 — Semáforo */}
-              <div className="medics-config__semaforo bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-2">
+              <div className="medics-config__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-start-1 md:row-start-2">
                 <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Semáforo</span>
                 </div>
@@ -2971,7 +2980,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Cols 1–2 Row 3 — Etiquetas globales */}
-              <div className="medics-config__tags bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-3">
+              <div className="medics-config__tags bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-3">
                 <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Etiquetas globales</span>
                 </div>
@@ -3061,7 +3070,7 @@ export default function MedicsPanel() {
               </div>
 
               {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
-              {false && <div className="medics-config__palette bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
+              {false && <div className="medics-config__palette bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
                 <div className="py-3.5 px-5 border-b border-fx-border-soft">
                   <span className="text-[15px] font-bold text-fx-text">Paleta de colores</span>
                 </div>
@@ -3298,6 +3307,34 @@ export default function MedicsPanel() {
             >
               Quizás más tarde
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── DEMO VIDEO MODAL ── */}
+      {showDemoModal && (
+        <div
+          onClick={() => setShowDemoModal(false)}
+          className="medics-demo-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-6"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-black rounded-fx-lg max-w-[800px] w-full shadow-fx-xl relative overflow-hidden"
+          >
+            <button
+              onClick={() => setShowDemoModal(false)}
+              className="absolute top-3.5 right-4 bg-white/15 text-white border-none rounded-full w-8 h-8 text-lg cursor-pointer leading-none flex items-center justify-center backdrop-blur-sm z-10"
+            >
+              ×
+            </button>
+            <div className="relative pb-[56.25%] h-0">
+              <iframe
+                src="https://player.vimeo.com/video/1196684941?autoplay=1"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="absolute top-0 left-0 w-full h-full border-none"
+              />
+            </div>
           </div>
         </div>
       )}
