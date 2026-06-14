@@ -1471,7 +1471,7 @@ export default function MedicsPanel() {
           </div>
           <div className="hidden sm:flex flex-col leading-tight min-w-0">
             <span className="text-sm font-semibold text-fx-text truncate">{doctorInfo?.center_name || 'Centro médico'}</span>
-            <span className="text-xs text-fx-text-tertiary truncate">Dr. {doctorInfo?.name}</span>
+            <span className="text-xs text-fx-text-secondary truncate">Dr. {doctorInfo?.name}</span>
           </div>
         </div>
 
@@ -1484,7 +1484,7 @@ export default function MedicsPanel() {
                 <button
                   key={item.id}
                   onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
-                  className="medics-topbar__nav-item flex items-center gap-2 px-4 h-10 rounded-fx-pill text-sm transition-colors"
+                  className="medics-topbar__nav-item flex items-center gap-2 px-4 h-12 rounded-fx-pill text-sm transition-colors"
                   style={active ? { backgroundColor: th.navActive, color: th.primary, fontWeight: 600 } : { color: 'var(--text-secondary)', fontWeight: 400 }}
                   onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'var(--fx-ink-100)'; }}
                   onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
@@ -1500,17 +1500,17 @@ export default function MedicsPanel() {
         <div className="medics-topbar__account relative flex items-center ml-auto flex-shrink-0">
           <button
             onClick={() => setAccountMenuOpen(o => !o)}
-            className="medics-topbar__account-btn flex items-center gap-2 pl-2 pr-2 sm:pr-3 h-10 rounded-fx-pill hover:bg-fx-ink-100 transition-colors"
+            className="medics-topbar__account-btn flex items-center gap-2 pl-2 pr-2 sm:pr-3 h-12 rounded-fx-pill hover:bg-fx-ink-100 transition-colors"
             aria-label="Cuenta"
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.primary }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.primary }}>
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             {doctorInfo?.plan === 'pro' && (
-              <span className="hidden sm:inline-flex text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-500 text-white">PRO</span>
+              <span className="hidden sm:inline-flex text-[10px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-100 text-fx-warning-700">PRO</span>
             )}
             {doctorInfo?.plan === 'beta' && (
-              <span className="hidden sm:inline-flex text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-violet-400 text-white">BETA</span>
+              <span className="hidden sm:inline-flex text-[10px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
             )}
           </button>
 
@@ -1520,31 +1520,31 @@ export default function MedicsPanel() {
               <div className="medics-account-menu absolute right-0 top-full mt-2 w-64 bg-white rounded-fx-lg shadow-fx-lg border border-fx-border-soft p-2 z-40">
                 <div className="medics-account-menu__header px-3 py-2 border-b border-fx-border-soft mb-1">
                   <div className="text-sm font-semibold text-fx-text truncate">Dr. {doctorInfo?.name}</div>
-                  <div className="text-xs text-fx-text-tertiary truncate">{doctorInfo?.specialty || 'Médico'}</div>
+                  <div className="text-xs text-fx-text-secondary truncate">{doctorInfo?.specialty || 'Médico'}</div>
                 </div>
                 {doctorInfo?.plan === 'free' && (
                   <button
                     onClick={() => { setShowUpgradeModal(true); setAccountMenuOpen(false); }}
-                    className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
+                    className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
                   >
                     Pasar a Pro
                   </button>
                 )}
                 <button
                   onClick={() => { setSection('config'); setAccountMenuOpen(false); }}
-                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
                 >
                   Configuración
                 </button>
                 <button
                   onClick={() => { openGuide(); setAccountMenuOpen(false); }}
-                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100"
                 >
                   Guía de uso
                 </button>
                 <button
                   onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
-                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 py-2 rounded-fx-md text-sm text-fx-error-600 hover:bg-fx-error-50"
+                  className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm text-fx-error-600 hover:bg-fx-error-50"
                 >
                   Cerrar sesión
                 </button>
