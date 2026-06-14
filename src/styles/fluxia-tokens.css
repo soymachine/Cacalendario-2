@@ -98,7 +98,7 @@
   --color-bg:               var(--fx-ink-50);
   --color-bg-elevated:      #FFFFFF;
   --color-surface:          #FFFFFF;
-  --color-surface-2:        var(--fx-ink-100);
+  --color-surface-2:        var(--fx-green-50);
   --color-surface-sunken:   var(--fx-ink-50);
   --color-surface-glass:        rgba(255, 255, 255, 0.62);
   --color-surface-glass-strong: rgba(255, 255, 255, 0.82);
