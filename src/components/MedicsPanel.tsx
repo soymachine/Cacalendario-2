@@ -1631,38 +1631,6 @@ export default function MedicsPanel() {
                   )}
                 </div>
               )}
-              {/* Proactive alerts */}
-              {(() => {
-                const noAct = accepted
-                  .filter(p => p.daysSinceLast === null || p.daysSinceLast >= 10)
-                  .sort((a, b) => (b.daysSinceLast ?? 999) - (a.daysSinceLast ?? 999))
-                  .slice(0, 3)
-                  .map(p => ({ p, msg: p.daysSinceLast === null ? 'Nunca ha registrado ninguna entrada' : `Sin registro hace ${p.daysSinceLast} días`, color: 'var(--color-error)' }));
-                const bristolItems = bristolAlerts.slice(0, 2).map(a => {
-                  const p = accepted.find(pt => pt.patient_id === a.patientId);
-                  if (!p) return null;
-                  const dir = a.curr > 4 ? 'Bristol alto' : 'Bristol bajo';
-                  return { p, msg: `${dir}: T${a.prev.toFixed(1)}→T${a.curr.toFixed(1)} esta semana`, color: 'var(--color-warning)' };
-                }).filter(Boolean) as { p: PatientLink; msg: string; color: string }[];
-                const all = [...noAct, ...bristolItems].slice(0, 5);
-                if (all.length === 0) return null;
-                return (
-                  <div className="medics-alerts bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft mb-4">
-                    <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">Alertas proactivas</div>
-                    {all.map(({ p, msg, color }, i) => (
-                      <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
-                        className={`medics-alerts__item flex items-center gap-3 px-4 py-2.5 cursor-pointer ${i < all.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
-                        <div className="w-[3px] h-8 rounded flex-shrink-0" style={{ backgroundColor: color }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap">{patientLabel(p)}</div>
-                          <div className="text-[11px]" style={{ color }}>{msg}</div>
-                        </div>
-                        <span className="text-xs text-fx-text-tertiary">›</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
               {/* Attention list */}
               {attentionList.length > 0 && (
                 <div className="medics-attention-list bg-fx-surface rounded-fx-xl shadow-fx-sm border border-fx-border-soft">
