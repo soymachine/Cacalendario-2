@@ -2613,7 +2613,11 @@ export default function MedicsPanel() {
                           { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
                           { id: 'urine_color', label: 'Color', group: null },
                           { id: 'urine_characteristics', label: 'Características', group: null },
-                        ].map((field, i, arr) => {
+                        ].filter(field => {
+                          if (patientEntryTypeMode === 'urine_only' && field.group === 'Deposición') return false;
+                          if (patientEntryTypeMode === 'poop_only' && field.group === 'Micción') return false;
+                          return true;
+                        }).map((field, i, arr) => {
                           const showGroupHeader = field.group !== null;
                           const isVisible = !patientHiddenFields.includes(field.id);
                           return (
