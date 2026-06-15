@@ -88,13 +88,13 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                         {entry.entry_type === 'urine' ? (
                           <>
                             {entry.urine_type === 'voluntary' && (
-                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: '#dbeafe', color: '#1d4ed8' }}>Voluntaria</span>
+                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>Voluntaria</span>
                             )}
                             {entry.urine_type === 'involuntary_escape' && (
-                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: '#ffedd5', color: '#c2410c' }}>Escape</span>
+                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: 'var(--color-warning-soft)', color: 'var(--fx-warning-600)' }}>Escape</span>
                             )}
                             {entry.urine_type === 'involuntary_drip' && (
-                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: '#ffedd5', color: '#c2410c' }}>Goteo</span>
+                              <span style={{ fontSize: 10, fontWeight: 900, padding: '2px 6px', borderRadius: 99, backgroundColor: 'var(--color-warning-soft)', color: 'var(--fx-warning-600)' }}>Goteo</span>
                             )}
                             {entry.urine_quantity != null && entry.urine_quantity > 0 && (
                               <span style={{ fontSize: 12, color: D.textMuted }}>{entry.urine_quantity} ml</span>

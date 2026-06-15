@@ -1,6 +1,7 @@
 ---
 import App from '../components/App';
 import { asset } from '../lib/config';
+import '../styles/fluxia-tokens.css';
 ---
 
 <html lang="es">
@@ -15,7 +16,7 @@ import { asset } from '../lib/config';
 
     <!-- PWA -->
     <link rel="manifest" href={asset('/manifest.json')} />
-    <meta name="theme-color" content="#F0F2F4" />
+    <meta name="theme-color" content="#F4F7F3" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Fluxia" />
@@ -35,17 +36,17 @@ import { asset } from '../lib/config';
     </script>
 
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       :root {
-        --fluxia-primary: #353435;
-        --fluxia-primary-text: #E3EBEE;
+        --fluxia-primary: var(--color-primary);
+        --fluxia-primary-text: var(--color-on-primary);
       }
       body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background-color: #F0F2F4;
+        font-family: var(--font-sans);
+        background-color: var(--color-bg);
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
       }
@@ -57,9 +58,9 @@ import { asset } from '../lib/config';
     </div>
 
     <!-- Update banner (hidden by default) -->
-    <div id="update-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; padding:12px; text-align:center; background:#231f20; color:white; font-family:'Inter',sans-serif; font-size:14px;">
+    <div id="update-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; padding:12px; text-align:center; background:#222A2E; color:white; font-family:'Lexend',sans-serif; font-size:14px;">
       🆕 Nueva versión disponible
-      <button onclick="window.location.reload()" style="margin-left:12px; padding:6px 16px; border-radius:20px; border:none; background:white; color:#231f20; font-weight:bold; font-size:14px; cursor:pointer;">
+      <button onclick="window.location.reload()" style="margin-left:12px; padding:6px 16px; border-radius:20px; border:none; background:white; color:#222A2E; font-weight:bold; font-size:14px; cursor:pointer;">
         Actualizar
       </button>
     </div>

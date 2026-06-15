@@ -139,17 +139,17 @@ function applyDoctorColor(color: string | null, secondary?: string | null): void
       const nb = Math.round(sRgb.b * 0.20 + 255 * 0.80);
       document.documentElement.style.setProperty('--fluxia-nav-bg', `rgb(${nr},${ng},${nb})`);
     }
-    if (meta) meta.setAttribute('content', '#F0F2F4');
+    if (meta) meta.setAttribute('content', '#F4F7F3');
   } else {
-    document.documentElement.style.setProperty('--fluxia-primary', '#353435');
-    document.documentElement.style.setProperty('--fluxia-primary-text', '#E3EBEE');
+    document.documentElement.style.removeProperty('--fluxia-primary');
+    document.documentElement.style.removeProperty('--fluxia-primary-text');
     document.documentElement.style.removeProperty('--fluxia-secondary');
     document.documentElement.style.removeProperty('--fluxia-chip');
     document.documentElement.style.removeProperty('--fluxia-chip-text');
     document.documentElement.style.removeProperty('--fluxia-chip-dark');
     document.documentElement.style.removeProperty('--fluxia-bg');
     document.documentElement.style.removeProperty('--fluxia-nav-bg');
-    if (meta) meta.setAttribute('content', '#F0F2F4');
+    if (meta) meta.setAttribute('content', '#F4F7F3');
   }
 }
 
@@ -213,6 +213,5 @@ export function applyTheme(_theme?: Theme): void {
   const doctorColor = getDoctorColor();
   const doctorSecondary = typeof window !== 'undefined' ? localStorage.getItem(DOCTOR_SECONDARY_KEY) : null;
   applyDoctorColor(doctorColor, doctorSecondary);
-  document.body.style.backgroundColor = '#F0F2F4';
 }
 

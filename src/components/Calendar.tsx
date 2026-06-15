@@ -130,7 +130,7 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                       width: 16, height: 16, borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 900,
-                      backgroundColor: 'white', color: '#333',
+                      backgroundColor: 'white', color: D.text,
                     }}>
                       {count}
                     </span>

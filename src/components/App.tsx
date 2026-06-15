@@ -245,13 +245,13 @@ export default function App() {
 
 function AppCrash() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', padding: 32, textAlign: 'center', backgroundColor: '#F0F2F4' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100dvh', padding: 32, textAlign: 'center', backgroundColor: D.bg }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-      <p style={{ fontSize: 18, fontWeight: 700, color: '#353435', margin: '0 0 8px' }}>Algo ha ido mal</p>
-      <p style={{ fontSize: 14, color: '#9A9A9A', margin: '0 0 24px' }}>El error ha sido reportado automáticamente.</p>
+      <p style={{ fontSize: 18, fontWeight: 700, color: D.text, margin: '0 0 8px' }}>Algo ha ido mal</p>
+      <p style={{ fontSize: 14, color: D.textMuted, margin: '0 0 24px' }}>El error ha sido reportado automáticamente.</p>
       <button
         onClick={() => window.location.reload()}
-        style={{ padding: '12px 28px', borderRadius: 99, backgroundColor: '#353435', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+        style={{ padding: '12px 28px', borderRadius: 99, backgroundColor: D.primary, color: D.primaryText, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
       >
         Recargar la app
       </button>
