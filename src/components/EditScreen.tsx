@@ -305,7 +305,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                         color: D.text,
                       }}
                     >
-                      <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                      <img src={asset(opt.img)} alt={opt.label} style={{ width: 52, height: 52, objectFit: 'contain' }} />
                       {opt.label}
                     </button>
                   ))}
