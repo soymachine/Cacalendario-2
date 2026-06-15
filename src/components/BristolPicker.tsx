@@ -24,7 +24,7 @@ export default function BristolPicker({ value, onChange, restrictedTypes }: Bris
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', gap: 4,
                 borderRadius: 12, padding: '10px 8px 8px',
-                border: isSelected ? `2px solid var(--fluxia-primary, #353435)` : '2px solid transparent',
+                border: isSelected ? `2px solid ${D.primary}` : '2px solid transparent',
                 cursor: isLocked ? 'default' : 'pointer',
                 backgroundColor: isSelected ? D.navBg : D.navBg,
                 opacity: isLocked ? 0.3 : 1,

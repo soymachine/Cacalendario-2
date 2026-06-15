@@ -14,8 +14,8 @@ import BottomNav, { type Tab } from './BottomNav';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { syncOnLogin } from '../lib/sync';
 import { usePreferences } from '../lib/usePreferences';
-import { fetchDoctorConfig, getPaletteTheme } from '../lib/palettes';
-import { setDoctorColor, clearDoctorColor, setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage, setDoctorEntryTypeMode, clearDoctorEntryTypeMode } from '../lib/preferences';
+import { fetchDoctorConfig } from '../lib/palettes';
+import { setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage, setDoctorEntryTypeMode, clearDoctorEntryTypeMode } from '../lib/preferences';
 import { registerPushSubscription } from '../lib/push';
 import { type PoopEntry, getEntryById } from '../lib/storage';
 import { D } from '../lib/design';
@@ -45,7 +45,7 @@ function AppContent() {
     if (isRecovery) setOverlay('auth');
   }, [isRecovery]);
 
-  // Sync and apply doctor palette on login/logout
+  // Sync and apply doctor config (hidden fields, center image, entry type) on login/logout
   useEffect(() => {
     if (user) {
       setSyncing(true);
@@ -53,10 +53,6 @@ function AppContent() {
         .then(() => window.dispatchEvent(new Event('fluxia-updated')))
         .finally(() => setSyncing(false));
       fetchDoctorConfig(user.id).then(config => {
-        if (config.palette) {
-          const theme = getPaletteTheme(config.palette);
-          setDoctorColor(theme.primary, theme.secondary);
-        } else clearDoctorColor();
         setDoctorHiddenFields(config.hiddenFields);
         if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
         else clearDoctorImage();
@@ -64,7 +60,6 @@ function AppContent() {
       });
       registerPushSubscription(user.id);
     } else {
-      clearDoctorColor();
       clearDoctorHiddenFields();
       clearDoctorImage();
       clearDoctorEntryTypeMode();
