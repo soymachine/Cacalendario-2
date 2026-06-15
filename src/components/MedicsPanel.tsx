@@ -1461,7 +1461,7 @@ export default function MedicsPanel() {
       {/* ── TOP BAR ── */}
       <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-3 md:px-4 shadow-fx-sm" style={{ background: 'var(--gradient-brand)' }}>
         {/* Logo / center */}
-        <div className="medics-topbar__logo flex items-center gap-2 min-w-0 flex-shrink-0 bg-white rounded-fx-pill h-12 pl-2 pr-4">
+        <div className="medics-topbar__logo flex items-center justify-center flex-shrink-0 bg-white rounded-fx-pill h-12 w-12">
           <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0">
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-contain" />
@@ -1469,7 +1469,6 @@ export default function MedicsPanel() {
               <img src="/fluxia-logo.png" alt="Fluxia" className="w-full h-full object-contain" />
             )}
           </div>
-          <span className="hidden sm:inline text-sm font-extrabold text-fx-text truncate">{doctorInfo?.center_name || 'Fluxia'}</span>
         </div>
 
         {/* Nav (desktop, centered) */}
