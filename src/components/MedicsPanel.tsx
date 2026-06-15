@@ -10,6 +10,7 @@ import { initSentry } from '../lib/sentry';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
+  House, User, UserPlus, Sliders,
 } from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
@@ -107,11 +108,11 @@ interface PatientDetail {
 
 type Section = 'inicio' | 'pacientes' | 'invitar' | 'config';
 
-const NAV_ITEMS: { id: Section; label: string }[] = [
-  { id: 'inicio', label: 'Inicio' },
-  { id: 'pacientes', label: 'Pacientes' },
-  { id: 'invitar', label: 'Invitar Paciente' },
-  { id: 'config', label: 'Configuración' },
+const NAV_ITEMS: { id: Section; label: string; icon: React.ComponentType<{ size?: number; weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone' }> }[] = [
+  { id: 'inicio', label: 'Inicio', icon: House },
+  { id: 'pacientes', label: 'Pacientes', icon: User },
+  { id: 'invitar', label: 'Invitar pacientes', icon: UserPlus },
+  { id: 'config', label: 'Configuración', icon: Sliders },
 ];
 
 const TAG_COLORS: Record<string, string> = {};
@@ -1458,20 +1459,17 @@ export default function MedicsPanel() {
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── TOP BAR ── */}
-      <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-4 md:px-6 bg-white/85 backdrop-blur-md border-b border-fx-border-soft">
+      <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-3 md:px-4 shadow-fx-sm" style={{ background: 'var(--gradient-brand)' }}>
         {/* Logo / center */}
-        <div className="medics-topbar__logo flex items-center gap-3 min-w-0 flex-shrink-0">
-          <div className="w-10 h-10 rounded-fx-md overflow-hidden flex items-center justify-center bg-white border border-fx-border-soft flex-shrink-0">
+        <div className="medics-topbar__logo flex items-center gap-2 min-w-0 flex-shrink-0 bg-white rounded-fx-pill h-12 pl-2 pr-4">
+          <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0">
             {centerImageUrl ? (
               <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="w-full h-full object-contain" />
             ) : (
-              <img src="/fluxia-logo.png" alt="Fluxia" className="w-3/4 object-contain" />
+              <img src="/fluxia-logo.png" alt="Fluxia" className="w-full h-full object-contain" />
             )}
           </div>
-          <div className="hidden sm:flex flex-col leading-tight min-w-0">
-            <span className="text-sm font-semibold text-fx-text truncate">{doctorInfo?.center_name || 'Centro médico'}</span>
-            <span className="text-xs text-fx-text-secondary truncate">Dr. {doctorInfo?.name}</span>
-          </div>
+          <span className="hidden sm:inline text-sm font-extrabold text-fx-text truncate">{doctorInfo?.center_name || 'Fluxia'}</span>
         </div>
 
         {/* Nav (desktop, centered) */}
@@ -1479,15 +1477,17 @@ export default function MedicsPanel() {
           <nav className="medics-topbar__nav flex-1 flex items-center justify-center gap-1">
             {NAV_ITEMS.map(item => {
               const active = section === item.id;
+              const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
                   className="medics-topbar__nav-item flex items-center gap-2 px-4 h-12 rounded-fx-pill text-sm transition-colors"
-                  style={active ? { backgroundColor: th.navActive, color: th.primary, fontWeight: 600 } : { color: 'var(--text-secondary)', fontWeight: 400 }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'var(--fx-ink-100)'; }}
+                  style={active ? { backgroundColor: 'rgba(255,255,255,0.28)', color: '#fff', fontWeight: 600 } : { color: 'rgba(255,255,255,0.85)', fontWeight: 400 }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)'; }}
                   onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
+                  <Icon size={18} weight={active ? 'fill' : 'regular'} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -1499,17 +1499,17 @@ export default function MedicsPanel() {
         <div className="medics-topbar__account relative flex items-center ml-auto flex-shrink-0">
           <button
             onClick={() => setAccountMenuOpen(o => !o)}
-            className="medics-topbar__account-btn flex items-center gap-2 pl-2 pr-2 sm:pr-3 h-12 rounded-fx-pill hover:bg-fx-ink-100 transition-colors"
+            className="medics-topbar__account-btn relative flex items-center h-12 px-1 rounded-fx-pill hover:bg-white/15 transition-colors"
             aria-label="Cuenta"
           >
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.primary }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.dark }}>
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             {doctorInfo?.plan === 'pro' && (
-              <span className="hidden sm:inline-flex text-[10px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-100 text-fx-warning-700">PRO</span>
+              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-300 text-fx-ink-900">PRO</span>
             )}
             {doctorInfo?.plan === 'beta' && (
-              <span className="hidden sm:inline-flex text-[10px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
+              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
             )}
           </button>
 
@@ -3198,6 +3198,7 @@ export default function MedicsPanel() {
         <nav className="medics-bottomnav fixed bottom-0 left-0 right-0 flex z-20 bg-white/90 backdrop-blur-md border-t border-fx-border-soft">
           {NAV_ITEMS.map(item => {
             const active = section === item.id;
+            const Icon = item.icon;
             return (
               <button
                 key={item.id}
@@ -3205,6 +3206,7 @@ export default function MedicsPanel() {
                 className="medics-bottomnav__item flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 border-t-2"
                 style={{ borderTopColor: active ? th.primary : 'transparent', color: active ? th.primary : 'var(--text-tertiary)' }}
               >
+                <Icon size={18} weight={active ? 'fill' : 'regular'} />
                 <span className="text-[11px] font-semibold">{item.label}</span>
               </button>
             );
