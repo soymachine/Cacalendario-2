@@ -1920,7 +1920,7 @@ export default function MedicsPanel() {
           <div className="medics-patient-detail">
             <SectionHeader
               title={
-                <span className="inline-flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-2.5 flex-wrap">
                   {patientLabel(selectedPatient)}
                   {selectedPatient.hasPushSub === true && (
                     <Bell size={18} title="Notificaciones activas" color="var(--color-secondary)" />
@@ -1928,6 +1928,9 @@ export default function MedicsPanel() {
                   {selectedPatient.hasPushSub === false && (
                     <BellSlash size={18} title="Sin notificaciones" color="var(--fx-ink-300)" />
                   )}
+                  {patientTagsDraft.map(t => (
+                    <span key={t} className="text-[11px] px-2 py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>{t}</span>
+                  ))}
                 </span>
               }
               subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
@@ -1962,69 +1965,6 @@ export default function MedicsPanel() {
               {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
                 <span className="text-[11px] font-semibold ml-1 inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
               )}
-            </div>
-
-            {/* Tags bar — global catalog, click to assign/unassign, input to create new */}
-            <div className="medics-patient-detail__tags bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-2.5 mb-4">
-              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                <span className="text-[11px] font-bold text-fx-text-tertiary whitespace-nowrap">ETIQUETAS</span>
-                {(patientTagsSaving || globalTagsSaving) && <span className="text-[10px] text-fx-ink-300">Guardando…</span>}
-              </div>
-              {globalTags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {globalTags.map(t => {
-                    const assigned = patientTagsDraft.includes(t);
-                    return (
-                      <button key={t}
-                        onClick={() => assigned
-                          ? savePatientTags(patientTagsDraft.filter(x => x !== t))
-                          : savePatientTags([...patientTagsDraft, t])
-                        }
-                        title={assigned ? `Quitar "${t}"` : `Asignar "${t}"`}
-                        className="inline-flex items-center gap-1 text-xs px-2.5 py-[3px] rounded-[20px] cursor-pointer transition-all duration-150"
-                        style={{
-                          border: assigned ? 'none' : `1px solid ${tagColor(t)}40`,
-                          backgroundColor: assigned ? tagColor(t) + '22' : 'transparent',
-                          color: assigned ? tagColor(t) : 'var(--fx-ink-300)',
-                          fontWeight: assigned ? 700 : 400,
-                        }}>
-                        {assigned && <span className="text-[9px] leading-none">✓</span>}
-                        {t}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-fx-ink-300 mb-2 italic">
-                  Sin etiquetas. Créalas desde Configuración o escribe una nueva abajo.
-                </p>
-              )}
-              <form
-                onSubmit={async e => {
-                  e.preventDefault();
-                  const v = newTagInput.trim();
-                  if (!v) return;
-                  setNewTagInput('');
-                  const isNew = !globalTags.includes(v);
-                  if (isNew) {
-                    const newGlobal = [...globalTags, v];
-                    setGlobalTagsSaving(true);
-                    setGlobalTags(newGlobal);
-                    setDoctorInfo(prev => prev ? { ...prev, global_tags: newGlobal } : prev);
-                    await supabase.from('doctors').update({ global_tags: newGlobal }).eq('id', doctorInfo!.id);
-                    setGlobalTagsSaving(false);
-                  }
-                  if (!patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]);
-                }}
-                className="flex gap-1.5 items-center">
-                <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
-                  placeholder="Nueva etiqueta global…"
-                  className="px-2.5 py-1 rounded-[20px] border border-fx-border text-[11px] outline-none flex-1 min-w-0" />
-                <button type="submit"
-                  className="px-3 py-1 rounded-[20px] border-none bg-fx-surface-2 text-[11px] text-fx-text-secondary cursor-pointer font-semibold whitespace-nowrap">
-                  Crear y asignar
-                </button>
-              </form>
             </div>
 
             {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
@@ -2566,6 +2506,69 @@ export default function MedicsPanel() {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Etiquetas — global catalog, click to assign/unassign, input to create new */}
+                    <div className="medics-patient-config__tags bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3.5">
+                      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        <span className="text-[13px] font-semibold text-fx-text-secondary whitespace-nowrap">Etiquetas</span>
+                        {(patientTagsSaving || globalTagsSaving) && <span className="text-[10px] text-fx-ink-300">Guardando…</span>}
+                      </div>
+                      {globalTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {globalTags.map(t => {
+                            const assigned = patientTagsDraft.includes(t);
+                            return (
+                              <button key={t}
+                                onClick={() => assigned
+                                  ? savePatientTags(patientTagsDraft.filter(x => x !== t))
+                                  : savePatientTags([...patientTagsDraft, t])
+                                }
+                                title={assigned ? `Quitar "${t}"` : `Asignar "${t}"`}
+                                className="inline-flex items-center gap-1 text-xs px-2.5 py-[3px] rounded-[20px] cursor-pointer transition-all duration-150"
+                                style={{
+                                  border: assigned ? 'none' : `1px solid ${tagColor(t)}40`,
+                                  backgroundColor: assigned ? tagColor(t) + '22' : 'transparent',
+                                  color: assigned ? tagColor(t) : 'var(--fx-ink-300)',
+                                  fontWeight: assigned ? 700 : 400,
+                                }}>
+                                {assigned && <span className="text-[9px] leading-none">✓</span>}
+                                {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-fx-ink-300 mb-2 italic">
+                          Sin etiquetas. Escribe una nueva abajo para crearla.
+                        </p>
+                      )}
+                      <form
+                        onSubmit={async e => {
+                          e.preventDefault();
+                          const v = newTagInput.trim();
+                          if (!v) return;
+                          setNewTagInput('');
+                          const isNew = !globalTags.includes(v);
+                          if (isNew) {
+                            const newGlobal = [...globalTags, v];
+                            setGlobalTagsSaving(true);
+                            setGlobalTags(newGlobal);
+                            setDoctorInfo(prev => prev ? { ...prev, global_tags: newGlobal } : prev);
+                            await supabase.from('doctors').update({ global_tags: newGlobal }).eq('id', doctorInfo!.id);
+                            setGlobalTagsSaving(false);
+                          }
+                          if (!patientTagsDraft.includes(v)) savePatientTags([...patientTagsDraft, v]);
+                        }}
+                        className="flex gap-1.5 items-center">
+                        <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
+                          placeholder="Nueva etiqueta global…"
+                          className="px-2.5 py-1 rounded-[20px] border border-fx-border text-[11px] outline-none flex-1 min-w-0" />
+                        <button type="submit"
+                          className="px-3 py-1 rounded-[20px] border-none bg-fx-surface-2 text-[11px] text-fx-text-secondary cursor-pointer font-semibold whitespace-nowrap">
+                          Crear y asignar
+                        </button>
+                      </form>
                     </div>
 
                     {/* Campos del formulario */}
