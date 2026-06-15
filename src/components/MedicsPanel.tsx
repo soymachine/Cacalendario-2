@@ -1459,7 +1459,7 @@ export default function MedicsPanel() {
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── TOP BAR ── */}
-      <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-3 md:px-4 shadow-fx-sm" style={{ background: 'var(--gradient-brand)' }}>
+      <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-3 md:px-4 shadow-fx-sm" style={{ background: 'linear-gradient(105deg, #3E78B5 0%, #539D9F 36%, #78AD89 62%, #D8DA56 100%)' }}>
         {/* Logo / center */}
         <div className="medics-topbar__logo flex items-center justify-center flex-shrink-0 bg-white rounded-fx-pill h-12 px-3.5">
           {centerImageUrl ? (
@@ -1499,11 +1499,11 @@ export default function MedicsPanel() {
             className="medics-topbar__account-btn relative flex items-center h-12 px-1 rounded-fx-pill hover:bg-white/15 transition-colors"
             aria-label="Cuenta"
           >
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: th.dark }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center bg-white text-fx-text font-bold text-sm flex-shrink-0">
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             {doctorInfo?.plan === 'pro' && (
-              <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-warning-300 text-fx-ink-900">PRO</span>
+              <span className="absolute -top-1 -right-1 text-[8px] font-extrabold px-1 py-0.5 rounded-fx-pill bg-black text-white">PRO</span>
             )}
             {doctorInfo?.plan === 'beta' && (
               <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
