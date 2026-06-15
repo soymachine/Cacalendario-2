@@ -2603,19 +2603,19 @@ export default function MedicsPanel() {
                           Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                         </p>
                         {[
-                          { id: 'bristol', label: 'Bristol', group: 'Deposición' },
-                          { id: 'color', label: 'Color', group: null },
-                          { id: 'floats', label: 'Flotación', group: null },
-                          { id: 'quantity', label: 'Cantidad', group: null },
-                          { id: 'duration', label: 'Duración', group: null },
-                          { id: 'symptoms', label: 'Síntomas', group: null },
-                          { id: 'urine_type', label: 'Tipo de micción', group: 'Micción' },
-                          { id: 'urine_quantity', label: 'Cantidad (ml)', group: null },
-                          { id: 'urine_color', label: 'Color', group: null },
-                          { id: 'urine_characteristics', label: 'Características', group: null },
+                          { id: 'bristol', label: 'Bristol', group: 'Deposición', section: 'poop' },
+                          { id: 'color', label: 'Color', group: null, section: 'poop' },
+                          { id: 'floats', label: 'Flotación', group: null, section: 'poop' },
+                          { id: 'quantity', label: 'Cantidad', group: null, section: 'poop' },
+                          { id: 'duration', label: 'Duración', group: null, section: 'poop' },
+                          { id: 'symptoms', label: 'Síntomas', group: null, section: 'poop' },
+                          { id: 'urine_type', label: 'Tipo de micción', group: 'Micción', section: 'urine' },
+                          { id: 'urine_quantity', label: 'Cantidad (ml)', group: null, section: 'urine' },
+                          { id: 'urine_color', label: 'Color', group: null, section: 'urine' },
+                          { id: 'urine_characteristics', label: 'Características', group: null, section: 'urine' },
                         ].filter(field => {
-                          if (patientEntryTypeMode === 'urine_only' && field.group === 'Deposición') return false;
-                          if (patientEntryTypeMode === 'poop_only' && field.group === 'Micción') return false;
+                          if (patientEntryTypeMode === 'urine_only' && field.section === 'poop') return false;
+                          if (patientEntryTypeMode === 'poop_only' && field.section === 'urine') return false;
                           return true;
                         }).map((field, i, arr) => {
                           const showGroupHeader = field.group !== null;
