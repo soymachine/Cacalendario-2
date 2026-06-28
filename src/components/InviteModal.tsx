@@ -38,15 +38,22 @@ export default function InviteModal({ userId }: InviteModalProps) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: D.bg,
+      position: 'fixed', inset: 0, zIndex: 9999,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px',
     }}>
-      <div style={{ maxWidth: 360, width: '100%', textAlign: 'center' }}>
+      <div style={{
+        maxWidth: 360, width: '100%', textAlign: 'center',
+        backgroundColor: D.card, borderRadius: 24, padding: '32px 24px',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+      }}>
         <p style={{ fontSize: 19, fontWeight: 700, color: D.text, marginBottom: 12 }}>
           {invite.center_name}
         </p>
-        <p style={{ fontSize: 15, color: D.textMuted, marginBottom: 32, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 15, color: D.textMuted, marginBottom: 28, lineHeight: 1.5 }}>
           El doctor <strong style={{ color: D.text }}>{invite.doctor_name}</strong> te ha invitado a compartir tus registros.
         </p>
         <button
