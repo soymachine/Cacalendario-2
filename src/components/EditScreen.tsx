@@ -58,6 +58,15 @@ const DURATION_OPTIONS = [
   { label: '> 5 min', value: 'long' as const },
 ];
 
+const FECES_TEXTURE_OPTIONS = [
+  { label: 'Dura/Seca', value: 'hard' as const },
+  { label: 'Normal', value: 'normal' as const },
+  { label: 'Blanda', value: 'soft' as const },
+  { label: 'Suelta', value: 'loose' as const },
+  { label: 'Líquida', value: 'liquid' as const },
+  { label: 'Aceitosa', value: 'oily' as const },
+];
+
 const SYMPTOMS = [
   { key: 'abdominal_pain', label: 'Dolor abdominal' },
   { key: 'bloating', label: 'Hinchazón' },
@@ -99,6 +108,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
   const [color, setColor] = useState<string | null>(entry.color ?? null);
   const [quantity, setQuantity] = useState<number>(entry.quantity ?? 50);
   const [duration, setDuration] = useState<'short' | 'medium' | 'long' | null>(entry.duration ?? null);
+  const [fecesTexture, setFecesTexture] = useState<'hard' | 'normal' | 'soft' | 'loose' | 'liquid' | 'oily' | null>(entry.feces_texture ?? null);
   const [symptoms, setSymptoms] = useState<string[]>(entry.symptoms ?? []);
   const [weightLoss, setWeightLoss] = useState((entry.symptoms ?? []).includes('weight_loss'));
 
@@ -141,6 +151,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
       color: isUrine ? null : color,
       quantity: isUrine ? null : quantity,
       duration: isUrine ? null : duration,
+      feces_texture: isUrine ? null : fecesTexture,
       symptoms: isUrine ? [] : finalSymptoms,
       urine_type: isUrine ? urineType : null,
       urine_quantity: isUrine ? urineQuantity : null,
@@ -374,6 +385,27 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                         flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
                         fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
                         ...(duration === opt.value ? chipActive : chipInactive),
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!isUrine && (
+              <div style={{ backgroundColor: D.card, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+                <span style={sectionLabel}>TEXTURA</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {FECES_TEXTURE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFecesTexture(fecesTexture === opt.value ? null : opt.value)}
+                      style={{
+                        padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: 700, transition: 'all 0.1s',
+                        ...(fecesTexture === opt.value ? chipActive : chipInactive),
                       }}
                     >
                       {opt.label}

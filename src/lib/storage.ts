@@ -14,6 +14,7 @@ export interface PoopEntry {
   color?: string | null; // hex color
   quantity?: number | null; // 0-100
   duration?: 'short' | 'medium' | 'long' | null; // <3min, 3-5min, >5min
+  feces_texture?: 'hard' | 'normal' | 'soft' | 'loose' | 'liquid' | 'oily' | null; // texture
   symptoms?: string[]; // list of symptom keys
   // ── Urine fields ──
   urine_type?: 'voluntary' | 'involuntary_escape' | 'involuntary_drip' | null;
