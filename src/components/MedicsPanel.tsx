@@ -259,7 +259,9 @@ export default function MedicsPanel() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [onboardingSkippable, setOnboardingSkippable] = useState(false);
-  const [notesDraft, setNotesDraft] = useState('');
+  const [clinicalNotes, setClinicalNotes] = useState<{ id: string; note: string; created_at: string }[]>([]);
+  const [clinicalNotesSort, setClinicalNotesSort] = useState<'desc' | 'asc'>('desc');
+  const [newNoteDraft, setNewNoteDraft] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
   const [bristolHover, setBristolHover] = useState<{ idx: number; b: number; date: string; svgX: number; svgY: number } | null>(null);
   const [noteEditing, setNoteEditing] = useState<{ entryId: string; draft: string } | null>(null);
@@ -709,19 +711,28 @@ export default function MedicsPanel() {
     setNoteEditing(null);
   };
 
-  // ── Save clinical notes for selected patient ──
-  const handleSaveNotes = async () => {
-    if (!selectedPatient) return;
+  // ── Bitácora: clinical notes log for selected patient ──
+  const loadClinicalNotes = async (linkId: string) => {
+    const { data, error } = await supabase
+      .from('patient_clinical_notes')
+      .select('id, note, created_at')
+      .eq('link_id', linkId)
+      .order('created_at', { ascending: false });
+    if (!error) setClinicalNotes(data ?? []);
+  };
+
+  const handleAddClinicalNote = async () => {
+    if (!selectedPatient || !newNoteDraft.trim()) return;
     setNotesSaving(true);
-    const { error } = await supabase
-      .from('patient_links')
-      .update({ doctor_notes: notesDraft })
-      .eq('id', selectedPatient.id);
+    const { data, error } = await supabase
+      .from('patient_clinical_notes')
+      .insert({ link_id: selectedPatient.id, note: newNoteDraft.trim() })
+      .select('id, note, created_at')
+      .single();
     setNotesSaving(false);
-    if (!error) {
-      const updated = { ...selectedPatient, doctor_notes: notesDraft };
-      setSelectedPatient(updated);
-      setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
+    if (!error && data) {
+      setClinicalNotes(prev => [data, ...prev]);
+      setNewNoteDraft('');
     }
   };
 
@@ -879,7 +890,9 @@ export default function MedicsPanel() {
     setEntryPage(0);
     setEntryFilterFrom('');
     setEntryFilterTo('');
-    setNotesDraft(patient.doctor_notes || '');
+    setNewNoteDraft('');
+    setClinicalNotes([]);
+    loadClinicalNotes(patient.id);
     setBristolHover(null);
     setNoteEditing(null);
     setPatientTagsDraft(patient.tags || []);
@@ -1964,66 +1977,71 @@ export default function MedicsPanel() {
               }
             />
 
-            {/* Notificaciones push */}
-            <div className="medics-patient-detail__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 mb-4">
-              <div className="flex items-center gap-2.5 flex-wrap justify-between">
-                <span className="text-[13px] font-bold text-fx-text flex items-center gap-1.5">
-                  <Bell size={16} />
-                  Notificaciones push
-                </span>
+            {/* Row 1: Notificaciones push + Hace X días, side by side */}
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'stretch' }} className="mb-4">
+              {/* Notificaciones push */}
+              <div className="medics-patient-detail__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3" style={{ flex: 1, minWidth: 0 }}>
+                <div className="flex items-center gap-2.5 flex-wrap justify-between">
+                  <span className="text-[13px] font-bold text-fx-text flex items-center gap-1.5">
+                    <Bell size={16} />
+                    Notificaciones push
+                  </span>
+                  <div className="flex items-center gap-2.5">
+                    <Switch
+                      checked={!patientPushDisabled}
+                      onChange={(checked) => { const next = !checked; setPatientPushDisabled(next); handleSavePushSettings({ push_disabled: next }); }}
+                      style={{ backgroundColor: !patientPushDisabled ? th.primary : undefined }}
+                    />
+                    <span className="text-[13px] font-semibold text-fx-text-secondary">
+                      {patientPushDisabled ? 'Desactivadas' : 'Activadas'}
+                    </span>
+                  </div>
+                </div>
+                {patientPushDisabled && (
+                  <p className="text-[11px] text-fx-ink-300 mt-1.5">
+                    No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
+                  </p>
+                )}
+                <div className="flex items-center justify-between gap-3 flex-wrap mt-3" style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
+                  <label className="text-xs font-bold text-fx-text-secondary">
+                    Días sin registro para notificar al paciente
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number" min={1} max={30} value={Math.round(patientPushMinHours / 24)}
+                      onChange={e => setPatientPushMinHours(Math.max(1, Number(e.target.value)) * 24)}
+                      onBlur={() => handleSavePushSettings({ push_min_hours: patientPushMinHours })}
+                      disabled={patientPushDisabled}
+                      style={{ width: 56 }}
+                      className="py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border text-center"
+                    />
+                    <span className="text-[11px] text-fx-ink-300">día(s) · por defecto: 1 (24h)</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-fx-ink-300 mt-2" style={{ opacity: patientPushDisabled ? 0.4 : 1 }}>
+                  Se envía como máximo 1 notificación al día.
+                </p>
+              </div>
+
+              {/* Hace X días */}
+              <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex flex-col gap-1.5 justify-center" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
                 <div className="flex items-center gap-2.5">
-                  <Switch
-                    checked={!patientPushDisabled}
-                    onChange={(checked) => { const next = !checked; setPatientPushDisabled(next); handleSavePushSettings({ push_disabled: next }); }}
-                    style={{ backgroundColor: !patientPushDisabled ? th.primary : undefined }}
-                  />
-                  <span className="text-[13px] font-semibold text-fx-text-secondary">
-                    {patientPushDisabled ? 'Desactivadas' : 'Activadas'}
+                  <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
+                  <span className="text-[15px] font-bold text-fx-text">
+                    {patientDetail.daysSinceLast === null
+                      ? 'Sin registros'
+                      : patientDetail.daysSinceLast === 0
+                        ? 'Último registro: hoy'
+                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
                   </span>
                 </div>
+                {patientDetail.lastEntryDate && (
+                  <span className="text-xs text-fx-text-tertiary">Último registro: {shortDate(patientDetail.lastEntryDate)}</span>
+                )}
+                {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+                  <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
+                )}
               </div>
-              {patientPushDisabled && (
-                <p className="text-[11px] text-fx-ink-300 mt-1.5">
-                  No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
-                </p>
-              )}
-              <div className="flex items-center justify-between gap-3 flex-wrap mt-3" style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
-                <label className="text-xs font-bold text-fx-text-secondary">
-                  Días sin registro para notificar al paciente
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number" min={1} max={30} value={Math.round(patientPushMinHours / 24)}
-                    onChange={e => setPatientPushMinHours(Math.max(1, Number(e.target.value)) * 24)}
-                    onBlur={() => handleSavePushSettings({ push_min_hours: patientPushMinHours })}
-                    disabled={patientPushDisabled}
-                    style={{ width: 56 }}
-                    className="py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border text-center"
-                  />
-                  <span className="text-[11px] text-fx-ink-300">día(s) · por defecto: 1 (24h)</span>
-                </div>
-              </div>
-              <p className="text-[11px] text-fx-ink-300 mt-2" style={{ opacity: patientPushDisabled ? 0.4 : 1 }}>
-                Se envía como máximo 1 notificación al día.
-              </p>
-            </div>
-
-            {/* Row 1: Semáforo — all inline */}
-            <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap mb-4">
-              <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
-              <span className="text-[15px] font-bold text-fx-text">
-                {patientDetail.daysSinceLast === null
-                  ? 'Sin registros'
-                  : patientDetail.daysSinceLast === 0
-                    ? 'Último registro: hoy'
-                    : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
-              </span>
-              {patientDetail.lastEntryDate && (
-                <span className="text-xs text-fx-text-tertiary">· {shortDate(patientDetail.lastEntryDate)}</span>
-              )}
-              {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                <span className="text-[11px] font-semibold ml-1 inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
-              )}
             </div>
 
             {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
@@ -2289,30 +2307,6 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
-              {/* Clinical notes card */}
-              <div className="medics-patient-detail__notes bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
-                <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
-                  Notas clínicas
-                </div>
-                <div className="px-4 py-3 flex flex-col gap-2">
-                  <textarea
-                    value={notesDraft}
-                    onChange={e => setNotesDraft(e.target.value)}
-                    placeholder="Observaciones, diagnóstico, próxima cita…"
-                    rows={5}
-                    className="w-full px-3 py-2.5 rounded-[10px] border border-fx-border text-[13px] text-fx-text-secondary resize-y font-sans leading-relaxed box-border outline-none"
-                  />
-                  <button
-                    onClick={handleSaveNotes}
-                    disabled={notesSaving}
-                    className="w-full py-2 rounded-fx-pill text-white text-[13px] font-semibold border-none cursor-pointer font-fx"
-                    style={{ backgroundColor: th.dark, opacity: notesSaving ? 0.5 : 1 }}
-                  >
-                    {notesSaving ? 'Guardando…' : 'Guardar nota'}
-                  </button>
-                </div>
-              </div>
-
               </div>{/* end left column */}
 
               {/* Right column: entry list */}
@@ -2493,6 +2487,57 @@ export default function MedicsPanel() {
                   </div>
                 );
               })()}
+
+              {/* Third column: Bitácora — accumulating clinical notes log */}
+              <div className="medics-patient-detail__bitacora bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex flex-col box-border" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
+                <div className="px-4 py-3 border-b border-fx-border-soft flex items-center justify-between">
+                  <span className="text-[15px] font-bold text-fx-text">Bitácora</span>
+                  <button
+                    onClick={() => setClinicalNotesSort(s => s === 'desc' ? 'asc' : 'desc')}
+                    className="px-2.5 py-1 rounded-lg border border-fx-border bg-fx-surface text-[11px] font-semibold text-fx-text-secondary cursor-pointer flex items-center gap-1"
+                    title="Ordenar por fecha"
+                  >
+                    {clinicalNotesSort === 'desc' ? '↓ Más reciente' : '↑ Más antigua'}
+                  </button>
+                </div>
+
+                <div className="px-4 py-3 flex flex-col gap-2 border-b border-fx-border-soft">
+                  <textarea
+                    value={newNoteDraft}
+                    onChange={e => setNewNoteDraft(e.target.value)}
+                    placeholder="Añadir nota clínica…"
+                    rows={3}
+                    className="w-full px-3 py-2.5 rounded-[10px] border border-fx-border text-[13px] text-fx-text-secondary resize-y font-sans leading-relaxed box-border outline-none"
+                  />
+                  <button
+                    onClick={handleAddClinicalNote}
+                    disabled={notesSaving || !newNoteDraft.trim()}
+                    className="w-full py-2 rounded-fx-pill text-white text-[13px] font-semibold border-none cursor-pointer font-fx"
+                    style={{ backgroundColor: th.dark, opacity: (notesSaving || !newNoteDraft.trim()) ? 0.5 : 1 }}
+                  >
+                    {notesSaving ? 'Guardando…' : 'Agregar nota'}
+                  </button>
+                </div>
+
+                <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 480 }}>
+                  {clinicalNotes.length === 0 ? (
+                    <p className="text-[13px] text-fx-text-tertiary px-4 py-3">Sin notas todavía.</p>
+                  ) : (
+                    [...clinicalNotes]
+                      .sort((a, b) => clinicalNotesSort === 'desc'
+                        ? b.created_at.localeCompare(a.created_at)
+                        : a.created_at.localeCompare(b.created_at))
+                      .map(n => (
+                        <div key={n.id} className="px-4 py-2.5 border-b border-fx-border-soft last:border-b-0">
+                          <p className="text-[13px] text-fx-text-secondary leading-relaxed whitespace-pre-wrap">{n.note}</p>
+                          <p className="text-[11px] text-fx-text-tertiary mt-1">
+                            {new Date(n.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* ── Config modal ── */}
