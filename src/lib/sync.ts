@@ -10,7 +10,7 @@ import type { PoopEntry } from './storage';
 
 const SYNC_PAGE_SIZE = 500;
 
-const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
+const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
 
 function rowToEntry(r: Record<string, unknown>): PoopEntry {
   return {
@@ -25,6 +25,7 @@ function rowToEntry(r: Record<string, unknown>): PoopEntry {
     color: (r.color as string) ?? null,
     quantity: (r.quantity as number) ?? null,
     duration: (r.duration as PoopEntry['duration']) ?? null,
+    feces_texture: (r.feces_texture as PoopEntry['feces_texture']) ?? null,
     symptoms: (r.symptoms as string[]) ?? [],
     urine_type: (r.urine_type as PoopEntry['urine_type']) ?? null,
     urine_quantity: (r.urine_quantity as number) ?? null,
@@ -107,6 +108,7 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       color: entry.color ?? null,
       quantity: entry.quantity ?? null,
       duration: entry.duration ?? null,
+      feces_texture: entry.feces_texture ?? null,
       symptoms: entry.symptoms ?? [],
       urine_type: entry.urine_type ?? null,
       urine_quantity: entry.urine_quantity ?? null,
