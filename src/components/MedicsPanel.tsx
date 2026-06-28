@@ -52,6 +52,7 @@ interface PatientLink {
   entry_type_mode?: string;
   push_min_hours?: number;
   push_frequency?: number;
+  push_disabled?: boolean;
   hasPushSub?: boolean | null;
   doctor_notes?: string;
   tags?: string[];
@@ -253,6 +254,7 @@ export default function MedicsPanel() {
   const [patientConfigOpen, setPatientConfigOpen] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
   const [patientPushFrequency, setPatientPushFrequency] = useState(2);
+  const [patientPushDisabled, setPatientPushDisabled] = useState(false);
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -871,6 +873,7 @@ export default function MedicsPanel() {
     setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushFrequency(patient.push_frequency ?? 2);
+    setPatientPushDisabled(patient.push_disabled ?? false);
     setPatientConfigSaved(false);
     setPatientConfigError(null);
     setPushTestStatus('idle');
@@ -1056,6 +1059,7 @@ export default function MedicsPanel() {
         entry_type_mode: patientEntryTypeMode,
         push_min_hours: mins,
         push_frequency: freq,
+        push_disabled: patientPushDisabled,
         tags: patientTagsDraft,
       })
       .eq('id', selectedPatient.id);
@@ -1072,6 +1076,7 @@ export default function MedicsPanel() {
         entry_type_mode: patientEntryTypeMode,
         push_min_hours: mins,
         push_frequency: freq,
+        push_disabled: patientPushDisabled,
         tags: patientTagsDraft,
       };
       setSelectedPatient(updated);
@@ -2651,27 +2656,44 @@ export default function MedicsPanel() {
                         Notificaciones push
                       </div>
                       <div className="p-3 px-4 flex flex-col gap-3">
-                        <p className="text-xs text-fx-ink-400 leading-relaxed">
+                        <div className="flex items-center gap-2.5">
+                          <Switch
+                            checked={!patientPushDisabled}
+                            onChange={(checked) => setPatientPushDisabled(!checked)}
+                            style={{ backgroundColor: !patientPushDisabled ? th.primary : undefined }}
+                          />
+                          <span className="text-[13px] font-semibold text-fx-text-secondary">
+                            {patientPushDisabled ? 'Recordatorios desactivados' : 'Recordatorios activados'}
+                          </span>
+                        </div>
+                        {patientPushDisabled && (
+                          <p className="text-[11px] text-fx-ink-300 -mt-1.5">
+                            No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
+                          </p>
+                        )}
+                        <p className="text-xs text-fx-ink-400 leading-relaxed" style={{ opacity: patientPushDisabled ? 0.4 : 1 }}>
                           Recordatorio automático cuando el paciente lleva X horas sin registrar.
                         </p>
-                        <div>
+                        <div style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
                           <label className="text-xs font-bold text-fx-text-secondary block mb-1">
                             Horas sin registrar antes de notificar
                           </label>
                           <input
                             type="number" min={1} max={168} value={patientPushMinHours}
                             onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                            disabled={patientPushDisabled}
                             className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
                           />
                           <span className="text-[11px] text-fx-ink-300">Por defecto: 24h</span>
                         </div>
-                        <div>
+                        <div style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
                           <label className="text-xs font-bold text-fx-text-secondary block mb-1">
                             Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
                           </label>
                           <input
                             type="number" min={1} max={24} value={patientPushFrequency}
                             onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                            disabled={patientPushDisabled}
                             className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
                           />
                           <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>

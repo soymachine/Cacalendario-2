@@ -127,12 +127,31 @@ Deno.serve(async () => {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const { data: patients, error } = await supabase.rpc('get_patients_needing_push');
+  const { data: candidates, error } = await supabase.rpc('get_patients_needing_push');
 
   if (error) {
     console.error('RPC error:', error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
+
+  // A doctor can disable automatic reminders for a patient regardless of the
+  // patient's own push preference. Filter those out before sending.
+  const candidatePatientIds = [...new Set((candidates ?? []).map((p: { patient_id: string }) => p.patient_id))];
+  let disabledPatientIds = new Set<string>();
+  if (candidatePatientIds.length > 0) {
+    const { data: disabledLinks, error: linksError } = await supabase
+      .from('patient_links')
+      .select('patient_id')
+      .eq('status', 'accepted')
+      .eq('push_disabled', true)
+      .in('patient_id', candidatePatientIds);
+    if (linksError) {
+      console.error('patient_links lookup error:', linksError);
+    } else {
+      disabledPatientIds = new Set((disabledLinks ?? []).map((l) => l.patient_id));
+    }
+  }
+  const patients = (candidates ?? []).filter((p: { patient_id: string }) => !disabledPatientIds.has(p.patient_id));
 
   let sent = 0;
   let failed = 0;
