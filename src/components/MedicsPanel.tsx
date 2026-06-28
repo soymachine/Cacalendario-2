@@ -2016,29 +2016,6 @@ export default function MedicsPanel() {
                   <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>
                 </div>
               </div>
-              <div className="border-t border-fx-border-soft mt-3 pt-3">
-                <button
-                  onClick={handleSendTestPush}
-                  disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
-                  className="py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent flex items-center justify-center gap-1.5"
-                  style={{
-                    border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
-                    color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
-                  }}
-                >
-                  <Bell size={14} />
-                  {pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}
-                </button>
-                {!selectedPatient?.hasPushSub && (
-                  <p className="text-[11px] text-fx-ink-300 mt-1.5">El paciente no tiene notificaciones activadas.</p>
-                )}
-                {pushTestStatus === 'ok' && (
-                  <p className="text-xs text-fx-success-500 font-semibold mt-2 flex items-center gap-1"><CheckCircle size={14} weight="fill" />Notificación enviada</p>
-                )}
-                {pushTestStatus === 'error' && (
-                  <p className="text-xs text-fx-error-500 font-semibold mt-2 flex items-center gap-1"><WarningCircle size={14} weight="fill" />{pushTestError}</p>
-                )}
-              </div>
             </div>
 
             {/* Row 1: Semáforo — all inline */}
