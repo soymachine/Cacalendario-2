@@ -469,6 +469,7 @@ export default function MedicsPanel() {
     // code exchange). Relying on getSession() instead caused a hang when the
     // PKCE exchange failed silently, leaving initialLoading=true forever.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[auth] onAuthStateChange event:', event, 'hasSession:', !!session, 'hasUser:', !!session?.user, 'expiresAt:', session?.expires_at);
       if (!mounted) return;
       // Unblock the UI immediately — never wait on an async query to remove
       // the loading screen, since a hung query would freeze the page forever.
@@ -510,11 +511,12 @@ export default function MedicsPanel() {
     // new tab to /medics) restore the doctor's session instantly instead of
     // depending solely on onAuthStateChange's INITIAL_SESSION timing — if
     // that event is ever slow or missed, this still recovers the session.
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('[auth] getSession fallback: hasSession:', !!session, 'hasUser:', !!session?.user, 'expiresAt:', session?.expires_at, 'error:', error?.message, 'doctorLoadInFlight:', doctorLoadInFlight);
       if (!mounted || doctorLoadInFlight) return;
       if (session?.user) {
         setInitialLoading(false);
-        tryLoadDoctor(session.user).catch(() => {});
+        tryLoadDoctor(session.user).catch((e) => console.error('[auth] getSession fallback tryLoadDoctor failed:', e));
       }
     });
 
