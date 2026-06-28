@@ -1047,8 +1047,6 @@ export default function MedicsPanel() {
   const handleSavePatientConfig = async () => {
     if (!selectedPatient) return;
     setPatientConfigError(null);
-    const freq = Math.max(1, Math.min(24, patientPushFrequency));
-    const mins = Math.max(1, Math.min(168, patientPushMinHours));
     const { error } = await supabase
       .from('patient_links')
       .update({
@@ -1057,9 +1055,6 @@ export default function MedicsPanel() {
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
         hidden_fields: patientHiddenFields,
         entry_type_mode: patientEntryTypeMode,
-        push_min_hours: mins,
-        push_frequency: freq,
-        push_disabled: patientPushDisabled,
         tags: patientTagsDraft,
       })
       .eq('id', selectedPatient.id);
@@ -1074,9 +1069,6 @@ export default function MedicsPanel() {
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
         hidden_fields: patientHiddenFields,
         entry_type_mode: patientEntryTypeMode,
-        push_min_hours: mins,
-        push_frequency: freq,
-        push_disabled: patientPushDisabled,
         tags: patientTagsDraft,
       };
       setSelectedPatient(updated);
@@ -1084,6 +1076,25 @@ export default function MedicsPanel() {
       setPatientConfigSaved(true);
       setTimeout(() => setPatientConfigSaved(false), 3000);
     }
+  };
+
+  // ── Save push notification settings (auto-save, lives in the main patient view) ──
+  const handleSavePushSettings = async (overrides: Partial<{ push_min_hours: number; push_frequency: number; push_disabled: boolean }> = {}) => {
+    if (!selectedPatient) return;
+    const mins = Math.max(1, Math.min(168, overrides.push_min_hours ?? patientPushMinHours));
+    const freq = Math.max(1, Math.min(24, overrides.push_frequency ?? patientPushFrequency));
+    const disabled = overrides.push_disabled ?? patientPushDisabled;
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ push_min_hours: mins, push_frequency: freq, push_disabled: disabled })
+      .eq('id', selectedPatient.id);
+    if (error) {
+      console.error('[medics] savePushSettings error:', error);
+      return;
+    }
+    const updated = { ...selectedPatient, push_min_hours: mins, push_frequency: freq, push_disabled: disabled };
+    setSelectedPatient(updated);
+    setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
   };
 
   // ── Save patient tags (auto-save on every add/remove) ──
@@ -1954,6 +1965,82 @@ export default function MedicsPanel() {
               }
             />
 
+            {/* Notificaciones push */}
+            <div className="medics-patient-detail__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 mb-4">
+              <div className="flex items-center gap-2.5 flex-wrap justify-between">
+                <span className="text-[13px] font-bold text-fx-text flex items-center gap-1.5">
+                  <Bell size={16} />
+                  Notificaciones push
+                </span>
+                <div className="flex items-center gap-2.5">
+                  <Switch
+                    checked={!patientPushDisabled}
+                    onChange={(checked) => { const next = !checked; setPatientPushDisabled(next); handleSavePushSettings({ push_disabled: next }); }}
+                    style={{ backgroundColor: !patientPushDisabled ? th.primary : undefined }}
+                  />
+                  <span className="text-[13px] font-semibold text-fx-text-secondary">
+                    {patientPushDisabled ? 'Desactivadas' : 'Activadas'}
+                  </span>
+                </div>
+              </div>
+              {patientPushDisabled && (
+                <p className="text-[11px] text-fx-ink-300 mt-1.5">
+                  No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
+                </p>
+              )}
+              <div className="flex gap-3 flex-wrap mt-3" style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label className="text-xs font-bold text-fx-text-secondary block mb-1">
+                    Horas sin registrar antes de notificar
+                  </label>
+                  <input
+                    type="number" min={1} max={168} value={patientPushMinHours}
+                    onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                    onBlur={() => handleSavePushSettings({ push_min_hours: patientPushMinHours })}
+                    disabled={patientPushDisabled}
+                    className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
+                  />
+                  <span className="text-[11px] text-fx-ink-300">Por defecto: 24h</span>
+                </div>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label className="text-xs font-bold text-fx-text-secondary block mb-1">
+                    Veces al día (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
+                  </label>
+                  <input
+                    type="number" min={1} max={24} value={patientPushFrequency}
+                    onChange={e => setPatientPushFrequency(Number(e.target.value))}
+                    onBlur={() => handleSavePushSettings({ push_frequency: patientPushFrequency })}
+                    disabled={patientPushDisabled}
+                    className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
+                  />
+                  <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>
+                </div>
+              </div>
+              <div className="border-t border-fx-border-soft mt-3 pt-3">
+                <button
+                  onClick={handleSendTestPush}
+                  disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
+                  className="py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent flex items-center justify-center gap-1.5"
+                  style={{
+                    border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
+                    color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
+                  }}
+                >
+                  <Bell size={14} />
+                  {pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}
+                </button>
+                {!selectedPatient?.hasPushSub && (
+                  <p className="text-[11px] text-fx-ink-300 mt-1.5">El paciente no tiene notificaciones activadas.</p>
+                )}
+                {pushTestStatus === 'ok' && (
+                  <p className="text-xs text-fx-success-500 font-semibold mt-2 flex items-center gap-1"><CheckCircle size={14} weight="fill" />Notificación enviada</p>
+                )}
+                {pushTestStatus === 'error' && (
+                  <p className="text-xs text-fx-error-500 font-semibold mt-2 flex items-center gap-1"><WarningCircle size={14} weight="fill" />{pushTestError}</p>
+                )}
+              </div>
+            </div>
+
             {/* Row 1: Semáforo — all inline */}
             <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex items-center gap-2.5 flex-wrap mb-4">
               <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
@@ -2646,84 +2733,6 @@ export default function MedicsPanel() {
                             </div>
                           );
                         })}
-                      </div>
-                    </div>
-
-                    {/* Notificaciones push */}
-                    <div className="medics-patient-config__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
-                      <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex items-center gap-1.5">
-                        <Bell size={15} />
-                        Notificaciones push
-                      </div>
-                      <div className="p-3 px-4 flex flex-col gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <Switch
-                            checked={!patientPushDisabled}
-                            onChange={(checked) => setPatientPushDisabled(!checked)}
-                            style={{ backgroundColor: !patientPushDisabled ? th.primary : undefined }}
-                          />
-                          <span className="text-[13px] font-semibold text-fx-text-secondary">
-                            {patientPushDisabled ? 'Recordatorios desactivados' : 'Recordatorios activados'}
-                          </span>
-                        </div>
-                        {patientPushDisabled && (
-                          <p className="text-[11px] text-fx-ink-300 -mt-1.5">
-                            No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
-                          </p>
-                        )}
-                        <p className="text-xs text-fx-ink-400 leading-relaxed" style={{ opacity: patientPushDisabled ? 0.4 : 1 }}>
-                          Recordatorio automático cuando el paciente lleva X horas sin registrar.
-                        </p>
-                        <div style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
-                          <label className="text-xs font-bold text-fx-text-secondary block mb-1">
-                            Horas sin registrar antes de notificar
-                          </label>
-                          <input
-                            type="number" min={1} max={168} value={patientPushMinHours}
-                            onChange={e => setPatientPushMinHours(Number(e.target.value))}
-                            disabled={patientPushDisabled}
-                            className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
-                          />
-                          <span className="text-[11px] text-fx-ink-300">Por defecto: 24h</span>
-                        </div>
-                        <div style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
-                          <label className="text-xs font-bold text-fx-text-secondary block mb-1">
-                            Veces al día que se notifica (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
-                          </label>
-                          <input
-                            type="number" min={1} max={24} value={patientPushFrequency}
-                            onChange={e => setPatientPushFrequency(Number(e.target.value))}
-                            disabled={patientPushDisabled}
-                            className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
-                          />
-                          <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>
-                        </div>
-                        <div className="border-t border-fx-border-soft pt-3">
-                          <p className="text-xs text-fx-ink-400 mb-2.5 leading-relaxed">
-                            Envía una notificación ahora para verificar que funciona correctamente.
-                          </p>
-                          <button
-                            onClick={handleSendTestPush}
-                            disabled={pushTestStatus === 'sending' || !selectedPatient?.hasPushSub}
-                            className="w-full py-2 px-3.5 text-xs font-bold rounded-lg bg-transparent flex items-center justify-center gap-1.5"
-                            style={{
-                              border: `2px solid ${th.primary}`, cursor: selectedPatient?.hasPushSub ? 'pointer' : 'not-allowed',
-                              color: th.primary, opacity: selectedPatient?.hasPushSub ? 1 : 0.4,
-                            }}
-                          >
-                            <Bell size={14} />
-                            {pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}
-                          </button>
-                          {!selectedPatient?.hasPushSub && (
-                            <p className="text-[11px] text-fx-ink-300 mt-1.5">El paciente no tiene notificaciones activadas.</p>
-                          )}
-                          {pushTestStatus === 'ok' && (
-                            <p className="text-xs text-fx-success-500 font-semibold mt-2 flex items-center gap-1"><CheckCircle size={14} weight="fill" />Notificación enviada</p>
-                          )}
-                          {pushTestStatus === 'error' && (
-                            <p className="text-xs text-fx-error-500 font-semibold mt-2 flex items-center gap-1"><WarningCircle size={14} weight="fill" />{pushTestError}</p>
-                          )}
-                        </div>
                       </div>
                     </div>
 
