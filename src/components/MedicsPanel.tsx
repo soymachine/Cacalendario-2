@@ -334,8 +334,22 @@ export default function MedicsPanel() {
   // ── Recover session on mount + handle Google OAuth callback ──
   useEffect(() => {
     let mounted = true;
+    // Guards against the INITIAL_SESSION listener and the getSession()
+    // fallback both racing to load the same restored session — not a
+    // permanent lock, so signing out and back in later still works.
+    let doctorLoadInFlight = false;
 
     const tryLoadDoctor = async (user: any) => {
+      if (doctorLoadInFlight) return;
+      doctorLoadInFlight = true;
+      try {
+        await tryLoadDoctorInner(user);
+      } finally {
+        doctorLoadInFlight = false;
+      }
+    };
+
+    const tryLoadDoctorInner = async (user: any) => {
       const isGoogle = (user.app_metadata?.provider || '') === 'google';
       const userMeta = (user.user_metadata || {}) as Record<string, any>;
       console.log('[tryLoadDoctor] uid:', user.id, 'provider:', user.app_metadata?.provider, 'metadata:', userMeta);
@@ -488,6 +502,19 @@ export default function MedicsPanel() {
             setLoading(false);
           }
         }
+      }
+    });
+
+    // Belt-and-braces: also read whatever session is already persisted in
+    // localStorage directly. This is what makes a page reload (or a brand
+    // new tab to /medics) restore the doctor's session instantly instead of
+    // depending solely on onAuthStateChange's INITIAL_SESSION timing — if
+    // that event is ever slow or missed, this still recovers the session.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted || doctorLoadInFlight) return;
+      if (session?.user) {
+        setInitialLoading(false);
+        tryLoadDoctor(session.user).catch(() => {});
       }
     });
 
