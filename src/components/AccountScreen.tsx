@@ -44,8 +44,6 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const [displayName, setDisplayName] = useState('');
   const [nameSaved, setNameSaved] = useState(false);
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
-  const [pendingInvites, setPendingInvites] = useState<Array<{ id: string; doctor_name: string; center_name: string; invited_at: string }>>([]);
-  const [respondingId, setRespondingId] = useState<string | null>(null);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [pushLoading, setPushLoading] = useState(false);
@@ -67,20 +65,18 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const isStandalone = typeof window !== 'undefined' &&
     ((navigator as any).standalone === true || window.matchMedia('(display-mode: standalone)').matches);
 
-  const loadPendingInvites = async () => {
+  const loadLinkedCenter = () => {
     if (!user) return;
-    const { data } = await supabase.rpc('patient_get_pending_invites');
-    if (Array.isArray(data)) setPendingInvites(data);
-  };
-
-  const handleRespondInvite = async (linkId: string, accept: boolean) => {
-    setRespondingId(linkId);
-    const { data } = await supabase.rpc('patient_respond_to_invite', { p_link_id: linkId, p_accept: accept });
-    setRespondingId(null);
-    if (data?.success) {
-      if (accept && data.center_name) setLinkedCenter(data.center_name);
-      await loadPendingInvites();
-    }
+    supabase.from('patient_links').select('id, status, center_id')
+      .eq('patient_id', user.id).eq('status', 'accepted').limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          supabase.from('centers').select('name').eq('id', data[0].center_id).single()
+            .then(({ data: center }) => { if (center) setLinkedCenter(center.name); });
+        } else {
+          setLinkedCenter(null);
+        }
+      });
   };
 
   useEffect(() => {
@@ -89,21 +85,20 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
     supabase.from('user_profiles').select('display_name').eq('id', user.id).single()
       .then(({ data }) => { if (data?.display_name) setDisplayName(data.display_name); });
     // Load linked center
-    supabase.from('patient_links').select('id, status, center_id')
-      .eq('patient_id', user.id).eq('status', 'accepted').limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          supabase.from('centers').select('name').eq('id', data[0].center_id).single()
-            .then(({ data: center }) => { if (center) setLinkedCenter(center.name); });
-        }
-      });
-    // Load pending invites
-    loadPendingInvites();
+    loadLinkedCenter();
     // Check push
     if (!('Notification' in window)) { setPushPermission('unsupported'); return; }
     setPushPermission(Notification.permission);
     supabase.from('push_subscriptions').select('id').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setPushSubscribed(!!data));
+  }, [user]);
+
+  // Refresh linked center after the full-screen invite modal accept action
+  useEffect(() => {
+    if (!user) return;
+    const handler = () => loadLinkedCenter();
+    window.addEventListener('fluxia-updated', handler);
+    return () => window.removeEventListener('fluxia-updated', handler);
   }, [user]);
 
   useEffect(() => {
@@ -363,39 +358,6 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
                 {nameSaved ? '✅ Guardado' : 'Guardar nombre'}
               </button>
             </div>
-
-            {/* Pending invitations */}
-            {pendingInvites.length > 0 && (
-              <div style={card}>
-                <span style={label}>🏥 INVITACIONES DE TU MÉDICO</span>
-                {pendingInvites.map((invite) => (
-                  <div key={invite.id} style={{ marginBottom: 12 }}>
-                    <p style={{ fontSize: 14, color: D.text, fontWeight: 600, margin: '0 0 2px' }}>
-                      {invite.center_name}
-                    </p>
-                    <p style={{ fontSize: 12, color: D.textMuted, margin: '0 0 10px' }}>
-                      Dr. {invite.doctor_name} te ha invitado a compartir tus registros.
-                    </p>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => handleRespondInvite(invite.id, true)}
-                        disabled={respondingId === invite.id}
-                        style={{ ...primaryBtn, flex: 1, opacity: respondingId === invite.id ? 0.5 : 1 }}
-                      >
-                        {respondingId === invite.id ? '...' : 'Aceptar'}
-                      </button>
-                      <button
-                        onClick={() => handleRespondInvite(invite.id, false)}
-                        disabled={respondingId === invite.id}
-                        style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: `1px solid ${D.border}`, background: 'none', color: D.textMuted, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: respondingId === invite.id ? 0.5 : 1 }}
-                      >
-                        Declinar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Linked center */}
             {linkedCenter && (

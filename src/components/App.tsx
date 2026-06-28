@@ -7,6 +7,7 @@ import EditScreen from './EditScreen';
 import DayDetailScreen from './DayDetailScreen';
 import CongratsScreen from './CongratsScreen';
 import AccountScreen from './AccountScreen';
+import InviteModal from './InviteModal';
 import AuthScreen from './AuthScreen';
 import PrivacyScreen from './PrivacyScreen';
 import SplashScreen from './SplashScreen';
@@ -127,6 +128,9 @@ function AppContent() {
   // ── Phase 3: auth resolved, user logged in → full app ──
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: D.bg, overflow: 'hidden' }}>
+      {/* ── PENDING INVITE (shown first, on top of everything) ── */}
+      <InviteModal userId={user.id} />
+
       {/* ── MAIN CONTENT (tabs) ── */}
       <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
 
