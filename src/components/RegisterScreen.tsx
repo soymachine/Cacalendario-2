@@ -95,7 +95,9 @@ const SYMPTOMS = [
   { key: 'sticky', label: 'Pegajoso' },
   { key: 'stringy', label: 'Filamentoso' },
   { key: 'undigested', label: 'No digerido' },
-  { key: 'weight_loss', label: 'Pérdida de peso' },
+  { key: 'gases', label: 'Gases' },
+  { key: 'laxative_use', label: 'Uso de laxantes' },
+  { key: 'astringent_agents', label: 'Agentes astringentes' },
   { key: 'fever', label: 'Fiebre' },
 ];
 
@@ -132,6 +134,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const [quantity, setQuantity] = useState(50);
   const [duration, setDuration] = useState<'short' | 'medium' | 'long' | null>(null);
   const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [weightLoss, setWeightLoss] = useState(false);
 
   // Urine fields
   const [urineType, setUrineType] = useState<'voluntary' | 'involuntary_escape' | 'involuntary_drip' | null>(null);
@@ -155,6 +158,12 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const handleSave = () => {
     const [y, mo, d] = targetDate.split('-').map(Number);
     const entryId = generateEntryId();
+    const finalSymptoms = [...symptoms];
+    if (weightLoss && !finalSymptoms.includes('weight_loss')) {
+      finalSymptoms.push('weight_loss');
+    } else if (!weightLoss && finalSymptoms.includes('weight_loss')) {
+      finalSymptoms.splice(finalSymptoms.indexOf('weight_loss'), 1);
+    }
     saveEntry({
       id: entryId,
       date: targetDate,
@@ -167,7 +176,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       color: isUrine ? null : color,
       quantity: isUrine ? null : quantity,
       duration: isUrine ? null : duration,
-      symptoms: isUrine ? [] : symptoms,
+      symptoms: isUrine ? [] : finalSymptoms,
       urine_type: isUrine ? urineType : null,
       urine_quantity: isUrine ? urineQuantity : null,
       urine_color: isUrine ? urineColor : null,
@@ -328,7 +337,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                     key={opt.value}
                     onClick={() => setFloats(floats === opt.value ? null : opt.value)}
                     style={{
-                      flex: 1, padding: '10px 4px 8px', borderRadius: 12,
+                      flex: 1, padding: '0px 0px 8px', borderRadius: 12,
                       border: isActive ? `2px solid ${D.primary}` : '2px solid transparent',
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
@@ -337,11 +346,35 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                       color: D.text,
                     }}
                   >
-                    <img src={asset(opt.img)} alt={opt.label} style={{ width: 52, height: 52, objectFit: 'contain' }} />
+                    <img src={asset(opt.img)} alt={opt.label} style={{ width: 74, height: 74, objectFit: 'contain' }} />
                     <span style={{ fontSize: 11, fontWeight: 700 }}>{opt.label}</span>
                   </button>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {!isUrine && (
+          <div style={sectionCard}>
+            <span style={sectionLabel}>Pérdida de peso</span>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {[
+                { label: 'No', value: false },
+                { label: 'Sí', value: true },
+              ].map(opt => (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => setWeightLoss(opt.value)}
+                  style={{
+                    flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    fontSize: 14, fontWeight: 700, textAlign: 'center', transition: 'all 0.1s',
+                    ...(weightLoss === opt.value ? { backgroundColor: D.primary, color: D.primaryText } : { backgroundColor: D.navBg, color: D.text }),
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
         )}
