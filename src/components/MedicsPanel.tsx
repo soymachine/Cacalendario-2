@@ -2525,7 +2525,7 @@ export default function MedicsPanel() {
 
               {/* Third column: Bitácora — accumulating clinical notes log (never taller than Historial; paginated instead) */}
               {(() => {
-                const NOTES_PER_PAGE = 5;
+                const NOTES_PER_PAGE = 10;
                 const sortedNotes = [...clinicalNotes].sort((a, b) => clinicalNotesSort === 'desc'
                   ? b.created_at.localeCompare(a.created_at)
                   : a.created_at.localeCompare(b.created_at));
