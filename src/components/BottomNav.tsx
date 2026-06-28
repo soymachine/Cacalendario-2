@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         alignItems: 'center',
         height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: D.secondary,
+        backgroundColor: 'var(--fx-lime-400)',
         borderRadius: 999,
         position: 'relative',
       }}>
@@ -84,12 +84,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: D.secondary,
+                  backgroundColor: 'var(--fx-lime-400)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 -2px 8px rgba(0,0,0,0.06)',
-                  border: `3px solid ${D.secondary}`,
+                  border: `3px solid var(--fx-lime-400)`,
                   position: 'relative',
                 }}>
                   <div style={{
@@ -103,7 +103,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                     transition: 'background-color 0.2s',
                     boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
                   }}>
-                    <RegisterIcon color={isActive ? D.primary : '#ffffff'} />
+                    <RegisterIcon color={isActive ? D.primary : D.text} />
                   </div>
                 </div>
               </button>
@@ -137,7 +137,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 transition: 'background-color 0.2s',
                 boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
               }}>
-                <Icon color={isActive ? D.primary : '#ffffff'} />
+                <Icon color={isActive ? D.primary : D.text} />
               </div>
             </button>
           );

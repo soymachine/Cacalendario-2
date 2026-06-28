@@ -337,7 +337,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                       color: D.text,
                     }}
                   >
-                    <img src={asset(opt.img)} alt={opt.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+                    <img src={asset(opt.img)} alt={opt.label} style={{ width: 52, height: 52, objectFit: 'contain' }} />
                     <span style={{ fontSize: 11, fontWeight: 700 }}>{opt.label}</span>
                   </button>
                 );
