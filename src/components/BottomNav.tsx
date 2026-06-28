@@ -52,7 +52,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         alignItems: 'center',
         height: 70,
         margin: '6px 14px 8px',
-        backgroundColor: 'var(--fx-lime-200)',
+        backgroundColor: 'var(--fx-lime-400)',
         borderRadius: 999,
         position: 'relative',
       }}>
@@ -84,12 +84,12 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                   width: 88,
                   height: 88,
                   borderRadius: 999,
-                  backgroundColor: 'var(--fx-lime-200)',
+                  backgroundColor: 'var(--fx-lime-400)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 -2px 8px rgba(0,0,0,0.06)',
-                  border: `3px solid var(--fx-lime-200)`,
+                  border: `3px solid var(--fx-lime-400)`,
                   position: 'relative',
                 }}>
                   <div style={{
