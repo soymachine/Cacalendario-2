@@ -68,13 +68,23 @@ interface DoctorInfo {
   semaforo_green: number;
   semaforo_red: number;
   palette?: string;
-  plan: 'free' | 'beta' | 'pro';
+  plan: 'free' | 'beta' | 'test' | 'pro';
+  test_plan_started_at: string | null;
   global_tags: string[];
 }
 
-// Free tier limit: 1 patient (accepted + pending). Beta: 100. Pro is effectively unlimited.
+// Free tier limit: 1 patient (accepted + pending). Beta: 100. Test/Pro are effectively unlimited.
 const FREE_PLAN_PATIENT_LIMIT = 1;
 const BETA_PLAN_PATIENT_LIMIT = 100;
+const TEST_PLAN_DURATION_DAYS = 31;
+
+// Returns days remaining in the 1-month free trial (0 once it has expired), or null if not started.
+function testPlanDaysLeft(startedAt: string | null | undefined): number | null {
+  if (!startedAt) return null;
+  const elapsedMs = Date.now() - new Date(startedAt).getTime();
+  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, TEST_PLAN_DURATION_DAYS - elapsedDays);
+}
 
 interface PatientEntry {
   id: string;
@@ -282,6 +292,9 @@ export default function MedicsPanel() {
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
 
+  const testDaysLeft = doctorInfo?.plan === 'test' ? testPlanDaysLeft(doctorInfo.test_plan_started_at) : null;
+  const testExpired = doctorInfo?.plan === 'test' && testDaysLeft !== null && testDaysLeft <= 0;
+
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -303,7 +316,8 @@ export default function MedicsPanel() {
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
     palette: d.palette || 'terracotta',
-    plan: (d.plan as 'free' | 'beta' | 'pro') || 'free',
+    plan: (d.plan as 'free' | 'beta' | 'test' | 'pro') || 'free',
+    test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
   });
 
@@ -1514,7 +1528,11 @@ export default function MedicsPanel() {
 
   // ── Main layout with sidebar ──
   return (
-    <div className="medics-shell min-h-screen flex flex-col bg-transparent font-fx" style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}>
+    <>
+    <div
+      className={`medics-shell min-h-screen flex flex-col bg-transparent font-fx ${testExpired ? 'blur-md pointer-events-none select-none' : ''}`}
+      style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}
+    >
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── TOP BAR ── */}
@@ -1566,6 +1584,14 @@ export default function MedicsPanel() {
             )}
             {doctorInfo?.plan === 'beta' && (
               <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
+            )}
+            {doctorInfo?.plan === 'test' && (
+              <span
+                className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-success-100 text-fx-success-700"
+                title="Días restantes de la prueba gratuita"
+              >
+                {testDaysLeft !== null ? `${testDaysLeft}d` : 'TEST'}
+              </span>
             )}
           </button>
 
@@ -3531,6 +3557,34 @@ export default function MedicsPanel() {
         );
       })()}
     </div>
+
+    {/* ── TEST PLAN EXPIRED MODAL ── */}
+    {testExpired && (
+      <div className="medics-test-expired-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[2000] p-6">
+        <div className="bg-white rounded-fx-lg p-8 max-w-[480px] w-full shadow-fx-xl text-center">
+          <span className="text-[40px]">🎁</span>
+          <h2 className="text-[22px] font-extrabold text-fx-text m-0 mt-2 mb-2">Tu mes de prueba ha finalizado</h2>
+          <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
+            Has agotado los 31 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
+            usando Fluxia sin límites: recuperarás automáticamente todos tus registros y pacientes guardados.
+          </p>
+          <button
+            onClick={() => { alert('Pronto: integración con Stripe para activar el plan de pago.'); }}
+            className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+            style={{ backgroundColor: th.dark }}
+          >
+            Pasar a la modalidad de pago
+          </button>
+          <button
+            onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
+            className="w-full mt-2.5 bg-transparent border-none text-fx-ink-400 text-[13px] cursor-pointer"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
