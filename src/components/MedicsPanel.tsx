@@ -253,7 +253,6 @@ export default function MedicsPanel() {
   const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
   const [patientConfigOpen, setPatientConfigOpen] = useState(false);
   const [patientPushMinHours, setPatientPushMinHours] = useState(24);
-  const [patientPushFrequency, setPatientPushFrequency] = useState(2);
   const [patientPushDisabled, setPatientPushDisabled] = useState(false);
   const [pushTestStatus, setPushTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
   const [pushTestError, setPushTestError] = useState('');
@@ -872,7 +871,6 @@ export default function MedicsPanel() {
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
     setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
-    setPatientPushFrequency(patient.push_frequency ?? 2);
     setPatientPushDisabled(patient.push_disabled ?? false);
     setPatientConfigSaved(false);
     setPatientConfigError(null);
@@ -1079,10 +1077,11 @@ export default function MedicsPanel() {
   };
 
   // ── Save push notification settings (auto-save, lives in the main patient view) ──
-  const handleSavePushSettings = async (overrides: Partial<{ push_min_hours: number; push_frequency: number; push_disabled: boolean }> = {}) => {
+  // Frequency is fixed at 1 notification/day — not user-configurable.
+  const handleSavePushSettings = async (overrides: Partial<{ push_min_hours: number; push_disabled: boolean }> = {}) => {
     if (!selectedPatient) return;
-    const mins = Math.max(1, Math.min(168, overrides.push_min_hours ?? patientPushMinHours));
-    const freq = Math.max(1, Math.min(24, overrides.push_frequency ?? patientPushFrequency));
+    const mins = Math.max(24, Math.min(720, overrides.push_min_hours ?? patientPushMinHours));
+    const freq = 1;
     const disabled = overrides.push_disabled ?? patientPushDisabled;
     const { error } = await supabase
       .from('patient_links')
@@ -1988,34 +1987,25 @@ export default function MedicsPanel() {
                   No se enviarán recordatorios automáticos a este paciente, aunque él los tenga activados en su app.
                 </p>
               )}
-              <div className="flex gap-3 flex-wrap mt-3" style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
-                <div style={{ flex: '1 1 200px' }}>
-                  <label className="text-xs font-bold text-fx-text-secondary block mb-1">
-                    Horas sin registrar antes de notificar
-                  </label>
+              <div className="flex items-center justify-between gap-3 flex-wrap mt-3" style={{ opacity: patientPushDisabled ? 0.4 : 1, pointerEvents: patientPushDisabled ? 'none' : 'auto' }}>
+                <label className="text-xs font-bold text-fx-text-secondary">
+                  Días sin registro para notificar al paciente
+                </label>
+                <div className="flex items-center gap-2">
                   <input
-                    type="number" min={1} max={168} value={patientPushMinHours}
-                    onChange={e => setPatientPushMinHours(Number(e.target.value))}
+                    type="number" min={1} max={30} value={Math.round(patientPushMinHours / 24)}
+                    onChange={e => setPatientPushMinHours(Math.max(1, Number(e.target.value)) * 24)}
                     onBlur={() => handleSavePushSettings({ push_min_hours: patientPushMinHours })}
                     disabled={patientPushDisabled}
-                    className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
+                    style={{ width: 56 }}
+                    className="py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border text-center"
                   />
-                  <span className="text-[11px] text-fx-ink-300">Por defecto: 24h</span>
-                </div>
-                <div style={{ flex: '1 1 200px' }}>
-                  <label className="text-xs font-bold text-fx-text-secondary block mb-1">
-                    Veces al día (cada {Math.round(24 / Math.max(1, patientPushFrequency))}h)
-                  </label>
-                  <input
-                    type="number" min={1} max={24} value={patientPushFrequency}
-                    onChange={e => setPatientPushFrequency(Number(e.target.value))}
-                    onBlur={() => handleSavePushSettings({ push_frequency: patientPushFrequency })}
-                    disabled={patientPushDisabled}
-                    className="w-full py-1.5 px-2.5 rounded-lg border border-fx-border text-[13px] text-fx-text box-border"
-                  />
-                  <span className="text-[11px] text-fx-ink-300">Por defecto: 2 (cada 12h)</span>
+                  <span className="text-[11px] text-fx-ink-300">día(s) · por defecto: 1 (24h)</span>
                 </div>
               </div>
+              <p className="text-[11px] text-fx-ink-300 mt-2" style={{ opacity: patientPushDisabled ? 0.4 : 1 }}>
+                Se envía como máximo 1 notificación al día.
+              </p>
             </div>
 
             {/* Row 1: Semáforo — all inline */}
@@ -2548,6 +2538,12 @@ export default function MedicsPanel() {
                           <span className="text-[11px] text-fx-ink-300">usa valores generales</span>
                         )}
                       </div>
+
+                      {patientSemaforoOverride && (
+                        <p className="text-[11px] text-fx-ink-300 leading-relaxed mb-2.5">
+                          {patientSemaforoGreen} día{patientSemaforoGreen !== 1 ? 's' : ''} o menos sin registrar se etiquetará al paciente como <strong style={{ color: 'var(--color-success)' }}>"Al día"</strong>; entre {patientSemaforoGreen + 1} y {patientSemaforoRed} días se considerará <strong style={{ color: 'var(--color-warning)' }}>"Atención"</strong>; más de {patientSemaforoRed} días se marcará como <strong style={{ color: 'var(--color-error)' }}>"Inactivo"</strong>.
+                        </p>
+                      )}
 
                       {patientSemaforoOverride && (
                         <div className="flex gap-1.5">
