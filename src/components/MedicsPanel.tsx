@@ -261,6 +261,7 @@ export default function MedicsPanel() {
   const [onboardingSkippable, setOnboardingSkippable] = useState(false);
   const [clinicalNotes, setClinicalNotes] = useState<{ id: string; note: string; created_at: string }[]>([]);
   const [clinicalNotesSort, setClinicalNotesSort] = useState<'desc' | 'asc'>('desc');
+  const [clinicalNotesPage, setClinicalNotesPage] = useState(0);
   const [newNoteDraft, setNewNoteDraft] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
   const [bristolHover, setBristolHover] = useState<{ idx: number; b: number; date: string; svgX: number; svgY: number } | null>(null);
@@ -733,6 +734,7 @@ export default function MedicsPanel() {
     if (!error && data) {
       setClinicalNotes(prev => [data, ...prev]);
       setNewNoteDraft('');
+      setClinicalNotesPage(0);
     }
   };
 
@@ -892,6 +894,7 @@ export default function MedicsPanel() {
     setEntryFilterTo('');
     setNewNoteDraft('');
     setClinicalNotes([]);
+    setClinicalNotesPage(0);
     loadClinicalNotes(patient.id);
     setBristolHover(null);
     setNoteEditing(null);
@@ -1946,9 +1949,16 @@ export default function MedicsPanel() {
         )}
         {section === 'pacientes' && selectedPatient && patientDetail && !detailLoading && (
           <div className="medics-patient-detail">
-            <SectionHeader
-              title={
-                <span className="inline-flex items-center gap-2.5 flex-wrap">
+            <div
+              className="mb-5 gap-3"
+              style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr auto', alignItems: 'center', rowGap: 12 }}
+            >
+              <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx" style={{ justifySelf: 'start' }}>
+                ← Volver
+              </button>
+
+              <div className="flex flex-col items-center text-center min-w-0" style={{ order: isMobile ? -1 : 0 }}>
+                <span className="inline-flex items-center justify-center gap-2.5 flex-wrap text-[20px] md:text-[24px] font-extrabold text-fx-text tracking-tight">
                   {patientLabel(selectedPatient)}
                   {selectedPatient.hasPushSub === true && (
                     <Bell size={18} title="Notificaciones activas" color="var(--color-secondary)" />
@@ -1960,31 +1970,49 @@ export default function MedicsPanel() {
                     <span key={t} className="text-[11px] px-2 py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>{t}</span>
                   ))}
                 </span>
-              }
-              subtitle={`${selectedPatient.display_name && selectedPatient.patient_email ? selectedPatient.patient_email + ' · ' : ''}Vinculado ${selectedPatient.accepted_at ? shortDate(selectedPatient.accepted_at) : ''}`}
-              actions={
-                <div className="flex gap-2">
-                  <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.dark }}>
-                    Exportar PDF
-                  </button>
-                  <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
-                    Configuración
-                  </button>
-                  <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">
-                    ← Volver
-                  </button>
-                </div>
-              }
-            />
+                {selectedPatient.patient_email && (
+                  <p className="text-sm text-fx-text-secondary mt-1 mb-0">{selectedPatient.patient_email}</p>
+                )}
+              </div>
 
-            {/* Row 1: Notificaciones push + Hace X días, side by side */}
+              <div className="flex gap-2 flex-wrap" style={{ justifySelf: isMobile ? 'start' : 'end' }}>
+                <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.dark }}>
+                  Exportar PDF
+                </button>
+                <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
+                  Configuración
+                </button>
+              </div>
+            </div>
+
+            {/* Row 1: Hace X días + Notificaciones al paciente, side by side */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'stretch' }} className="mb-4">
-              {/* Notificaciones push */}
+              {/* Hace X días */}
+              <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex flex-col gap-1.5 justify-center" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
+                <div className="flex items-center gap-2.5">
+                  <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
+                  <span className="text-[15px] font-bold text-fx-text">
+                    {patientDetail.daysSinceLast === null
+                      ? 'Sin registros'
+                      : patientDetail.daysSinceLast === 0
+                        ? 'Último registro: hoy'
+                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
+                  </span>
+                </div>
+                {patientDetail.lastEntryDate && (
+                  <span className="text-xs text-fx-text-tertiary">Último registro: {shortDate(patientDetail.lastEntryDate)}</span>
+                )}
+                {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+                  <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
+                )}
+              </div>
+
+              {/* Notificaciones al paciente */}
               <div className="medics-patient-detail__push bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3" style={{ flex: 1, minWidth: 0 }}>
                 <div className="flex items-center gap-2.5 flex-wrap justify-between">
                   <span className="text-[13px] font-bold text-fx-text flex items-center gap-1.5">
                     <Bell size={16} />
-                    Notificaciones push
+                    Notificaciones al paciente
                   </span>
                   <div className="flex items-center gap-2.5">
                     <Switch
@@ -2022,30 +2050,10 @@ export default function MedicsPanel() {
                   Se envía como máximo 1 notificación al día.
                 </p>
               </div>
-
-              {/* Hace X días */}
-              <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex flex-col gap-1.5 justify-center" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
-                <div className="flex items-center gap-2.5">
-                  <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
-                  <span className="text-[15px] font-bold text-fx-text">
-                    {patientDetail.daysSinceLast === null
-                      ? 'Sin registros'
-                      : patientDetail.daysSinceLast === 0
-                        ? 'Último registro: hoy'
-                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
-                  </span>
-                </div>
-                {patientDetail.lastEntryDate && (
-                  <span className="text-xs text-fx-text-tertiary">Último registro: {shortDate(patientDetail.lastEntryDate)}</span>
-                )}
-                {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                  <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
-                )}
-              </div>
             </div>
 
-            {/* Row 2: Left column (calendar + stats) + Right column (entries) */}
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'flex-start' }}>
+            {/* Row 2: Left column (calendar + stats) + Right column (entries) + Bitácora */}
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: isMobile ? 'flex-start' : 'stretch' }}>
               {/* Left column: calendar + semáforo override */}
               <div className="medics-patient-detail__sidebar flex flex-col gap-4" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
               <div className="medics-patient-detail__calendar bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
@@ -2488,56 +2496,79 @@ export default function MedicsPanel() {
                 );
               })()}
 
-              {/* Third column: Bitácora — accumulating clinical notes log */}
-              <div className="medics-patient-detail__bitacora bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex flex-col box-border" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
-                <div className="px-4 py-3 border-b border-fx-border-soft flex items-center justify-between">
-                  <span className="text-[15px] font-bold text-fx-text">Bitácora</span>
-                  <button
-                    onClick={() => setClinicalNotesSort(s => s === 'desc' ? 'asc' : 'desc')}
-                    className="px-2.5 py-1 rounded-lg border border-fx-border bg-fx-surface text-[11px] font-semibold text-fx-text-secondary cursor-pointer flex items-center gap-1"
-                    title="Ordenar por fecha"
-                  >
-                    {clinicalNotesSort === 'desc' ? '↓ Más reciente' : '↑ Más antigua'}
-                  </button>
-                </div>
+              {/* Third column: Bitácora — accumulating clinical notes log (never taller than Historial; paginated instead) */}
+              {(() => {
+                const NOTES_PER_PAGE = 5;
+                const sortedNotes = [...clinicalNotes].sort((a, b) => clinicalNotesSort === 'desc'
+                  ? b.created_at.localeCompare(a.created_at)
+                  : a.created_at.localeCompare(b.created_at));
+                const notesTotalPages = Math.max(1, Math.ceil(sortedNotes.length / NOTES_PER_PAGE));
+                const pagedNotes = sortedNotes.slice(clinicalNotesPage * NOTES_PER_PAGE, (clinicalNotesPage + 1) * NOTES_PER_PAGE);
 
-                <div className="px-4 py-3 flex flex-col gap-2 border-b border-fx-border-soft">
-                  <textarea
-                    value={newNoteDraft}
-                    onChange={e => setNewNoteDraft(e.target.value)}
-                    placeholder="Añadir nota clínica…"
-                    rows={3}
-                    className="w-full px-3 py-2.5 rounded-[10px] border border-fx-border text-[13px] text-fx-text-secondary resize-y font-sans leading-relaxed box-border outline-none"
-                  />
-                  <button
-                    onClick={handleAddClinicalNote}
-                    disabled={notesSaving || !newNoteDraft.trim()}
-                    className="w-full py-2 rounded-fx-pill text-white text-[13px] font-semibold border-none cursor-pointer font-fx"
-                    style={{ backgroundColor: th.dark, opacity: (notesSaving || !newNoteDraft.trim()) ? 0.5 : 1 }}
-                  >
-                    {notesSaving ? 'Guardando…' : 'Agregar nota'}
-                  </button>
-                </div>
+                return (
+                  <div className="medics-patient-detail__bitacora bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex flex-col box-border overflow-hidden" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315, height: isMobile ? undefined : '100%' }}>
+                    <div className="px-4 py-3 border-b border-fx-border-soft flex items-center justify-between" style={{ flexShrink: 0 }}>
+                      <span className="text-[15px] font-bold text-fx-text">Bitácora</span>
+                      <button
+                        onClick={() => { setClinicalNotesSort(s => s === 'desc' ? 'asc' : 'desc'); setClinicalNotesPage(0); }}
+                        className="px-2.5 py-1 rounded-lg border border-fx-border bg-fx-surface text-[11px] font-semibold text-fx-text-secondary cursor-pointer flex items-center gap-1"
+                        title="Ordenar por fecha"
+                      >
+                        {clinicalNotesSort === 'desc' ? '↓ Más reciente' : '↑ Más antigua'}
+                      </button>
+                    </div>
 
-                <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 480 }}>
-                  {clinicalNotes.length === 0 ? (
-                    <p className="text-[13px] text-fx-text-tertiary px-4 py-3">Sin notas todavía.</p>
-                  ) : (
-                    [...clinicalNotes]
-                      .sort((a, b) => clinicalNotesSort === 'desc'
-                        ? b.created_at.localeCompare(a.created_at)
-                        : a.created_at.localeCompare(b.created_at))
-                      .map(n => (
-                        <div key={n.id} className="px-4 py-2.5 border-b border-fx-border-soft last:border-b-0">
-                          <p className="text-[13px] text-fx-text-secondary leading-relaxed whitespace-pre-wrap">{n.note}</p>
-                          <p className="text-[11px] text-fx-text-tertiary mt-1">
-                            {new Date(n.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      ))
-                  )}
-                </div>
-              </div>
+                    <div className="px-4 py-3 flex flex-col gap-2 border-b border-fx-border-soft" style={{ flexShrink: 0 }}>
+                      <textarea
+                        value={newNoteDraft}
+                        onChange={e => setNewNoteDraft(e.target.value)}
+                        placeholder="Añadir nota clínica…"
+                        rows={3}
+                        className="w-full px-3 py-2.5 rounded-[10px] border border-fx-border text-[13px] text-fx-text-secondary resize-y font-sans leading-relaxed box-border outline-none"
+                      />
+                      <button
+                        onClick={handleAddClinicalNote}
+                        disabled={notesSaving || !newNoteDraft.trim()}
+                        className="w-full py-2 rounded-fx-pill text-white text-[13px] font-semibold border-none cursor-pointer font-fx"
+                        style={{ backgroundColor: th.dark, opacity: (notesSaving || !newNoteDraft.trim()) ? 0.5 : 1 }}
+                      >
+                        {notesSaving ? 'Guardando…' : 'Agregar nota'}
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
+                      {pagedNotes.length === 0 ? (
+                        <p className="text-[13px] text-fx-text-tertiary px-4 py-3">Sin notas todavía.</p>
+                      ) : (
+                        pagedNotes.map(n => (
+                          <div key={n.id} className="px-4 py-2.5 border-b border-fx-border-soft last:border-b-0">
+                            <p className="text-[13px] text-fx-text-secondary leading-relaxed whitespace-pre-wrap">{n.note}</p>
+                            <p className="text-[11px] text-fx-text-tertiary mt-1">
+                              {new Date(n.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {sortedNotes.length > NOTES_PER_PAGE && (
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-fx-border-soft" style={{ backgroundColor: 'var(--fx-ink-50)', flexShrink: 0 }}>
+                        <button onClick={() => setClinicalNotesPage(p => Math.max(0, p - 1))} disabled={clinicalNotesPage === 0}
+                          className="px-3.5 py-[5px] rounded-lg border border-fx-border bg-fx-surface text-[13px]" style={{ cursor: clinicalNotesPage === 0 ? 'default' : 'pointer', opacity: clinicalNotesPage === 0 ? 0.4 : 1 }}>
+                          ← Anterior
+                        </button>
+                        <span className="text-xs text-fx-text-secondary">
+                          Página <strong>{clinicalNotesPage + 1}</strong> de <strong>{notesTotalPages}</strong>
+                        </span>
+                        <button onClick={() => setClinicalNotesPage(p => Math.min(notesTotalPages - 1, p + 1))} disabled={clinicalNotesPage === notesTotalPages - 1}
+                          className="px-3.5 py-[5px] rounded-lg border border-fx-border bg-fx-surface text-[13px]" style={{ cursor: clinicalNotesPage === notesTotalPages - 1 ? 'default' : 'pointer', opacity: clinicalNotesPage === notesTotalPages - 1 ? 0.4 : 1 }}>
+                          Siguiente →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* ── Config modal ── */}
