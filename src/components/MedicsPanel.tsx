@@ -352,7 +352,6 @@ export default function MedicsPanel() {
     const tryLoadDoctorInner = async (user: any) => {
       const isGoogle = (user.app_metadata?.provider || '') === 'google';
       const userMeta = (user.user_metadata || {}) as Record<string, any>;
-      console.log('[tryLoadDoctor] uid:', user.id, 'provider:', user.app_metadata?.provider, 'metadata:', userMeta);
       setDebugMsg('Buscando tu perfil médico…');
 
       // 1. Existing doctor record — with 8 s timeout so a hung query doesn't
@@ -364,7 +363,6 @@ export default function MedicsPanel() {
         supabase.from('doctors').select('*, centers(name, image_url)').eq('id', user.id).maybeSingle(),
         timeoutPromise,
       ]);
-      console.log('[tryLoadDoctor] step1 doctor:', doctorData);
       if (!mounted) return;
 
       // 2. Pending admin invitation (email/password only)
@@ -381,7 +379,7 @@ export default function MedicsPanel() {
               name: pendingCenter.pending_doctor_name || userEmail.split('@')[0],
               specialty: pendingCenter.pending_doctor_specialty || null,
             });
-            if (insertErr) console.error('[tryLoadDoctor] admin-invite doctors INSERT failed:', insertErr);
+            if (insertErr) console.error('[medics] admin-invite doctors INSERT failed:', insertErr);
             if (!insertErr) {
               await supabase.from('centers').update({
                 pending_doctor_email: null, pending_doctor_name: null, pending_doctor_specialty: null,
@@ -401,7 +399,6 @@ export default function MedicsPanel() {
       // doctors row that doesn't exist yet at insert time.
       if (!doctorData && !isGoogle) {
         setDebugMsg('Configurando tu cuenta por primera vez…');
-        console.log('[tryLoadDoctor] step3 is_doctor:', userMeta.is_doctor, 'center_name:', userMeta.center_name);
         if (userMeta.is_doctor) {
           const userEmail = user.email?.toLowerCase() || '';
           const centerName = (userMeta.center_name as string)?.trim() || `Consulta de ${userMeta.name || userEmail.split('@')[0]}`;
@@ -411,22 +408,22 @@ export default function MedicsPanel() {
             p_specialty: (userMeta.specialty as string)?.trim() || null,
           });
           if (regErr) {
-            console.error('[tryLoadDoctor] doctor_self_register RPC failed:', regErr);
+            console.error('[medics] doctor_self_register RPC failed:', regErr);
             setDebugMsg('');
             setError(`Error al activar tu cuenta: ${regErr.message}`);
             setLoading(false);
+            setInitialLoading(false);
             return; // valid auth account — don't sign out, let them retry
           }
-          console.log('[tryLoadDoctor] RPC ok, fetching doctor row…');
           const { data: d, error: selectErr } = await supabase.from('doctors')
             .select('*, centers(name, image_url)').eq('id', user.id).single();
-          console.log('[tryLoadDoctor] post-RPC doctor:', d, 'err:', selectErr);
           if (selectErr) {
             // RPC succeeded (doctor+center created) but SELECT failed — don't sign out
-            console.error('[tryLoadDoctor] doctors SELECT post-RPC failed:', selectErr);
+            console.error('[medics] doctors SELECT post-RPC failed:', selectErr);
             setDebugMsg('');
             setError('Tu cuenta ha sido activada. Recarga la página para continuar.');
             setLoading(false);
+            setInitialLoading(false);
             return;
           }
           doctorData = d;
@@ -454,6 +451,7 @@ export default function MedicsPanel() {
           await supabase.auth.signOut();
           setLoading(false);
         }
+        setInitialLoading(false);
         return;
       }
 
@@ -461,6 +459,7 @@ export default function MedicsPanel() {
       applyDoctorInfo(buildDoctorInfo(doctorData));
       setLoggedIn(true);
       setLoading(false);
+      setInitialLoading(false);
     };
 
     // onAuthStateChange always fires INITIAL_SESSION on mount (with or without
@@ -469,39 +468,41 @@ export default function MedicsPanel() {
     // code exchange). Relying on getSession() instead caused a hang when the
     // PKCE exchange failed silently, leaving initialLoading=true forever.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[auth] onAuthStateChange event:', event, 'hasSession:', !!session, 'hasUser:', !!session?.user, 'expiresAt:', session?.expires_at);
       if (!mounted) return;
-      // Unblock the UI immediately — never wait on an async query to remove
-      // the loading screen, since a hung query would freeze the page forever.
-      setInitialLoading(false);
-      if (session?.user) {
-        setError(''); // clear any error from a previous (e.g. timed-out) auth event
-        // Token refresh and user-update events don't require reloading the doctor
-        // profile — the doctor is already in state. Reloading would re-run the
-        // 8 s DB timeout, which can fire spuriously right after functions.invoke
-        // triggers an internal token refresh, showing a false connection error.
-        if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
-        if (window.location.search || window.location.hash) {
-          window.history.replaceState({}, '', '/medics');
-        }
-        try { await tryLoadDoctor(session.user); } catch (e) {
-          if (mounted) {
-            const msg = e instanceof Error ? e.message : '';
-            // Supabase PKCE lock contention during OAuth callback — the token is still
-            // valid; retry once with a fresh session instead of showing an error.
-            if (msg.includes('Lock broken')) {
-              try {
-                const { data: { session: fresh } } = await supabase.auth.getSession();
-                if (fresh?.user && mounted) await tryLoadDoctor(fresh.user);
-              } catch (e2) {
-                if (mounted) { setDebugMsg(''); setError('Error al iniciar sesión. Intenta de nuevo.'); setLoading(false); }
-              }
-              return;
+      if (!session?.user) {
+        // Genuinely logged out / no session to restore — show the login form right away.
+        setInitialLoading(false);
+        return;
+      }
+      setError(''); // clear any error from a previous (e.g. timed-out) auth event
+      // Token refresh and user-update events don't require reloading the doctor
+      // profile — the doctor is already in state. Reloading would re-run the
+      // 8 s DB timeout, which can fire spuriously right after functions.invoke
+      // triggers an internal token refresh, showing a false connection error.
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
+      if (window.location.search || window.location.hash) {
+        window.history.replaceState({}, '', '/medics');
+      }
+      // Keep the loading splash up until tryLoadDoctor reaches a terminal state,
+      // so a session restore never flashes the bare login form while it resolves.
+      try { await tryLoadDoctor(session.user); } catch (e) {
+        if (mounted) {
+          const msg = e instanceof Error ? e.message : '';
+          // Supabase PKCE lock contention during OAuth callback — the token is still
+          // valid; retry once with a fresh session instead of showing an error.
+          if (msg.includes('Lock broken')) {
+            try {
+              const { data: { session: fresh } } = await supabase.auth.getSession();
+              if (fresh?.user && mounted) await tryLoadDoctor(fresh.user);
+            } catch (e2) {
+              if (mounted) { setDebugMsg(''); setError('Error al iniciar sesión. Intenta de nuevo.'); setLoading(false); setInitialLoading(false); }
             }
-            setDebugMsg('');
-            setError(msg || 'Error inesperado. Intenta de nuevo.');
-            setLoading(false);
+            return;
           }
+          setDebugMsg('');
+          setError(msg || 'Error inesperado. Intenta de nuevo.');
+          setLoading(false);
+          setInitialLoading(false);
         }
       }
     });
@@ -511,12 +512,10 @@ export default function MedicsPanel() {
     // new tab to /medics) restore the doctor's session instantly instead of
     // depending solely on onAuthStateChange's INITIAL_SESSION timing — if
     // that event is ever slow or missed, this still recovers the session.
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('[auth] getSession fallback: hasSession:', !!session, 'hasUser:', !!session?.user, 'expiresAt:', session?.expires_at, 'error:', error?.message, 'doctorLoadInFlight:', doctorLoadInFlight);
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted || doctorLoadInFlight) return;
       if (session?.user) {
-        setInitialLoading(false);
-        tryLoadDoctor(session.user).catch((e) => console.error('[auth] getSession fallback tryLoadDoctor failed:', e));
+        tryLoadDoctor(session.user).catch((e) => console.error('[medics] getSession fallback tryLoadDoctor failed:', e));
       }
     });
 
