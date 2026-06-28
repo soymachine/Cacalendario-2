@@ -28,11 +28,28 @@ interface Doctor {
   name: string;
   specialty: string | null;
   center_name: string;
-  plan: 'free' | 'beta' | 'pro';
+  plan: 'free' | 'beta' | 'test' | 'pro';
+  test_plan_started_at: string | null;
   created_at: string;
   email?: string;
   provider?: string;
   patientCount: number;
+}
+
+const PLAN_OPTIONS: { value: 'free' | 'beta' | 'test' | 'pro'; label: string }[] = [
+  { value: 'free', label: '⭐ Free' },
+  { value: 'beta', label: '🧪 Beta' },
+  { value: 'test', label: '🎁 Test (1 mes gratis)' },
+  { value: 'pro', label: '🚀 Pro' },
+];
+
+const TEST_PLAN_DURATION_DAYS = 31;
+
+function testPlanDaysLeft(startedAt: string | null): number | null {
+  if (!startedAt) return null;
+  const elapsedMs = Date.now() - new Date(startedAt).getTime();
+  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, TEST_PLAN_DURATION_DAYS - elapsedDays);
 }
 
 interface DashboardStats {
@@ -75,7 +92,7 @@ export default function AdminPanel() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
-  const [planConfirm, setPlanConfirm] = useState<{ doctor: Doctor; newPlan: 'free' | 'beta' | 'pro' } | null>(null);
+  const [planConfirm, setPlanConfirm] = useState<{ doctor: Doctor; newPlan: 'free' | 'beta' | 'test' | 'pro' } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Doctor | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -162,7 +179,7 @@ export default function AdminPanel() {
   const loadDoctors = async () => {
     const { data, error } = await supabase
       .from('doctors')
-      .select('id, name, specialty, plan, created_at, centers(name)')
+      .select('id, name, specialty, plan, test_plan_started_at, created_at, centers(name)')
       .order('created_at', { ascending: false });
     if (error) { console.error('loadDoctors:', error); return; }
 
@@ -180,6 +197,7 @@ export default function AdminPanel() {
       specialty: d.specialty,
       center_name: d.centers?.name || '—',
       plan: d.plan || 'free',
+      test_plan_started_at: d.test_plan_started_at || null,
       created_at: d.created_at,
       patientCount: countMap[d.id] || 0,
     }));
@@ -200,7 +218,7 @@ export default function AdminPanel() {
     setDoctors(docList);
   };
 
-  const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'beta' | 'pro') => {
+  const handleChangeDoctorPlan = async (doctorId: string, newPlan: 'free' | 'beta' | 'test' | 'pro') => {
     setChangingPlanId(doctorId);
     const { error } = await supabase.rpc('admin_set_doctor_plan', { p_doctor_id: doctorId, p_plan: newPlan });
     setChangingPlanId(null);
@@ -208,7 +226,9 @@ export default function AdminPanel() {
       alert('Error al cambiar el plan: ' + error.message);
       return;
     }
-    setDoctors(prev => prev.map(d => d.id === doctorId ? { ...d, plan: newPlan } : d));
+    setDoctors(prev => prev.map(d => d.id === doctorId
+      ? { ...d, plan: newPlan, test_plan_started_at: newPlan === 'test' ? new Date().toISOString() : d.test_plan_started_at }
+      : d));
   };
 
   const handleDeleteDoctor = async (doctor: Doctor) => {
@@ -571,6 +591,7 @@ export default function AdminPanel() {
               <StatCard emoji="🩺" label="TOTAL MÉDICOS" value={String(doctors.length)} />
               <StatCard emoji="⭐" label="PLAN FREE" value={String(doctors.filter(d => d.plan === 'free').length)} />
               <StatCard emoji="🧪" label="PLAN BETA" value={String(doctors.filter(d => d.plan === 'beta').length)} />
+              <StatCard emoji="🎁" label="PLAN TEST" value={String(doctors.filter(d => d.plan === 'test').length)} />
               <StatCard emoji="🚀" label="PLAN PRO" value={String(doctors.filter(d => d.plan === 'pro').length)} dark />
               <StatCard emoji="🏥" label="ESPECIALIDADES" value={String(new Set(doctors.map(d => d.specialty).filter(Boolean)).size)} />
             </div>
@@ -620,24 +641,33 @@ export default function AdminPanel() {
                       <span style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : doc.plan === 'beta' ? '#6366f1' : '#fff8e1',
-                          color: doc.plan === 'pro' ? '#dd8273' : doc.plan === 'beta' ? '#fff' : '#7a5810',
-                          border: doc.plan === 'pro' || doc.plan === 'beta' ? 'none' : '1px solid #ffe082',
+                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : doc.plan === 'beta' ? '#6366f1' : doc.plan === 'test' ? '#16a34a' : '#fff8e1',
+                          color: doc.plan === 'pro' ? '#dd8273' : (doc.plan === 'beta' || doc.plan === 'test') ? '#fff' : '#7a5810',
+                          border: doc.plan === 'pro' || doc.plan === 'beta' || doc.plan === 'test' ? 'none' : '1px solid #ffe082',
+                          whiteSpace: 'nowrap' as const,
                         }}>
-                          {doc.plan === 'pro' ? '🚀 Pro' : doc.plan === 'beta' ? '🧪 Beta' : '⭐ Free'}
+                          {doc.plan === 'pro' ? '🚀 Pro' : doc.plan === 'beta' ? '🧪 Beta' : doc.plan === 'test' ? `🎁 Test${(() => { const d = testPlanDaysLeft(doc.test_plan_started_at); return d !== null ? ` (${d}d)` : ''; })()}` : '⭐ Free'}
                         </span>
-                        <button
-                          onClick={() => setPlanConfirm({ doctor: doc, newPlan: doc.plan === 'pro' ? 'free' : doc.plan === 'beta' ? 'pro' : 'beta' })}
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            const newPlan = e.target.value as 'free' | 'beta' | 'test' | 'pro';
+                            if (newPlan && newPlan !== doc.plan) setPlanConfirm({ doctor: doc, newPlan });
+                            e.target.value = '';
+                          }}
                           disabled={isChanging}
-                          title={doc.plan === 'pro' ? 'Cambiar a Free' : doc.plan === 'beta' ? 'Activar Pro' : 'Activar Beta'}
+                          title="Cambiar plan"
                           style={{
-                            padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11,
+                            padding: '3px 4px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11,
                             cursor: 'pointer', backgroundColor: '#fff', color: '#555',
                             opacity: isChanging ? 0.4 : 1,
                           }}
                         >
-                          {isChanging ? '…' : doc.plan === 'pro' ? '↓ Free' : doc.plan === 'beta' ? '↑ Pro' : '↑ Beta'}
-                        </button>
+                          <option value="" disabled>{isChanging ? '…' : 'Cambiar a…'}</option>
+                          {PLAN_OPTIONS.filter(o => o.value !== doc.plan).map(o => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
                         <button
                           onClick={() => setDeleteConfirm(doc)}
                           disabled={deletingId === doc.id}
@@ -943,22 +973,33 @@ export default function AdminPanel() {
       {/* ── Plan change confirmation modal ── */}
       {planConfirm && (() => {
         const { doctor, newPlan } = planConfirm;
-        const isPro = newPlan === 'pro';
+        const planEmoji: Record<string, string> = { free: '⭐', beta: '🧪', test: '🎁', pro: '🚀' };
+        const planLabel: Record<string, string> = { free: 'Free', beta: 'Beta', test: 'Test (1 mes gratis)', pro: 'Pro' };
         return (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <span style={{ fontSize: 40 }}>{isPro ? '🚀' : '⭐'}</span>
+                <span style={{ fontSize: 40 }}>{planEmoji[newPlan]}</span>
                 <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', margin: '12px 0 6px' }}>
-                  {isPro ? 'Activar plan Pro' : 'Cambiar a plan Free'}
+                  Cambiar a plan {planLabel[newPlan]}
                 </h3>
                 <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.5 }}>
                   ¿Confirmas el cambio de plan de <strong>{doctor.name}</strong> a{' '}
-                  <strong>{isPro ? 'Pro' : 'Free'}</strong>?
+                  <strong>{planLabel[newPlan]}</strong>?
                 </p>
-                {!isPro && (
+                {newPlan === 'free' && (
                   <p style={{ fontSize: 13, color: '#c0392b', marginTop: 10, backgroundColor: '#fdecea', borderRadius: 8, padding: '8px 12px' }}>
                     El médico quedará limitado a 1 paciente.
+                  </p>
+                )}
+                {newPlan === 'beta' && (
+                  <p style={{ fontSize: 13, color: '#5b21b6', marginTop: 10, backgroundColor: '#f3e8ff', borderRadius: 8, padding: '8px 12px' }}>
+                    El médico quedará limitado a 100 pacientes.
+                  </p>
+                )}
+                {newPlan === 'test' && (
+                  <p style={{ fontSize: 13, color: '#166534', marginTop: 10, backgroundColor: '#dcfce7', borderRadius: 8, padding: '8px 12px' }}>
+                    Se activan 31 días de pacientes ilimitados a partir de hoy. El contador empieza de nuevo si se reactiva este plan más adelante.
                   </p>
                 )}
               </div>
@@ -977,7 +1018,7 @@ export default function AdminPanel() {
                   disabled={changingPlanId === doctor.id}
                   style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#1a0e0e', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  {isPro ? '🚀 Activar Pro' : '↓ Cambiar a Free'}
+                  {planEmoji[newPlan]} Activar {planLabel[newPlan]}
                 </button>
               </div>
             </div>
