@@ -10,7 +10,7 @@ import { initSentry } from '../lib/sentry';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
-  House, User, UserPlus, Sliders,
+  House, User, UserPlus, Sliders, UserMinus,
 } from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
@@ -236,6 +236,7 @@ export default function MedicsPanel() {
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [patientActionModal, setPatientActionModal] = useState<{ type: 'unlink' | 'remove'; patient: PatientLink } | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
@@ -791,11 +792,12 @@ export default function MedicsPanel() {
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
-    if (doctorInfo?.plan === 'beta' && patients.length >= BETA_PLAN_PATIENT_LIMIT) {
+    const activePatientsCount = patients.filter(p => p.status !== 'unlinked').length;
+    if (doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
     }
-    if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
+    if (doctorInfo?.plan === 'free' && activePatientsCount >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
     }
@@ -858,6 +860,30 @@ export default function MedicsPanel() {
     } else {
       loadPatients();
     }
+  };
+
+  // ── Unlink patient (keeps historical record in list) ──
+  const handleUnlinkPatient = async (patient: PatientLink) => {
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ status: 'unlinked' })
+      .eq('id', patient.id)
+      .eq('doctor_id', doctorInfo!.id);
+    if (error) { setError(error.message); return; }
+    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, status: 'unlinked' } : p));
+    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, status: 'unlinked' } : prev);
+  };
+
+  // ── Remove patient (deletes link — disappears from list) ──
+  const handleRemovePatient = async (patient: PatientLink) => {
+    const { error } = await supabase
+      .from('patient_links')
+      .delete()
+      .eq('id', patient.id)
+      .eq('doctor_id', doctorInfo!.id);
+    if (error) { setError(error.message); return; }
+    setPatients(prev => prev.filter(p => p.id !== patient.id));
+    if (selectedPatient?.id === patient.id) { setSelectedPatient(null); setPatientDetail(null); }
   };
 
   // ── Load patient detail ──
@@ -1912,8 +1938,8 @@ export default function MedicsPanel() {
                   const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)}
-                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${isAccepted ? 'cursor-pointer' : 'cursor-default'}`}
+                    <div key={patient.id} onClick={() => (isAccepted || patient.status === 'unlinked') && loadPatientDetail(patient)}
+                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${(isAccepted || patient.status === 'unlinked') ? 'cursor-pointer' : 'cursor-default'} ${patient.status === 'unlinked' ? 'opacity-60' : ''}`}
                       style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
                       {/* Semáforo */}
                       <div className="w-10">
@@ -1968,18 +1994,51 @@ export default function MedicsPanel() {
                         {isAccepted && patient.hasPushSub === null && <span title="Sin datos" className="opacity-20 text-xs">—</span>}
                       </div>}
                       {/* Status badge + actions */}
-                      <div className="flex items-center gap-1.5" style={{ width: isMobile ? 90 : 140 }}>
-                        <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl" style={{
-                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : 'var(--color-warning-soft)',
-                          color: isAccepted ? 'var(--color-secondary)' : 'var(--color-warning)',
+                      <div className="flex items-center gap-1.5" style={{ width: isMobile ? 100 : 160 }}>
+                        <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl whitespace-nowrap" style={{
+                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : patient.status === 'unlinked' ? 'var(--fx-ink-100)' : 'var(--color-warning-soft)',
+                          color: isAccepted ? 'var(--color-secondary)' : patient.status === 'unlinked' ? 'var(--fx-ink-400)' : 'var(--color-warning)',
                         }}>
-                          {isAccepted ? 'Vinculado' : 'Pendiente'}
+                          {isAccepted ? 'Vinculado' : patient.status === 'unlinked' ? 'Desvinculado' : 'Pendiente'}
                         </span>
-                        {!isAccepted && (
+                        {isAccepted && (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'unlink', patient }); }}
+                              title="Desvincular paciente"
+                              className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-warning)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                            >
+                              <UserMinus size={15} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
+                              title="Borrar paciente"
+                              className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                            >
+                              <Trash size={15} />
+                            </button>
+                          </>
+                        )}
+                        {patient.status === 'unlinked' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
+                            title="Borrar paciente"
+                            className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                          >
+                            <Trash size={15} />
+                          </button>
+                        )}
+                        {patient.status === 'pending' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRevokeInvite(patient); }}
                             title="Eliminar invitación"
-                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-fx-ink-300 px-1 py-0.5 rounded flex items-center"
+                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
                             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
                             onMouseLeave={(e) => (e.currentTarget.style.color = '')}
                           >
@@ -2035,6 +2094,22 @@ export default function MedicsPanel() {
                 </button>
                 <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
                   Configuración
+                </button>
+                {selectedPatient.status === 'accepted' && (
+                  <button
+                    onClick={() => setPatientActionModal({ type: 'unlink', patient: selectedPatient })}
+                    className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
+                    style={{ backgroundColor: 'var(--fx-warning-50)', color: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}
+                  >
+                    <UserMinus size={15} /> Desvincular
+                  </button>
+                )}
+                <button
+                  onClick={() => setPatientActionModal({ type: 'remove', patient: selectedPatient })}
+                  className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
+                  style={{ backgroundColor: 'var(--fx-error-50)', color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+                >
+                  <Trash size={15} /> Borrar
                 </button>
               </div>
             </div>
@@ -2874,8 +2949,8 @@ export default function MedicsPanel() {
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
                       {doctorInfo?.plan === 'beta'
-                        ? `Plan Beta · ${patients.length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
-                        : `Plan Free · ${patients.length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
+                        ? `Plan Beta · ${patients.filter(p => p.status !== 'unlinked').length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
+                        : `Plan Free · ${patients.filter(p => p.status !== 'unlinked').length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
                     <div className="text-xs text-fx-warning-600">
                       {doctorInfo?.plan === 'beta'
@@ -3557,6 +3632,56 @@ export default function MedicsPanel() {
         );
       })()}
     </div>
+
+    {/* ── PATIENT ACTION CONFIRMATION MODAL ── */}
+    {patientActionModal && (() => {
+      const { type, patient } = patientActionModal;
+      const name = patientLabel(patient);
+      const isUnlink = type === 'unlink';
+      return (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-6"
+          onClick={() => setPatientActionModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-8 max-w-[420px] w-full shadow-2xl text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-[38px]">{isUnlink ? '🔗' : '🗑️'}</span>
+            <h2 className="text-[20px] font-extrabold text-fx-text m-0 mt-2 mb-2">
+              {isUnlink ? 'Desvincular paciente' : 'Borrar paciente'}
+            </h2>
+            <p className="text-sm text-fx-text-secondary m-0 mb-1 leading-relaxed">
+              <strong>{name}</strong>
+            </p>
+            <p className="text-sm text-fx-text-secondary m-0 mb-6 leading-relaxed">
+              {isUnlink
+                ? 'El paciente dejará de compartir sus registros futuros contigo, pero seguirá apareciendo en tu lista como caso clínico histórico. Puedes consultarlo en cualquier momento.'
+                : 'El paciente desaparecerá de tu lista por completo. Si en el futuro quiere volver al tratamiento, tendrás que invitarle de nuevo.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPatientActionModal(null)}
+                className="flex-1 py-3 rounded-full border border-fx-border bg-white text-[14px] font-semibold cursor-pointer text-fx-text-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setPatientActionModal(null);
+                  if (isUnlink) await handleUnlinkPatient(patient);
+                  else await handleRemovePatient(patient);
+                }}
+                className="flex-1 py-3 rounded-full border-none text-white text-[14px] font-bold cursor-pointer"
+                style={{ backgroundColor: isUnlink ? 'var(--color-warning)' : 'var(--color-error)' }}
+              >
+                {isUnlink ? 'Desvincular' : 'Borrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* ── TEST PLAN EXPIRED MODAL ── */}
     {testExpired && (
