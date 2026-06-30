@@ -51,10 +51,12 @@ export default function InviteModal({ userId }: InviteModalProps) {
         boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
       }}>
         <p style={{ fontSize: 19, fontWeight: 700, color: D.text, marginBottom: 12 }}>
-          {invite.center_name}
+          Enhorabuena, ya estás vinculado con tu sanitario preescritor
         </p>
         <p style={{ fontSize: 15, color: D.textMuted, marginBottom: 28, lineHeight: 1.5 }}>
-          El doctor <strong style={{ color: D.text }}>{invite.doctor_name}</strong> te ha invitado a compartir tus registros.
+          A partir de ahora tus registros en la app se compartirán con{' '}
+          <strong style={{ color: D.text }}>{invite.doctor_name}</strong>
+          {invite.center_name ? ` (${invite.center_name})` : ''}.
         </p>
         <button
           onClick={handleAccept}
