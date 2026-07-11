@@ -22,8 +22,8 @@ AS $$
 DECLARE
   v_doctor_id uuid;
 BEGIN
-  -- Resolve the doctor record for the calling user
-  SELECT id INTO v_doctor_id FROM public.doctors WHERE user_id = auth.uid();
+  -- In this schema, doctors.id = auth.uid() (the doctor IS the auth user)
+  SELECT id INTO v_doctor_id FROM public.doctors WHERE id = auth.uid();
   IF v_doctor_id IS NULL THEN
     RAISE EXCEPTION 'No doctor profile found for this user';
   END IF;
