@@ -56,6 +56,7 @@ interface PatientLink {
   hasPushSub?: boolean | null;
   doctor_notes?: string;
   tags?: string[];
+  doctor_unlinked?: boolean;
 }
 
 interface DoctorInfo {
@@ -792,7 +793,7 @@ export default function MedicsPanel() {
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
-    const activePatientsCount = patients.filter(p => p.status !== 'unlinked').length;
+    const activePatientsCount = patients.filter(p => !p.doctor_unlinked).length;
     if (doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
@@ -862,16 +863,16 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Unlink patient (keeps historical record in list) ──
+  // ── Unlink patient (keeps historical record + preserves RLS access) ──
   const handleUnlinkPatient = async (patient: PatientLink) => {
     const { error } = await supabase
       .from('patient_links')
-      .update({ status: 'unlinked' })
+      .update({ doctor_unlinked: true })
       .eq('id', patient.id)
       .eq('doctor_id', doctorInfo!.id);
     if (error) { setError(error.message); return; }
-    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, status: 'unlinked' } : p));
-    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, status: 'unlinked' } : prev);
+    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: true } : p));
+    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, doctor_unlinked: true } : prev);
   };
 
   // ── Remove patient (deletes link — disappears from list) ──
@@ -1933,13 +1934,13 @@ export default function MedicsPanel() {
                   );
                 }
                 return displayed.map((patient, i) => {
-                  const isAccepted = patient.status === 'accepted';
+                  const isAccepted = patient.status === 'accepted' && !patient.doctor_unlinked;
                   const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
                   const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => (isAccepted || patient.status === 'unlinked') && loadPatientDetail(patient)}
-                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${(isAccepted || patient.status === 'unlinked') ? 'cursor-pointer' : 'cursor-default'} ${patient.status === 'unlinked' ? 'opacity-60' : ''}`}
+                    <div key={patient.id} onClick={() => (isAccepted || patient.doctor_unlinked) && loadPatientDetail(patient)}
+                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${(isAccepted || patient.doctor_unlinked) ? 'cursor-pointer' : 'cursor-default'} ${patient.doctor_unlinked ? 'opacity-60' : ''}`}
                       style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
                       {/* Semáforo */}
                       <div className="w-10">
@@ -1996,10 +1997,10 @@ export default function MedicsPanel() {
                       {/* Status badge + actions */}
                       <div className="flex items-center gap-1.5" style={{ width: isMobile ? 100 : 160 }}>
                         <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl whitespace-nowrap" style={{
-                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : patient.status === 'unlinked' ? 'var(--fx-ink-100)' : 'var(--color-warning-soft)',
-                          color: isAccepted ? 'var(--color-secondary)' : patient.status === 'unlinked' ? 'var(--fx-ink-400)' : 'var(--color-warning)',
+                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : patient.doctor_unlinked ? 'var(--fx-ink-100)' : 'var(--color-warning-soft)',
+                          color: isAccepted ? 'var(--color-secondary)' : patient.doctor_unlinked ? 'var(--fx-ink-400)' : 'var(--color-warning)',
                         }}>
-                          {isAccepted ? 'Vinculado' : patient.status === 'unlinked' ? 'Desvinculado' : 'Pendiente'}
+                          {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Desvinculado' : 'Pendiente'}
                         </span>
                         {isAccepted && (
                           <>
@@ -2023,7 +2024,7 @@ export default function MedicsPanel() {
                             </button>
                           </>
                         )}
-                        {patient.status === 'unlinked' && (
+                        {patient.doctor_unlinked && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
                             title="Borrar paciente"
@@ -2095,7 +2096,7 @@ export default function MedicsPanel() {
                 <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
                   Configuración
                 </button>
-                {selectedPatient.status === 'accepted' && (
+                {selectedPatient.status === 'accepted' && !selectedPatient.doctor_unlinked && (
                   <button
                     onClick={() => setPatientActionModal({ type: 'unlink', patient: selectedPatient })}
                     className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
@@ -2949,8 +2950,8 @@ export default function MedicsPanel() {
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
                       {doctorInfo?.plan === 'beta'
-                        ? `Plan Beta · ${patients.filter(p => p.status !== 'unlinked').length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
-                        : `Plan Free · ${patients.filter(p => p.status !== 'unlinked').length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
+                        ? `Plan Beta · ${patients.filter(p => !p.doctor_unlinked).length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
+                        : `Plan Free · ${patients.filter(p => !p.doctor_unlinked).length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
                     <div className="text-xs text-fx-warning-600">
                       {doctorInfo?.plan === 'beta'
