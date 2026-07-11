@@ -644,14 +644,17 @@ export default function MedicsPanel() {
         display_name = profile?.display_name || null;
         patient_email = p.patient_email || profile?.email || null;
 
-        // Fetch last entry
-        const { data: lastEntry } = await supabase
+        // Fetch last entry (capped at unlinked_at for unlinked patients)
+        let lastEntryQuery = supabase
           .from('entries')
           .select('date')
           .eq('user_id', p.patient_id)
           .order('date', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
+        if (p.doctor_unlinked && p.unlinked_at) {
+          lastEntryQuery = lastEntryQuery.lte('created_at', p.unlinked_at);
+        }
+        const { data: lastEntry } = await lastEntryQuery.single();
 
         if (lastEntry) {
           lastEntryDate = lastEntry.date;
@@ -865,14 +868,15 @@ export default function MedicsPanel() {
 
   // ── Unlink patient (keeps historical record + preserves RLS access) ──
   const handleUnlinkPatient = async (patient: PatientLink) => {
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('patient_links')
-      .update({ doctor_unlinked: true })
+      .update({ doctor_unlinked: true, unlinked_at: now })
       .eq('id', patient.id)
       .eq('doctor_id', doctorInfo!.id);
     if (error) { setError(error.message); return; }
-    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: true } : p));
-    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, doctor_unlinked: true } : prev);
+    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: true, unlinked_at: now } : p));
+    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, doctor_unlinked: true, unlinked_at: now } : prev);
   };
 
   // ── Remove patient (deletes link — disappears from list) ──
@@ -894,12 +898,16 @@ export default function MedicsPanel() {
     setDetailLoading(true);
     setLoading(true);
 
-    const { data: entries } = await supabase
+    let entriesQuery = supabase
       .from('entries')
       .select('*')
       .eq('user_id', patient.patient_id)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
+    if (patient.doctor_unlinked && patient.unlinked_at) {
+      entriesQuery = entriesQuery.lte('created_at', patient.unlinked_at);
+    }
+    const { data: entries } = await entriesQuery;
 
     const entryList: PatientEntry[] = (entries || []).map((e: any) => ({
       id: e.id,

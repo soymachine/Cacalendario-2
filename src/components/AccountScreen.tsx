@@ -68,7 +68,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const loadLinkedCenter = () => {
     if (!user) return;
     supabase.from('patient_links').select('id, status, center_id')
-      .eq('patient_id', user.id).eq('status', 'accepted').limit(1)
+      .eq('patient_id', user.id).eq('status', 'accepted').eq('doctor_unlinked', false).limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
           supabase.from('centers').select('name').eq('id', data[0].center_id).single()

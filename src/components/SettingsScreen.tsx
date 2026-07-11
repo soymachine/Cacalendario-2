@@ -67,6 +67,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
       .select('id, status, center_id')
       .eq('patient_id', user.id)
       .eq('status', 'accepted')
+      .eq('doctor_unlinked', false)
       .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
