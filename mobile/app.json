@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Fluxia",
+    "slug": "fluxia",
+    "version": "0.1.0",
+    "scheme": "fluxia",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F7F3",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F7F3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fluxiahealth.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.fluxiahealth.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4F7F3",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-notifications",
+      "expo-web-browser"
+    ]
+  }
+}

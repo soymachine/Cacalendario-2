@@ -83,6 +83,34 @@ interface PushSubscription {
   keys: { p256dh: string; auth: string };
 }
 
+// ── Expo push (native app) ────────────────────────────────────────────────────
+// The mobile app stores { type: 'expo', token } in push_subscriptions instead
+// of a Web Push subscription; those are delivered through Expo's push API.
+
+interface ExpoSubscription {
+  type: 'expo';
+  token: string;
+}
+
+function isExpoSubscription(sub: unknown): sub is ExpoSubscription {
+  return !!sub && typeof sub === 'object' && (sub as ExpoSubscription).type === 'expo'
+    && typeof (sub as ExpoSubscription).token === 'string';
+}
+
+async function sendExpoPush(token: string, title: string, body: string): Promise<Response> {
+  const res = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: token, title, body, sound: 'default' }),
+  });
+  const out = await res.json().catch(() => null);
+  const status = out?.data?.status;
+  if (status === 'ok') return json({ success: true });
+  const errType = out?.data?.details?.error;
+  if (errType === 'DeviceNotRegistered') return json({ success: false, error: 'Subscription expirada', expired: true });
+  return json({ success: false, error: `Expo push error: ${out?.data?.message ?? res.status}` });
+}
+
 async function encryptPayload(subscription: PushSubscription, plaintext: string): Promise<Uint8Array> {
   const enc = new TextEncoder();
   const uaPubBytes = safeDecode('p256dh', subscription.keys.p256dh);
@@ -150,7 +178,7 @@ Deno.serve(async (req) => {
     const title = payload.title ?? 'Fluxia';
     const msg = payload.body ?? 'Recuerda registrar tu actividad de hoy 🩺';
 
-    let subscription: PushSubscription | null = payload.subscription ?? null;
+    let subscription: PushSubscription | ExpoSubscription | null = payload.subscription ?? null;
 
     // Mode 1: doctor sends to patient_id
     if (!subscription && payload.patient_id) {
@@ -193,6 +221,11 @@ Deno.serve(async (req) => {
     }
 
     if (!subscription) return json({ success: false, error: 'Se requiere subscription o patient_id' });
+
+    // Native app subscription → deliver via Expo push API instead of Web Push
+    if (isExpoSubscription(subscription)) {
+      return await sendExpoPush(subscription.token, title, msg);
+    }
 
     const body = await encryptPayload(subscription, JSON.stringify({ title, body: msg }));
     const authHeader = await buildVapidHeader(subscription.endpoint, vapidPublicKey, vapidPrivateKey);
