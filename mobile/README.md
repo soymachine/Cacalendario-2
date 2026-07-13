@@ -24,7 +24,17 @@ los mismos datos.
   Las pantallas huérfanas de la web (`ProfileScreen`, `SettingsScreen`, `StatsScreen`,
   `FeedbackScreen`, `ProfileButton`) no se portaron.
 
-## Desarrollo
+## Flujo de pruebas por fases (sin riesgo para producción)
+
+Contexto de riesgo: la app apunta a la **base de datos de producción** (misma URL y
+anon key que la web), pero con RLS cada cuenta solo puede leer/escribir sus propias
+filas. Probando con una **cuenta de prueba nueva** no se pueden tocar datos de otros
+usuarios; al terminar, "Eliminar mi cuenta" borra todo rastro. La web desplegada no se
+ve afectada en ninguna fase: `mobile/` no participa en el build de Astro, y las Edge
+Functions modificadas no cambian en producción hasta que se ejecute
+`supabase functions deploy`.
+
+### Fase 1 — Expo Go en tu móvil (riesgo cero, sin tocar nada)
 
 ```bash
 cd mobile
@@ -32,37 +42,69 @@ npm install
 npx expo start        # escanea el QR con Expo Go (iOS/Android)
 ```
 
-Notas sobre **Expo Go**:
-- Todo funciona salvo las **notificaciones push remotas**, que desde SDK 53 requieren
-  un development build (`npx expo run:android` / `run:ios` o EAS).
-- El login con Google usa el scheme `fluxia://`; en Expo Go el deep link de retorno
-  usa el scheme de Expo Go, así que pruébalo mejor en un development build.
+1. Crea una **cuenta de prueba nueva** con email + contraseña.
+2. Prueba el flujo completo: registrar deposición y micción, calendario, detalle de
+   día, editar, borrar, cuenta, feedback, exportar.
+3. **Prueba de sincronización cruzada**: entra en `fluxia-health.com/user` con la misma
+   cuenta y comprueba que los registros del móvil aparecen en la web (y al revés).
+4. Si tienes un médico de prueba en `/medics`, vincula la cuenta para validar la config
+   del doctor (campos ocultos, imagen del centro, modo de tipo de registro).
 
-## Builds para las stores (EAS)
+Limitaciones de Expo Go: las **push remotas no funcionan** (desde SDK 53 requieren
+development build) y el **login de Google no completa el deep link** (Expo Go usa su
+propio scheme). Todo lo demás funciona.
 
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure   # crea el projectId y eas.json
-eas build --platform android
-eas build --platform ios
-```
+### Fase 2 — Development build (Google OAuth + push)
 
-## Configuración pendiente en servicios externos
-
-1. **Supabase → Authentication → URL Configuration**: añadir
-   `fluxia://auth-callback` a *Redirect URLs* (necesario para el login con Google
-   desde la app).
-2. **Push en Android**: subir credenciales FCM (`eas credentials`) — Expo las usa
-   para entregar las notificaciones. En iOS, EAS gestiona el certificado APNs.
-3. **Desplegar Edge Functions actualizadas** (ahora soportan tokens Expo además de
-   Web Push):
+1. **Supabase → Authentication → URL Configuration**: añadir `fluxia://auth-callback`
+   a *Redirect URLs*. Es aditivo — no altera el login de la web.
+2. Build de desarrollo (empieza por Android, no requiere cuenta de pago de Apple):
+   ```bash
+   npm install -g eas-cli
+   eas login
+   eas build:configure   # crea el projectId y eas.json
+   eas build --profile development --platform android
+   ```
+   Para push en Android, sube credenciales FCM con `eas credentials`
+   (en iOS, EAS gestiona el certificado APNs).
+3. **Desplegar las Edge Functions con red de seguridad** (son retrocompatibles: la rama
+   Expo solo se activa con suscripciones `{ type: 'expo' }`, el camino Web Push queda
+   intacto). Orden recomendado:
    ```bash
    supabase functions deploy send-push
-   supabase functions deploy check-inactive-patients
    ```
-4. **Iconos/splash**: `assets/icon.png` y `assets/splash-icon.png` usan el icono
-   512px de la PWA; reemplazar por arte de 1024×1024 antes de publicar.
+   a. Regresión: envía un push desde `/medics` a un paciente **web** suscrito → debe
+      seguir llegando.
+   b. Prueba móvil: activa notificaciones en la app con la cuenta de prueba y envíale
+      un push desde `/medics`.
+   c. Solo entonces:
+      ```bash
+      supabase functions deploy check-inactive-patients
+      ```
+   **Rollback** si algo falla:
+   ```bash
+   git checkout main -- supabase/functions/send-push
+   supabase functions deploy send-push
+   ```
+4. Ojo: activar push en el móvil **reemplaza la suscripción web de esa misma cuenta**
+   (hay una fila por usuario en `push_subscriptions`) — otra razón para usar una cuenta
+   de prueba y no la tuya personal.
+
+### Fase 3 — Distribución interna
+
+- **Android**: Google Play Console → *Internal testing* (subir el `.aab` de
+  `eas build --platform android`).
+- **iOS**: TestFlight interno (requiere Apple Developer Program, 99 $/año).
+- Invita a 2-3 personas de confianza antes de abrir a usuarios reales.
+- **Iconos/splash** antes de subir a las stores: `assets/icon.png` y
+  `assets/splash-icon.png` reutilizan el icono 512px de la PWA; reemplazar por arte
+  de 1024×1024.
+
+### Fase 4 — Producción
+
+- Play Console: promocionar el track interno a producción.
+- App Store: enviar a revisión desde TestFlight.
+- La web sigue intacta durante todo el proceso; ambas conviven sobre el mismo backend.
 
 ## Decisiones y pendientes
 
