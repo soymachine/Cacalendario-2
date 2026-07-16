@@ -10,7 +10,7 @@ import { initSentry } from '../lib/sentry';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
-  House, User, UserPlus, Sliders,
+  House, User, UserPlus, Sliders, UserMinus, UserCircle,
 } from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
@@ -56,6 +56,11 @@ interface PatientLink {
   hasPushSub?: boolean | null;
   doctor_notes?: string;
   tags?: string[];
+  doctor_unlinked?: boolean;
+  unlinked_at?: string | null;
+  dob?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
 }
 
 interface DoctorInfo {
@@ -236,6 +241,12 @@ export default function MedicsPanel() {
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [patientActionModal, setPatientActionModal] = useState<{ type: 'unlink' | 'remove'; patient: PatientLink } | null>(null);
+  const [patientProfileOpen, setPatientProfileOpen] = useState(false);
+  const [profileDob, setProfileDob] = useState('');
+  const [profileHeight, setProfileHeight] = useState('');
+  const [profileWeight, setProfileWeight] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
@@ -642,14 +653,17 @@ export default function MedicsPanel() {
         display_name = profile?.display_name || null;
         patient_email = p.patient_email || profile?.email || null;
 
-        // Fetch last entry
-        const { data: lastEntry } = await supabase
+        // Fetch last entry (capped at unlinked_at for unlinked patients)
+        let lastEntryQuery = supabase
           .from('entries')
           .select('date')
           .eq('user_id', p.patient_id)
           .order('date', { ascending: false })
-          .limit(1)
-          .single();
+          .limit(1);
+        if (p.doctor_unlinked && p.unlinked_at) {
+          lastEntryQuery = lastEntryQuery.lte('created_at', p.unlinked_at);
+        }
+        const { data: lastEntry } = await lastEntryQuery.single();
 
         if (lastEntry) {
           lastEntryDate = lastEntry.date;
@@ -791,11 +805,12 @@ export default function MedicsPanel() {
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
     // Free tier: enforce the 1-patient limit (accepted + pending combined)
-    if (doctorInfo?.plan === 'beta' && patients.length >= BETA_PLAN_PATIENT_LIMIT) {
+    const activePatientsCount = patients.filter(p => !p.doctor_unlinked).length;
+    if (doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
     }
-    if (doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT) {
+    if (doctorInfo?.plan === 'free' && activePatientsCount >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
     }
@@ -860,6 +875,27 @@ export default function MedicsPanel() {
     }
   };
 
+  // ── Unlink patient (keeps historical record + preserves RLS access) ──
+  const handleUnlinkPatient = async (patient: PatientLink) => {
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ doctor_unlinked: true, unlinked_at: now })
+      .eq('id', patient.id)
+      .eq('doctor_id', doctorInfo!.id);
+    if (error) { setError(error.message); return; }
+    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: true, unlinked_at: now } : p));
+    if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, doctor_unlinked: true, unlinked_at: now } : prev);
+  };
+
+  // ── Remove patient (deletes link — disappears from list) ──
+  const handleRemovePatient = async (patient: PatientLink) => {
+    const { error } = await supabase.rpc('doctor_remove_patient_link', { p_link_id: patient.id });
+    if (error) { setError(error.message); return; }
+    setPatients(prev => prev.filter(p => p.id !== patient.id));
+    if (selectedPatient?.id === patient.id) { setSelectedPatient(null); setPatientDetail(null); }
+  };
+
   // ── Load patient detail ──
   const loadPatientDetail = async (patient: PatientLink) => {
     if (!patient.patient_id) return;
@@ -867,12 +903,16 @@ export default function MedicsPanel() {
     setDetailLoading(true);
     setLoading(true);
 
-    const { data: entries } = await supabase
+    let entriesQuery = supabase
       .from('entries')
       .select('*')
       .eq('user_id', patient.patient_id)
       .order('date', { ascending: false })
       .order('time', { ascending: false });
+    if (patient.doctor_unlinked && patient.unlinked_at) {
+      entriesQuery = entriesQuery.lte('created_at', patient.unlinked_at);
+    }
+    const { data: entries } = await entriesQuery;
 
     const entryList: PatientEntry[] = (entries || []).map((e: any) => ({
       id: e.id,
@@ -1907,13 +1947,13 @@ export default function MedicsPanel() {
                   );
                 }
                 return displayed.map((patient, i) => {
-                  const isAccepted = patient.status === 'accepted';
+                  const isAccepted = patient.status === 'accepted' && !patient.doctor_unlinked;
                   const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
                   const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
-                    <div key={patient.id} onClick={() => isAccepted && loadPatientDetail(patient)}
-                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${isAccepted ? 'cursor-pointer' : 'cursor-default'}`}
+                    <div key={patient.id} onClick={() => (isAccepted || patient.doctor_unlinked) && loadPatientDetail(patient)}
+                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${(isAccepted || patient.doctor_unlinked) ? 'cursor-pointer' : 'cursor-default'} ${patient.doctor_unlinked ? 'opacity-60' : ''}`}
                       style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
                       {/* Semáforo */}
                       <div className="w-10">
@@ -1968,18 +2008,51 @@ export default function MedicsPanel() {
                         {isAccepted && patient.hasPushSub === null && <span title="Sin datos" className="opacity-20 text-xs">—</span>}
                       </div>}
                       {/* Status badge + actions */}
-                      <div className="flex items-center gap-1.5" style={{ width: isMobile ? 90 : 140 }}>
-                        <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl" style={{
-                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : 'var(--color-warning-soft)',
-                          color: isAccepted ? 'var(--color-secondary)' : 'var(--color-warning)',
+                      <div className="flex items-center gap-1.5" style={{ width: isMobile ? 100 : 160 }}>
+                        <span className="text-[11px] font-semibold px-2.5 py-[3px] rounded-xl whitespace-nowrap" style={{
+                          backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : patient.doctor_unlinked ? 'var(--fx-ink-100)' : 'var(--color-warning-soft)',
+                          color: isAccepted ? 'var(--color-secondary)' : patient.doctor_unlinked ? 'var(--fx-ink-400)' : 'var(--color-warning)',
                         }}>
-                          {isAccepted ? 'Vinculado' : 'Pendiente'}
+                          {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Desvinculado' : 'Pendiente'}
                         </span>
-                        {!isAccepted && (
+                        {isAccepted && (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'unlink', patient }); }}
+                              title="Desvincular paciente"
+                              className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-warning)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                            >
+                              <UserMinus size={15} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
+                              title="Borrar paciente"
+                              className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                            >
+                              <Trash size={15} />
+                            </button>
+                          </>
+                        )}
+                        {patient.doctor_unlinked && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
+                            title="Borrar paciente"
+                            className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                          >
+                            <Trash size={15} />
+                          </button>
+                        )}
+                        {patient.status === 'pending' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRevokeInvite(patient); }}
                             title="Eliminar invitación"
-                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-fx-ink-300 px-1 py-0.5 rounded flex items-center"
+                            className="medics-pacientes__revoke bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
                             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-error)')}
                             onMouseLeave={(e) => (e.currentTarget.style.color = '')}
                           >
@@ -2014,6 +2087,18 @@ export default function MedicsPanel() {
               <div className="flex flex-col items-center text-center min-w-0" style={{ order: isMobile ? -1 : 0 }}>
                 <span className="inline-flex items-center justify-center gap-2.5 flex-wrap text-[20px] md:text-[24px] font-extrabold text-fx-text tracking-tight">
                   {patientLabel(selectedPatient)}
+                  <button
+                    title="Datos del paciente"
+                    onClick={() => {
+                      setProfileDob(selectedPatient.dob || '');
+                      setProfileHeight(selectedPatient.height_cm != null ? String(selectedPatient.height_cm) : '');
+                      setProfileWeight(selectedPatient.weight_kg != null ? String(selectedPatient.weight_kg) : '');
+                      setPatientProfileOpen(true);
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--fx-ink-400)', display: 'flex' }}
+                  >
+                    <UserCircle size={22} />
+                  </button>
                   {selectedPatient.hasPushSub === true && (
                     <Bell size={18} title="Notificaciones activas" color="var(--color-secondary)" />
                   )}
@@ -2035,6 +2120,22 @@ export default function MedicsPanel() {
                 </button>
                 <button onClick={() => setPatientConfigOpen(true)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.navActive }}>
                   Configuración
+                </button>
+                {selectedPatient.status === 'accepted' && !selectedPatient.doctor_unlinked && (
+                  <button
+                    onClick={() => setPatientActionModal({ type: 'unlink', patient: selectedPatient })}
+                    className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
+                    style={{ backgroundColor: 'var(--fx-warning-50)', color: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}
+                  >
+                    <UserMinus size={15} /> Desvincular
+                  </button>
+                )}
+                <button
+                  onClick={() => setPatientActionModal({ type: 'remove', patient: selectedPatient })}
+                  className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
+                  style={{ backgroundColor: 'var(--fx-error-50)', color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+                >
+                  <Trash size={15} /> Borrar
                 </button>
               </div>
             </div>
@@ -2164,8 +2265,19 @@ export default function MedicsPanel() {
                             backgroundColor: hasEntry ? th.primary : isToday ? `${th.primary}20` : 'transparent',
                             opacity: isFuture ? 0.3 : 1,
                             border: isToday ? `1px solid ${th.primary}` : '1px solid var(--fx-ink-100)',
+                            position: 'relative',
                           }}>
                             <span className="font-semibold" style={{ fontSize: isMobile ? 12 : 9, color: hasEntry ? '#fff' : 'var(--fx-ink-500)' }}>{day}</span>
+                            {hasEntry && count > 0 && (
+                              <span style={{
+                                position: 'absolute', top: isMobile ? 2 : 1, right: isMobile ? 2 : 1,
+                                minWidth: isMobile ? 14 : 11, height: isMobile ? 14 : 11,
+                                borderRadius: '50%', backgroundColor: '#fff',
+                                color: th.primary, fontSize: isMobile ? 8 : 6,
+                                fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                lineHeight: 1, padding: '0 1px',
+                              }}>{count}</span>
+                            )}
                           </div>
                         );
                       }
@@ -2874,8 +2986,8 @@ export default function MedicsPanel() {
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
                       {doctorInfo?.plan === 'beta'
-                        ? `Plan Beta · ${patients.length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
-                        : `Plan Free · ${patients.length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
+                        ? `Plan Beta · ${patients.filter(p => !p.doctor_unlinked).length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
+                        : `Plan Free · ${patients.filter(p => !p.doctor_unlinked).length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
                     </div>
                     <div className="text-xs text-fx-warning-600">
                       {doctorInfo?.plan === 'beta'
@@ -3557,6 +3669,134 @@ export default function MedicsPanel() {
         );
       })()}
     </div>
+
+    {/* ── PATIENT ACTION CONFIRMATION MODAL ── */}
+    {patientActionModal && (() => {
+      const { type, patient } = patientActionModal;
+      const name = patientLabel(patient);
+      const isUnlink = type === 'unlink';
+      return (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-6"
+          onClick={() => setPatientActionModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-8 max-w-[420px] w-full shadow-2xl text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-[38px]">{isUnlink ? '🔗' : '🗑️'}</span>
+            <h2 className="text-[20px] font-extrabold text-fx-text m-0 mt-2 mb-2">
+              {isUnlink ? 'Desvincular paciente' : 'Borrar paciente'}
+            </h2>
+            <p className="text-sm text-fx-text-secondary m-0 mb-1 leading-relaxed">
+              <strong>{name}</strong>
+            </p>
+            <p className="text-sm text-fx-text-secondary m-0 mb-6 leading-relaxed">
+              {isUnlink
+                ? 'El paciente dejará de compartir sus registros futuros contigo, pero seguirá apareciendo en tu lista como caso clínico histórico. Puedes consultarlo en cualquier momento.'
+                : 'El paciente desaparecerá de tu lista por completo. Si en el futuro quiere volver al tratamiento, tendrás que invitarle de nuevo.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPatientActionModal(null)}
+                className="flex-1 py-3 rounded-full border border-fx-border bg-white text-[14px] font-semibold cursor-pointer text-fx-text-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setPatientActionModal(null);
+                  if (isUnlink) await handleUnlinkPatient(patient);
+                  else await handleRemovePatient(patient);
+                }}
+                className="flex-1 py-3 rounded-full border-none text-white text-[14px] font-bold cursor-pointer"
+                style={{ backgroundColor: isUnlink ? 'var(--color-warning)' : 'var(--color-error)' }}
+              >
+                {isUnlink ? 'Desvincular' : 'Borrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* ── PATIENT PROFILE MODAL ── */}
+    {patientProfileOpen && selectedPatient && (() => {
+      const dobDate = profileDob ? new Date(profileDob) : null;
+      const age = dobDate ? Math.floor((Date.now() - dobDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+      const handleSaveProfile = async () => {
+        if (!selectedPatient) return;
+        setProfileSaving(true);
+        const patch: Record<string, unknown> = {
+          dob: profileDob || null,
+          height_cm: profileHeight ? parseInt(profileHeight, 10) : null,
+          weight_kg: profileWeight ? parseFloat(profileWeight) : null,
+        };
+        const { error } = await supabase.from('patient_links').update(patch).eq('id', selectedPatient.id);
+        setProfileSaving(false);
+        if (error) { setError(error.message); return; }
+        setPatients(prev => prev.map(p => p.id === selectedPatient.id ? { ...p, ...patch } : p));
+        setSelectedPatient(prev => prev ? { ...prev, ...patch } : prev);
+        setPatientProfileOpen(false);
+      };
+      return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-6" onClick={() => setPatientProfileOpen(false)}>
+          <div className="bg-white rounded-2xl p-7 max-w-[400px] w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-[18px] font-extrabold text-fx-text m-0 mb-1 flex items-center gap-2"><UserCircle size={22} /> Datos del paciente</h2>
+            <p className="text-xs text-fx-text-secondary m-0 mb-5">Solo tú puedes ver y editar estos datos.</p>
+
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-fx-ink-500 mb-1">Nombre</label>
+              <div className="text-sm text-fx-text px-3 py-2 rounded-lg bg-fx-ink-50 border border-fx-border-soft">{selectedPatient.display_name || '—'}</div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-fx-ink-500 mb-1">Email</label>
+              <div className="text-sm text-fx-text px-3 py-2 rounded-lg bg-fx-ink-50 border border-fx-border-soft">{selectedPatient.patient_email || '—'}</div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-fx-ink-500 mb-1">Fecha de nacimiento{age !== null ? ` · ${age} años` : ''}</label>
+              <input
+                type="date"
+                value={profileDob}
+                onChange={e => setProfileDob(e.target.value)}
+                className="w-full text-sm px-3 py-2 rounded-lg border border-fx-border-soft outline-none"
+                style={{ background: 'var(--fx-surface)' }}
+              />
+            </div>
+            <div className="flex gap-3 mb-5">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-fx-ink-500 mb-1">Estatura (cm)</label>
+                <input
+                  type="number" min="50" max="250"
+                  value={profileHeight}
+                  onChange={e => setProfileHeight(e.target.value)}
+                  placeholder="175"
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-fx-border-soft outline-none"
+                  style={{ background: 'var(--fx-surface)' }}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-fx-ink-500 mb-1">Peso (kg)</label>
+                <input
+                  type="number" min="20" max="300" step="0.1"
+                  value={profileWeight}
+                  onChange={e => setProfileWeight(e.target.value)}
+                  placeholder="70"
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-fx-border-soft outline-none"
+                  style={{ background: 'var(--fx-surface)' }}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setPatientProfileOpen(false)} className="flex-1 py-2.5 rounded-full border border-fx-border bg-white text-[14px] font-semibold cursor-pointer text-fx-text-secondary">Cancelar</button>
+              <button onClick={handleSaveProfile} disabled={profileSaving} className="flex-1 py-2.5 rounded-full border-none text-white text-[14px] font-bold cursor-pointer" style={{ backgroundColor: th.dark, opacity: profileSaving ? 0.6 : 1 }}>
+                {profileSaving ? '...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* ── TEST PLAN EXPIRED MODAL ── */}
     {testExpired && (

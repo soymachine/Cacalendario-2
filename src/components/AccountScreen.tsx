@@ -44,6 +44,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const [displayName, setDisplayName] = useState('');
   const [nameSaved, setNameSaved] = useState(false);
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
+  const [linkedDoctor, setLinkedDoctor] = useState<string | null>(null);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [pushLoading, setPushLoading] = useState(false);
@@ -67,14 +68,22 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
 
   const loadLinkedCenter = () => {
     if (!user) return;
-    supabase.from('patient_links').select('id, status, center_id')
-      .eq('patient_id', user.id).eq('status', 'accepted').limit(1)
+    supabase.from('patient_links').select('id, status, center_id, doctor_id')
+      .eq('patient_id', user.id).eq('status', 'accepted').eq('doctor_unlinked', false).limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
-          supabase.from('centers').select('name').eq('id', data[0].center_id).single()
-            .then(({ data: center }) => { if (center) setLinkedCenter(center.name); });
+          const row = data[0];
+          if (row.center_id) {
+            supabase.from('centers').select('name').eq('id', row.center_id).single()
+              .then(({ data: center }) => { if (center) setLinkedCenter(center.name); });
+          }
+          if (row.doctor_id) {
+            supabase.from('doctors').select('name').eq('id', row.doctor_id).single()
+              .then(({ data: doc }) => { if (doc) setLinkedDoctor(doc.name); });
+          }
         } else {
           setLinkedCenter(null);
+          setLinkedDoctor(null);
         }
       });
   };
@@ -360,12 +369,19 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
             </div>
 
             {/* Linked center */}
-            {linkedCenter && (
+            {(linkedCenter || linkedDoctor) && (
               <div style={card}>
                 <span style={label}>🏥 MI MÉDICO</span>
-                <p style={{ fontSize: 14, color: D.text, marginBottom: 4 }}>
-                  Vinculado con: <strong>{linkedCenter}</strong>
-                </p>
+                {linkedDoctor && (
+                  <p style={{ fontSize: 14, color: D.text, marginBottom: 2 }}>
+                    <strong>{linkedDoctor}</strong>
+                  </p>
+                )}
+                {linkedCenter && (
+                  <p style={{ fontSize: 13, color: D.textMuted, marginBottom: 4 }}>
+                    {linkedCenter}
+                  </p>
+                )}
                 <p style={{ fontSize: 12, color: D.textMuted }}>
                   Tu médico puede ver tus registros para ayudarte mejor.
                 </p>
