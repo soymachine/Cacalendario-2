@@ -73,6 +73,18 @@ npm install
 - Limitaciones ya conocidas: sin push remoto, y el login de Google no completa el deep
   link `fluxia://` (Expo Go usa su propio esquema). Todo lo demás funciona igual.
 
+> **Nota (SDK 57, julio 2026):** en **iPhone físico** puedes ver el error `Project is
+> incompatible with this version of Expo Go — requires a newer version of Expo Go`.
+> No es un desfase nuestro: SDK 57 se publicó el 30/06/2026 y su build de Expo Go
+> todavía está en cola de revisión de Apple — la App Store solo tiene publicada la que
+> soporta hasta SDK 54, y Apple no permite instalar otra versión por sideloading en
+> dispositivo físico (sí en Simulador/Android, ver puntos 3 y 4). Mientras se aprueba:
+> usa el **Simulador** (funciona ya, no depende de la App Store), o instala un **dev
+> build directamente en tu iPhone** con firma "Personal Team" gratuita (ver punto 3.5):
+> ```bash
+> npx expo run:ios --device
+> ```
+
 ### 3. Simulador de iOS — funciona hoy, sin cuenta Apple
 
 1. Instala **Xcode** desde la App Store (~10-15 GB). Ábrelo una vez para que termine de
