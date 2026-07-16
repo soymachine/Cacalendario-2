@@ -56,6 +56,13 @@ cd mobile
 npm install
 ```
 
+> **Importante:** esta app no tiene soporte web (no está instalado `react-native-web`
+> ni hace falta — la versión web ya existe en `/user`, en el proyecto Astro). En la
+> terminal interactiva de `npx expo start`, no pulses `w`; usa `i` (Simulador de iOS)
+> o `a` (Emulador de Android), o escanea el QR con Expo Go. Si ves el error `Unable to
+> resolve "react-native-web/dist/exports/View"`, es justo esto — vuelve a lanzar
+> `npx expo start` y elige `i`/`a` en vez de `w`.
+
 ### 2. Móvil físico con Expo Go — funciona hoy, sin cuenta Apple
 
 - Instala **Expo Go** desde App Store o Google Play en tu móvil.
