@@ -1,5 +1,4 @@
 import { View, Pressable, StyleSheet } from 'react-native';
-import { BlurView } from 'expo-blur';
 import Svg, { Path } from 'react-native-svg';
 import { D } from '../lib/design';
 
@@ -49,12 +48,7 @@ function AccountIcon({ color }: { color: string }) {
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <View style={styles.nav}>
-      <BlurView
-        style={styles.pill}
-        tint="systemChromeMaterial"
-        intensity={100}
-        blurMethod="dimezisBlurViewSdk31Plus"
-      >
+      <View style={styles.pill}>
         {(['calendar', 'register', 'account'] as const).map((id) => {
           const isActive = active === id;
           const isRegister = id === 'register';
@@ -63,16 +57,11 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
             return (
               <Pressable key={id} onPress={() => onChange(id)} style={styles.registerButton}>
                 {/* Elevated circle backdrop */}
-                <BlurView
-                  style={styles.registerOuter}
-                  tint="systemChromeMaterial"
-                  intensity={100}
-                  blurMethod="dimezisBlurViewSdk31Plus"
-                >
+                <View style={styles.registerOuter}>
                   <View style={[styles.registerInner, isActive && styles.activeCircle]}>
                     <RegisterIcon color="#000000" />
                   </View>
-                </BlurView>
+                </View>
               </Pressable>
             );
           }
@@ -86,7 +75,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
             </Pressable>
           );
         })}
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -107,8 +96,8 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 8,
     marginHorizontal: 14,
+    backgroundColor: '#C7CEA0',
     borderRadius: 999,
-    overflow: 'hidden',
   },
   registerButton: {
     flex: 1,
@@ -120,9 +109,11 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 999,
+    backgroundColor: '#C7CEA0',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#C7CEA0',
   },
   registerInner: {
     width: 68,
