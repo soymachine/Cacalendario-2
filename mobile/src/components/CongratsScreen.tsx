@@ -1,5 +1,5 @@
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { formatDateForDisplay } from '../lib/dates';
 import { D } from '../lib/design';
 import { CloseIcon } from './icons';
@@ -19,6 +19,7 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
+      <SafeAreaProvider>
       <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
         {/* Close button */}
         <Pressable onPress={onClose} style={styles.closeButton}>
@@ -62,6 +63,7 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
           </Pressable>
         </View>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

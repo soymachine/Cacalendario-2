@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
@@ -126,6 +126,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
+      <SafeAreaProvider>
       <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
         {/* Close button */}
         <Pressable onPress={onClose} style={styles.closeButton}>
@@ -493,6 +494,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
           )}
         </View>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

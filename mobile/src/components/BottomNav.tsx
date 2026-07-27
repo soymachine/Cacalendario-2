@@ -5,6 +5,9 @@ import { D } from '../lib/design';
 
 export type Tab = 'calendar' | 'register' | 'account';
 
+// 6 marginTop + 70 alto del pill + 8 marginBottom + 10 paddingBottom del nav
+export const BOTTOM_NAV_HEIGHT = 94;
+
 interface BottomNavProps {
   active: Tab;
   onChange: (tab: Tab) => void;
@@ -90,8 +93,11 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
 
 const styles = StyleSheet.create({
   nav: {
-    flexShrink: 0,
-    backgroundColor: D.bg,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
     paddingBottom: 10,
   },
   pill: {

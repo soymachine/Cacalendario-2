@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Modal,
   KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
 import { D } from '../lib/design';
 import { CloseIcon, EyeIcon, GoogleIcon } from './icons';
@@ -91,6 +91,7 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
+      <SafeAreaProvider>
       <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -253,6 +254,7 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
         )}
       </KeyboardAvoidingView>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

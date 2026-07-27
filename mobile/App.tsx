@@ -14,7 +14,7 @@ import InviteModal from './src/components/InviteModal';
 import AuthScreen from './src/components/AuthScreen';
 import PrivacyScreen from './src/components/PrivacyScreen';
 import SplashScreen from './src/components/SplashScreen';
-import BottomNav, { type Tab } from './src/components/BottomNav';
+import BottomNav, { BOTTOM_NAV_HEIGHT, type Tab } from './src/components/BottomNav';
 import { AuthProvider, useAuth } from './src/lib/auth';
 import { syncOnLogin } from './src/lib/sync';
 import { fetchDoctorConfig } from './src/lib/palettes';
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   calendarContent: {
     paddingTop: 16,
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 32 + BOTTOM_NAV_HEIGHT,
   },
   syncingRow: {
     flexDirection: 'row',

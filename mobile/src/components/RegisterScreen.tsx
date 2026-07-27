@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
@@ -16,6 +16,7 @@ import {
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
 import { CloseIcon, EditIcon, PoopSwitchIcon, UrineSwitchIcon } from './icons';
+import { BOTTOM_NAV_HEIGHT } from './BottomNav';
 import LigeroIcon from '../assets/Ligero-icon.svg';
 import PesadoIcon from '../assets/Pesado-icon.svg';
 
@@ -118,7 +119,10 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const content = (
     <ScrollView
       style={{ backgroundColor: D.bg }}
-      contentContainerStyle={[styles.container, { paddingTop: isTab ? 16 : 60 }]}
+      contentContainerStyle={[
+        styles.container,
+        { paddingTop: isTab ? 16 : 60, paddingBottom: 32 + (isTab ? BOTTOM_NAV_HEIGHT : 0) },
+      ]}
       keyboardShouldPersistTaps="handled"
     >
       {/* Logo (only in tab mode) */}
@@ -486,7 +490,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
+      <SafeAreaProvider>
       <SafeAreaView style={styles.tabWrapper} edges={['top', 'bottom']}>{content}</SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

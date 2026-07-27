@@ -15,6 +15,7 @@ import { emitEvent, onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { APP_VERSION } from '../lib/version';
 import { D } from '../lib/design';
 import { ChevronSmallIcon } from './icons';
+import { BOTTOM_NAV_HEIGHT } from './BottomNav';
 
 interface AccountScreenProps {
   onShowAuth: () => void;
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 24,
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 32 + BOTTOM_NAV_HEIGHT,
   },
   card: {
     backgroundColor: D.card,
