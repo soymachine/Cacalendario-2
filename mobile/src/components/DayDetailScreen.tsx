@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDateForDisplay } from '../lib/dates';
 import { getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { onEvent, FLUXIA_UPDATED } from '../lib/events';
@@ -29,7 +30,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View style={styles.wrapper}>
+      <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
         {/* Close button */}
         <Pressable onPress={onClose} style={styles.closeButton}>
           <CloseIcon size={24} />
@@ -115,7 +116,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
             <PoopButtonIcon width={24} height={24} />
           </Pressable>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

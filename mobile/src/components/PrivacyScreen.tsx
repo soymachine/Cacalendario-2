@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { D } from '../lib/design';
 import { CloseIcon } from './icons';
 import LogoIcon from '../assets/poop-small.svg';
@@ -28,7 +29,7 @@ function B({ children }: { children: ReactNode }) {
 export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View style={styles.wrapper}>
+      <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
         <ScrollView contentContainerStyle={styles.container}>
           {/* Header: logo + close */}
           <View style={styles.header}>
@@ -113,7 +114,7 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
             implica la aceptación de la política actualizada.
           </Section>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

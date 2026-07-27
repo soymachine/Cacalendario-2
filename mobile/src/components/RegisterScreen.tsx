@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
@@ -485,7 +486,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View style={styles.tabWrapper}>{content}</View>
+      <SafeAreaView style={styles.tabWrapper} edges={['top', 'bottom']}>{content}</SafeAreaView>
     </Modal>
   );
 }
