@@ -156,11 +156,37 @@ Deno.serve(async () => {
   let sent = 0;
   let failed = 0;
 
+  const reminderTitle = 'Fluxia';
+  const reminderBody = 'No has registrado nada hoy. Tu médico necesita esta información 🩺';
+
   for (const patient of patients ?? []) {
     try {
+      // Native app subscriptions ({ type: 'expo', token }) go through Expo's push API
+      if (patient.subscription?.type === 'expo' && typeof patient.subscription.token === 'string') {
+        const res = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: patient.subscription.token, title: reminderTitle, body: reminderBody, sound: 'default' }),
+        });
+        const out = await res.json().catch(() => null);
+        const status = out?.data?.status;
+        if (status !== 'ok') {
+          if (out?.data?.details?.error === 'DeviceNotRegistered') {
+            await supabase.from('push_subscriptions').delete().eq('user_id', patient.patient_id);
+          } else {
+            console.error(`Expo push failed for ${patient.patient_id}:`, out?.data?.message ?? res.status);
+          }
+          failed++;
+          continue;
+        }
+        await supabase.from('push_subscriptions').update({ last_push_sent_at: new Date().toISOString() }).eq('user_id', patient.patient_id);
+        sent++;
+        continue;
+      }
+
       const res = await sendWebPush(
         patient.subscription,
-        JSON.stringify({ title: 'Fluxia', body: 'No has registrado nada hoy. Tu médico necesita esta información 🩺' }),
+        JSON.stringify({ title: reminderTitle, body: reminderBody }),
         vapidPublicKey,
         vapidPrivateKey,
       );
