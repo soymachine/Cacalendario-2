@@ -17,10 +17,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.fluxiahealth.app",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification",
-          "remote-notification"
-        ],
+        "UIBackgroundModes": ["remote-notification"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
