@@ -17,7 +17,11 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.fluxiahealth.app",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -31,6 +35,11 @@
     "plugins": [
       "expo-notifications",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "90082a8e-6882-4130-a8f5-b5cb8225eafa"
+      }
+    }
   }
 }
