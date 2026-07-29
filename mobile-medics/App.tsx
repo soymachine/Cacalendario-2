@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from './src/components/AuthScreen';
 import GoogleProfileScreen from './src/components/GoogleProfileScreen';
-import HomeScreen from './src/components/HomeScreen';
+import DoctorApp from './src/components/DoctorApp';
 import { AuthProvider, useAuth } from './src/lib/auth';
 import { bootstrapDoctor, type DoctorInfo, type DoctorBootstrapResult } from './src/lib/doctor';
 import { D } from './src/lib/design';
@@ -39,7 +39,7 @@ function AppContent() {
   }
 
   if (bootstrap.status === 'ready') {
-    return <HomeScreen doctor={bootstrap.doctor} />;
+    return <DoctorApp doctor={bootstrap.doctor} />;
   }
 
   if (bootstrap.status === 'google_profile_needed') {
