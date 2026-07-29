@@ -110,6 +110,7 @@ export default function PatientListScreen({
           showsHorizontalScrollIndicator={false}
           keyExtractor={(t) => t}
           contentContainerStyle={styles.pillsRow}
+          style={styles.pillsList}
           renderItem={({ item }) => {
             if (item === '__all__') {
               return (
