@@ -1,4 +1,5 @@
 import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { D } from '../lib/design';
 
 export type Tab = 'inicio' | 'pacientes' | 'invitar' | 'config';
@@ -16,8 +17,9 @@ interface BottomNavProps {
 }
 
 export default function BottomNav({ active, onChange }: BottomNavProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.nav}>
+    <View style={[styles.nav, { paddingBottom: Math.max(10, insets.bottom + 6) }]}>
       {TABS.map((tab) => {
         const isActive = tab.id === active;
         return (
@@ -38,7 +40,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: D.border,
     paddingTop: 8,
-    paddingBottom: 10,
   },
   button: {
     flex: 1,

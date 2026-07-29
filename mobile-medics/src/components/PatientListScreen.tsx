@@ -92,7 +92,10 @@ export default function PatientListScreen({
               onPress={() => setSemaforoFilter(item.key)}
               style={[styles.pill, { backgroundColor: active ? item.soft : D.chip, borderColor: active ? item.color : 'transparent' }]}
             >
-              <Text style={[styles.pillText, { color: active ? item.color : D.textMuted, fontWeight: active ? '800' : '600' }]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.pillText, { color: active ? item.color : D.textMuted, fontWeight: active ? '800' : '600' }]}
+              >
                 {item.label} {item.count}
               </Text>
             </Pressable>
@@ -111,14 +114,14 @@ export default function PatientListScreen({
             if (item === '__all__') {
               return (
                 <Pressable onPress={() => setTagFilter(null)} style={[styles.tagPill, { backgroundColor: tagFilter === null ? D.text : D.chip }]}>
-                  <Text style={[styles.tagPillText, { color: tagFilter === null ? '#fff' : D.textMuted }]}>Todos</Text>
+                  <Text numberOfLines={1} style={[styles.tagPillText, { color: tagFilter === null ? '#fff' : D.textMuted }]}>Todos</Text>
                 </Pressable>
               );
             }
             const active = tagFilter === item;
             return (
               <Pressable onPress={() => setTagFilter(active ? null : item)} style={[styles.tagPill, { backgroundColor: active ? tagColor(item) : tagColor(item) + '20' }]}>
-                <Text style={[styles.tagPillText, { color: active ? '#fff' : tagColor(item) }]}>{item}</Text>
+                <Text numberOfLines={1} style={[styles.tagPillText, { color: active ? '#fff' : tagColor(item) }]}>{item}</Text>
               </Pressable>
             );
           }}
@@ -206,10 +209,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 12, color: D.textMuted, marginTop: 2 },
   pillsList: { flexGrow: 0 },
   pillsRow: { paddingHorizontal: 16, gap: 8, paddingVertical: 6 },
-  pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },
-  pillText: { fontSize: 12 },
-  tagPill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  tagPillText: { fontSize: 11, fontWeight: '700' },
+  pill: { height: 30, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  pillText: { fontSize: 12, lineHeight: 15 },
+  tagPill: { height: 28, paddingHorizontal: 12, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  tagPillText: { fontSize: 11, fontWeight: '700', lineHeight: 14 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
   toolbarLabel: { fontSize: 11, fontWeight: '800', color: D.textMuted },
   sortButton: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: D.chip },

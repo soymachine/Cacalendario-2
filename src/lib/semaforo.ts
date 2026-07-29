@@ -27,11 +27,15 @@ export function resolveSemaforoThresholds(
   };
 }
 
+// Valores hex fijos (no CSS var()) para que esta lógica sea portable a React
+// Native, que no soporta custom properties de CSS. Coinciden exactamente con
+// --fx-ink-300 / --color-success / --color-warning / --color-error de
+// src/styles/fluxia-tokens.css (fijos, sin variante dark-mode).
 export function getSemaforo(daysSinceLast: number | null, green: number, red: number): SemaforoResult {
-  if (daysSinceLast === null) return { color: 'var(--fx-ink-300)', key: 'gray' };
-  if (daysSinceLast <= green) return { color: 'var(--color-success)', key: 'green' };
-  if (daysSinceLast <= red) return { color: 'var(--color-warning)', key: 'orange' };
-  return { color: 'var(--color-error)', key: 'red' };
+  if (daysSinceLast === null) return { color: '#B9C2C5', key: 'gray' };
+  if (daysSinceLast <= green) return { color: '#3F9E6E', key: 'green' };
+  if (daysSinceLast <= red) return { color: '#E09F3C', key: 'orange' };
+  return { color: '#D26464', key: 'red' };
 }
 
 export function getSemaforoKey(daysSinceLast: number | null, green: number, red: number): SemaforoKey {
