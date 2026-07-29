@@ -7,13 +7,15 @@ import BottomNav, { type Tab } from './BottomNav';
 import HomeScreen from './HomeScreen';
 import PatientListScreen from './PatientListScreen';
 import InviteScreen from './InviteScreen';
+import ConfigScreen from './ConfigScreen';
 import ComingSoonScreen from './ComingSoonScreen';
 
 interface DoctorAppProps {
   doctor: DoctorInfo;
 }
 
-export default function DoctorApp({ doctor }: DoctorAppProps) {
+export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
+  const [doctor, setDoctor] = useState<DoctorInfo>(initialDoctor);
   const [activeTab, setActiveTab] = useState<Tab>('inicio');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(true);
@@ -81,9 +83,10 @@ export default function DoctorApp({ doctor }: DoctorAppProps) {
         )}
 
         {activeTab === 'config' && (
-          <ComingSoonScreen
-            title="Configuración"
-            body="Umbrales de semáforo, logo, paleta y tags globales llegan en la próxima versión. Por ahora, ajústalos desde la web en /medics."
+          <ConfigScreen
+            doctor={doctor}
+            patients={patients}
+            onDoctorUpdated={(updated) => setDoctor(updated)}
           />
         )}
       </View>
