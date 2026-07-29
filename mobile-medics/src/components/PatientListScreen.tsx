@@ -148,6 +148,7 @@ export default function PatientListScreen({
       <FlatList
         data={displayed}
         keyExtractor={(p) => p.id}
+        style={styles.listContainer}
         refreshControl={<RefreshControl refreshing={patientsLoading} onRefresh={onRefresh} tintColor={D.primary} />}
         contentContainerStyle={styles.list}
         ListEmptyComponent={!patientsLoading ? (
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   sortButtonText: { fontSize: 11, fontWeight: '700', color: D.textMuted },
   sortButtonTextActive: { color: '#fff' },
   search: { marginHorizontal: 20, marginTop: 8, marginBottom: 4, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: D.card, borderWidth: 1, borderColor: D.border, fontSize: 14, color: D.text },
+  listContainer: { flex: 1 },
   list: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32 },
   emptyText: { textAlign: 'center', color: D.textMuted, fontSize: 13, paddingTop: 40 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: D.card, borderRadius: 14, padding: 12, marginBottom: 8 },
