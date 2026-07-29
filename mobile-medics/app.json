@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Fluxia Médicos",
+    "slug": "fluxia-medics",
+    "version": "0.1.0",
+    "scheme": "fluxiamedics",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F7F3",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F7F3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fluxiahealth.medics",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.fluxiahealth.medics",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4F7F3",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
+  }
+}
