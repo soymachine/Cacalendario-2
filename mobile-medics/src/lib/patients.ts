@@ -20,6 +20,13 @@ export interface PatientLink {
   tags?: string[];
   doctor_unlinked?: boolean;
   unlinked_at?: string | null;
+  hidden_fields?: string[];
+  entry_type_mode?: string;
+  push_min_hours?: number;
+  push_disabled?: boolean;
+  dob?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
 }
 
 export interface PracticeStats {

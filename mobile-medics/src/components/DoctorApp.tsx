@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import type { DoctorInfo } from '../lib/doctor';
-import { loadPatients, loadPracticeStatsAndAlerts, patientLabel, type PatientLink, type PracticeStats } from '../lib/patients';
+import { loadPatients, loadPracticeStatsAndAlerts, type PatientLink, type PracticeStats } from '../lib/patients';
 import { D } from '../lib/design';
 import BottomNav, { type Tab } from './BottomNav';
 import HomeScreen from './HomeScreen';
 import PatientListScreen from './PatientListScreen';
+import PatientDetailScreen from './PatientDetailScreen';
 import InviteScreen from './InviteScreen';
 import ConfigScreen from './ConfigScreen';
-import ComingSoonScreen from './ComingSoonScreen';
 
 interface DoctorAppProps {
   doctor: DoctorInfo;
@@ -46,6 +46,17 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
     setActiveTab(tab);
   };
 
+  const handlePatientUpdated = (patch: Partial<PatientLink>) => {
+    if (!selectedPatient) return;
+    const updated = { ...selectedPatient, ...patch };
+    setSelectedPatient(updated);
+    setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
+  const handleGlobalTagsUpdated = (tags: string[]) => {
+    setDoctor((prev) => ({ ...prev, global_tags: tags }));
+  };
+
   return (
     <View style={styles.fill}>
       <View style={styles.content}>
@@ -61,10 +72,12 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
 
         {activeTab === 'pacientes' && (
           selectedPatient ? (
-            <ComingSoonScreen
-              title={patientLabel(selectedPatient)}
-              body="El detalle de paciente (calendario, entradas, bitácora, tags) llega en la próxima versión. Por ahora, consulta esta información desde la web."
+            <PatientDetailScreen
+              doctor={doctor}
+              patient={selectedPatient}
               onBack={() => setSelectedPatient(null)}
+              onPatientUpdated={handlePatientUpdated}
+              onGlobalTagsUpdated={handleGlobalTagsUpdated}
             />
           ) : (
             <PatientListScreen
