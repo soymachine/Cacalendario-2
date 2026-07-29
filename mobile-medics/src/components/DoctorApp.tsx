@@ -6,6 +6,7 @@ import { D } from '../lib/design';
 import BottomNav, { type Tab } from './BottomNav';
 import HomeScreen from './HomeScreen';
 import PatientListScreen from './PatientListScreen';
+import InviteScreen from './InviteScreen';
 import ComingSoonScreen from './ComingSoonScreen';
 
 interface DoctorAppProps {
@@ -76,10 +77,7 @@ export default function DoctorApp({ doctor }: DoctorAppProps) {
         )}
 
         {activeTab === 'invitar' && (
-          <ComingSoonScreen
-            title="Invitar pacientes"
-            body="Esta sección llega en la próxima versión. Por ahora, invita pacientes desde la web en /medics."
-          />
+          <InviteScreen doctor={doctor} patients={patients} onInvited={refreshPatients} />
         )}
 
         {activeTab === 'config' && (
