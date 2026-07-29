@@ -149,6 +149,7 @@ export default function PatientListScreen({
         data={displayed}
         keyExtractor={(p) => p.id}
         style={styles.listContainer}
+        contentInsetAdjustmentBehavior="never"
         refreshControl={<RefreshControl refreshing={patientsLoading} onRefresh={onRefresh} tintColor={D.primary} />}
         contentContainerStyle={styles.list}
         ListEmptyComponent={!patientsLoading ? (
