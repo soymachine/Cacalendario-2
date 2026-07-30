@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
+import { bootstrapDoctor } from './doctor';
 import type { User, Session } from '@supabase/supabase-js';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRecovery, setIsRecovery] = useState(false);
+  const gatingRef = useRef(false);
 
   useEffect(() => {
     // Get initial session
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (gatingRef.current) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (event === 'PASSWORD_RECOVERY') {
@@ -115,9 +118,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: translateAuthError(error.message) };
-    return { error: null };
+    // Gate the auth-state listener while we verify this account has a doctor
+    // profile, so a patient account never briefly becomes a "logged in" user
+    // in context — it must look identical to wrong credentials.
+    gatingRef.current = true;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: translateAuthError(error.message) };
+
+      const signedInUser = data?.user;
+      if (signedInUser) {
+        const result = await bootstrapDoctor(signedInUser);
+        if (result.status === 'no_profile') {
+          // bootstrapDoctor already signed the session out for this case.
+          return { error: 'Email o contraseña incorrectos' };
+        }
+      }
+
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      setSession(freshSession);
+      setUser(freshSession?.user ?? null);
+      return { error: null };
+    } finally {
+      gatingRef.current = false;
+    }
   };
 
   const signInWithGoogle = async () => {
