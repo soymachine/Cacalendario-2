@@ -10,7 +10,7 @@ import { bootstrapDoctor, type DoctorInfo, type DoctorBootstrapResult } from './
 import { D } from './src/lib/design';
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [bootstrap, setBootstrap] = useState<DoctorBootstrapResult | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
 
@@ -66,6 +66,9 @@ function AppContent() {
       >
         <Text style={styles.retryButtonText}>Reintentar</Text>
       </Pressable>
+      <Pressable onPress={signOut} style={styles.signOutLink}>
+        <Text style={styles.signOutLinkText}>Cerrar sesión</Text>
+      </Pressable>
     </View>
   );
 }
@@ -118,4 +121,6 @@ const styles = StyleSheet.create({
   messageText: { fontSize: 15, color: D.text, textAlign: 'center', lineHeight: 21 },
   retryButton: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 28, borderRadius: 99, backgroundColor: D.primary },
   retryButtonText: { color: D.primaryText, fontSize: 15, fontWeight: '700' },
+  signOutLink: { marginTop: 16, padding: 8 },
+  signOutLinkText: { color: D.textMuted, fontSize: 13, textDecorationLine: 'underline' },
 });

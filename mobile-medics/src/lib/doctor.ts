@@ -138,6 +138,10 @@ export async function bootstrapDoctor(user: BootstrapUser): Promise<DoctorBootst
     if (userMeta.is_doctor) {
       return { status: 'activating', message: 'Tu cuenta está siendo activada. Inicia sesión de nuevo en unos segundos.' };
     }
+    // Cuenta válida pero sin perfil médico y sin vía de auto-alta — igual que
+    // en MedicsPanel.tsx (web), cerramos sesión para no dejar al usuario
+    // atrapado en esta pantalla sin ninguna salida.
+    await supabase.auth.signOut();
     return {
       status: 'no_profile',
       message: 'No encontramos un perfil médico para esta cuenta. Pide al administrador que te dé de alta desde /admin.',
