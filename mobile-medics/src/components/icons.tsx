@@ -1,6 +1,58 @@
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { D } from '../lib/design';
 
+// Portado de @phosphor-icons/react (mismos paths que src/components/MedicsPanel.tsx)
+// mantener sincronizado a mano si cambian los iconos de la nav en la web.
+interface PhosphorIconProps {
+  size?: number;
+  color?: string;
+  weight?: 'regular' | 'fill';
+}
+
+export function HouseIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
+  const d = weight === 'fill'
+    ? 'M224,120v96a8,8,0,0,1-8,8H160a8,8,0,0,1-8-8V164a4,4,0,0,0-4-4H108a4,4,0,0,0-4,4v52a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V120a16,16,0,0,1,4.69-11.31l80-80a16,16,0,0,1,22.62,0l80,80A16,16,0,0,1,224,120Z'
+    : 'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 256 256">
+      <Path d={d} fill={color} />
+    </Svg>
+  );
+}
+
+export function UserIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
+  const d = weight === 'fill'
+    ? 'M230.93,220a8,8,0,0,1-6.93,4H32a8,8,0,0,1-6.92-12c15.23-26.33,38.7-45.21,66.09-54.16a72,72,0,1,1,73.66,0c27.39,8.95,50.86,27.83,66.09,54.16A8,8,0,0,1,230.93,220Z'
+    : 'M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,0,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 256 256">
+      <Path d={d} fill={color} />
+    </Svg>
+  );
+}
+
+export function UserPlusIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
+  const d = weight === 'fill'
+    ? 'M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136ZM144,157.68a68,68,0,1,0-71.9,0c-20.65,6.76-39.23,19.39-54.17,37.17A8,8,0,0,0,24,208H192a8,8,0,0,0,6.13-13.15C183.18,177.07,164.6,164.44,144,157.68Z'
+    : 'M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 256 256">
+      <Path d={d} fill={color} />
+    </Svg>
+  );
+}
+
+export function SlidersIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
+  const d = weight === 'fill'
+    ? 'M84,136a28,28,0,0,1-20,26.83V216a8,8,0,0,1-16,0V162.83a28,28,0,0,1,0-53.66V40a8,8,0,0,1,16,0v69.17A28,28,0,0,1,84,136Zm52-74.83V40a8,8,0,0,0-16,0V61.17a28,28,0,0,0,0,53.66V216a8,8,0,0,0,16,0V114.83a28,28,0,0,0,0-53.66Zm72,80V40a8,8,0,0,0-16,0V141.17a28,28,0,0,0,0,53.66V216a8,8,0,0,0,16,0V194.83a28,28,0,0,0,0-53.66Z'
+    : 'M64,105V40a8,8,0,0,0-16,0v65a32,32,0,0,0,0,62v49a8,8,0,0,0,16,0V167a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,56,152Zm80-95V40a8,8,0,0,0-16,0V57a32,32,0,0,0,0,62v97a8,8,0,0,0,16,0V119a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,128,104Zm104,64a32.06,32.06,0,0,0-24-31V40a8,8,0,0,0-16,0v97a32,32,0,0,0,0,62v17a8,8,0,0,0,16,0V199A32.06,32.06,0,0,0,232,168Zm-32,16a16,16,0,1,1,16-16A16,16,0,0,1,200,184Z';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 256 256">
+      <Path d={d} fill={color} />
+    </Svg>
+  );
+}
+
 export function EyeIcon({ open }: { open: boolean }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={D.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
