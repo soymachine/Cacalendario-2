@@ -1,0 +1,239 @@
+---
+import { asset } from '../lib/config';
+import '../styles/fluxia-tokens.css';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Soporte — Fluxia</title>
+    <meta name="description" content="Ayuda y contacto para Fluxia y Fluxia Pro: preguntas frecuentes de pacientes y médicos, y cómo escribirnos." />
+    <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="hero">
+        <img src={asset('/logo.svg')} alt="Fluxia" class="logo" />
+        <h1>Soporte</h1>
+        <p class="scope">
+          ¿Necesitas ayuda con <strong>Fluxia</strong> (pacientes) o con
+          <strong>Fluxia Pro</strong> (médicos)? Aquí tienes las dudas más
+          habituales. Si no encuentras lo que buscas, escríbenos directamente.
+        </p>
+      </header>
+
+      <section class="contact-card">
+        <p class="contact-label">CONTACTO DIRECTO</p>
+        <a class="contact-email" href="mailto:hola@fluxia-health.com">hola@fluxia-health.com</a>
+        <p class="contact-hint">Solemos responder en menos de 48 horas.</p>
+      </section>
+
+      <article class="doc">
+        <section>
+          <p class="group-title">Preguntas frecuentes · Pacientes (Fluxia)</p>
+
+          <details>
+            <summary>¿Cómo vinculo mi cuenta con mi médico?</summary>
+            <p>
+              Pídele a tu médico que te invite desde su app o desde
+              <strong>/medics</strong> introduciendo tu email. Verás un aviso
+              para aceptar la invitación en la sección de configuración de tu
+              cuenta; una vez aceptada, quedará vinculado automáticamente.
+            </p>
+          </details>
+
+          <details>
+            <summary>¿Puedo usar Fluxia sin crear una cuenta?</summary>
+            <p>
+              Sí. Sin cuenta, tus registros se guardan solo en tu dispositivo.
+              Si quieres sincronizarlos entre dispositivos o vincularte con un
+              médico, necesitas crear una cuenta.
+            </p>
+          </details>
+
+          <details>
+            <summary>¿Cómo exporto mis datos?</summary>
+            <p>
+              Desde "Mi cuenta" puedes exportar todos tus registros en formato
+              JSON en cualquier momento.
+            </p>
+          </details>
+
+          <details>
+            <summary>¿Cómo elimino mi cuenta?</summary>
+            <p>
+              Desde "Mi cuenta" → "Eliminar mi cuenta", tanto en la web como en
+              la app. Es inmediato e irreversible: se borran tu perfil y todos
+              tus registros.
+            </p>
+          </details>
+        </section>
+
+        <section>
+          <p class="group-title">Preguntas frecuentes · Médicos (Fluxia Pro)</p>
+
+          <details>
+            <summary>¿Cómo invito a un paciente?</summary>
+            <p>
+              Desde la sección "Invitar" introduce el email de tu paciente. En
+              cuanto se registre en Fluxia y acepte la invitación desde su
+              cuenta, aparecerá vinculado en tu listado de pacientes.
+            </p>
+          </details>
+
+          <details>
+            <summary>¿Puedo personalizar los umbrales del semáforo?</summary>
+            <p>
+              Sí, desde "Configuración" / "Ajustes" defines cuántos días sin
+              registro se consideran normales, en vigilancia o en alerta, tanto
+              a nivel general como por paciente concreto.
+            </p>
+          </details>
+
+          <details>
+            <summary>¿Qué ocurre si elimino mi cuenta de médico?</summary>
+            <p>
+              Se borran tu perfil, tu consulta y las notas clínicas que hayas
+              escrito, y se desvinculan tus pacientes. Los registros de salud
+              de tus pacientes <strong>no se eliminan</strong> — siguen siendo
+              suyos, solo pierden el vínculo contigo. Puedes hacerlo desde
+              "Ajustes → Eliminar mi cuenta".
+            </p>
+          </details>
+
+          <details>
+            <summary>La exportación a PDF y la sugerencia automática de colores del logo, ¿están en la app?</summary>
+            <p>
+              No, esas dos funciones solo están disponibles en la versión web
+              de <strong>/medics</strong>. En la app puedes subir tu logo y
+              elegir la paleta manualmente.
+            </p>
+          </details>
+        </section>
+      </article>
+
+      <footer class="foot">
+        <p>
+          ¿Prefieres leer sobre privacidad y tratamiento de datos?
+          Consulta la <a href="/privacy">política de privacidad</a>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(html), :global(body) { margin: 0; padding: 0; }
+  body {
+    background: var(--color-bg);
+    color: var(--fx-ink-800);
+    font-family: 'Lexend', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 22px 64px;
+  }
+  .hero {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo {
+    width: 56px;
+    height: auto;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(24px, 4vw, 30px);
+    font-weight: 800;
+    color: var(--fx-ink-900);
+    margin: 0 0 10px;
+  }
+  .scope {
+    font-size: 14px;
+    color: var(--fx-ink-600);
+    max-width: 52ch;
+    margin: 0 auto;
+  }
+  .contact-card {
+    background: var(--color-bg-elevated, #fff);
+    border: 1px solid var(--fx-ink-200);
+    border-radius: 16px;
+    padding: 20px 24px;
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .contact-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--fx-ink-500);
+    margin: 0 0 6px;
+  }
+  .contact-email {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  .contact-email:hover { text-decoration: underline; }
+  .contact-hint {
+    font-size: 12.5px;
+    color: var(--fx-ink-500);
+    margin: 6px 0 0;
+  }
+  .doc { display: flex; flex-direction: column; gap: 28px; }
+  .group-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-accent, var(--fx-teal-500));
+    margin: 0 0 12px;
+  }
+  details {
+    background: var(--color-bg-elevated, #fff);
+    border: 1px solid var(--fx-ink-200);
+    border-radius: 12px;
+    padding: 4px 16px;
+    margin-bottom: 8px;
+  }
+  details[open] { padding-bottom: 12px; }
+  summary {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--fx-ink-800);
+    padding: 12px 0;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: '+';
+    display: inline-block;
+    width: 18px;
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+  details[open] summary::before { content: '–'; }
+  details p {
+    font-size: 14px;
+    color: var(--fx-ink-600);
+    margin: 0;
+    padding-left: 18px;
+  }
+  strong { color: var(--fx-ink-800); font-weight: 700; }
+  .foot {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--fx-ink-200);
+    text-align: center;
+    font-size: 13px;
+    color: var(--fx-ink-500);
+  }
+  .foot a { color: var(--color-primary); text-decoration: underline; }
+</style>
