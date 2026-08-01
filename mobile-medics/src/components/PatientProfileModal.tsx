@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { PatientLink } from '../lib/patients';
 import { saveProfile } from '../lib/patientDetail';
+import { UserCircleIcon } from './icons';
 import { D } from '../lib/design';
 
 interface PatientProfileModalProps {
@@ -38,7 +39,10 @@ export default function PatientProfileModal({ patient, onClose, onSaved }: Patie
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.centerWrap}>
           <View style={styles.card}>
-            <Text style={styles.title}>👤 Datos del paciente</Text>
+            <View style={styles.titleRow}>
+              <UserCircleIcon size={20} color={D.text} />
+              <Text style={styles.title}>Datos del paciente</Text>
+            </View>
             <Text style={styles.subtitle}>Solo tú puedes ver y editar estos datos.</Text>
 
             <Text style={styles.label}>NOMBRE</Text>
@@ -94,7 +98,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { width: '100%', maxWidth: 400, backgroundColor: '#fff', borderRadius: 20, padding: 24 },
-  title: { fontSize: 17, fontWeight: '900', color: D.text, marginBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  title: { fontSize: 17, fontWeight: '900', color: D.text },
   subtitle: { fontSize: 12, color: D.textMuted, marginBottom: 18 },
   label: { fontSize: 11, fontWeight: '800', color: D.textMuted, marginBottom: 4, marginTop: 10 },
   readOnly: { fontSize: 14, color: D.text, backgroundColor: D.bg, borderWidth: 1, borderColor: D.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
