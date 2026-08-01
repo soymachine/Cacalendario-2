@@ -13,13 +13,14 @@ interface HomeScreenProps {
   patientsLoading: boolean;
   practiceStats: PracticeStats | null;
   onNavigate: (tab: Tab, semaforoFilter?: string) => void;
+  onSelectPatient: (patient: PatientLink) => void;
 }
 
 function shortDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate }: HomeScreenProps) {
+export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate, onSelectPatient }: HomeScreenProps) {
   const accepted = patients.filter((p) => p.status === 'accepted');
   const pending = patients.filter((p) => p.status === 'pending');
 
@@ -123,7 +124,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
                   });
                   const sem = getSemaforo(p.daysSinceLast ?? null, green, red);
                   return (
-                    <View key={p.id} style={[styles.attentionRow, i < attentionList.length - 1 && styles.attentionRowBorder]}>
+                    <Pressable key={p.id} onPress={() => onSelectPatient(p)} style={[styles.attentionRow, i < attentionList.length - 1 && styles.attentionRowBorder]}>
                       <View style={[styles.dot, { backgroundColor: sem.color }]} />
                       <View style={styles.attentionInfo}>
                         <Text style={styles.attentionName} numberOfLines={1}>{patientLabel(p)}</Text>
@@ -135,7 +136,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
                       {(p.tags || []).slice(0, 2).map((t) => (
                         <Text key={t} style={[styles.tag, { backgroundColor: tagColor(t) + '20', color: tagColor(t) }]}>{t}</Text>
                       ))}
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>

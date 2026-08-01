@@ -46,6 +46,11 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
     setActiveTab(tab);
   };
 
+  const handleSelectPatientFromHome = (patient: PatientLink) => {
+    setSelectedPatient(patient);
+    setActiveTab('pacientes');
+  };
+
   const handlePatientUpdated = (patch: Partial<PatientLink>) => {
     if (!selectedPatient) return;
     const updated = { ...selectedPatient, ...patch };
@@ -67,6 +72,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
             patientsLoading={patientsLoading}
             practiceStats={practiceStats}
             onNavigate={handleNavigate}
+            onSelectPatient={handleSelectPatientFromHome}
           />
         )}
 
