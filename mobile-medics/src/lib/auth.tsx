@@ -22,6 +22,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   clearRecovery: () => void;
@@ -167,6 +168,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // Apple guideline 5.1.1(v): an app that lets you create an account must
+  // let you delete it from within the app. doctor_self_delete_account()
+  // wipes the doctor's data (patient links, clinical notes, center if
+  // orphaned) and the auth user itself.
+  const deleteAccount = async () => {
+    const { error } = await supabase.rpc('doctor_self_delete_account');
+    if (error) return { error: error.message };
+    await supabase.auth.signOut();
+    return { error: null };
+  };
+
   const resetPassword = async (email: string) => {
     // The recovery link opens the web app, where the user sets a new password.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -186,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearRecovery = () => setIsRecovery(false);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isRecovery, signUp, signIn, signInWithGoogle, signOut, resetPassword, updatePassword, clearRecovery }}>
+    <AuthContext.Provider value={{ user, session, loading, isRecovery, signUp, signIn, signInWithGoogle, signOut, deleteAccount, resetPassword, updatePassword, clearRecovery }}>
       {children}
     </AuthContext.Provider>
   );

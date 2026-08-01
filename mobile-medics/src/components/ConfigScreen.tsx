@@ -16,7 +16,7 @@ interface ConfigScreenProps {
 }
 
 export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: ConfigScreenProps) {
-  const { signOut } = useAuth();
+  const { signOut, deleteAccount } = useAuth();
   const [name, setName] = useState(doctor.name);
   const [centerName, setCenterName] = useState(doctor.center_name);
   const [green, setGreen] = useState(doctor.semaforo_green);
@@ -27,6 +27,9 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
   const [imageError, setImageError] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tagsSaving, setTagsSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const handleSave = async () => {
     setSaving(true);
@@ -66,6 +69,14 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
     if (!error) {
       onDoctorUpdated({ ...doctor, global_tags: (doctor.global_tags || []).filter((t) => t !== tag) });
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    const { error } = await deleteAccount();
+    setDeleting(false);
+    if (error) setDeleteError(error);
   };
 
   return (
@@ -168,6 +179,34 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
         <Pressable onPress={signOut} style={styles.signOutButton}>
           <Text style={styles.signOutText}>Cerrar sesión</Text>
         </Pressable>
+
+        {confirmDelete && (
+          <View style={[styles.card, styles.deleteCard]}>
+            <Text style={styles.deleteTitle}>⚠️ ¿Estás seguro?</Text>
+            <Text style={styles.deleteBody}>
+              Esta acción es <Text style={styles.bold}>irreversible</Text>. Se borrarán tu perfil, tus pacientes vinculados y las notas clínicas que hayas escrito.
+            </Text>
+            {!!deleteError && <Text style={styles.deleteErrorText}>{deleteError}</Text>}
+            <View style={styles.rowGap8}>
+              <Pressable onPress={() => { setConfirmDelete(false); setDeleteError(''); }} style={[styles.outlineBtn, styles.flex1]} disabled={deleting}>
+                <Text style={styles.outlineBtnText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleDeleteAccount}
+                disabled={deleting}
+                style={[styles.solidDangerBtn, styles.flex1, deleting && styles.buttonDisabled]}
+              >
+                <Text style={styles.solidDangerBtnText}>{deleting ? 'Eliminando...' : 'Sí, eliminar todo'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {!confirmDelete && (
+          <Pressable onPress={() => setConfirmDelete(true)} style={styles.deleteLinkWrap}>
+            <Text style={styles.deleteLink}>Eliminar mi cuenta</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -205,4 +244,17 @@ const styles = StyleSheet.create({
   addTagButtonText: { color: D.primaryText, fontSize: 20, fontWeight: '700' },
   signOutButton: { paddingVertical: 12, borderRadius: 50, backgroundColor: D.dangerBg, alignItems: 'center' },
   signOutText: { color: D.danger, fontSize: 15, fontWeight: '700' },
+  deleteCard: { borderWidth: 2, borderColor: D.danger, backgroundColor: D.dangerBg, marginTop: 12 },
+  deleteTitle: { fontSize: 14, fontWeight: '700', color: D.danger, textAlign: 'center', marginBottom: 6 },
+  deleteBody: { fontSize: 12, color: D.danger, textAlign: 'center', marginBottom: 12, lineHeight: 18 },
+  deleteErrorText: { fontSize: 12, color: D.danger, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+  bold: { fontWeight: '700' },
+  rowGap8: { flexDirection: 'row', gap: 8 },
+  flex1: { flex: 1 },
+  outlineBtn: { paddingVertical: 12, borderRadius: 50, borderWidth: 2, borderColor: D.border, alignItems: 'center' },
+  outlineBtnText: { color: D.text, fontSize: 14, fontWeight: '700' },
+  solidDangerBtn: { paddingVertical: 12, borderRadius: 50, backgroundColor: D.danger, alignItems: 'center' },
+  solidDangerBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  deleteLinkWrap: { alignItems: 'center', marginTop: 16 },
+  deleteLink: { fontSize: 12, color: D.danger, opacity: 0.6 },
 });
