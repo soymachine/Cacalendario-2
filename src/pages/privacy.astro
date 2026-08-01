@@ -1,0 +1,231 @@
+---
+import { asset } from '../lib/config';
+import '../styles/fluxia-tokens.css';
+
+const lastUpdated = '1 de agosto de 2026';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Política de privacidad — Fluxia</title>
+    <meta name="description" content="Política de privacidad de Fluxia y Fluxia Pro: qué datos recogemos, para qué los usamos y tus derechos como paciente o como médico." />
+    <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="hero">
+        <img src={asset('/logo.svg')} alt="Fluxia" class="logo" />
+        <h1>Política de privacidad</h1>
+        <p class="updated">Última actualización: {lastUpdated}</p>
+        <p class="scope">
+          Aplica a las cuatro superficies de Fluxia: la web y la app para pacientes,
+          y la web y la app <strong>Fluxia Pro</strong> para médicos. Donde el
+          tratamiento cambia según el rol, se indica expresamente.
+        </p>
+      </header>
+
+      <article class="doc">
+        <section>
+          <h2>1. Responsable del tratamiento</h2>
+          <p>
+            El responsable del tratamiento de tus datos es el desarrollador de
+            Fluxia. Puedes contactarnos en <strong>hola@fluxia-health.com</strong>.
+          </p>
+        </section>
+
+        <section>
+          <h2>2. Qué datos recogemos</h2>
+          <h3>Si usas Fluxia como paciente</h3>
+          <ul>
+            <li><strong>Email y contraseña</strong> — solo si creas una cuenta (opcional).</li>
+            <li><strong>Registros de deposiciones y orina</strong> — fecha, hora, notas, escala de Bristol y otras características.</li>
+            <li><strong>Preferencias</strong> — emoji y tema visual seleccionados.</li>
+          </ul>
+          <h3>Si usas Fluxia Pro como médico</h3>
+          <ul>
+            <li><strong>Email y contraseña</strong> de tu cuenta.</li>
+            <li><strong>Datos de tu consulta</strong> — tu nombre, el nombre y logo de tu centro, los umbrales de semáforo y las etiquetas que definas.</li>
+            <li><strong>Registros y notas clínicas de tus pacientes</strong> — solo de aquellos que se han vinculado contigo voluntariamente desde su propia cuenta.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>3. Para qué usamos tus datos</h2>
+          <ul>
+            <li>Proporcionar el servicio de seguimiento personal de salud digestiva.</li>
+            <li>Permitir que un médico haga seguimiento de los pacientes que se han vinculado con él.</li>
+            <li>Sincronizar tus datos entre dispositivos (si tienes cuenta).</li>
+            <li>Generar estadísticas visibles únicamente por ti o, en el caso de un paciente vinculado, también por su médico.</li>
+          </ul>
+          <p>
+            Un médico solo accede a los registros de un paciente <strong>después
+            de que este acepte expresamente</strong> la invitación de vinculación
+            desde su propia cuenta. <strong>No vendemos, compartimos ni cedemos
+            tus datos a terceros.</strong>
+          </p>
+        </section>
+
+        <section>
+          <h2>4. Datos de salud (categoría especial)</h2>
+          <p>
+            Los registros de deposiciones, orina y las notas clínicas se
+            consideran <strong>datos relativos a la salud</strong> según el
+            artículo 9 del RGPD. Para un paciente, el tratamiento se basa en su
+            <strong>consentimiento explícito</strong> (Art. 9.2.a RGPD), que
+            proporciona al crear una cuenta. Para un médico, el paciente sigue
+            siendo el titular de sus propios datos de salud: el médico accede a
+            ellos únicamente para prestar el seguimiento clínico que el propio
+            paciente ha solicitado al vincularse.
+          </p>
+        </section>
+
+        <section>
+          <h2>5. Dónde se almacenan tus datos</h2>
+          <ul>
+            <li><strong>Sin cuenta (solo pacientes):</strong> tus datos se almacenan exclusivamente en tu dispositivo (localStorage del navegador o almacenamiento local de la app). No tenemos acceso a ellos.</li>
+            <li><strong>Con cuenta:</strong> tus datos se sincronizan con Supabase (infraestructura en AWS, región EU). La contraseña se almacena hasheada con bcrypt.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>6. Tus derechos</h2>
+          <p>Según el RGPD y la LOPDGDD, tienes derecho a:</p>
+          <ul>
+            <li><strong>Acceso:</strong> ver todos tus datos almacenados.</li>
+            <li><strong>Rectificación:</strong> modificar tus registros en cualquier momento.</li>
+            <li><strong>Supresión:</strong> eliminar tu cuenta y todos tus datos ("derecho al olvido").</li>
+            <li><strong>Portabilidad:</strong> exportar tus datos en formato JSON.</li>
+            <li><strong>Oposición:</strong> dejar de usar el servicio en cualquier momento.</li>
+          </ul>
+          <p>
+            Puedes ejercer el derecho de supresión tú mismo, sin necesidad de
+            contactarnos: los pacientes desde "Mi cuenta" y los médicos desde
+            "Ajustes → Eliminar mi cuenta", tanto en la web como en la app.
+            También puedes escribirnos a <strong>hola@fluxia-health.com</strong>.
+          </p>
+        </section>
+
+        <section>
+          <h2>7. Qué ocurre cuando se elimina una cuenta</h2>
+          <ul>
+            <li><strong>Si eliminas tu cuenta de paciente:</strong> se borran tus registros y se desvinculan todos los médicos que tuvieras asociados.</li>
+            <li><strong>Si eliminas tu cuenta de médico:</strong> se borran tu perfil, tu consulta, tus pacientes vinculados y las notas clínicas que hayas escrito tú. Los registros de salud de tus pacientes <strong>no se eliminan</strong> — siguen siendo suyos, solo pierden el vínculo contigo.</li>
+          </ul>
+          <p>En ambos casos, el borrado es permanente e irreversible.</p>
+        </section>
+
+        <section>
+          <h2>8. Seguridad</h2>
+          <ul>
+            <li>Comunicaciones cifradas con HTTPS/TLS.</li>
+            <li>Contraseñas hasheadas con bcrypt (nunca en texto plano).</li>
+            <li>Row Level Security (RLS) en base de datos: cada usuario solo accede a sus propios datos o a los que se le han vinculado explícitamente.</li>
+            <li>Autenticación segura mediante tokens JWT.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>9. Cookies y tracking</h2>
+          <p>
+            Fluxia <strong>no utiliza cookies de terceros ni herramientas de
+            tracking publicitario</strong>. Solo almacenamos datos funcionales en
+            el dispositivo para el funcionamiento de la app.
+          </p>
+        </section>
+
+        <section>
+          <h2>10. Cambios en esta política</h2>
+          <p>
+            Si realizamos cambios significativos en esta política, te
+            notificaremos a través de la aplicación. El uso continuado de
+            Fluxia o Fluxia Pro tras dichos cambios implica la aceptación de la
+            política actualizada.
+          </p>
+        </section>
+      </article>
+
+      <footer class="foot">
+        <p>¿Dudas sobre esta política? Escríbenos a <a href="mailto:hola@fluxia-health.com">hola@fluxia-health.com</a>.</p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(html), :global(body) { margin: 0; padding: 0; }
+  body {
+    background: var(--color-bg);
+    color: var(--fx-ink-800);
+    font-family: 'Lexend', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 22px 64px;
+  }
+  .hero {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .logo {
+    width: 56px;
+    height: auto;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(24px, 4vw, 30px);
+    font-weight: 800;
+    color: var(--fx-ink-900);
+    margin: 0 0 6px;
+  }
+  .updated {
+    font-size: 12.5px;
+    color: var(--fx-ink-500);
+    margin: 0 0 16px;
+  }
+  .scope {
+    font-size: 14px;
+    color: var(--fx-ink-600, var(--fx-ink-500));
+    max-width: 52ch;
+    margin: 0 auto;
+  }
+  .doc { display: flex; flex-direction: column; gap: 28px; }
+  section h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--fx-ink-900);
+    margin: 0 0 8px;
+  }
+  section h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fx-ink-600, var(--fx-ink-500));
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 14px 0 6px;
+  }
+  section p, section ul {
+    font-size: 14.5px;
+    color: var(--fx-ink-600, var(--fx-ink-500));
+    margin: 0 0 10px;
+  }
+  section ul { padding-left: 20px; }
+  section li { margin-bottom: 4px; }
+  section li:last-child { margin-bottom: 0; }
+  section p:last-child, section ul:last-child { margin-bottom: 0; }
+  strong { color: var(--fx-ink-800); font-weight: 700; }
+  .foot {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--fx-ink-200);
+    text-align: center;
+    font-size: 13px;
+    color: var(--fx-ink-500);
+  }
+  .foot a { color: var(--color-primary); text-decoration: underline; }
+</style>
