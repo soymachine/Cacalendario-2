@@ -441,16 +441,16 @@
           <span class="status-pill prepare">A preparar</span>
         </div>
         <div class="card-body">
-          <p>PNG o JPEG, sin transparencia ni marcos de dispositivo (opcionales). Apple solo exige un tamaño de iPhone — genera el resto automáticamente a partir de él:</p>
+          <p>PNG o JPEG, sin transparencia ni marcos de dispositivo (opcionales). Apple solo exige un tamaño por familia de dispositivo — genera el resto automáticamente a partir de él:</p>
           <table class="spec-table">
             <thead><tr><th>Dispositivo</th><th>Tamaño</th><th>Cantidad</th></tr></thead>
             <tbody>
               <tr><td>iPhone 6.9″ (16/15 Pro Max y similares)</td><td class="num">1320 × 2868&nbsp;px</td><td class="num">3–10</td></tr>
-              <tr><td>iPad</td><td class="num">No aplica</td><td class="num">—</td></tr>
+              <tr><td>iPad 13″ (Pro / Air, MA únicamente)</td><td class="num">2048 × 2732&nbsp;px</td><td class="num">3–10</td></tr>
             </tbody>
           </table>
-          <p class="sub">Sin capturas de iPad porque ambas apps declaran <code>supportsTablet: false</code> en su <code>app.json</code> — App Store Connect no os las va a pedir.</p>
-          <p class="sub">Cada app necesita su propio set, no se comparten: en <strong>PA</strong>, calendario + registro de un evento + estadísticas; en <strong>MA</strong>, Inicio con semáforo + listado de pacientes + ficha de un paciente. 4–6 capturas reales suelen bastar.</p>
+          <p class="sub"><strong>PA</strong> sigue sin necesitar capturas de iPad (<code>supportsTablet: false</code>). <strong>MA</strong> ya declara <code>supportsTablet: true</code> en su <code>app.json</code> —al ser un dashboard que se aprovecha mejor en pantalla grande— así que sí necesita su propio set de capturas de iPad.</p>
+          <p class="sub">Cada app necesita su propio set, no se comparten: en <strong>PA</strong>, calendario + registro de un evento + estadísticas; en <strong>MA</strong>, Inicio con semáforo + listado de pacientes + ficha de un paciente, tanto en iPhone como en iPad. 4–6 capturas reales por tamaño suelen bastar.</p>
           <div class="app-tags"><span class="app-chip pa">PA</span><span class="app-chip ma">MA</span></div>
           <div class="callout">Apple ajusta esta tabla cuando lanza nuevos modelos de iPhone — comprobad las medidas vigentes en App Store Connect al subir, justo antes de enviar a revisión.</div>
         </div>
