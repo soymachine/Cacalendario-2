@@ -15,7 +15,7 @@ import PatientEntriesList from './PatientEntriesList';
 import PatientBitacora from './PatientBitacora';
 import PatientConfigModal from './PatientConfigModal';
 import PatientProfileModal from './PatientProfileModal';
-import { UserCircleIcon, SlidersIcon } from './icons';
+import { UserCircleIcon, SlidersIcon, BellIcon } from './icons';
 import { D } from '../lib/design';
 
 interface PatientDetailScreenProps {
@@ -128,7 +128,10 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
 
           <View style={styles.pushCard}>
             <View style={styles.pushHeader}>
-              <Text style={styles.pushTitle}>🔔 Notificaciones al paciente</Text>
+              <View style={styles.pushTitleRow}>
+                <BellIcon size={14} color={D.text} />
+                <Text style={styles.pushTitle}>Notificaciones al paciente</Text>
+              </View>
               <View style={styles.pushToggle}>
                 <Switch value={!pushDisabled} onValueChange={handleTogglePush} trackColor={{ true: D.primary, false: D.chipDark }} thumbColor="#fff" />
                 <Text style={styles.pushToggleLabel}>{pushDisabled ? 'Desactivadas' : 'Activadas'}</Text>
@@ -152,7 +155,10 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
                 disabled={pushTestStatus === 'sending' || !patient.hasPushSub}
                 style={[styles.testButton, !patient.hasPushSub && styles.testButtonDisabled]}
               >
-                <Text style={styles.testButtonText}>{pushTestStatus === 'sending' ? 'Enviando...' : '🔔 Enviar notificación de prueba'}</Text>
+                <View style={styles.testButtonRow}>
+                  {pushTestStatus !== 'sending' && <BellIcon size={13} color={D.primary} />}
+                  <Text style={styles.testButtonText}>{pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}</Text>
+                </View>
               </Pressable>
               {!patient.hasPushSub && <Text style={styles.pushHint}>El paciente no tiene notificaciones activadas.</Text>}
               {pushTestStatus === 'ok' && <Text style={styles.pushSuccess}>✅ Notificación enviada</Text>}
@@ -206,6 +212,7 @@ const styles = StyleSheet.create({
   semaforoWarning: { fontSize: 11, fontWeight: '700', color: '#B94A4A', marginTop: 4 },
   pushCard: { backgroundColor: D.card, borderRadius: 16, padding: 14, marginBottom: 12 },
   pushHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
+  pushTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pushTitle: { fontSize: 13, fontWeight: '800', color: D.text },
   pushToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pushToggleLabel: { fontSize: 12, fontWeight: '600', color: D.textMuted },
@@ -217,6 +224,7 @@ const styles = StyleSheet.create({
   pushTestRow: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: D.border },
   testButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, borderWidth: 2, borderColor: D.primary, alignItems: 'center' },
   testButtonDisabled: { opacity: 0.4 },
+  testButtonRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   testButtonText: { fontSize: 12, fontWeight: '700', color: D.primary },
   pushSuccess: { fontSize: 12, fontWeight: '700', color: D.success, marginTop: 8 },
   pushError: { fontSize: 12, fontWeight: '700', color: D.danger, marginTop: 8 },
