@@ -23,8 +23,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
   const insets = useSafeAreaInsets();
   return (
     <LinearGradient
-      colors={['#3E78B5', '#539D9F', '#78AD89', '#D8DA56']}
-      locations={[0, 0.36, 0.62, 1]}
+      colors={['#3E78B5', '#539D9F', '#78AD89', '#78AD89', '#D8DA56']}
+      locations={[0, 0.3, 0.58, 0.88, 1]}
       start={{ x: 0.017, y: 0.371 }}
       end={{ x: 0.983, y: 0.629 }}
       style={[styles.nav, { paddingBottom: Math.max(10, insets.bottom + 6) }]}
@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    transform: [{ translateY: '20%' }],
   },
   iconWrap: {
     paddingHorizontal: 14,
