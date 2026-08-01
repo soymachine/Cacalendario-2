@@ -15,6 +15,7 @@ import PatientEntriesList from './PatientEntriesList';
 import PatientBitacora from './PatientBitacora';
 import PatientConfigModal from './PatientConfigModal';
 import PatientProfileModal from './PatientProfileModal';
+import { UserCircleIcon, SlidersIcon } from './icons';
 import { D } from '../lib/design';
 
 interface PatientDetailScreenProps {
@@ -98,8 +99,8 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}><Text style={styles.backText}>← Volver</Text></Pressable>
         <View style={styles.headerIcons}>
-          <Pressable onPress={() => setProfileOpen(true)} style={styles.iconButton}><Text style={styles.iconText}>👤</Text></Pressable>
-          <Pressable onPress={() => setConfigOpen(true)} style={styles.iconButton}><Text style={styles.iconText}>⚙️</Text></Pressable>
+          <Pressable onPress={() => setProfileOpen(true)} style={styles.iconButton}><UserCircleIcon size={22} color="#95A0A5" /></Pressable>
+          <Pressable onPress={() => setConfigOpen(true)} style={styles.iconButton}><SlidersIcon size={20} color="#95A0A5" /></Pressable>
         </View>
       </View>
 
@@ -193,7 +194,6 @@ const styles = StyleSheet.create({
   backText: { fontSize: 14, fontWeight: '700', color: D.text },
   headerIcons: { flexDirection: 'row', gap: 4 },
   iconButton: { padding: 8 },
-  iconText: { fontSize: 18 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { paddingHorizontal: 16, paddingBottom: 32 },
   patientName: { fontSize: 20, fontWeight: '900', color: D.text },
