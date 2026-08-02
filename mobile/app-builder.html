@@ -1,0 +1,555 @@
+<title>Fluxia — Guía de build</title>
+<style>
+  :root {
+    --paper: #F6F8F4;
+    --surface: #FFFFFF;
+    --ink-900: #1B2225;
+    --ink-800: #2D3539;
+    --ink-600: #586269;
+    --ink-400: #8B979C;
+    --ink-200: #DCE2DF;
+    --ink-150: #E7ECE8;
+    --border: #D7DED9;
+
+    --blue-500: #3C7DB8;
+    --blue-050: #EAF2FA;
+    --green-500: #4DA078;
+    --green-050: #EAF6EF;
+    --teal-500: #3E8385;
+    --teal-050: #EAF4F4;
+    --success: #3F9E6E;
+
+    --font-ui: -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+
+    --radius: 10px;
+    --shadow-card: 0 1px 2px rgba(27, 34, 37, 0.04), 0 4px 14px rgba(27, 34, 37, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #161D20;
+      --surface: #1E262A;
+      --ink-900: #F2F5F3;
+      --ink-800: #E8ECE8;
+      --ink-600: #A9B4B0;
+      --ink-400: #76827E;
+      --ink-200: #313C3F;
+      --ink-150: #2A3438;
+      --border: #333F42;
+
+      --blue-500: #6FA3D6;
+      --blue-050: #1D2B37;
+      --green-500: #74C79C;
+      --green-050: #1B2E27;
+      --teal-500: #6BB6B8;
+      --teal-050: #1B2C2D;
+      --success: #59C68C;
+      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.28);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #161D20; --surface: #1E262A; --ink-900: #F2F5F3; --ink-800: #E8ECE8;
+    --ink-600: #A9B4B0; --ink-400: #76827E; --ink-200: #313C3F; --ink-150: #2A3438; --border: #333F42;
+    --blue-500: #6FA3D6; --blue-050: #1D2B37; --green-500: #74C79C; --green-050: #1B2E27;
+    --teal-500: #6BB6B8; --teal-050: #1B2C2D; --success: #59C68C;
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.2), 0 6px 20px rgba(0,0,0,0.28);
+  }
+  :root[data-theme="light"] {
+    --paper: #F6F8F4; --surface: #FFFFFF; --ink-900: #1B2225; --ink-800: #2D3539;
+    --ink-600: #586269; --ink-400: #8B979C; --ink-200: #DCE2DF; --ink-150: #E7ECE8; --border: #D7DED9;
+    --blue-500: #3C7DB8; --blue-050: #EAF2FA; --green-500: #4DA078; --green-050: #EAF6EF;
+    --teal-500: #3E8385; --teal-050: #EAF4F4; --success: #3F9E6E;
+    --shadow-card: 0 1px 2px rgba(27,34,37,0.04), 0 4px 14px rgba(27,34,37,0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink-800);
+    font-family: var(--font-ui);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--blue-050); }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 96px;
+  }
+
+  /* ---- Header ---- */
+  .doc-header { margin-bottom: 8px; }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-600);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 10px;
+    color: var(--ink-900);
+  }
+  .lede {
+    font-size: 15px;
+    color: var(--ink-600);
+    max-width: 58ch;
+    margin: 0 0 28px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 40px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-600);
+  }
+  .swatch {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .swatch.blue { background: var(--blue-500); }
+  .swatch.green { background: var(--green-500); }
+  .legend-spacer { flex: 1; }
+  .reset-link {
+    font-size: 13px;
+    color: var(--ink-400);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 4px;
+    font-family: inherit;
+  }
+  .reset-link:hover { color: var(--ink-600); }
+  .reset-link:focus-visible { outline: 2px solid var(--blue-500); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---- Track ---- */
+  .track { margin-bottom: 48px; }
+  .track-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .track-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--ink-900);
+    margin: 0;
+  }
+  .track[data-track="prod"] .track-title { color: var(--blue-500); }
+  .track[data-track="dev"] .track-title { color: var(--green-500); }
+  .track-progress {
+    font-size: 13px;
+    color: var(--ink-400);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .track-desc {
+    font-size: 14px;
+    color: var(--ink-600);
+    margin: 0 0 22px;
+    max-width: 60ch;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 2px solid var(--ink-200);
+  }
+  .track[data-track="prod"] .steps { border-left-color: var(--blue-050); }
+  .track[data-track="dev"] .steps { border-left-color: var(--green-050); }
+
+  .step {
+    position: relative;
+    padding: 0 0 28px 26px;
+  }
+  .step:last-child { padding-bottom: 4px; }
+
+  .step-num {
+    position: absolute;
+    left: -13px;
+    top: 1px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--ink-200);
+    color: var(--ink-600);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .track[data-track="prod"] .step-num { border-color: var(--blue-500); color: var(--blue-500); }
+  .track[data-track="dev"] .step-num { border-color: var(--green-500); color: var(--green-500); }
+
+  .step.done .step-num {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .step.done .step-title { color: var(--ink-400); text-decoration: line-through; text-decoration-color: var(--ink-200); }
+  .step.done .step-body { opacity: 0.65; }
+
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .step-check {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    border-radius: 5px;
+    border: 1.5px solid var(--ink-400);
+    background: var(--surface);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  .step-check:checked {
+    background: var(--success);
+    border-color: var(--success);
+  }
+  .step-check:checked::after {
+    content: "";
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+  .step-check:focus-visible { outline: 2px solid var(--blue-500); outline-offset: 2px; }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-900);
+    margin: 0 0 4px;
+  }
+  .step-body { flex: 1; min-width: 0; }
+  .step-note {
+    font-size: 13.5px;
+    color: var(--ink-600);
+    margin: 0 0 10px;
+    max-width: 58ch;
+  }
+  .step-note code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--ink-150);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .step-note.warn { color: var(--teal-500); }
+  .step-note.warn::before { content: "Ojo — "; font-weight: 600; }
+
+  .cmd {
+    display: flex;
+    align-items: stretch;
+    background: var(--ink-900);
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 8px;
+  }
+  :root[data-theme="light"] .cmd, .cmd { background: #1B2225; }
+  @media (prefers-color-scheme: dark) { .cmd { background: #0F1416; } }
+  :root[data-theme="dark"] .cmd { background: #0F1416; }
+  :root[data-theme="light"] .cmd { background: #1B2225; }
+
+  .cmd code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #E8ECE8;
+    padding: 10px 12px;
+    white-space: pre;
+    flex: 1;
+  }
+  .copy-btn {
+    flex-shrink: 0;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: #A9B4B0;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .copy-btn:focus-visible { outline: 2px solid var(--blue-500); outline-offset: -2px; }
+  .copy-btn[data-copied="true"] { color: var(--success); }
+
+  footer {
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--ink-400);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step-num { transition: none; }
+  }
+</style>
+
+<div class="page">
+  <header class="doc-header">
+    <p class="eyebrow">Fluxia · mobile</p>
+    <h1>Guía de build</h1>
+    <p class="lede">Los dos procesos que usamos: subir una versión de verdad a producción / TestFlight, y compilar una build para probar en tu iPhone en local. Marca cada paso según lo vayas haciendo — queda guardado en este navegador.</p>
+  </header>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch blue"></span> Producción → llega a testers/App Store</span>
+    <span class="legend-item"><span class="swatch green"></span> Desarrollo → solo tu iPhone, con Metro</span>
+    <span class="legend-spacer"></span>
+    <button class="reset-link" id="reset-btn" type="button">Reiniciar checklist</button>
+  </div>
+
+  <!-- ================= PRODUCCIÓN ================= -->
+  <section class="track" data-track="prod" id="track-prod">
+    <div class="track-head">
+      <h2 class="track-title">Producción → TestFlight</h2>
+      <span class="track-progress" data-progress-for="prod">0/6</span>
+    </div>
+    <p class="track-desc">Compila con las credenciales reales, sube el build a App Store Connect y ponlo delante de tus testers.</p>
+
+    <ol class="steps">
+      <li class="step" data-id="prod-1">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Verifica que <code style="font-family:var(--font-mono)">app.json</code> está limpio</p>
+            <p class="step-note">No debe haber diferencias — <code>expo-notifications</code> tiene que seguir en <code>plugins</code>. Si algo aparece, es el workaround temporal de firma; deshazlo antes de seguir.</p>
+            <div class="cmd"><code>cd mobile
+git diff app.json</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="prod-2">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Compila la build de producción</p>
+            <p class="step-note">EAS reutiliza el certificado y el perfil ya guardados — no debería pedir login de Apple. 10-20 min.</p>
+            <div class="cmd"><code>eas build --platform ios --profile production</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="prod-3">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Súbela a App Store Connect</p>
+            <p class="step-note warn">Aquí puedes usar tu propia Apple ID (contraseña específica de app) — subir builds es acceso de App Store Connect, no del Developer Portal restringido.</p>
+            <div class="cmd"><code>eas submit --platform ios --latest</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="prod-4">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Espera el procesado de Apple</p>
+            <p class="step-note">App Store Connect → tu app → TestFlight → iOS Builds. De "Processing" a listo: 15 min – 2 h. Si repregunta por Export Compliance, es exento (solo HTTPS estándar).</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="prod-5">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Añade el build al grupo de Internal Testing</p>
+            <p class="step-note">TestFlight → Internal Testing → crea o reutiliza un grupo → Add Testers (marca a la gente de Users and Access) → asocia este build. No pasa por revisión de Apple.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="prod-6">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">El tester instala desde TestFlight</p>
+            <p class="step-note">App TestFlight desde la App Store → acepta la invitación que llega a su Apple ID → Install.</p>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ================= DESARROLLO ================= -->
+  <section class="track" data-track="dev" id="track-dev">
+    <div class="track-head">
+      <h2 class="track-title">Desarrollo → tu iPhone</h2>
+      <span class="track-progress" data-progress-for="dev">0/5</span>
+    </div>
+    <p class="track-desc">Un dev client instalado en tu propio iPhone, conectado a Metro en tu Mac — para iterar rápido sin pasar por App Store Connect.</p>
+
+    <ol class="steps">
+      <li class="step" data-id="dev-1">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Registra tu iPhone (solo la primera vez)</p>
+            <p class="step-note">Abre el enlace/QR resultante desde Safari en el propio iPhone para registrar el UDID.</p>
+            <div class="cmd"><code>cd mobile
+eas device:create</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="dev-2">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Compila el dev client</p>
+            <p class="step-note">Build en la nube con las credenciales ya guardadas — capabilities completas (push incluido), sin líos de firma local. 10-20 min.</p>
+            <div class="cmd"><code>eas build --profile development --platform ios</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="dev-3">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Instala desde el QR</p>
+            <p class="step-note">Al terminar, la terminal (y expo.dev) dan un QR — escanéalo con la Cámara del iPhone e instala. Como un Ad Hoc, sin TestFlight.</p>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="dev-4">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Arranca Metro</p>
+            <p class="step-note">Déjalo corriendo en una terminal mientras trabajas — es lo que sirve el JS en caliente.</p>
+            <div class="cmd"><code>npx expo start --dev-client</code><button class="copy-btn" type="button">Copiar</button></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step" data-id="dev-5">
+        <div class="step-row">
+          <input type="checkbox" class="step-check" aria-label="Marcar paso completado">
+          <div class="step-body">
+            <p class="step-title">Abre la app en el iPhone</p>
+            <p class="step-note">Se conecta sola a Metro (misma WiFi que el Mac). Cada guardado recarga al instante.</p>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <footer>
+    Referencia rápida — para el detalle completo de cada paso (certificados, provisioning, TestFlight externo, solución de problemas), ver <code style="font-family:var(--font-mono)">mobile/README.md</code> en el repo.
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var STORAGE_KEY = "fluxia-build-guide-v1";
+
+    function loadState() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch (e) { return {}; }
+    }
+    function saveState(state) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+      catch (e) {}
+    }
+
+    var state = loadState();
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+    function updateProgress() {
+      ["prod", "dev"].forEach(function (track) {
+        var trackSteps = steps.filter(function (s) { return s.closest("[data-track]").dataset.track === track; });
+        var done = trackSteps.filter(function (s) { return s.classList.contains("done"); }).length;
+        var el = document.querySelector('[data-progress-for="' + track + '"]');
+        if (el) el.textContent = done + "/" + trackSteps.length;
+      });
+    }
+
+    steps.forEach(function (step) {
+      var id = step.dataset.id;
+      var checkbox = step.querySelector(".step-check");
+      if (state[id]) {
+        checkbox.checked = true;
+        step.classList.add("done");
+      }
+      checkbox.addEventListener("change", function () {
+        state[id] = checkbox.checked;
+        step.classList.toggle("done", checkbox.checked);
+        saveState(state);
+        updateProgress();
+      });
+    });
+    updateProgress();
+
+    document.getElementById("reset-btn").addEventListener("click", function () {
+      state = {};
+      saveState(state);
+      steps.forEach(function (step) {
+        step.classList.remove("done");
+        step.querySelector(".step-check").checked = false;
+      });
+      updateProgress();
+    });
+
+    document.querySelectorAll(".copy-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var code = btn.previousElementSibling.textContent;
+        navigator.clipboard.writeText(code).then(function () {
+          var original = btn.textContent;
+          btn.textContent = "Copiado";
+          btn.dataset.copied = "true";
+          setTimeout(function () {
+            btn.textContent = original;
+            btn.dataset.copied = "false";
+          }, 1400);
+        });
+      });
+    });
+  })();
+</script>

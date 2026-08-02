@@ -1,0 +1,15 @@
+/* ============================================================
+   Fluxia Health — Border Radius
+   Rounded, soft, friendly. Cards are generously curved.
+   ============================================================ */
+:root {
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;    /* inputs, small controls */
+  --radius-lg: 20px;    /* buttons, list items */
+  --radius-xl: 26px;    /* cards */
+  --radius-2xl: 32px;   /* large modules, sheets */
+  --radius-3xl: 40px;   /* hero panels */
+  --radius-pill: 999px; /* pills, segmented controls, FAB */
+  --radius-circle: 50%;
+}

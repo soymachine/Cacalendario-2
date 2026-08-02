@@ -1,0 +1,152 @@
+/* ============================================================
+   Fluxia Health — Color Tokens
+   Palette anchored on the Fluxia logo gradient:
+   yellow (#D4D62F) → green (#78AD89) → teal (#539D9F) → blue (#467CB3)
+   Calm, clinical-but-warm digital health.
+   ============================================================ */
+:root {
+  /* ---- Brand: Blue (primary — trust / action) ---- */
+  --blue-50:  #EEF4FB;
+  --blue-100: #DAE8F5;
+  --blue-200: #BAD3EC;
+  --blue-300: #90B7DD;
+  --blue-400: #6298CB;
+  --blue-500: #3C7DB8;
+  --blue-600: #316499;
+  --blue-700: #2A547D;
+  --blue-800: #274867;
+  --blue-900: #1F3A53;
+
+  /* ---- Brand: Green (secondary — wellbeing / positive) ---- */
+  --green-50:  #EDF7F1;
+  --green-100: #D6EEE0;
+  --green-200: #AFDDC3;
+  --green-300: #83C9A3;
+  --green-400: #60B187;
+  --green-500: #4DA078;
+  --green-600: #3E8463;
+  --green-700: #346B52;
+  --green-800: #2C5644;
+  --green-900: #244739;
+
+  /* ---- Brand: Teal / Cyan (accent — fluid / data) ---- */
+  --teal-50:  #ECF6F6;
+  --teal-100: #D4ECEC;
+  --teal-200: #A9DADB;
+  --teal-300: #79C5C6;
+  --teal-400: #57B0B2;
+  --teal-500: #4DA0A2;
+  --teal-600: #3E8385;
+  --teal-700: #346B6D;
+  --teal-800: #2C5759;
+  --teal-900: #244748;
+
+  /* ---- Brand: Lime / Soft Yellow (highlight — energy, sparing use) ---- */
+  --lime-50:  #FAFBE6;
+  --lime-100: #F4F6C3;
+  --lime-200: #E9EC8C;
+  --lime-300: #DCE05A;
+  --lime-400: #CFD33C;
+  --lime-500: #B4B833;
+  --lime-600: #8E9229;
+
+  /* ---- Brand: Violet (soft atmospheric only) ---- */
+  --violet-100: #E8E7F7;
+  --violet-200: #D0CEEF;
+  --violet-300: #B0ABE2;
+  --violet-400: #968FD6;
+  --violet-500: #8480C9;
+
+  /* ---- Neutrals (cool-warm ink, slight green cast) ---- */
+  --ink-900: #222A2E;
+  --ink-800: #2D3539;  /* text primary (matches wordmark) */
+  --ink-700: #3F484D;
+  --ink-600: #586269;  /* text secondary */
+  --ink-500: #717C82;
+  --ink-400: #95A0A5;  /* placeholder / tertiary */
+  --ink-300: #B9C2C5;
+  --ink-250: #CCD4D2;
+  --ink-200: #DCE2DF;  /* border */
+  --ink-150: #E6EAE6;
+  --ink-100: #EEF2EE;  /* subtle fill */
+  --ink-50:  #F4F7F3;  /* app background (pale green-white) */
+  --white:   #FFFFFF;
+
+  /* ---- Semantic status: Success / Warning / Error / Info ---- */
+  --success-50:  #EAF6EF;
+  --success-100: #D2EDDD;
+  --success-500: #3F9E6E;
+  --success-600: #338058;
+  --success-700: #2A6747;
+
+  --warning-50:  #FCF4E7;
+  --warning-100: #F8E6C7;
+  --warning-300: #EEBF77;
+  --warning-500: #E09F3C;
+  --warning-600: #C0832B;
+  --warning-700: #99681F;
+
+  --error-50:  #FBEDED;
+  --error-100: #F6DADA;
+  --error-300: #E6A1A1;
+  --error-500: #D26464;
+  --error-600: #BB4E4E;
+  --error-700: #9B4040;
+
+  --info-50:  var(--blue-50);
+  --info-500: var(--blue-500);
+  --info-700: var(--blue-700);
+
+  /* ============================================================
+     SEMANTIC ALIASES — use these in components, not raw scales.
+     ============================================================ */
+  --color-bg:               var(--ink-50);
+  --color-bg-elevated:      var(--white);
+  --color-surface:          var(--white);
+  --color-surface-2:        var(--ink-100);
+  --color-surface-sunken:   var(--ink-50);
+  --color-surface-glass:    rgba(255, 255, 255, 0.62);
+  --color-surface-glass-strong: rgba(255, 255, 255, 0.82);
+
+  --color-primary:          var(--blue-500);
+  --color-primary-hover:    var(--blue-600);
+  --color-primary-active:   var(--blue-700);
+  --color-primary-soft:     var(--blue-50);
+  --color-on-primary:       var(--white);
+
+  --color-secondary:        var(--green-500);
+  --color-secondary-hover:  var(--green-600);
+  --color-secondary-soft:   var(--green-50);
+  --color-on-secondary:     var(--white);
+
+  --color-accent:           var(--teal-500);
+  --color-accent-soft:      var(--teal-50);
+  --color-highlight:        var(--lime-400);
+
+  --color-success:          var(--success-500);
+  --color-success-soft:     var(--success-50);
+  --color-warning:          var(--warning-500);
+  --color-warning-soft:     var(--warning-50);
+  --color-error:            var(--error-500);
+  --color-error-soft:       var(--error-50);
+  --color-info:             var(--info-500);
+  --color-info-soft:        var(--info-50);
+
+  --text-primary:           var(--ink-800);
+  --text-secondary:         var(--ink-600);
+  --text-tertiary:          var(--ink-400);
+  --text-on-color:          var(--white);
+  --text-link:              var(--blue-600);
+
+  --border:                 var(--ink-200);
+  --border-soft:            var(--ink-150);
+  --border-strong:          var(--ink-300);
+  --border-focus:           var(--blue-500);
+
+  --disabled-bg:            var(--ink-100);
+  --disabled-border:        var(--ink-200);
+  --disabled-text:          var(--ink-400);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(60, 125, 184, 0.35);
+}

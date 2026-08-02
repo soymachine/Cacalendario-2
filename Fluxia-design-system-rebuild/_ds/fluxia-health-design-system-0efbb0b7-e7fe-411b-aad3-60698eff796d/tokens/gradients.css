@@ -1,0 +1,33 @@
+/* ============================================================
+   Fluxia Health — Gradients
+   Subtle, blurred, atmospheric. Derived from the logo.
+   Never decorative for its own sake.
+   ============================================================ */
+:root {
+  /* The signature brand gradient (logo flow): yellow→green→teal→blue */
+  --gradient-brand: linear-gradient(105deg, #D8DA56 0%, #78AD89 38%, #539D9F 64%, #3E78B5 100%); /* @kind color */
+  --gradient-brand-soft: linear-gradient(105deg, #E9EA8E 0%, #9AC4A6 40%, #7FB7B9 66%, #6E9BCB 100%); /* @kind color */
+
+  /* Vertical fluid gradient for hero/header panels */
+  --gradient-flow: linear-gradient(160deg, #5AA88B 0%, #4D9CA0 45%, #3E78B5 100%); /* @kind color */
+
+  /* Primary button / pill gradient (very subtle) */
+  --gradient-primary: linear-gradient(135deg, #4A8CC4 0%, #3C7DB8 100%); /* @kind color */
+  --gradient-secondary: linear-gradient(135deg, #5BB18A 0%, #4DA078 100%); /* @kind color */
+
+  /* Atmospheric tints — used as large blurred blobs behind content */
+  --gradient-atmosphere: radial-gradient(120% 90% at 12% 8%, rgba(120,173,137,0.22) 0%, rgba(120,173,137,0) 48%),
+                         radial-gradient(120% 90% at 96% 0%, rgba(207,211,60,0.16) 0%, rgba(207,211,60,0) 42%),
+                         radial-gradient(130% 110% at 88% 100%, rgba(62,120,181,0.18) 0%, rgba(62,120,181,0) 52%),
+                         radial-gradient(120% 120% at 50% 120%, rgba(148,143,214,0.12) 0%, rgba(148,143,214,0) 50%); /* @kind color */
+
+  /* Page background = pale green-white + the atmosphere wash */
+  --gradient-page: var(--gradient-atmosphere), linear-gradient(180deg, #F6F8F4 0%, #F2F6F1 100%); /* @kind color */
+
+  /* Glass card sheen (top-light translucent surface) */
+  --gradient-glass: linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.55) 100%); /* @kind color */
+
+  /* Data-viz friendly soft fills */
+  --gradient-data-green: linear-gradient(180deg, rgba(77,160,120,0.30) 0%, rgba(77,160,120,0.02) 100%); /* @kind color */
+  --gradient-data-blue:  linear-gradient(180deg, rgba(60,125,184,0.32) 0%, rgba(60,125,184,0.02) 100%); /* @kind color */
+}

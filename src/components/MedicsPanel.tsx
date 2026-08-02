@@ -7,6 +7,9 @@ import 'rc-switch/assets/index.css';
 import { PALETTES } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
 import { initSentry } from '../lib/sentry';
+import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
+import { tagColor } from '../lib/tags';
+import { filterEntriesByDateRange } from '../lib/entryFilters';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
@@ -130,16 +133,6 @@ const NAV_ITEMS: { id: Section; label: string; icon: React.ComponentType<{ size?
   { id: 'invitar', label: 'Invitar pacientes', icon: UserPlus },
   { id: 'config', label: 'Configuración', icon: Sliders },
 ];
-
-const TAG_COLORS: Record<string, string> = {};
-const TAG_PALETTE = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'];
-const tagColor = (tag: string) => {
-  if (!TAG_COLORS[tag]) {
-    let h = 0; for (const c of tag) h = (h * 31 + c.charCodeAt(0)) % TAG_PALETTE.length;
-    TAG_COLORS[tag] = TAG_PALETTE[h];
-  }
-  return TAG_COLORS[tag];
-};
 
 const ONBOARDING_STEPS = [
   {
@@ -1315,32 +1308,24 @@ export default function MedicsPanel() {
   const acceptedPatients = patients.filter(p => p.status === 'accepted');
   const pendingPatients = patients.filter(p => p.status === 'pending');
 
-  // ── Semáforo helper ──
-  const getSemaforo = (daysSinceLast: number | null, overrideGreen?: number, overrideRed?: number) => {
-    if (daysSinceLast === null) return { color: 'var(--fx-ink-300)', key: 'gray' as const };
-    const green = overrideGreen ?? doctorInfo?.semaforo_green ?? 1;
-    const red = overrideRed ?? doctorInfo?.semaforo_red ?? 3;
-    if (daysSinceLast <= green) return { color: 'var(--color-success)', key: 'green' as const };
-    if (daysSinceLast <= red) return { color: 'var(--color-warning)', key: 'orange' as const };
-    return { color: 'var(--color-error)', key: 'red' as const };
-  };
+  // ── Semáforo helper (pure logic lives in src/lib/semaforo.ts) ──
+  const doctorGreen = doctorInfo?.semaforo_green ?? 1;
+  const doctorRed = doctorInfo?.semaforo_red ?? 3;
 
-  const getSemaforoKey = (p: PatientLink): 'green' | 'orange' | 'red' | 'gray' => {
-    if (p.daysSinceLast === null) return 'gray';
-    const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : (doctorInfo?.semaforo_green ?? 1);
-    const pR = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : (doctorInfo?.semaforo_red ?? 3);
-    if (p.daysSinceLast <= pG) return 'green';
-    if (p.daysSinceLast <= pR) return 'orange';
-    return 'red';
+  const thresholdsFor = (p: PatientLink) =>
+    resolveSemaforoThresholds(doctorGreen, doctorRed, {
+      enabled: !!p.semaforo_override, green: p.semaforo_green_override, red: p.semaforo_red_override,
+    });
+
+  const keyFor = (p: PatientLink) => {
+    const { green, red } = thresholdsFor(p);
+    return getSemaforoKey(p.daysSinceLast, green, red);
   };
 
   // Effective semáforo thresholds for the currently selected patient
-  const effectiveGreen = selectedPatient?.semaforo_override
-    ? (selectedPatient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1)
-    : (doctorInfo?.semaforo_green ?? 1);
-  const effectiveRed = selectedPatient?.semaforo_override
-    ? (selectedPatient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3)
-    : (doctorInfo?.semaforo_red ?? 3);
+  const { green: effectiveGreen, red: effectiveRed } = selectedPatient
+    ? thresholdsFor(selectedPatient)
+    : { green: doctorGreen, red: doctorRed };
 
   // ── Initial loading ──
   if (initialLoading) {
@@ -1684,11 +1669,11 @@ export default function MedicsPanel() {
         {section === 'inicio' && (() => {
           const accepted = patients.filter(p => p.status === 'accepted');
           const pending = patients.filter(p => p.status === 'pending');
-          const semCounts = accepted.reduce((acc, p) => { const k = getSemaforoKey(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {} as Record<string, number>);
+          const semCounts = accepted.reduce((acc, p) => { const k = keyFor(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {} as Record<string, number>);
           const noDataWeek = accepted.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
           const attentionList = [...accepted].sort((a, b) => {
             const order: Record<string, number> = { red: 0, gray: 1, orange: 2, green: 3 };
-            const ka = getSemaforoKey(a), kb = getSemaforoKey(b);
+            const ka = keyFor(a), kb = keyFor(b);
             if (ka !== kb) return order[ka] - order[kb];
             const da = a.daysSinceLast ?? 9999, db = b.daysSinceLast ?? 9999;
             return ka === 'green' ? da - db : db - da;
@@ -1763,8 +1748,7 @@ export default function MedicsPanel() {
                       className="text-[11px] text-fx-text-tertiary bg-transparent border-none cursor-pointer p-0">Ver todos →</button>
                   </div>
                   {attentionList.map((p, i) => {
-                    const pG = p.semaforo_override ? (p.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
-                    const pR = p.semaforo_override ? (p.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
+                    const { green: pG, red: pR } = thresholdsFor(p);
                     const sem = getSemaforo(p.daysSinceLast, pG, pR);
                     return (
                       <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
@@ -1812,9 +1796,9 @@ export default function MedicsPanel() {
               {/* Semáforo quick-filter pills */}
               {(() => {
                 const acc = patients.filter(p => p.status === 'accepted');
-                const sc = acc.reduce((a, p) => { const k = getSemaforoKey(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
+                const sc = acc.reduce((a, p) => { const k = keyFor(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
                 const no7d = acc.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
-                const g = doctorInfo?.semaforo_green ?? 1, r = doctorInfo?.semaforo_red ?? 3;
+                const g = doctorGreen, r = doctorRed;
                 const pills: { key: typeof semaforoFilter; label: string; desc: string; count: number; color: string; soft: string }[] = [
                   { key: 'all',    label: 'Todos',        desc: 'Todos los pacientes vinculados',                                          count: acc.length,     color: 'var(--color-secondary)', soft: 'var(--color-secondary-soft)' },
                   { key: 'green',  label: 'Al día',       desc: `Último registro hace ≤ ${g} día${g === 1 ? '' : 's'}`,                   count: sc.green || 0,  color: 'var(--color-success)',   soft: 'var(--color-success-soft)' },
@@ -1927,7 +1911,7 @@ export default function MedicsPanel() {
                     if (q && !patientLabel(p).toLowerCase().includes(q) && !(p.patient_email || '').toLowerCase().includes(q)) return false;
                     if (tagFilter && !(p.tags || []).includes(tagFilter)) return false;
                     if (semaforoFilter === 'no7d') return p.status === 'accepted' && (p.daysSinceLast === null || p.daysSinceLast >= 7);
-                    if (semaforoFilter !== 'all') return p.status === 'accepted' && getSemaforoKey(p) === semaforoFilter;
+                    if (semaforoFilter !== 'all') return p.status === 'accepted' && keyFor(p) === semaforoFilter;
                     return true;
                   })
                   .sort((a, b) => {
@@ -1948,8 +1932,7 @@ export default function MedicsPanel() {
                 }
                 return displayed.map((patient, i) => {
                   const isAccepted = patient.status === 'accepted' && !patient.doctor_unlinked;
-                  const pGreen = patient.semaforo_override ? (patient.semaforo_green_override ?? doctorInfo?.semaforo_green ?? 1) : undefined;
-                  const pRed = patient.semaforo_override ? (patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3) : undefined;
+                  const { green: pGreen, red: pRed } = thresholdsFor(patient);
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
                   return (
                     <div key={patient.id} onClick={() => (isAccepted || patient.doctor_unlinked) && loadPatientDetail(patient)}
@@ -2508,11 +2491,7 @@ export default function MedicsPanel() {
 
               {/* Right column: entry list */}
               {(() => {
-                const filteredEntries = patientDetail.entries.filter(e => {
-                  if (entryFilterFrom && e.date < entryFilterFrom) return false;
-                  if (entryFilterTo && e.date > entryFilterTo) return false;
-                  return true;
-                });
+                const filteredEntries = filterEntriesByDateRange(patientDetail.entries, entryFilterFrom, entryFilterTo);
                 const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
                 const pagedEntries = filteredEntries.slice(entryPage * ENTRIES_PER_PAGE, (entryPage + 1) * ENTRIES_PER_PAGE);
                 const hasFilter = entryFilterFrom || entryFilterTo;

@@ -1,0 +1,18 @@
+/* ============================================================
+   Fluxia Health — Fonts
+   Lexend: designed to reduce reading fatigue and improve reading
+   proficiency — an ideal, accessibility-first choice for older
+   adults and users with low digital confidence. Soft, modern,
+   geometric-humanist; not an overused UI default.
+
+   NOTE: loaded from Google Fonts for reliability. For production,
+   self-host the woff2 binaries and replace this @import with local
+   @font-face rules. (Flagged to the user.)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Lexend', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Lexend', system-ui, -apple-system, sans-serif;
+  --font-numeric: 'Lexend', system-ui, sans-serif; /* use tabular-nums for tables */
+}
