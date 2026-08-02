@@ -7,7 +7,7 @@ import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
 import { saveDoctorConfig, saveGlobalTags, deleteGlobalTag, pickAndUploadCenterLogo } from '../lib/config';
 import { tagColor } from '../lib/tags';
-import { D } from '../lib/design';
+import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
 interface ConfigScreenProps {
   doctor: DoctorInfo;
@@ -81,7 +81,7 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
         <Text style={styles.title}>Configuración</Text>
         <Text style={styles.subtitle}>Ajusta tu perfil y los parámetros del semáforo</Text>
 

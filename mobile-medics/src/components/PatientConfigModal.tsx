@@ -8,7 +8,7 @@ import { savePatientConfig, savePatientTags } from '../lib/patientDetail';
 import { saveGlobalTags } from '../lib/config';
 import { tagColor } from '../lib/tags';
 import { ENTRY_TYPE_FIELDS } from '../lib/entryLabels';
-import { D } from '../lib/design';
+import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 
 interface PatientConfigModalProps {
   doctor: DoctorInfo;
@@ -93,7 +93,7 @@ export default function PatientConfigModal({ doctor, patient, onClose, onSaved, 
           <Pressable onPress={onClose}><Text style={styles.closeText}>×</Text></Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={[styles.content, centered(FORM_MAX_WIDTH)]}>
           <View style={styles.card}>
             <View style={styles.switchRow}>
               <Switch value={semaforoOverride} onValueChange={setSemaforoOverride} trackColor={{ true: D.primary, false: D.chipDark }} thumbColor="#fff" />

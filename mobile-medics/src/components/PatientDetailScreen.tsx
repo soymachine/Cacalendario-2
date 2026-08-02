@@ -16,7 +16,7 @@ import PatientBitacora from './PatientBitacora';
 import PatientConfigModal from './PatientConfigModal';
 import PatientProfileModal from './PatientProfileModal';
 import { UserCircleIcon, SlidersIcon, BellIcon } from './icons';
-import { D } from '../lib/design';
+import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
 interface PatientDetailScreenProps {
   doctor: DoctorInfo;
@@ -107,7 +107,7 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
       {loading || !detail ? (
         <View style={styles.loading}><ActivityIndicator color={D.primary} /></View>
       ) : (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
           <Text style={styles.patientName}>{patientLabel(patient)}</Text>
           {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
 

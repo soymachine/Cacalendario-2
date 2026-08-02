@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { completeGoogleDoctorProfile, type DoctorInfo } from '../lib/doctor';
-import { D } from '../lib/design';
+import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 
 interface GoogleProfileScreenProps {
   userId: string;
@@ -31,7 +31,7 @@ export default function GoogleProfileScreen({ userId, suggestedName, onComplete 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.container, centered(FORM_MAX_WIDTH)]} keyboardShouldPersistTaps="handled">
           <Text style={styles.heading}>Completa tu perfil</Text>
           <Text style={styles.subheading}>Un último paso para activar tu cuenta médica</Text>
 

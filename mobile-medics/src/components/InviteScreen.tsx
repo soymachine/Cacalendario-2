@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
 import { invitePatient, planLimitFor, FREE_PLAN_PATIENT_LIMIT, BETA_PLAN_PATIENT_LIMIT } from '../lib/invite';
-import { D } from '../lib/design';
+import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 
 interface InviteScreenProps {
   doctor: DoctorInfo;
@@ -38,7 +38,7 @@ export default function InviteScreen({ doctor, patients, onInvited }: InviteScre
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.container, centered(FORM_MAX_WIDTH)]} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Invitar paciente</Text>
           <Text style={styles.subtitle}>Envía una invitación por email a tu paciente</Text>
 

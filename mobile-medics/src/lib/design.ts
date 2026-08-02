@@ -21,3 +21,14 @@ export const D = {
   warningSoft: '#FCF4E7', // --fx-warning-50
   warningText: '#C0832B', // --fx-warning-600
 } as const;
+
+// Ancho máximo de contenido en pantallas grandes (iPad) — en iPhone el ancho
+// de pantalla siempre es menor, así que esto no cambia nada visualmente ahí.
+export const CONTENT_MAX_WIDTH = 720; // dashboards/listas
+export const FORM_MAX_WIDTH = 480; // formularios de una columna
+
+export const centered = (maxWidth: number) => ({
+  width: '100%' as const,
+  maxWidth,
+  alignSelf: 'center' as const,
+});
