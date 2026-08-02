@@ -127,9 +127,35 @@
   --text-primary:   var(--fx-ink-800);
   --text-secondary: var(--fx-ink-600);
   --text-tertiary:  var(--fx-ink-400);
+  --text-link:      var(--fx-blue-600);
 
   --border:      var(--fx-ink-200);
   --border-soft: var(--fx-ink-150);
+
+  /* ---- Unprefixed aliases (match upstream design-system token names,
+     kept in sync with Fluxia-design-system-rebuild) ---- */
+  --ink-800:     var(--fx-ink-800);
+  --lime-400:    var(--fx-lime-400);
+  --lime-500:    var(--fx-lime-500);
+  --success-500: var(--fx-success-500);
+  --warning-500: var(--fx-warning-500);
+  --error-500:   var(--fx-error-500);
+
+  /* ---- Typography scale ---- */
+  --font-display: 'Lexend', system-ui, -apple-system, sans-serif;
+  --text-body-lg: 1.125rem;  /* 18px */
+  --text-body:    1rem;      /* 16px */
+  --text-label:   0.875rem;  /* 14px */
+  --text-caption: 0.8125rem; /* 13px */
+  --leading-tight:   1.12;
+  --leading-snug:    1.28;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --card-pad-lg: 1.5rem;
 
   /* ---- Radius ---- */
   --radius-xs: 8px;
