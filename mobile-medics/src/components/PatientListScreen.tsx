@@ -5,7 +5,7 @@ import type { DoctorInfo } from '../lib/doctor';
 import { getSemaforo, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { patientLabel, patientInitial, type PatientLink } from '../lib/patients';
-import { D } from '../lib/design';
+import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
 type SemaforoFilter = 'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d';
 type SortBy = 'estado' | 'nombre';
@@ -73,6 +73,7 @@ export default function PatientListScreen({
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
+      <View style={[styles.body, centered(CONTENT_MAX_WIDTH)]}>
       <View style={styles.header}>
         <Text style={styles.title}>Mis pacientes</Text>
         <Text style={styles.subtitle}>{accepted.length} vinculados · {pending.length} pendientes</Text>
@@ -201,12 +202,14 @@ export default function PatientListScreen({
           );
         }}
       />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: D.bg },
+  body: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   title: { fontSize: 22, fontWeight: '900', color: D.text },
   subtitle: { fontSize: 12, color: D.textMuted, marginTop: 2 },

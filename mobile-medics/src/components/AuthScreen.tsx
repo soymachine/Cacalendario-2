@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
-import { D } from '../lib/design';
+import { D, FORM_MAX_WIDTH, centered as centerWidth } from '../lib/design';
 import { EyeIcon, GoogleIcon } from './icons';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'forgot-sent' | 'reset';
@@ -97,7 +97,7 @@ export default function AuthScreen() {
 
         <ScrollView
           style={styles.content}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[styles.contentContainer, centerWidth(FORM_MAX_WIDTH)]}
           keyboardShouldPersistTaps="handled"
         >
           {mode === 'reset' ? (

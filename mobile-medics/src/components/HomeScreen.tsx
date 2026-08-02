@@ -4,7 +4,7 @@ import type { DoctorInfo } from '../lib/doctor';
 import { getSemaforo, resolveSemaforoThresholds, type SemaforoKey } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { patientLabel, type PatientLink, type PracticeStats } from '../lib/patients';
-import { D } from '../lib/design';
+import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 import type { Tab } from './BottomNav';
 
 interface HomeScreenProps {
@@ -57,7 +57,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
         <Text style={styles.kicker}>HOLA,</Text>
         <Text style={styles.title}>Dr. {doctor.name.split(' ')[0]}</Text>
         <Text style={styles.subtitle}>
