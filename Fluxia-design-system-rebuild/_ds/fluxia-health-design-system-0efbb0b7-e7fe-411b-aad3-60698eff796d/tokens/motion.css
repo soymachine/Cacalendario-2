@@ -1,0 +1,34 @@
+/* ============================================================
+   Fluxia Health — Motion
+   Calm and gentle. Motion reassures, never startles.
+   Soft ease-out curves, no bounce, no aggressive spring.
+   Respect prefers-reduced-motion.
+   ============================================================ */
+:root {
+  --duration-instant: 80ms; /* @kind other */
+  --duration-fast: 140ms; /* @kind other */    /* hovers, small state changes */
+  --duration-base: 220ms; /* @kind other */    /* most transitions */
+  --duration-slow: 340ms; /* @kind other */    /* sheets, modals, entrances */
+  --duration-slower: 500ms; /* @kind other */  /* full-screen transitions */
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */     /* gentle settle */
+  --ease-in-out: cubic-bezier(0.45, 0, 0.25, 1); /* @kind other */
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1); /* @kind other */
+
+  --transition-colors: color var(--duration-fast) var(--ease-standard),
+                       background-color var(--duration-fast) var(--ease-standard),
+                       border-color var(--duration-fast) var(--ease-standard),
+                       box-shadow var(--duration-fast) var(--ease-standard); /* @kind other */
+  --transition-transform: transform var(--duration-base) var(--ease-out); /* @kind other */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms; /* @kind other */
+    --duration-fast: 0ms; /* @kind other */
+    --duration-base: 0ms; /* @kind other */
+    --duration-slow: 0ms; /* @kind other */
+    --duration-slower: 0ms; /* @kind other */
+  }
+}
