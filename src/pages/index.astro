@@ -177,8 +177,7 @@ const benefits = [
   .hero-fine { font-size: 13.5px; color: rgba(255,255,255,.75); margin-bottom: 10px; }
   .hero-tag { font-size: 16px; font-weight: 600; color: #fff; }
   .hero-visual { flex: 1 1 460px; min-width: 300px; }
-  .hero-visual .frame { border-radius: var(--radius-3xl); box-shadow: var(--shadow-xl); overflow: hidden; }
-  .hero-visual img { width: 100%; height: 420px; object-fit: cover; object-position: top; }
+  .hero-visual img { width: 100%; height: auto; display: block; }
 
   /* ————————————————————— Video */
   .video-frame { position: relative; border-radius: var(--radius-2xl); overflow: hidden; box-shadow: var(--shadow-xl); cursor: pointer; border: none; padding: 0; display: block; width: 100%; }
@@ -209,8 +208,7 @@ const benefits = [
   /* ————————————————————— Split (patient app / clinical panel) */
   .split { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 64px; align-items: center; }
   .split-visual { flex: 1 1 380px; min-width: 280px; display: flex; justify-content: center; }
-  .split-visual .frame { width: 280px; border-radius: var(--radius-3xl); box-shadow: var(--shadow-xl); overflow: hidden; border: 1px solid var(--border-soft); }
-  .split-visual img { width: 100%; height: 520px; object-fit: cover; object-position: top; }
+  .split-visual img { width: 100%; max-width: 300px; height: auto; display: block; filter: drop-shadow(0 24px 48px rgba(34,66,100,.16)); }
   .split-copy { flex: 1 1 460px; min-width: 300px; }
   .split-copy h2 { font-size: clamp(26px, 3vw, 34px); margin-bottom: 20px; }
   .split-copy p { font-size: 16.5px; line-height: var(--leading-relaxed); color: var(--text-secondary); margin-bottom: 16px; }
@@ -223,8 +221,7 @@ const benefits = [
   .legend-row { display: flex; align-items: center; gap: 14px; }
   .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
   .legend-row span:last-child { font-size: 15.5px; color: #fff; }
-  .split-reverse .split-visual .frame2 { border-radius: var(--radius-2xl); overflow: hidden; width: 100%; }
-  .split-reverse .split-visual img { height: 420px; }
+  .split-reverse .split-visual img { max-width: 100%; filter: none; }
 
   /* ————————————————————— Benefits grid */
   .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
@@ -385,9 +382,7 @@ const benefits = [
       <div class="hero-tag">Datos reales. Decisiones mejores.</div>
     </div>
     <div class="hero-visual">
-      <div class="frame">
-        <img src="/dashboard-screenshot.png" alt="Panel clínico de Fluxia — lista de pacientes con código de colores" />
-      </div>
+      <img src="/imgs/render.png" alt="Panel clínico de Fluxia en escritorio y app de registro en el móvil" />
     </div>
   </div>
 </section>
@@ -446,9 +441,7 @@ const benefits = [
 <section class="section-sunken">
   <div class="split">
     <div class="split-visual">
-      <div class="frame">
-        <img src="/app-screenshot.png" alt="App del paciente — pantalla de registro" />
-      </div>
+      <img src="/imgs/app_paciente.gif" alt="App del paciente — pantalla de registro" />
     </div>
     <div class="split-copy">
       <h2>Registrar su evolución debe ser sencillo</h2>
@@ -473,9 +466,7 @@ const benefits = [
       <p>Cuando necesitas más información, puedes acceder al historial individual y consultar en detalle la actividad registrada por cada paciente.</p>
     </div>
     <div class="split-visual">
-      <div class="frame2">
-        <img src="/dashboard-screenshot.png" alt="Panel clínico — lista de pacientes con código de colores" />
-      </div>
+      <img src="/imgs/web_pacientes@2x-8.png" alt="Panel clínico — lista de pacientes con código de colores" />
     </div>
   </div>
 </section>
