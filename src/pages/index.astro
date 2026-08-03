@@ -199,6 +199,8 @@ const benefits = [
   }
   .video-play svg { width: 30px; height: 30px; color: var(--color-primary); margin-left: 4px; }
 
+  #demo-modal::backdrop { background: rgba(0, 0, 0, 0.9); }
+
   /* ————————————————————— Steps */
   .steps-grid { max-width: 1160px; margin: 0 auto; }
   .steps-grid h2 { text-align: center; color: #fff; margin-bottom: 56px; }
@@ -736,7 +738,13 @@ const benefits = [
   // Video modal
   var demoModal = document.getElementById('demo-modal');
   var demoVideo = document.getElementById('demo-video');
+  var scrollLockY = 0;
   document.getElementById('video-open').addEventListener('click', function () {
+    scrollLockY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + scrollLockY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     demoModal.showModal();
     demoVideo.play();
   });
@@ -747,6 +755,11 @@ const benefits = [
   demoModal.addEventListener('close', function () {
     demoVideo.pause();
     demoVideo.currentTime = 0;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    window.scrollTo(0, scrollLockY);
   });
   function closeDemo() {
     demoModal.close();
