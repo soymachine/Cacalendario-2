@@ -707,9 +707,10 @@ const benefits = [
 <!-- ——————————————————————————— VIDEO MODAL -->
 <dialog id="demo-modal" style="border:none;border-radius:16px;padding:0;background:#000;width:calc(100vw - 48px);max-width:calc(100vw - 48px);box-shadow:0 40px 80px rgba(0,0,0,0.5)">
   <div style="position:relative;padding-bottom:56.25%;height:0">
-    <iframe id="demo-iframe" width="100%" height="100%" src="about:blank" data-src="https://player.vimeo.com/video/1196684941?autoplay=1"
-      frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen
-      style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px"></iframe>
+    <video id="demo-video" width="100%" height="100%" controls playsinline preload="none" poster="/dashboard-screenshot.png"
+      style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;background:#000">
+      <source src="/video/Marketing_Fluxia_Video.mp4" type="video/mp4" />
+    </video>
   </div>
   <button id="demo-close" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">✕</button>
 </dialog>
@@ -736,20 +737,20 @@ const benefits = [
 
   // Video modal
   var demoModal = document.getElementById('demo-modal');
-  var demoIframe = document.getElementById('demo-iframe');
+  var demoVideo = document.getElementById('demo-video');
   document.getElementById('video-open').addEventListener('click', function () {
-    demoIframe.src = demoIframe.dataset.src;
     demoModal.showModal();
+    demoVideo.play();
   });
   demoModal.addEventListener('click', function (e) {
     if (e.target === demoModal) closeDemo();
   });
   document.getElementById('demo-close').addEventListener('click', closeDemo);
+  demoModal.addEventListener('close', function () {
+    demoVideo.pause();
+    demoVideo.currentTime = 0;
+  });
   function closeDemo() {
-    var fresh = demoIframe.cloneNode(false);
-    fresh.src = 'about:blank';
-    demoIframe.replaceWith(fresh);
-    demoIframe = fresh;
     demoModal.close();
   }
 </script>
