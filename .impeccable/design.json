@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-03T08:34:50Z",
+  "title": "Design System: Fluxia Health — Marketing Site",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Trust Blue", "canonical": "#3C7DB8", "tonalRamp": ["#1F3A53", "#274867", "#2A547D", "#316499", "#3C7DB8", "#6298CB", "#90B7DD", "#BAD3EC"] },
+      "secondary": { "role": "secondary", "displayName": "Wellbeing Green", "canonical": "#4DA078", "tonalRamp": ["#244739", "#2C5644", "#346B52", "#3E8463", "#4DA078", "#60B187", "#83C9A3", "#AFDDC3"] },
+      "accent": { "role": "tertiary", "displayName": "Fluid Teal", "canonical": "#4DA0A2", "tonalRamp": ["#244748", "#2C5759", "#346B6D", "#3E8385", "#4DA0A2", "#57B0B2", "#79C5C6", "#A9DADB"] },
+      "highlight-lime": { "role": "accent", "displayName": "Warm Lime", "canonical": "#CFD33C", "tonalRamp": ["#8E9229", "#B4B833", "#CFD33C", "#DCE05A", "#E9EC8C", "#F4F6C3", "#FAFBE6", "#FDFEF2"] },
+      "success": { "role": "semantic-success", "displayName": "Semáforo Green", "canonical": "#3F9E6E", "tonalRamp": ["#2A6747", "#338058", "#3F9E6E", "#7BBE9B", "#A8D5BE", "#D2EDDD", "#EAF6EF", "#F5FBF7"] },
+      "warning": { "role": "semantic-warning", "displayName": "Semáforo Amber", "canonical": "#E09F3C", "tonalRamp": ["#99681F", "#C0832B", "#E09F3C", "#EEBF77", "#F4D5A2", "#F8E6C7", "#FCF4E7", "#FEFAF2"] },
+      "error": { "role": "semantic-error", "displayName": "Semáforo Red", "canonical": "#D26464", "tonalRamp": ["#9B4040", "#BB4E4E", "#D26464", "#E6A1A1", "#EFC0C0", "#F6DADA", "#FBEDED", "#FDF6F6"] },
+      "ink-900": { "role": "neutral", "displayName": "Ink 900", "canonical": "#222A2E" },
+      "ink-50": { "role": "neutral", "displayName": "Ink 50 (page base)", "canonical": "#F4F7F3" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero H1 only." },
+      "headline": { "displayName": "Headline", "purpose": "All section H2 titles." },
+      "body-lg": { "displayName": "Body Large", "purpose": "Lede paragraphs directly under a headline." },
+      "body": { "displayName": "Body", "purpose": "Standard paragraph copy." },
+      "label": { "displayName": "Label", "purpose": "Nav links, badges, footer headers." }
+    },
+    "shadows": [
+      { "name": "shadow-xs", "value": "0 1px 2px rgba(40, 64, 74, 0.05)", "purpose": "Barely-there separation." },
+      { "name": "shadow-sm", "value": "0 2px 8px rgba(40, 70, 80, 0.06)", "purpose": "Default card elevation." },
+      { "name": "shadow-md", "value": "0 6px 20px rgba(40, 70, 82, 0.08)", "purpose": "Mid-weight lift / hover states." },
+      { "name": "shadow-lg", "value": "0 16px 40px rgba(38, 70, 90, 0.10)", "purpose": "Video-play button, video thumbnail frame." },
+      { "name": "shadow-xl", "value": "0 24px 60px rgba(34, 66, 100, 0.12)", "purpose": "Hero/split photographic frames." },
+      { "name": "shadow-primary", "value": "0 10px 28px rgba(60, 125, 184, 0.28)", "purpose": "Primary CTA button and featured pricing card — the one colored shadow, marks the click target." }
+    ],
+    "motion": [
+      { "name": "transition-btn", "value": "background .14s, color .14s, border-color .14s, box-shadow .14s, transform .14s ease", "purpose": "Default button state transition." },
+      { "name": "transition-nav-shadow", "value": "box-shadow .2s ease", "purpose": "Nav shadow fade-in on scroll." },
+      { "name": "transition-faq-icon", "value": "transform .25s ease", "purpose": "FAQ plus-icon rotates 45° into an × on open." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "nav-collapse", "value": "900px" }
+    ],
+    "gradients": [
+      { "name": "gradient-brand", "value": "linear-gradient(105deg, #D8DA56 0%, #78AD89 38%, #539D9F 64%, #3E78B5 100%)", "purpose": "Signature logo-derived gradient; full-bleed section backgrounds only." },
+      { "name": "gradient-atmosphere", "value": "multi-stop radial wash (green/lime/blue/violet at low opacity)", "purpose": "Soft blurred wash behind the default page background." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA — pill shape, colored ambient shadow, used once per section as the primary action.",
+      "html": "<a class=\"ds-btn ds-btn-primary\" href=\"#pricing\">Pruébalo gratis</a>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: .55em; font-family: 'Lexend', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.01em; border: 1.5px solid transparent; border-radius: 999px; cursor: pointer; text-decoration: none; white-space: nowrap; min-height: 48px; padding: 0 22px; font-size: 1rem; transition: background .14s, color .14s, border-color .14s, box-shadow .14s, transform .14s ease; } .ds-btn-primary { background: #3C7DB8; color: #fff; box-shadow: 0 10px 28px rgba(60,125,184,0.28); } .ds-btn-primary:hover { background: #316499; } .ds-btn-primary:active { transform: scale(.98); background: #2A547D; }"
+    },
+    {
+      "name": "Ghost Inverse Button",
+      "kind": "button",
+      "refersTo": "button-ghost-inverse",
+      "description": "Secondary CTA used on top of the brand gradient.",
+      "html": "<a class=\"ds-btn ds-btn-ghost-inverse\" href=\"#video\">Ver cómo funciona</a>",
+      "css": ".ds-btn-ghost-inverse { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.6); box-shadow: none; display: inline-flex; align-items: center; justify-content: center; gap: .55em; font-family: 'Lexend', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.01em; border-radius: 999px; min-height: 48px; padding: 0 22px; font-size: 1rem; text-decoration: none; cursor: pointer; transition: background .14s, color .14s, border-color .14s, transform .14s ease; } .ds-btn-ghost-inverse:hover { background: #fff; color: #3C7DB8; border-color: #fff; } .ds-btn-ghost-inverse:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Benefit Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White surface card with a lime icon, used in the benefits grid.",
+      "html": "<div class=\"ds-card\"><svg class=\"ds-card-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z\"/></svg><h3>Seguimiento más fiable</h3><p>Los datos se registran cuando ocurren y permanecen organizados en un único lugar.</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border-radius: 26px; box-shadow: 0 2px 8px rgba(40,70,80,0.06); padding: 24px; font-family: 'Lexend', system-ui, sans-serif; } .ds-card-icon { width: 36px; height: 36px; color: #CFD33C; margin-bottom: 18px; display: block; } .ds-card h3 { font-size: 18px; font-weight: 600; margin: 0 0 8px; color: #2D3539; } .ds-card p { font-size: 15px; line-height: 1.65; color: #586269; margin: 0; }"
+    },
+    {
+      "name": "Featured Price Card",
+      "kind": "card",
+      "refersTo": "price-card-featured",
+      "description": "Recommended pricing tier — heavier border, colored shadow, floating pill badge.",
+      "html": "<div class=\"ds-price-card ds-price-card--featured\"><div class=\"ds-price-pill\">Más popular</div><div class=\"ds-price-name\">Profesional</div><div class=\"ds-price-amount\">29€</div><div class=\"ds-price-period\">/mes tras 30 días gratis</div></div>",
+      "css": ".ds-price-card { flex: 1 1 300px; max-width: 380px; background: #fff; border: 2px solid #3C7DB8; border-radius: 26px; padding: 44px 32px 36px; position: relative; box-shadow: 0 10px 28px rgba(60,125,184,0.28); font-family: 'Lexend', system-ui, sans-serif; } .ds-price-pill { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #3C7DB8; color: #fff; font-size: 12.5px; font-weight: 700; padding: 6px 16px; border-radius: 999px; white-space: nowrap; } .ds-price-name { font-size: 18px; font-weight: 600; color: #2D3539; margin-bottom: 14px; } .ds-price-amount { font-size: 40px; font-weight: 700; color: #2D3539; line-height: 1; } .ds-price-period { font-size: 13px; color: #95A0A5; }"
+    },
+    {
+      "name": "Nav Bar",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Sticky glass-blurred navigation, gains a soft shadow on scroll.",
+      "html": "<nav class=\"ds-nav\"><div class=\"ds-nav-inner\"><a class=\"ds-nav-logo\">Fluxia</a><div class=\"ds-nav-links\"><a href=\"#how\">Cómo funciona</a><a href=\"#pricing\">Precios</a></div><a class=\"ds-btn ds-btn-primary\" href=\"#pricing\">Empieza gratis</a></div></nav>",
+      "css": ".ds-nav { position: sticky; top: 0; background: rgba(255,255,255,0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); transition: box-shadow .2s ease; } .ds-nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; max-width: 1240px; margin: 0 auto; } .ds-nav-links { display: flex; align-items: center; gap: 32px; } .ds-nav-links a, .ds-nav-logo { font-family: 'Lexend', system-ui, sans-serif; font-size: 15.5px; font-weight: 700; color: #2D3539; text-decoration: none; } .ds-nav-links a:hover { color: #3C7DB8; } .ds-btn-primary { background: #3C7DB8; color: #fff; border-radius: 999px; min-height: 48px; padding: 0 22px; display: inline-flex; align-items: center; font-weight: 600; box-shadow: 0 10px 28px rgba(60,125,184,0.28); }"
+    },
+    {
+      "name": "FAQ Accordion Item",
+      "kind": "custom",
+      "refersTo": "faq-item",
+      "description": "Native details/summary accordion row with a rotating plus icon.",
+      "html": "<details class=\"ds-faq-item\"><summary><span>¿El paciente tiene que pagar?</span><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg></summary><p>No. La aplicación es gratuita para el paciente.</p></details>",
+      "css": ".ds-faq-item { border-bottom: 1px solid #E6EAE6; font-family: 'Lexend', system-ui, sans-serif; } .ds-faq-item summary { list-style: none; padding: 20px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; font-size: 16.5px; font-weight: 600; color: #2D3539; } .ds-faq-item summary::-webkit-details-marker { display: none; } .ds-faq-item summary svg { width: 20px; height: 20px; color: #3C7DB8; flex: none; transition: transform .25s ease; } .ds-faq-item[open] summary svg { transform: rotate(45deg); } .ds-faq-item p { font-size: 15.5px; line-height: 1.6; color: #586269; padding-bottom: 22px; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clinical Instrument Panel",
+    "overview": "Fluxia's marketing site reads like the trust surface of a precision instrument built for clinicians, not a consumer wellness app skinned in medical colors. The system pairs a confident, saturated brand gradient (the logo's yellow→green→teal→blue \"flow\") with a calm, editorial-white working surface — the gradient marks moments of arrival and conviction (hero, closing CTA, the \"how it works\" and \"semáforo\" narrative sections), while everything the clinician needs to evaluate calmly (benefits, security, pricing, FAQ) sits on flat white or barely-tinted sunken ground. Pill-shaped buttons, soft glass navigation, and a single warm lime accent for iconography keep the tone approachable rather than sterile, appropriate for an audience that includes elderly patients' caregivers as well as physicians.\n\nThe gradient itself is the signature asset and is treated as scarce: full-bleed section backgrounds and the primary CTA's colored shadow are its only expressions. Everywhere else, color does semantic work — blue for primary action and trust, green/teal as the calm \"everything is fine\" register, lime only as a small icon accent, and the red/amber/green semáforo triad reserved exclusively for patient-status meaning, never decoration.",
+    "keyCharacteristics": [
+      "One signature multi-stop brand gradient, used only for section backgrounds and the primary button's shadow — never as a text color or a small UI accent.",
+      "Generous corner radii and pill buttons throughout; no sharp corners anywhere in the system.",
+      "A single warm lime accent color for icons/emphasis, distinct from the cool blue/green/teal brand family.",
+      "Soft, cool-tinted shadows only (no black shadows) — depth reads as atmosphere, not weight.",
+      "The semáforo traffic-light triad (green/amber/red) is reserved for patient-monitoring status and must never be reused as generic UI color."
+    ],
+    "rules": [
+      { "name": "The Gradient Scarcity Rule", "body": "The full brand gradient appears only as a full-bleed section background or the primary button's colored ambient shadow. It never appears as a text fill, an icon color, or a small decorative accent.", "section": "colors" },
+      { "name": "The Semáforo Reservation Rule", "body": "Success green, warning amber, and error red are reserved exclusively for patient-monitoring status. Don't repurpose this triad for generic success/error UI states elsewhere on the marketing site.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Lime is the only warm color in the system and appears exclusively as a small icon/emphasis accent — never as a background, button, or large fill.", "section": "colors" },
+      { "name": "The Single-Family Rule", "body": "Don't introduce a second typeface for display moments. Hierarchy comes entirely from size, weight, and color within one Lexend family.", "section": "typography" },
+      { "name": "The Colored-Shadow-Means-Click Rule", "body": "The colored primary shadow only appears under the primary button and the featured pricing tier. Use a neutral shadow for anything that needs weight without implying 'primary action.'", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the brand gradient full-bleed and section-scoped; treat it as a background material, not a foreground color.",
+      "Do use pill radius (999px) for every button and badge without exception.",
+      "Do pair any element sitting on the brand gradient with white or near-white text/icons at reduced opacity for secondary copy.",
+      "Do reserve the colored primary shadow for the one primary action per section/page state.",
+      "Do keep the semáforo green/amber/red triad legible and undiluted wherever patient status is shown."
+    ],
+    "donts": [
+      "Don't introduce a second typeface; Lexend carries the entire hierarchy.",
+      "Don't use sharp (0px) corners anywhere.",
+      "Don't use neutral black shadows; all elevation is cool-tinted blue/teal-gray.",
+      "Don't repurpose lime as a background fill or button color.",
+      "Don't imply diagnostic capability in imagery or copy near components."
+    ]
+  }
+}
