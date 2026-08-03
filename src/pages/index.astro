@@ -273,6 +273,10 @@ const benefits = [
     max-width: 380px; border: 2px solid var(--color-primary); padding: 44px 32px 36px;
     position: relative; box-shadow: var(--shadow-primary);
   }
+  .price-card--trial {
+    background: var(--color-surface-sunken); border-style: dashed;
+  }
+  .price-card--trial .price-name { color: var(--text-secondary); }
   .price-pill {
     position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
     background: var(--color-primary); color: #fff; font-size: 12.5px; font-weight: 700;
@@ -300,6 +304,10 @@ const benefits = [
   .faq-item summary svg { width: 20px; height: 20px; color: var(--color-primary); flex: none; transition: transform .25s ease; }
   .faq-item[open] summary svg { transform: rotate(45deg); }
   .faq-item p { font-size: 15.5px; line-height: 1.6; color: var(--text-secondary); padding-bottom: 22px; margin: 0; }
+  .faq-item p:has(+ .mini-legend) { padding-bottom: 12px; }
+  .mini-legend { display: flex; flex-wrap: wrap; gap: 16px; padding-bottom: 22px; }
+  .mini-legend-row { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .mini-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 
   /* ————————————————————— Final CTA */
   .final-cta { text-align: center; color: #fff; }
@@ -542,11 +550,11 @@ const benefits = [
     <h2 style="font-size:clamp(26px,3vw,34px)">Planes simples y transparentes</h2>
     <p class="pricing-sub">30 días gratis en todos los planes. Sin tarjeta de crédito.</p>
     <div class="pricing-grid">
-      <div class="price-card">
+      <div class="price-card price-card--trial">
         <div class="price-name">Inicio</div>
         <div class="price-amount">0€</div>
-        <div class="price-period">30 días gratis</div>
-        <p class="price-desc">Para empezar a conocer Fluxia sin compromiso.</p>
+        <div class="price-period">Prueba de 30 días, luego pasa a un plan de pago</div>
+        <p class="price-desc">Para empezar a conocer Fluxia sin compromiso antes de elegir un plan.</p>
         <div class="price-hr"></div>
         <div class="price-features">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />1 usuario</div>
@@ -611,6 +619,13 @@ const benefits = [
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.plus} />
         </summary>
         <p>{a}</p>
+        {q === '¿Puedo ver todos mis pacientes desde un mismo lugar?' && (
+          <div class="mini-legend">
+            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--success-500)"></span>Al día</span>
+            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--warning-500)"></span>Se demora</span>
+            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--error-500)"></span>Requiere atención</span>
+          </div>
+        )}
       </details>
     ))}
   </div>
