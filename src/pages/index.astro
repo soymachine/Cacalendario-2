@@ -82,7 +82,7 @@ const benefits = [
 
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; overflow-x: hidden; }
+  html, body { margin: 0; padding: 0; overflow-x: clip; }
   body {
     font-family: var(--font-sans);
     background: var(--gradient-page);
@@ -146,6 +146,7 @@ const benefits = [
   .nav-links { display: flex; align-items: center; gap: 32px; }
   .nav-links a { font-size: 15.5px; font-weight: 700; color: var(--ink-800); }
   .nav-links a:hover { color: var(--color-primary); }
+  .nav-cta { display: flex; align-items: center; gap: 10px; }
   .nav-toggle {
     display: none; background: none; border: none; padding: 8px; color: var(--text-primary);
   }
@@ -155,12 +156,12 @@ const benefits = [
   .nav.is-open .nav-mobile { display: flex; }
 
   @media (max-width: 900px) {
-    .nav-links, .nav-inner > .btn { display: none; }
+    .nav-links, .nav-cta { display: none; }
     .nav-toggle { display: block; }
   }
 
   /* ————————————————————— Sections */
-  section { padding: 96px 24px; }
+  section { padding: 50px 24px; }
   .section-brand { background: var(--gradient-brand); }
   .section-sunken { background: var(--color-surface-sunken); }
   .section-surface { background: var(--color-surface); }
@@ -176,8 +177,8 @@ const benefits = [
   .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
   .hero-fine { font-size: 13.5px; color: rgba(255,255,255,.75); margin-bottom: 10px; }
   .hero-tag { font-size: 16px; font-weight: 600; color: #fff; }
-  .hero-visual { flex: 1 1 460px; min-width: 300px; }
-  .hero-visual img { width: 100%; height: auto; display: block; }
+  .hero-visual { flex: 1 1 460px; min-width: 300px; display: flex; justify-content: center; }
+  .hero-visual img { width: 125%; max-width: 125%; height: auto; display: block; }
 
   /* ————————————————————— Video */
   .video-frame { position: relative; border-radius: var(--radius-2xl); overflow: hidden; cursor: pointer; border: none; padding: 0; display: block; width: 100%; }
@@ -257,7 +258,7 @@ const benefits = [
   .specialty { background: rgba(255,255,255,.14); border-radius: var(--radius-lg); padding: 24px 12px; flex: 1 1 160px; max-width: 200px; }
   .specialty svg { width: 32px; height: 32px; color: #fff; margin: 0 auto 12px; display: block; }
   .specialty div { font-size: 13.5px; font-weight: 600; color: #fff; }
-  .specialties-note { font-size: 16px; color: rgba(255,255,255,.8); max-width: 1100px; margin: 50px auto 0; text-align: center; }
+  .specialties-note { font-size: 16px; color: rgba(255,255,255,.8); max-width: 1100px; margin: 25px auto; text-align: center; }
 
   /* ————————————————————— Pricing */
   .pricing-wrap { max-width: 1180px; margin: 0 auto; }
@@ -352,7 +353,10 @@ const benefits = [
       <a href="#pricing">Precios</a>
       <a href="#faq">Preguntas frecuentes</a>
     </div>
-    <a class="btn" href="#pricing">Empieza gratis</a>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="/user">Paciente</a>
+      <a class="btn" href="/medics">Profesional</a>
+    </div>
     <button class="nav-toggle" id="nav-toggle" aria-label="Menú" aria-expanded="false">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
     </button>
@@ -363,7 +367,8 @@ const benefits = [
     <a href="#security">Seguridad</a>
     <a href="#pricing">Precios</a>
     <a href="#faq">Preguntas frecuentes</a>
-    <a class="btn btn-block" href="#pricing">Empieza gratis</a>
+    <a class="btn btn-ghost btn-block" href="/user">Paciente</a>
+    <a class="btn btn-block" href="/medics">Profesional</a>
   </div>
 </nav>
 
