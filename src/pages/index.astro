@@ -144,14 +144,21 @@ const benefits = [
   .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; }
   .nav-logo img { height: 44px; width: auto; }
   .nav-links { display: flex; align-items: center; gap: 32px; }
-  .nav-links a { font-size: 15.5px; font-weight: 700; color: var(--ink-800); }
+  .nav-links a { position: relative; font-size: 15.5px; font-weight: 700; color: var(--ink-800); }
   .nav-links a:hover { color: var(--color-primary); }
+  .nav-links a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px;
+    background: currentColor; transform: scaleX(0); transform-origin: left;
+    transition: transform .25s var(--ease-out, ease);
+  }
+  .nav-links a:hover::after { transform: scaleX(1); }
   .nav-cta { display: flex; align-items: center; gap: 10px; }
   .nav-toggle {
     display: none; background: none; border: none; padding: 8px; color: var(--text-primary);
   }
   .nav-mobile { display: none; flex-direction: column; gap: 2px; padding: 8px 24px 20px; border-top: 1px solid var(--border-soft); }
-  .nav-mobile a { padding: 12px 0; font-size: 16px; font-weight: 500; color: var(--text-primary); }
+  .nav-mobile a { position: relative; padding: 12px 0; font-size: 16px; font-weight: 500; color: var(--text-primary); transition: background-color .2s ease, color .2s ease; }
+  .nav-mobile a:hover { color: var(--color-primary); background-color: var(--color-primary-soft); }
   .nav-mobile .btn { margin-top: 8px; }
   .nav.is-open .nav-mobile { display: flex; }
 
@@ -291,6 +298,13 @@ const benefits = [
   .price-features div { display: flex; gap: 10px; font-size: 14.5px; color: var(--text-primary); }
   .price-features svg { width: 18px; height: 18px; color: var(--color-primary); flex: none; }
   .pricing-contact { text-align: center; font-size: 14px; color: var(--text-tertiary); margin-top: 40px; }
+  .pricing-contact a { position: relative; }
+  .pricing-contact a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1.5px;
+    background: currentColor; transform: scaleX(0); transform-origin: left;
+    transition: transform .25s var(--ease-out, ease);
+  }
+  .pricing-contact a:hover::after { transform: scaleX(1); }
 
   /* ————————————————————— FAQ */
   .faq-wrap { max-width: 750px; margin: 0 auto; }
@@ -303,6 +317,7 @@ const benefits = [
   .faq-item summary::-webkit-details-marker { display: none; }
   .faq-item summary svg { width: 20px; height: 20px; color: var(--color-primary); flex: none; transition: transform .25s ease; }
   .faq-item[open] summary svg { transform: rotate(45deg); }
+  .faq-answer { height: 0; overflow: hidden; }
   .faq-item p { font-size: 15.5px; line-height: 1.6; color: var(--text-secondary); padding-bottom: 22px; margin: 0; }
   .faq-item p:has(+ .mini-legend) { padding-bottom: 12px; }
   .mini-legend { display: flex; flex-wrap: wrap; gap: 16px; padding-bottom: 22px; }
@@ -327,7 +342,13 @@ const benefits = [
   .footer-col { flex: 1 1 160px; min-width: 160px; }
   .footer-col h5 { font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 16px; }
   .footer-col-links { display: flex; flex-direction: column; gap: 11px; }
-  .footer-col-links a { font-size: 14.5px; color: var(--text-secondary); }
+  .footer-col-links a { position: relative; display: inline-block; width: fit-content; font-size: 14.5px; color: var(--text-secondary); }
+  .footer-col-links a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1.5px;
+    background: currentColor; transform: scaleX(0); transform-origin: left;
+    transition: transform .25s var(--ease-out, ease);
+  }
+  .footer-col-links a:hover::after { transform: scaleX(1); }
   .footer-hr { height: 1px; background: var(--border-soft); margin-bottom: 24px; }
   .footer-legal { font-size: 12.5px; color: var(--text-tertiary); text-align: center; }
 
@@ -618,14 +639,16 @@ const benefits = [
           <span>{q}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.plus} />
         </summary>
-        <p>{a}</p>
-        {q === '¿Puedo ver todos mis pacientes desde un mismo lugar?' && (
-          <div class="mini-legend">
-            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--success-500)"></span>Al día</span>
-            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--warning-500)"></span>Se demora</span>
-            <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--error-500)"></span>Requiere atención</span>
-          </div>
-        )}
+        <div class="faq-answer">
+          <p>{a}</p>
+          {q === '¿Puedo ver todos mis pacientes desde un mismo lugar?' && (
+            <div class="mini-legend">
+              <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--success-500)"></span>Al día</span>
+              <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--warning-500)"></span>Se demora</span>
+              <span class="mini-legend-row"><span class="mini-legend-dot" style="background:var(--error-500)"></span>Requiere atención</span>
+            </div>
+          )}
+        </div>
       </details>
     ))}
   </div>
@@ -729,6 +752,164 @@ const benefits = [
     demoIframe = fresh;
     demoModal.close();
   }
+</script>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  gsap.registerPlugin(ScrollTrigger);
+
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    gsap.defaults({ ease: 'power2.out', duration: 0.8 });
+
+    // ————— Hero entrance
+    const heroAnimated = [
+      '.hero-copy .badge', '.hero-copy h1', '.hero-copy .lede',
+      '.hero-cta .btn', '.hero-fine', '.hero-tag', '.hero-visual img',
+    ];
+    // Reset any leftover inline styles from a previous run (e.g. hot reload) before animating.
+    gsap.set(heroAnimated, { clearProps: 'all' });
+
+    // Explicit start state for every hero element (avoids relying on from()'s
+    // immediateRender timing inside a chained timeline, which was leaving the
+    // buttons at full opacity instead of fading in).
+    gsap.set('.hero-copy .badge', { autoAlpha: 0, y: 16 });
+    gsap.set('.hero-copy h1', { autoAlpha: 0, y: 24 });
+    gsap.set('.hero-copy .lede', { autoAlpha: 0, y: 20 });
+    gsap.set('.hero-cta .btn', { autoAlpha: 0, y: 16 });
+    gsap.set(['.hero-fine', '.hero-tag'], { autoAlpha: 0, y: 12 });
+    gsap.set('.hero-visual img', { autoAlpha: 0, y: 28, scale: 0.97 });
+
+    const heroTl = gsap.timeline({
+      delay: 0.1,
+      onComplete: () => gsap.set(heroAnimated, { clearProps: 'all' }),
+    });
+    heroTl
+      .to('.hero-copy .badge', { autoAlpha: 1, y: 0, duration: 0.6 })
+      .to('.hero-copy h1', { autoAlpha: 1, y: 0 }, '-=0.35')
+      .to('.hero-copy .lede', { autoAlpha: 1, y: 0 }, '-=0.5')
+      .to('.hero-cta .btn', { autoAlpha: 1, y: 0, stagger: 0.1 }, '-=0.45')
+      .to(['.hero-fine', '.hero-tag'], { autoAlpha: 1, y: 0, stagger: 0.08 }, '-=0.35')
+      .to('.hero-visual img', { autoAlpha: 1, y: 0, scale: 1, duration: 0.9 }, '-=0.7');
+
+    // ————— FAQ answers: animate open/close instead of the instant native <details> toggle
+    document.querySelectorAll('.faq-item').forEach((item) => {
+      const summary = item.querySelector('summary');
+      const answer = item.querySelector('.faq-answer');
+      if (!summary || !answer) return;
+      gsap.set(answer, { height: 0 });
+      summary.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (item.hasAttribute('open')) {
+          gsap.to(answer, {
+            height: 0,
+            duration: 0.35,
+            ease: 'power2.inOut',
+            onComplete: () => item.removeAttribute('open'),
+          });
+        } else {
+          item.setAttribute('open', '');
+          gsap.fromTo(
+            answer,
+            { height: 0 },
+            {
+              height: answer.scrollHeight,
+              duration: 0.4,
+              ease: 'power2.inOut',
+              onComplete: () => gsap.set(answer, { height: 'auto' }),
+            }
+          );
+        }
+      });
+    });
+
+    // ————— Generic scroll reveal for section headings & standalone blocks
+    gsap.utils.toArray('.center, .steps-grid > h2, .security-copy, .specialties-wrap > h2, .specialties-wrap > p, .pricing-wrap h2, .pricing-sub, .faq-wrap h2, .final-cta-inner').forEach((el) => {
+      gsap.from(el as Element, {
+        autoAlpha: 0,
+        y: 28,
+        scrollTrigger: { trigger: el as Element, start: 'top 85%', toggleActions: 'play none none reverse' },
+      });
+    });
+
+    // ————— Video frame
+    gsap.from('.video-frame', {
+      autoAlpha: 0,
+      y: 32,
+      scale: 0.98,
+      scrollTrigger: { trigger: '.video-frame', start: 'top 82%', toggleActions: 'play none none reverse' },
+    });
+
+    // ————— Steps (staggered)
+    ScrollTrigger.batch('.step', {
+      start: 'top 85%',
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.12, overwrite: true }),
+      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 24 }),
+    });
+    gsap.set('.step', { autoAlpha: 0, y: 24 });
+
+    // ————— Split sections (visual + copy from opposite sides)
+    document.querySelectorAll('.split').forEach((split) => {
+      const visual = split.querySelector('.split-visual');
+      const copy = split.querySelector('.split-copy');
+      const fromLeft = split.querySelector('.split-visual') === split.firstElementChild;
+      gsap.from(visual, {
+        autoAlpha: 0,
+        x: fromLeft ? -40 : 40,
+        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none reverse' },
+      });
+      gsap.from(copy, {
+        autoAlpha: 0,
+        x: fromLeft ? 40 : -40,
+        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none reverse' },
+      });
+    });
+
+    // ————— Benefit cards (staggered)
+    gsap.set('.grid-cards .card', { autoAlpha: 0, y: 24 });
+    ScrollTrigger.batch('.grid-cards .card', {
+      start: 'top 88%',
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.1, overwrite: true }),
+      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 24 }),
+    });
+
+    // ————— Security points (staggered)
+    gsap.from('.security-points > div', {
+      autoAlpha: 0,
+      y: 14,
+      stagger: 0.08,
+      scrollTrigger: { trigger: '.security-points', start: 'top 85%', toggleActions: 'play none none reverse' },
+    });
+    gsap.from('.security-icon .circle', {
+      autoAlpha: 0,
+      scale: 0.85,
+      scrollTrigger: { trigger: '.security-icon', start: 'top 82%', toggleActions: 'play none none reverse' },
+    });
+
+    // ————— Specialty tiles (staggered)
+    gsap.set('.specialty', { autoAlpha: 0, y: 18 });
+    ScrollTrigger.batch('.specialty', {
+      start: 'top 90%',
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.06, overwrite: true }),
+      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 18 }),
+    });
+
+    // ————— Pricing cards (staggered)
+    gsap.from('.price-card', {
+      autoAlpha: 0,
+      y: 28,
+      stagger: 0.1,
+      scrollTrigger: { trigger: '.pricing-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+    });
+
+    // ————— FAQ items (staggered)
+    gsap.set('.faq-item', { autoAlpha: 0, y: 16 });
+    ScrollTrigger.batch('.faq-item', {
+      start: 'top 90%',
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.06, overwrite: true }),
+      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 16 }),
+    });
+  });
 </script>
 
 </body>
