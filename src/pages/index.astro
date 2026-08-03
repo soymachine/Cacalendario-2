@@ -828,7 +828,7 @@ const benefits = [
       gsap.from(el as Element, {
         autoAlpha: 0,
         y: 28,
-        scrollTrigger: { trigger: el as Element, start: 'top 85%', toggleActions: 'play none none reverse' },
+        scrollTrigger: { trigger: el as Element, start: 'top 85%', toggleActions: 'play none none none', once: true },
       });
     });
 
@@ -837,14 +837,14 @@ const benefits = [
       autoAlpha: 0,
       y: 32,
       scale: 0.98,
-      scrollTrigger: { trigger: '.video-frame', start: 'top 82%', toggleActions: 'play none none reverse' },
+      scrollTrigger: { trigger: '.video-frame', start: 'top 82%', toggleActions: 'play none none none', once: true },
     });
 
     // ————— Steps (staggered)
     ScrollTrigger.batch('.step', {
       start: 'top 85%',
+      once: true,
       onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.12, overwrite: true }),
-      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 24 }),
     });
     gsap.set('.step', { autoAlpha: 0, y: 24 });
 
@@ -856,12 +856,12 @@ const benefits = [
       gsap.from(visual, {
         autoAlpha: 0,
         x: fromLeft ? -40 : 40,
-        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none reverse' },
+        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none none', once: true },
       });
       gsap.from(copy, {
         autoAlpha: 0,
         x: fromLeft ? 40 : -40,
-        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none reverse' },
+        scrollTrigger: { trigger: split, start: 'top 78%', toggleActions: 'play none none none', once: true },
       });
     });
 
@@ -869,8 +869,8 @@ const benefits = [
     gsap.set('.grid-cards .card', { autoAlpha: 0, y: 24 });
     ScrollTrigger.batch('.grid-cards .card', {
       start: 'top 88%',
+      once: true,
       onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.1, overwrite: true }),
-      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 24 }),
     });
 
     // ————— Security points (staggered)
@@ -878,20 +878,20 @@ const benefits = [
       autoAlpha: 0,
       y: 14,
       stagger: 0.08,
-      scrollTrigger: { trigger: '.security-points', start: 'top 85%', toggleActions: 'play none none reverse' },
+      scrollTrigger: { trigger: '.security-points', start: 'top 85%', toggleActions: 'play none none none', once: true },
     });
     gsap.from('.security-icon .circle', {
       autoAlpha: 0,
       scale: 0.85,
-      scrollTrigger: { trigger: '.security-icon', start: 'top 82%', toggleActions: 'play none none reverse' },
+      scrollTrigger: { trigger: '.security-icon', start: 'top 82%', toggleActions: 'play none none none', once: true },
     });
 
     // ————— Specialty tiles (staggered)
     gsap.set('.specialty', { autoAlpha: 0, y: 18 });
     ScrollTrigger.batch('.specialty', {
       start: 'top 90%',
+      once: true,
       onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.06, overwrite: true }),
-      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 18 }),
     });
 
     // ————— Pricing cards (staggered)
@@ -899,15 +899,15 @@ const benefits = [
       autoAlpha: 0,
       y: 28,
       stagger: 0.1,
-      scrollTrigger: { trigger: '.pricing-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+      scrollTrigger: { trigger: '.pricing-grid', start: 'top 85%', toggleActions: 'play none none none', once: true },
     });
 
     // ————— FAQ items (staggered)
     gsap.set('.faq-item', { autoAlpha: 0, y: 16 });
     ScrollTrigger.batch('.faq-item', {
       start: 'top 90%',
+      once: true,
       onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.06, overwrite: true }),
-      onLeaveBack: (els) => gsap.set(els, { autoAlpha: 0, y: 16 }),
     });
   });
 </script>
