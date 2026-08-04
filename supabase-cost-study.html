@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Fluxia — Supabase en escala: coste y alternativas</title>
+<style>
+  :root {
+    --paper: #F1F4F3;
+    --paper-raised: #FFFFFF;
+    --ink: #1A2321;
+    --ink-soft: #52605C;
+    --ink-faint: #7C8985;
+    --line: #D7DEDB;
+    --line-strong: #B9C4C0;
+    --accent: #12876F;
+    --accent-ink: #0B5C4C;
+    --accent-soft: #DCEEE9;
+    --warn: #C4711F;
+    --warn-soft: #F6E7D6;
+    --bad: #A8433A;
+    --bad-soft: #F5DFDC;
+    --good: #2E7D4F;
+    --good-soft: #DFEFE3;
+    --auto: #5C6BC0;
+    --auto-soft: #E4E6F7;
+    --shadow: 0 1px 2px rgba(26,35,33,.06), 0 8px 24px rgba(26,35,33,.06);
+    --radius: 6px;
+    --serif: Iowan Old Style, "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+  }
+  :root[data-theme="dark"] {
+    --paper: #12181A;
+    --paper-raised: #182120;
+    --ink: #E7ECEA;
+    --ink-soft: #9FB0AC;
+    --ink-faint: #6C7A76;
+    --line: #2B3634;
+    --line-strong: #3B4744;
+    --accent: #2FB89C;
+    --accent-ink: #7FDCC6;
+    --accent-soft: #1A332E;
+    --warn: #DB9C55;
+    --warn-soft: #3A2C1C;
+    --bad: #E08479;
+    --bad-soft: #3A2320;
+    --good: #5FBE86;
+    --good-soft: #1D3324;
+    --auto: #8C9AE8;
+    --auto-soft: #232645;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12181A;
+      --paper-raised: #182120;
+      --ink: #E7ECEA;
+      --ink-soft: #9FB0AC;
+      --ink-faint: #6C7A76;
+      --line: #2B3634;
+      --line-strong: #3B4744;
+      --accent: #2FB89C;
+      --accent-ink: #7FDCC6;
+      --accent-soft: #1A332E;
+      --warn: #DB9C55;
+      --warn-soft: #3A2C1C;
+      --bad: #E08479;
+      --bad-soft: #3A2320;
+      --good: #5FBE86;
+      --good-soft: #1D3324;
+      --auto: #8C9AE8;
+      --auto-soft: #232645;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 56px 24px 120px;
+  }
+
+  header.report-head {
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin-bottom: 14px;
+  }
+  h1.title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 34px;
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .subtitle {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 18px;
+  }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 18px;
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint);
+  }
+  .meta-row b { color: var(--ink-soft); font-weight: 600; }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: -0.005em;
+    margin: 56px 0 6px;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  h2 .num { color: var(--ink-faint); font-weight: 400; margin-right: 10px; font-family: var(--mono); font-size: 20px; }
+  .section-dek {
+    color: var(--ink-soft);
+    font-size: 15.5px;
+    max-width: 66ch;
+    margin: 0 0 24px;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 15.5px;
+    margin: 30px 0 10px;
+    color: var(--ink);
+  }
+  p { margin: 0 0 15px; max-width: 68ch; }
+  p.wide { max-width: none; }
+  a { color: var(--accent-ink); text-decoration-color: color-mix(in oklab, var(--accent-ink) 40%, transparent); text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+  strong { font-weight: 700; }
+  ul, ol { margin: 0 0 15px; padding-left: 22px; max-width: 66ch; }
+  li { margin-bottom: 6px; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--paper-raised); border: 1px solid var(--line); padding: .1em .35em; border-radius: 4px; }
+
+  /* ---- Callouts (no accent rail — full tinted block with an eyebrow label) ---- */
+  .callout {
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin: 24px 0;
+  }
+  .callout .callout-label {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent-ink); margin-bottom: 8px;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { background: var(--warn-soft); }
+  .callout.warn .callout-label { color: color-mix(in oklab, var(--warn) 70%, black 25%); }
+  :root[data-theme="dark"] .callout.warn .callout-label,
+  @media (prefers-color-scheme: dark) { .callout.warn .callout-label { color: var(--warn); } }
+
+  /* ---- Executive summary ---- */
+  .tldr {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 26px 26px 22px;
+    margin: 8px 0 12px;
+  }
+  .tldr .callout-label { font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .tldr .verdict { font-family: var(--serif); font-size: 20px; line-height: 1.4; margin: 0 0 18px; color: var(--ink); max-width: none; }
+  .tldr .verdict b { color: var(--accent-ink); }
+  .stat-row { display: flex; gap: 28px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line); }
+  .stat { min-width: 140px; }
+  .stat .n { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.1; }
+  .stat .n small { font-size: 14px; font-weight: 500; color: var(--ink-faint); }
+  .stat .l { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* ---- Tables ---- */
+  .table-wrap { overflow-x: auto; margin: 18px 0 26px; border: 1px solid var(--line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 480px; }
+  caption { text-align: left; font-size: 12.5px; color: var(--ink-faint); padding: 10px 14px 0; caption-side: top; font-family: var(--mono); }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+  thead th {
+    font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--ink-faint); font-weight: 600; background: var(--paper-raised);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: color-mix(in oklab, var(--accent-soft) 40%, transparent); }
+  td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.hero-num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; }
+  tr.total td { font-weight: 700; border-top: 1px solid var(--line-strong); background: var(--paper-raised); }
+  tr.highlight td { background: var(--accent-soft); }
+  .table-wrap { background: var(--paper-raised); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .03em;
+    padding: 3px 9px; border-radius: 99px; white-space: nowrap;
+  }
+  .pill.good { background: var(--good-soft); color: color-mix(in oklab, var(--good) 75%, black 20%); }
+  .pill.warn { background: var(--warn-soft); color: color-mix(in oklab, var(--warn) 75%, black 20%); }
+  .pill.bad { background: var(--bad-soft); color: color-mix(in oklab, var(--bad) 75%, black 15%); }
+  @media (prefers-color-scheme: dark) {
+    .pill.good { color: var(--good); } .pill.warn { color: var(--warn); } .pill.bad { color: var(--bad); }
+  }
+  :root[data-theme="dark"] .pill.good { color: var(--good); }
+  :root[data-theme="dark"] .pill.warn { color: var(--warn); }
+  :root[data-theme="dark"] .pill.bad { color: var(--bad); }
+
+  .footnote { font-size: 12.5px; color: var(--ink-faint); max-width: 66ch; margin-top: -10px; }
+
+  /* ---- Chart ---- */
+  .chart-card {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 8px;
+    padding: 22px 20px 14px; margin: 20px 0 8px; box-shadow: var(--shadow);
+  }
+  .chart-title { font-weight: 700; font-size: 14.5px; margin-bottom: 2px; }
+  .chart-sub { font-size: 12.5px; color: var(--ink-faint); margin-bottom: 14px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 4px 0 10px; font-size: 12.5px; color: var(--ink-soft); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart-scroll { overflow-x: auto; }
+  svg text { font-family: var(--sans); }
+  .bar-label { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11.5px; fill: var(--ink); }
+  .axis-label { font-size: 11px; fill: var(--ink-faint); }
+  .facet-title { font-size: 12.5px; font-weight: 700; fill: var(--ink); }
+  .grid-line { stroke: var(--line); stroke-width: 1; }
+  .range-tick { stroke: var(--ink-faint); stroke-width: 1.5; stroke-dasharray: 2 2; }
+
+  /* ---- Phase cards ---- */
+  .phases { display: flex; flex-direction: column; gap: 14px; margin: 20px 0 30px; }
+  .phase {
+    display: grid; grid-template-columns: 120px 1fr; gap: 18px;
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .phase .ph-range { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); padding-top: 2px; }
+  .phase .ph-range .n { display: block; font-size: 20px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .phase h4 { margin: 0 0 6px; font-size: 15.5px; font-family: var(--serif); font-weight: 600; }
+  .phase p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .phase p + p { margin-top: 8px; }
+
+  /* ---- Source list ---- */
+  .sources { font-size: 13px; columns: 1; }
+  .sources li { margin-bottom: 8px; color: var(--ink-soft); }
+  .sources a { color: var(--ink-soft); }
+
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 48px 0; }
+
+  footer.report-foot {
+    margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-faint); font-family: var(--mono);
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 36px 16px 80px; }
+    h1.title { font-size: 27px; }
+    .phase { grid-template-columns: 1fr; }
+    .stat-row { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="report-head">
+    <div class="eyebrow">Estudio de infraestructura — Fluxia Health</div>
+    <h1 class="title">Supabase a escala: coste real y cuándo (si acaso) autohospedar</h1>
+    <p class="subtitle">Del tier gratuito actual a 100, 500 y 1.000 profesionales sanitarios (100 pacientes cada uno como mínimo). Qué paga hoy Supabase por eso, qué costaría gestionarlo uno mismo, y un hallazgo en el propio código que cambia la respuesta más que cualquier tier de precios.</p>
+    <div class="meta-row">
+      <span><b>Fecha</b> 4 agosto 2026</span>
+      <span><b>Alcance</b> Base de datos, Auth, Storage, Edge Functions, ancho de banda</span>
+      <span><b>Región</b> UE (RGPD)</span>
+    </div>
+  </header>
+
+  <div class="tldr">
+    <div class="callout-label">Resumen ejecutivo</div>
+    <p class="verdict">A estas escalas, <b>el coste de Supabase no es el problema</b> — incluso sin tocar nada, nunca supera unos <b>150 €/mes</b>, y con un arreglo de una tarde en el código de sincronización, se queda por debajo de <b>90 €/mes</b> incluso en el escenario de 1.000 profesionales. Autohospedar ahorraría, en el mejor caso, decenas de euros al mes — y a cambio asume un riesgo operativo real sobre datos de salud, con un equipo pequeño.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="n">&lt; 90 <small>€/mes</small></div><div class="l">Supabase a 1.000 profesionales, con el fix de sync</div></div>
+      <div class="stat"><div class="n">0,4 <small>% de ingresos</small></div><div class="l">ese coste frente a la facturación estimada a esa escala</div></div>
+      <div class="stat"><div class="n">2×</div><div class="l">de más paga hoy el código por resincronizar el historial completo en cada sesión</div></div>
+    </div>
+  </div>
+
+  <h2><span class="num">01</span>Metodología y supuestos</h2>
+  <p class="section-dek">Los precios de Supabase, AWS, Hetzner, etc. están verificados hoy contra fuente primaria (ver §7). Los <em>volúmenes de datos</em> — cuántos registros, cuánto pesan, cuánto tráfico generan — son estimaciones propias, ancladas en el esquema real de la tabla <code>entries</code> y en cómo el código sincroniza hoy. Se marcan explícitamente como supuestos para que se puedan ajustar.</p>
+
+  <div class="table-wrap">
+    <caption>Supuestos base del modelo</caption>
+    <table>
+      <thead><tr><th>Parámetro</th><th class="num">Valor</th><th>Origen</th></tr></thead>
+      <tbody>
+        <tr><td>Profesionales</td><td class="num">100 / 500 / 1.000</td><td>Dado por el encargo</td></tr>
+        <tr><td>Pacientes por profesional</td><td class="num">100 (mínimo)</td><td>Dado por el encargo</td></tr>
+        <tr><td>Pacientes totales</td><td class="num">10.000 / 50.000 / 100.000</td><td>Derivado</td></tr>
+        <tr><td>Registros por paciente y día</td><td class="num">2 (caso base)</td><td>Estimación propia — la app registra deposición y micción; 2/día es un punto medio razonable. Sensibilidad 1–4 en §4.4</td></tr>
+        <tr><td>Peso en disco por registro (fila + índices)</td><td class="num">≈ 400 bytes</td><td>Calculado desde las 19 columnas de <code>entries</code> (<code>src/lib/sync.ts</code>) + margen de índices</td></tr>
+        <tr><td>Peso del JSON transferido por registro</td><td class="num">≈ 300 bytes</td><td>Mismas columnas, serializadas vía PostgREST</td></tr>
+        <tr><td>Antigüedad media de un paciente activo</td><td class="num">12 meses</td><td>Estimación propia para modelar el ancho de banda "en régimen" (producto ya maduro, no el primer mes)</td></tr>
+        <tr><td>Margen operativo de base de datos</td><td class="num">×1,3 + 0,5 GB</td><td>Bloat/autovacuum/índices adicionales — práctica habitual de sizing</td></tr>
+        <tr><td>Tipo de cambio USD→EUR</td><td class="num">0,92</td><td>Aproximado, solo para comparar cifras entre proveedores</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="num">02</span>El hallazgo que importa más que el precio</h2>
+  <p class="section-dek">Antes de mirar tiers de Supabase: el propio código ya determina buena parte de la factura de ancho de banda, y hoy lo hace de la forma más cara posible.</p>
+
+  <p><code>src/lib/sync.ts</code> expone <code>syncOnLogin()</code>, que descarga <strong>el historial completo</strong> de registros de un paciente, paginado de 500 en 500. Se llama desde <code>App.tsx</code> dentro de un <code>useEffect</code> con dependencia <code>[user]</code> — es decir, no solo al escribir la contraseña, sino <strong>cada vez que el objeto de sesión se resuelve</strong>: recarga de página, nueva pestaña, PWA que vuelve a primer plano. Un paciente que abre la app 2-3 veces al día no sincroniza solo lo nuevo — vuelve a descargar meses o años de historial cada vez.</p>
+
+  <div class="callout warn">
+    <div class="callout-label">Por qué importa a escala</div>
+    <p>El tamaño en disco de la base de datos crece con el <em>número</em> de pacientes y es barato de almacenar (Supabase cobra 0,125 $/GB-mes). El ancho de banda de esta resincronización completa crece con la <em>antigüedad</em> del historial de cada paciente, y Supabase cobra 0,09 $/GB de salida — así que este coste concreto <strong>se duplica cada vez que la base de usuarios "envejece" un año más</strong>, incluso si no se incorpora ni un paciente nuevo. Es la única partida de este estudio que crece sin límite con el tiempo en vez de estabilizarse.</p>
+  </div>
+
+  <p>El arreglo es acotado: guardar localmente la marca de tiempo del último registro sincronizado y pedir solo <code>.gt('timestamp', ultimaSync)</code> en vez de la tabla entera. Es un cambio en una función, no una migración de arquitectura — y como se ve en §4, es la palanca individual que más abarata la factura a partir de 500 profesionales.</p>
+
+  <h2><span class="num">03</span>Precios de Supabase, hoy</h2>
+  <p class="section-dek">Verificado contra la documentación fuente de Supabase (no memoria de entrenamiento — ver §7 para los archivos exactos consultados).</p>
+
+  <h3>Planes base</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Plan</th><th class="num">Base/mes</th><th>Incluye de más</th></tr></thead>
+      <tbody>
+        <tr><td>Free</td><td class="num">0 $</td><td>2 proyectos máx.; se pausa tras 7 días sin uso</td></tr>
+        <tr class="highlight"><td>Pro</td><td class="num">25 $</td><td>Crédito de 10 $/mes de cómputo (cubre una instancia Micro)</td></tr>
+        <tr><td>Team</td><td class="num">599 $</td><td>+ SOC 2, ISO 27001, SSO/SAML, backups 14 días, retención de logs 28 días</td></tr>
+        <tr><td>Enterprise</td><td class="num">a medida</td><td>Cuotas a medida, SLA de disponibilidad</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Cuotas incluidas y coste por exceso (Pro / Team)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Partida</th><th class="num">Incluido</th><th class="num">Exceso</th></tr></thead>
+      <tbody>
+        <tr><td>Salida de datos (egress)</td><td class="num">250 GB</td><td class="num">0,09 $/GB</td></tr>
+        <tr><td>Disco de base de datos (gp3)</td><td class="num">8 GB</td><td class="num">0,125 $/GB-mes</td></tr>
+        <tr><td>Almacenamiento de archivos</td><td class="num">100 GB</td><td class="num">0,021 $/GB-mes</td></tr>
+        <tr><td>Auth — usuarios activos/mes (MAU)</td><td class="num">100.000</td><td class="num">0,00325 $/MAU</td></tr>
+        <tr><td>Invocaciones de Edge Functions</td><td class="num">2.000.000</td><td class="num">2 $/millón</td></tr>
+        <tr><td>Mensajes Realtime</td><td class="num">5.000.000</td><td class="num">2,50 $/millón</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Add-on de cómputo (tamaño de la instancia Postgres)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tamaño</th><th class="num">RAM</th><th class="num">€/mes aprox.</th><th>Encaja con</th></tr></thead>
+      <tbody>
+        <tr><td>Micro</td><td class="num">1 GB</td><td class="num">≈ 9 €</td><td>BD hasta ~10-15 GB, baja concurrencia</td></tr>
+        <tr><td>Small</td><td class="num">2 GB</td><td class="num">≈ 14 €</td><td>BD 15-40 GB</td></tr>
+        <tr><td>Medium</td><td class="num">4 GB</td><td class="num">≈ 55 €</td><td>BD 40-80 GB, paneles con agregaciones</td></tr>
+        <tr><td>Large</td><td class="num">8 GB</td><td class="num">≈ 101 €</td><td>Por encima de 80 GB / mucha concurrencia</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">El cómputo se cobra por hora, aparte de las cuotas anteriores. Cifras en $ convertidas a € solo para lectura rápida — ver §3 tabla original en dólares en el modelo de coste (§4) para las cifras fuente.</p>
+
+  <h3>Región UE y RGPD</h3>
+  <p>Supabase permite crear el proyecto directamente en <strong>Frankfurt, Irlanda, París, Zúrich o Estocolmo</strong> — sin recargo de precio por región. El Data Processing Agreement (RGPD) va incluido en todos los planes, no es un add-on de pago. Una matización real para un dato de salud: Supabase Inc. es una empresa de EE. UU. (Delaware), así que aunque los datos vivan físicamente en la UE, la compañía sigue sujeta al CLOUD Act estadounidense — resuelve <em>residencia</em> de datos, no <em>soberanía</em> plena. Vale la pena comentarlo con el asesor legal de RGPD del proyecto, aunque no impide usar una región UE hoy.</p>
+
+  <h2><span class="num">04</span>Modelo de coste por escala</h2>
+  <p class="section-dek">Combinando los supuestos de §1 con los precios de §3. Cada bloque muestra el desglose completo, con y sin el arreglo de sincronización de §2.</p>
+
+  <h3>Tamaño de base de datos (con margen operativo)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Escala</th><th class="num">1 año</th><th class="num">2 años</th><th class="num">3 años</th></tr></thead>
+      <tbody>
+        <tr><td>100 profesionales (10k pacientes)</td><td class="num">4,3 GB</td><td class="num">8,1 GB</td><td class="num">11,9 GB</td></tr>
+        <tr><td>500 profesionales (50k pacientes)</td><td class="num">19,5 GB</td><td class="num">38,5 GB</td><td class="num">57,4 GB</td></tr>
+        <tr><td>1.000 profesionales (100k pacientes)</td><td class="num">38,5 GB</td><td class="num">76,4 GB</td><td class="num">114,4 GB</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">El disco es la partida más barata de todo el modelo: incluso a 114 GB (1.000 profesionales, 3 años), el exceso sobre los 8 GB incluidos cuesta ≈ 13 $/mes. No es donde está el riesgo de coste.</p>
+
+  <h3>Ancho de banda mensual "en régimen" (paciente activo medio, 12 meses de historial)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Escala</th><th class="num">Arquitectura actual</th><th class="num">Con sync incremental</th></tr></thead>
+      <tbody>
+        <tr><td>100 profesionales</td><td class="num">103,6 GB</td><td class="num">5,2 GB</td></tr>
+        <tr><td>500 profesionales</td><td class="num">518 GB</td><td class="num">25,9 GB</td></tr>
+        <tr><td>1.000 profesionales</td><td class="num">1.036 GB</td><td class="num">51,8 GB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Coste mensual total de Supabase (plan Pro, 25 $ base)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Escala</th><th class="num">Arquitectura actual</th><th class="num">Con sync incremental</th></tr></thead>
+      <tbody>
+        <tr><td>100 profesionales</td><td class="num hero-num">25 $ <span class="pill good">≈ 23 €</span></td><td class="num hero-num">25 $ <span class="pill good">≈ 23 €</span></td></tr>
+        <tr><td>500 profesionales</td><td class="num hero-num">58 $ <span class="pill warn">≈ 53 €</span></td><td class="num hero-num">34 $ <span class="pill good">≈ 31 €</span></td></tr>
+        <tr class="highlight"><td>1.000 profesionales</td><td class="num hero-num">158 $ <span class="pill warn">≈ 145 €</span></td><td class="num hero-num">87 $ <span class="pill good">≈ 80 €</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">Incluye: base del plan + add-on de cómputo (Micro/Small/Medium según escala) + exceso de disco (horizonte de 2 años) + exceso de salida de datos + exceso de MAU. Storage de archivos y Edge Functions no generan exceso en ningún escenario — la app no almacena imágenes pesadas y el cron de recordatorios corre una vez por hora, muy por debajo de cualquier cuota.</p>
+
+  <div class="chart-card">
+    <div class="chart-title">Coste mensual por escala y estrategia</div>
+    <div class="chart-sub">Supabase gestionado (con y sin el fix de sync) frente a autohospedar Supabase OSS en un VPS en la UE. En euros/mes.</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--warn)"></span>Supabase — arquitectura actual</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Supabase — con sync incremental</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:var(--auto)"></span>Autohospedado (VPS UE, rango)</span>
+    </div>
+    <div class="chart-scroll">
+      <svg viewBox="0 0 760 300" width="100%" height="300" role="img" aria-label="Comparación de coste mensual en euros entre Supabase con arquitectura actual, Supabase con sync incremental, y autohospedaje, para 100, 500 y 1000 profesionales">
+        <!-- gridlines -->
+        <g>
+          <line class="grid-line" x1="40" x2="740" y1="230" y2="230"></line>
+          <line class="grid-line" x1="40" x2="740" y1="170" y2="170"></line>
+          <line class="grid-line" x1="40" x2="740" y1="110" y2="110"></line>
+          <line class="grid-line" x1="40" x2="740" y1="50" y2="50"></line>
+          <text class="axis-label" x="34" y="234" text-anchor="end">0 €</text>
+          <text class="axis-label" x="34" y="174" text-anchor="end">50 €</text>
+          <text class="axis-label" x="34" y="114" text-anchor="end">100 €</text>
+          <text class="axis-label" x="34" y="54" text-anchor="end">150 €</text>
+        </g>
+
+        <!-- Facet 100 profesionales: baseline y=230, scale 1.2px per euro -->
+        <g>
+          <text class="facet-title" x="130" y="20" text-anchor="middle">100 profesionales</text>
+          <rect x="70" y="202.4" width="34" height="27.6" rx="3" fill="var(--warn)"></rect>
+          <text class="bar-label" x="87" y="197" text-anchor="middle">23 €</text>
+          <rect x="113" y="202.4" width="34" height="27.6" rx="3" fill="var(--accent)"></rect>
+          <text class="bar-label" x="130" y="197" text-anchor="middle">23 €</text>
+          <rect x="156" y="208.4" width="34" height="21.6" rx="3" fill="var(--auto)"></rect>
+          <text class="bar-label" x="173" y="203" text-anchor="middle">18 €</text>
+          <line class="range-tick" x1="173" y1="201.2" x2="173" y2="208.4"></line>
+          <text class="axis-label" x="130" y="248" text-anchor="middle">10.000 pacientes</text>
+        </g>
+
+        <!-- Facet 500 profesionales -->
+        <g>
+          <text class="facet-title" x="380" y="20" text-anchor="middle">500 profesionales</text>
+          <rect x="320" y="166.4" width="34" height="63.6" rx="3" fill="var(--warn)"></rect>
+          <text class="bar-label" x="337" y="161" text-anchor="middle">53 €</text>
+          <rect x="363" y="192.8" width="34" height="37.2" rx="3" fill="var(--accent)"></rect>
+          <text class="bar-label" x="380" y="187" text-anchor="middle">31 €</text>
+          <rect x="406" y="197.6" width="34" height="32.4" rx="3" fill="var(--auto)"></rect>
+          <text class="bar-label" x="423" y="192" text-anchor="middle">27 €</text>
+          <line class="range-tick" x1="423" y1="183.2" x2="423" y2="197.6"></line>
+          <text class="axis-label" x="380" y="248" text-anchor="middle">50.000 pacientes</text>
+        </g>
+
+        <!-- Facet 1000 profesionales -->
+        <g>
+          <text class="facet-title" x="630" y="20" text-anchor="middle">1.000 profesionales</text>
+          <rect x="570" y="56" width="34" height="174" rx="3" fill="var(--warn)"></rect>
+          <text class="bar-label" x="587" y="50" text-anchor="middle">145 €</text>
+          <rect x="613" y="134" width="34" height="96" rx="3" fill="var(--accent)"></rect>
+          <text class="bar-label" x="630" y="128" text-anchor="middle">80 €</text>
+          <rect x="656" y="183.2" width="34" height="46.8" rx="3" fill="var(--auto)"></rect>
+          <text class="bar-label" x="673" y="177" text-anchor="middle">39 €</text>
+          <line class="range-tick" x1="673" y1="46.4" x2="673" y2="183.2"></line>
+          <text class="axis-label" x="630" y="248" text-anchor="middle">100.000 pacientes</text>
+        </g>
+      </svg>
+    </div>
+    <p class="footnote" style="margin-top:6px">La barra de "Autohospedado" muestra el escenario ligero (VPS compartido); la línea discontinua marca hasta dónde sube si se opta por vCPU dedicada (recomendable a partir de 1.000 profesionales si se busca margen de rendimiento). Ver §5.</p>
+  </div>
+
+  <h3>Sensibilidad: ¿y si un paciente registra más o menos de 2 veces al día?</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Registros/paciente/día</th><th class="num">Egress "en régimen", 1.000 prof.</th><th class="num">¿Supera los 250 GB incluidos?</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="num">≈ 518 GB</td><td class="num"><span class="pill warn">Sí, con arq. actual</span></td></tr>
+        <tr><td>2 (caso base)</td><td class="num">≈ 1.036 GB</td><td class="num"><span class="pill warn">Sí, con arq. actual</span></td></tr>
+        <tr><td>4</td><td class="num">≈ 2.072 GB</td><td class="num"><span class="pill bad">Sí, con arq. actual</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">Con el fix de sync incremental, incluso el caso de 4 registros/día se queda en ≈ 104 GB/mes a 1.000 profesionales — sigue dentro de los 250 GB incluidos. La frecuencia de registro casi no importa una vez arreglada la sincronización; sí importa muchísimo si no se arregla.</p>
+
+  <h2><span class="num">05</span>Alternativa: autohospedar Supabase</h2>
+  <p class="section-dek">Supabase publica su stack completo como código abierto (Postgres + Auth + PostgREST + Storage + Realtime + Functions, ~12 contenedores Docker). Se puede correr en un VPS propio.</p>
+
+  <h3>Coste de infraestructura (VPS UE)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Escala</th><th class="num">Ligero</th><th class="num">Con margen (vCPU dedicada)</th></tr></thead>
+      <tbody>
+        <tr><td>100 profesionales</td><td class="num">≈ 18 €/mes <span class="footnote" style="display:inline">(Hetzner CPX21, 3vCPU/4GB + object storage)</span></td><td class="num">≈ 24 €/mes</td></tr>
+        <tr><td>500 profesionales</td><td class="num">≈ 27 €/mes <span class="footnote" style="display:inline">(CPX31, 4vCPU/8GB)</span></td><td class="num">≈ 39 €/mes <span class="footnote" style="display:inline">(CPX41)</span></td></tr>
+        <tr><td>1.000 profesionales</td><td class="num">≈ 39 €/mes <span class="footnote" style="display:inline">(CPX41, 8vCPU/16GB)</span></td><td class="num">≈ 153 €/mes <span class="footnote" style="display:inline">(CCX33 dedicada)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">Precios Hetzner post-subida de junio 2026 (las instancias con vCPU dedicada, serie CCX, subieron 122-173 % ese mes — cifras antiguas que circulan por internet ya no aplican). Incluye almacenamiento tipo objeto para copias de seguridad.</p>
+
+  <div class="callout">
+    <div class="callout-label">Lo que la tabla de arriba no dice: el coste operativo</div>
+    <p>El VPS es la parte fácil de estimar y, casi siempre, la menos representativa del coste real. Un análisis independiente de una agencia especializada en Supabase (happycoding.agency) sitúa el TCO a 3 años de un stack autohospedado típico en <strong>40.000-80.000 €</strong> una vez se suma la puesta en marcha y el tiempo de operación — frente a "solo" el doble en la versión gestionada, para una app de tamaño medio. Y un hilo de la propia comunidad de Supabase sobre autohospedaje en producción (<a href="https://github.com/orgs/supabase/discussions/39820" target="_blank" rel="noopener">discusión #39820</a>) es igual de directo: <em>"cada actualización de nuestro entorno de producción es un evento que nos pone los pelos de punta"</em> — las actualizaciones entre versiones no tienen changelog fiable, el contenedor de Postgres solo ejecuta los scripts de migración una vez (rompe despliegues continuos), y no hay comunidad activa alrededor de los componentes individuales si algo falla un domingo por la noche.</p>
+  </div>
+
+  <p>Para un equipo pequeño operando un producto de salud, ese riesgo tiene un precio real aunque no aparezca en ninguna factura: son las 2-3 de la madrugada en las que una migración de Postgres se queda a medias con historiales clínicos de por medio, sin el equipo de guardia de un proveedor gestionado detrás. La diferencia de coste en euros entre autohospedar y quedarse en Supabase — con el fix de sync aplicado — es de <strong>apenas 5-40 €/mes</strong> en las tres escalas estudiadas. No es una diferencia que compre tranquilidad operativa.</p>
+
+  <h2><span class="num">06</span>Otras alternativas gestionadas</h2>
+  <p class="section-dek">Por si el punto de comparación no es "Supabase o nada", sino qué otro proveedor gestionado encajaría.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Proveedor</th><th>Qué ofrece</th><th>Región UE</th><th>Encaje</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Neon</td><td>Postgres serverless, autoscaling. Desde 0,106 $/hora-CU + 0,35 $/GB-mes</td><td>Frankfurt (AWS eu-central-1)</td>
+          <td>Solo base de datos — Auth/Storage/Functions hay que montarlos aparte. Empresa de EE. UU., mismo matiz de CLOUD Act que Supabase.</td>
+        </tr>
+        <tr>
+          <td>AWS RDS PostgreSQL</td><td>db.t4g.micro desde ≈ 13 $/mes hasta instancias grandes a medida</td><td>eu-central-1 nativo</td>
+          <td>Cifra verificada en vivo contra la API de precios de AWS. Solo base de datos — control total, pero hay que construir Auth/Storage/Realtime/Functions desde cero.</td>
+        </tr>
+        <tr>
+          <td>Appwrite</td><td>Alternativa "todo en uno" más directa a Supabase. Free: 75k MAU. Pro: 15 $/miembro/mes</td><td>Frankfurt</td>
+          <td>El competidor más parecido si algún día Supabase deja de encajar — vale la pena tenerlo en el radar, no urgente hoy.</td>
+        </tr>
+        <tr>
+          <td>Firebase</td><td>Todo en uno de Google</td><td>Firestore sí (eur3), <strong>Auth no</strong></td>
+          <td><span class="pill bad">Descartar</span> — el servicio de autenticación de Firebase no tiene región UE aunque la base de datos sí, lo que abre una brecha de RGPD justo en el dato más sensible (credenciales de pacientes y profesionales de salud).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="num">07</span>Recomendación por fase</h2>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="ph-range">Ahora<span class="n">0→100</span></div>
+      <div>
+        <h4>Pasar a Pro en cuanto se acabe la fase de validación</h4>
+        <p>25 $/mes fijos, sin sorpresas a esta escala pase lo que pase con la sincronización. Es también el momento más barato para arreglar <code>syncOnLogin()</code> — cuesta lo mismo hacerlo ahora que a 50.000 pacientes, y evita tener que hacerlo con el sistema ya en producción bajo carga real.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="ph-range">Cuando crezca<span class="n">100→500</span></div>
+      <div>
+        <h4>Arreglar la sincronización antes de que se note en la factura</h4>
+        <p>Es aquí donde el coste "con" y "sin" el fix empiezan a separarse de forma visible (31 € frente a 53 €/mes). Seguir en Pro; no hay motivo para Team todavía — sus extras (SOC 2, SSO) son para ventas a hospitales grandes, no para escalar.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="ph-range">Consolidado<span class="n">500→1.000+</span></div>
+      <div>
+        <h4>Seguir en Supabase gestionado; presupuestar PITR</h4>
+        <p>Incluso en el peor caso (145 €/mes, sin fix) el coste sigue siendo una fracción marginal de los ingresos a esta escala. Lo que sí conviene añadir aquí es el add-on de <strong>Point-in-Time Recovery</strong> (7 días ≈ 100 $/mes) — con datos de salud reales de miles de pacientes, el backup diario del plan Pro deja de ser suficiente margen de seguridad. Reconsiderar Team solo si un cliente institucional grande lo exige contractualmente (SOC 2/SSO), no por coste de infraestructura.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-label">Cuándo sí reconsiderar autohospedar</div>
+    <p>No es una decisión de coste a estas escalas — es una decisión de capacidad de equipo y de requisitos externos. Reabrir la pregunta si: (a) se incorpora una persona dedicada a infraestructura/DevOps al equipo, (b) un cliente institucional exige soberanía de datos on-premise o una nube soberana concreta por contrato, o (c) el uso real supera con creces los supuestos de este modelo (por ejemplo, si se añaden fotos o archivos adjuntos pesados a los registros, cosa que cambiaría totalmente la partida de almacenamiento).</p>
+  </div>
+
+  <hr class="rule">
+
+  <h2><span class="num">08</span>Fuentes y advertencias</h2>
+  <p class="section-dek">Todo lo anterior que es un precio de mercado está verificado contra fuente primaria hoy. Lo que es una estimación de volumen de datos está marcado como tal en §1 y es la parte que conviene revisar si algo no encaja con el uso real.</p>
+
+  <h3>Verificado contra fuente primaria</h3>
+  <ul class="sources">
+    <li>Precios y cuotas de Supabase — leídos directamente de los archivos fuente de la documentación: <a href="https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/platform/billing-on-supabase.mdx" target="_blank" rel="noopener">billing-on-supabase.mdx</a>, <a href="https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/platform/manage-your-usage/compute.mdx" target="_blank" rel="noopener">compute.mdx</a>, <a href="https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/platform/manage-your-usage/egress.mdx" target="_blank" rel="noopener">egress.mdx</a>, <a href="https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/platform/manage-your-usage/monthly-active-users.mdx" target="_blank" rel="noopener">monthly-active-users.mdx</a>, <a href="https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/platform/backups.mdx" target="_blank" rel="noopener">backups.mdx</a></li>
+    <li>Precios de AWS RDS PostgreSQL (eu-central-1) — parseados directamente de la API pública de precios de AWS, publicación del 3 de agosto de 2026</li>
+  </ul>
+
+  <h3>Fuentes secundarias cruzadas</h3>
+  <ul class="sources">
+    <li>Hallazgos de autohospedaje en producción: <a href="https://github.com/orgs/supabase/discussions/39820" target="_blank" rel="noopener">GitHub Discussion #39820</a>, <a href="https://news.ycombinator.com/item?id=40084697" target="_blank" rel="noopener">Hacker News #40084697</a></li>
+    <li>TCO comparado gestionado vs. autohospedado: <a href="https://www.happycoding.agency/en/blog/what-supabase-really-costs-in-production" target="_blank" rel="noopener">happycoding.agency</a>, <a href="https://www.supascale.app/blog/the-true-cost-of-selfhosting-supabase-a-breakdown" target="_blank" rel="noopener">Supascale</a></li>
+    <li>Precios VPS UE: <a href="https://omr.com/en/reviews/product/hetzner/pricing" target="_blank" rel="noopener">Hetzner (OMR Reviews)</a>, <a href="https://webhosting.today/2026/06/18/hetzners-price-increases-reached-209-the-30-headline-applied-to-a-different-tier/" target="_blank" rel="noopener">subida de precios de Hetzner, junio 2026</a></li>
+    <li>Brecha de RGPD en Auth de Firebase: <a href="https://www.termsfeed.com/blog/gdpr-firebase-dpo/" target="_blank" rel="noopener">TermsFeed</a></li>
+    <li>Región UE de Neon y matiz de CLOUD Act: <a href="https://sota.io/blog/neon-eu-alternative-gdpr-cloud-act-2026" target="_blank" rel="noopener">sota.io</a></li>
+    <li>Appwrite Cloud, planes y regiones: <a href="https://appwrite.io/cloud-ga" target="_blank" rel="noopener">appwrite.io</a></li>
+  </ul>
+
+  <h3>No verificado — no usar sin confirmar directamente</h3>
+  <ul class="sources">
+    <li>Coste del add-on HIPAA de Supabase (~350 $/mes citado en un solo hilo de la comunidad) — no aplica a este caso (RGPD, no HIPAA), se menciona solo por completitud</li>
+    <li>Precio del add-on de PITR (100/200/400 $ para 7/14/28 días) — de una fuente secundaria, no leído directamente del archivo de precios de Supabase</li>
+    <li>Precio de Google Cloud SQL PostgreSQL en europe-west1 — la calculadora de GCP no fue accesible durante la investigación; solo se encontró una referencia de us-central1, que no es comparable</li>
+  </ul>
+
+  <footer class="report-foot">
+    Fluxia Health · Estudio interno de infraestructura · Cifras en USD convertidas a EUR a 0,92 solo para lectura comparativa — las tablas de origen (§3–4) mantienen la moneda de la fuente citada.
+  </footer>
+
+</div>
+</body>
+</html>
