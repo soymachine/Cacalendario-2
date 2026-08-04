@@ -4,14 +4,23 @@ import type { PoopEntry } from './storage';
 
 /**
  * Sync layer: cloud is the source of truth when logged in.
- * - On login: clear local entries and replace with cloud data
+ * - On login: incrementally pull what changed since the last sync; fall
+ *   back to a full resync if there's no recent cursor (first login, or the
+ *   cursor is stale) so anything the incremental path can't see — e.g. an
+ *   entry deleted on another device — still self-corrects periodically.
  * - On save: save to both local storage and Supabase (if logged in)
  * - Without login: everything works with local storage only
  */
 
 const SYNC_PAGE_SIZE = 500;
+const ENTRIES_KEY = 'cacalendario_entries';
+const LAST_SYNCED_KEY = 'cacalendario_last_synced_at';
+// Beyond this, trust in the incremental cursor is spent and we redownload
+// everything instead — the periodic safety net described above.
+const RECONCILE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
+const ENTRY_COLUMNS_WITH_CURSOR = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep, updated_at';
 
 function rowToEntry(r: Record<string, unknown>): PoopEntry {
   return {
@@ -37,8 +46,93 @@ function rowToEntry(r: Record<string, unknown>): PoopEntry {
   };
 }
 
-async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntry[]; error: string | null }> {
+function getLocalEntries(): PoopEntry[] {
+  return JSON.parse(localStore.getItem(ENTRIES_KEY) || '[]');
+}
+
+function getLastSyncedAt(): string | null {
+  return localStore.getItem(LAST_SYNCED_KEY);
+}
+
+function setLastSyncedAt(iso: string | null): void {
+  if (iso) localStore.setItem(LAST_SYNCED_KEY, iso);
+}
+
+/**
+ * Full resync (existing behaviour): pages through every cloud entry for the
+ * user. Also opportunistically reads `updated_at` to seed the incremental
+ * cursor — but if that column doesn't exist yet (migration
+ * supabase/migrations/20260804_entries_updated_at.sql not applied), retries
+ * without it rather than breaking sync entirely. In that case no cursor is
+ * set, so future syncs simply keep doing a full resync, matching today's
+ * behaviour.
+ */
+async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntry[]; maxUpdatedAt: string | null; error: string | null }> {
   const entries: PoopEntry[] = [];
+  let maxUpdatedAt: string | null = null;
+  let withCursor = true;
+  let page = 0;
+
+  while (true) {
+    const from = page * SYNC_PAGE_SIZE;
+    const to = from + SYNC_PAGE_SIZE - 1;
+
+    let data: Record<string, unknown>[] | null = null;
+    let error: { message: string } | null = null;
+
+    if (withCursor) {
+      const res = await supabase
+        .from('entries')
+        .select(ENTRY_COLUMNS_WITH_CURSOR)
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: true })
+        .range(from, to);
+      data = res.data as Record<string, unknown>[] | null;
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from('entries')
+        .select(ENTRY_COLUMNS)
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: true })
+        .range(from, to);
+      data = res.data as Record<string, unknown>[] | null;
+      error = res.error;
+    }
+
+    if (error && withCursor && page === 0) {
+      // Column not there yet — fall back for the whole fetch, no cursor.
+      withCursor = false;
+      const res = await supabase
+        .from('entries')
+        .select(ENTRY_COLUMNS)
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: true })
+        .range(from, to);
+      data = res.data as Record<string, unknown>[] | null;
+      error = res.error;
+    }
+
+    if (error) return { entries: [], maxUpdatedAt: null, error: error.message };
+
+    const rows = data ?? [];
+    for (const r of rows) {
+      entries.push(rowToEntry(r));
+      const u = withCursor ? (r as Record<string, unknown>).updated_at as string | undefined : undefined;
+      if (u && (!maxUpdatedAt || u > maxUpdatedAt)) maxUpdatedAt = u;
+    }
+
+    if (rows.length < SYNC_PAGE_SIZE) break;
+    page++;
+  }
+
+  return { entries, maxUpdatedAt: withCursor ? maxUpdatedAt : null, error: null };
+}
+
+/** Only entries changed since `since` — the common case on session restore. */
+async function fetchChangedCloudEntries(userId: string, since: string): Promise<{ entries: PoopEntry[]; maxUpdatedAt: string | null; error: string | null }> {
+  const entries: PoopEntry[] = [];
+  let maxUpdatedAt: string | null = since;
   let page = 0;
 
   while (true) {
@@ -47,50 +141,73 @@ async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntr
 
     const { data, error } = await supabase
       .from('entries')
-      .select(ENTRY_COLUMNS)
+      .select(ENTRY_COLUMNS_WITH_CURSOR)
       .eq('user_id', userId)
-      .order('timestamp', { ascending: true })
+      .gt('updated_at', since)
+      .order('updated_at', { ascending: true })
       .range(from, to);
 
-    if (error) return { entries: [], error: error.message };
+    if (error) return { entries: [], maxUpdatedAt: null, error: error.message };
 
     const rows = data ?? [];
-    for (const r of rows) entries.push(rowToEntry(r));
+    for (const r of rows) {
+      entries.push(rowToEntry(r));
+      const u = (r as Record<string, unknown>).updated_at as string | undefined;
+      if (u && u > (maxUpdatedAt ?? '')) maxUpdatedAt = u;
+    }
 
-    // If we got fewer rows than the page size, we've reached the end
     if (rows.length < SYNC_PAGE_SIZE) break;
     page++;
   }
 
-  return { entries, error: null };
+  return { entries, maxUpdatedAt, error: null };
 }
 
 export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
-  // 1. Get all cloud entries (paginated)
-  const { entries: cloudEntries, error } = await fetchAllCloudEntries(userId);
+  const lastSyncedAt = getLastSyncedAt();
+  const cursorIsFresh = !!lastSyncedAt && Date.now() - new Date(lastSyncedAt).getTime() < RECONCILE_AFTER_MS;
+
+  if (cursorIsFresh) {
+    const { entries: changed, maxUpdatedAt, error } = await fetchChangedCloudEntries(userId, lastSyncedAt!);
+
+    if (error) {
+      console.error('[sync] Error fetching changed entries:', error);
+      return getLocalEntries();
+    }
+
+    const changedIds = new Set(changed.map((e) => e.id));
+    const merged = [...getLocalEntries().filter((e) => !changedIds.has(e.id)), ...changed];
+    merged.sort((a, b) => a.timestamp - b.timestamp);
+
+    localStore.setItem(ENTRIES_KEY, JSON.stringify(merged));
+    setLastSyncedAt(maxUpdatedAt);
+    return merged;
+  }
+
+  // No cursor, or it's stale: full reconciliation. Also what recovers from
+  // anything the incremental path can't see (e.g. a delete from another
+  // device) since it always reflects the cloud's exact current state.
+  const { entries: cloudEntries, maxUpdatedAt, error } = await fetchAllCloudEntries(userId);
 
   if (error) {
     console.error('[sync] Error fetching cloud entries:', error);
-    const local = JSON.parse(localStore.getItem('cacalendario_entries') || '[]');
-    return local;
+    return getLocalEntries();
   }
 
-  const cloudIds = new Set(cloudEntries.map(e => e.id));
+  const cloudIds = new Set(cloudEntries.map((e) => e.id));
 
-  // 2. Keep any local entries not yet in the cloud (failed to sync)
-  const localEntries: PoopEntry[] = JSON.parse(localStore.getItem('cacalendario_entries') || '[]');
-  const localOnly = localEntries.filter(e => e.id && !cloudIds.has(e.id));
+  const localEntries = getLocalEntries();
+  const localOnly = localEntries.filter((e) => e.id && !cloudIds.has(e.id));
 
-  // Upload local-only entries to cloud so they're not lost
   for (const entry of localOnly) {
-    saveEntryToCloud(userId, entry).catch(e => console.error('[sync] Failed to upload local entry:', e));
+    saveEntryToCloud(userId, entry).catch((e) => console.error('[sync] Failed to upload local entry:', e));
   }
 
-  // 3. Merge: cloud is authoritative, local-only entries are appended
   const merged = [...cloudEntries, ...localOnly];
   merged.sort((a, b) => a.timestamp - b.timestamp);
 
-  localStore.setItem('cacalendario_entries', JSON.stringify(merged));
+  localStore.setItem(ENTRIES_KEY, JSON.stringify(merged));
+  setLastSyncedAt(maxUpdatedAt);
   return merged;
 }
 

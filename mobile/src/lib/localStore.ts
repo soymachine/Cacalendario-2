@@ -11,6 +11,7 @@ const KNOWN_KEYS = [
   'cacalendario_doctor_image',
   'cacalendario_hidden_fields',
   'cacalendario_entry_type_mode',
+  'cacalendario_last_synced_at',
 ] as const;
 
 const cache = new Map<string, string>();
