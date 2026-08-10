@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabaseAdmin as supabase } from '../lib/supabase';
+import { testPlanDaysLeft } from '../lib/plan';
 
 interface FeedbackItem {
   id: string;
@@ -42,15 +43,6 @@ const PLAN_OPTIONS: { value: 'free' | 'beta' | 'test' | 'pro'; label: string }[]
   { value: 'test', label: '🎁 Test (1 mes gratis)' },
   { value: 'pro', label: '🚀 Pro' },
 ];
-
-const TEST_PLAN_DURATION_DAYS = 31;
-
-function testPlanDaysLeft(startedAt: string | null): number | null {
-  if (!startedAt) return null;
-  const elapsedMs = Date.now() - new Date(startedAt).getTime();
-  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-  return Math.max(0, TEST_PLAN_DURATION_DAYS - elapsedDays);
-}
 
 interface DashboardStats {
   totalUsers: number;
@@ -999,7 +991,7 @@ export default function AdminPanel() {
                 )}
                 {newPlan === 'test' && (
                   <p style={{ fontSize: 13, color: '#166534', marginTop: 10, backgroundColor: '#dcfce7', borderRadius: 8, padding: '8px 12px' }}>
-                    Se activan 31 días de pacientes ilimitados a partir de hoy. El contador empieza de nuevo si se reactiva este plan más adelante.
+                    Se activan 30 días de pacientes ilimitados a partir de hoy. El contador empieza de nuevo si se reactiva este plan más adelante.
                   </p>
                 )}
               </div>

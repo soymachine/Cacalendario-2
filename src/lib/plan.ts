@@ -7,7 +7,7 @@
 // `doctors.test_plan_started_at`, que fija el trigger `doctors_set_trial_on_insert`
 // en el alta. Al caducar, MW ofrece pasar por Stripe Checkout.
 
-export const TEST_PLAN_DURATION_DAYS = 31;
+export const TEST_PLAN_DURATION_DAYS = 30;
 
 export type DoctorPlan = 'free' | 'beta' | 'test' | 'pro';
 

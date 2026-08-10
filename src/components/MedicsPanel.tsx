@@ -646,7 +646,7 @@ export default function MedicsPanel() {
         name: registerName.trim(),
         specialty: registerSpecialty.trim() || null,
         // El plan lo fija el trigger `doctors_set_trial_on_insert`: todo
-        // registro nuevo entra en el trial de 31 días ('test').
+        // registro nuevo entra en el trial de 30 días ('test').
       });
       if (docErr) throw new Error(docErr.message);
       const { data: doctorData } = await supabase
@@ -3896,7 +3896,7 @@ export default function MedicsPanel() {
           <span className="text-[40px]">🎁</span>
           <h2 className="text-[22px] font-extrabold text-fx-text m-0 mt-2 mb-2">Tu mes de prueba ha finalizado</h2>
           <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
-            Has agotado los 31 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
+            Has agotado los 30 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
             usando Fluxia sin límites: recuperarás automáticamente todos tus registros y pacientes guardados.
           </p>
           {billingError && (

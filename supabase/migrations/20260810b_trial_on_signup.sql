@@ -1,12 +1,12 @@
 -- ============================================================================
--- Fluxia — Los registros nuevos entran en el trial de 31 días ('test')
+-- Fluxia — Los registros nuevos entran en el trial de 30 días ('test')
 -- ----------------------------------------------------------------------------
 -- Hasta ahora un médico que se registraba entraba en 'beta': ilimitado en el
 -- tiempo y sin caducidad, así que nunca llegaba a la pantalla de pago pese a
 -- que la landing anuncia "30 días gratis". Con Stripe ya integrado, esto
 -- significaba que ningún usuario nuevo entraría jamás en el flujo de cobro.
 --
--- A partir de aquí, todo registro nuevo entra en 'test' (31 días, sin límite
+-- A partir de aquí, todo registro nuevo entra en 'test' (30 días, sin límite
 -- de pacientes y SIN pedir tarjeta). Cuando caduca, MedicsPanel muestra el
 -- modal que abre Stripe Checkout.
 --

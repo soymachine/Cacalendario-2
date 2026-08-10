@@ -286,11 +286,15 @@ const benefits = [
     background: var(--color-surface-sunken); border-style: dashed;
   }
   .price-card--trial .price-name { color: var(--text-secondary); }
+  /* Plan aún no disponible: se anuncia, pero sin CTA ni jerarquía visual. */
+  .price-card--soon { position: relative; opacity: .72; }
   .price-pill {
     position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
     background: var(--color-primary); color: #fff; font-size: 12.5px; font-weight: 700;
     padding: 6px 16px; border-radius: var(--radius-pill); white-space: nowrap;
   }
+  .price-pill--soon { background: var(--color-surface-sunken); color: var(--text-secondary); border: 1px solid var(--border); }
+  .price-soon-note { font-size: 13.5px; color: var(--text-tertiary); text-align: center; margin: 0; }
   .price-name { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
   .price-amount { font-size: 40px; font-weight: 700; font-family: var(--font-display); color: var(--text-primary); line-height: 1; }
   .price-period { font-size: 13px; color: var(--text-tertiary); margin-bottom: 14px; }
@@ -609,7 +613,8 @@ const benefits = [
         <a class="btn btn-block" href="/medics">Empieza gratis</a>
       </div>
 
-      <div class="price-card">
+      <div class="price-card price-card--soon">
+        <span class="price-pill price-pill--soon">Próximamente</span>
         <div class="price-name">Equipo</div>
         <div class="price-amount">49,95€</div>
         <div class="price-period">/mes · IVA no incluido</div>
@@ -624,7 +629,7 @@ const benefits = [
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel unificado del centro</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Soporte prioritario</div>
         </div>
-        <a class="btn btn-ghost btn-block" href="/medics">Empieza gratis</a>
+        <p class="price-soon-note">Estamos terminándolo. Escríbenos si te interesa y te avisamos.</p>
       </div>
     </div>
     <p class="pricing-contact">¿Tienes un equipo de más de 3 usuarios o una red de centros? Escríbenos a <a href="mailto:hola@fluxia.health">hola@fluxia.health</a> y te preparamos una propuesta a medida.</p>

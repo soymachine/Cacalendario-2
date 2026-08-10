@@ -1,4 +1,4 @@
-// Pantalla de bloqueo cuando caduca el trial de 31 días.
+// Pantalla de bloqueo cuando caduca el trial de 30 días.
 //
 // IMPORTANTE — reglas de App Store: esta pantalla NO puede incluir botones,
 // enlaces ni llamadas a la acción que lleven a pagar fuera de la app (App
