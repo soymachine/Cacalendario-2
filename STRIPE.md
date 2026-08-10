@@ -68,7 +68,20 @@ Tres ideas que conviene interiorizar desde el principio:
 | `supabase/functions/stripe-portal/index.ts` | Abre el portal de cliente (facturas, cambiar tarjeta, cancelar) |
 | `supabase/functions/stripe-webhook/index.ts` | Recibe los eventos y escribe el plan |
 | `src/lib/billing.ts` | Las tres funciones que llama el navegador |
+| `supabase/migrations/20260810b_trial_on_signup.sql` | Los registros nuevos entran en el trial de 31 días (`test`), vía trigger |
 | `src/components/MedicsPanel.tsx` | Botones cableados + aviso al volver de Stripe |
+
+### El ciclo de vida de un médico
+
+```
+registro (sin tarjeta) ──► test · 31 días ──► caduca ──► modal de pago
+                                                             │
+                                                             ▼
+                                                    Stripe Checkout ──► pro
+```
+
+Los médicos que ya estaban en `beta` conservan su acceso indefinido: la
+migración solo cambia las altas nuevas.
 
 ---
 
@@ -356,13 +369,13 @@ Estas las tomé yo para poder dejarlo funcionando; cámbialas si no encajan:
    landing 19,95 €. Lo he unificado a 19,95 € desde `PRO_PRICE_LABEL` en
    `src/lib/billing.ts`. Si el precio bueno era otro, cámbialo ahí **y** en
    el Price de Stripe.
-3. **La prueba gratuita sigue siendo vuestra, no de Stripe.** El plan `test`
-   de 31 días se gestiona en la base de datos como hasta ahora, y Checkout no
-   pide tarjeta hasta que caduca. Esto respeta el "sin tarjeta de crédito" que
-   promete la landing. Si algún día prefieres el trial de Stripe (pedir
-   tarjeta el día 1 y cobrar solo al día 31 — convierte bastante mejor), es
-   añadir `subscription_data: { trial_period_days: 30 }` en `stripe-checkout`
-   y reescribir ese texto de la landing.
+3. **La prueba gratuita es vuestra, no de Stripe, y no pide tarjeta.** El
+   plan `test` de 31 días se gestiona en la base de datos, y Checkout solo
+   entra en escena cuando caduca o cuando el médico decide pagar antes. Si
+   algún día prefieres el trial de Stripe (pedir tarjeta el día 1 y cobrar al
+   31 — convierte mejor, pero rompe el "sin tarjeta de crédito" de la
+   landing), es añadir `subscription_data: { trial_period_days: 30 }` en
+   `stripe-checkout`.
 4. **Impagos con margen.** `past_due` y `unpaid` mantienen el acceso Pro: si a
    un médico le caduca la tarjeta, Stripe reintenta durante días y no quiero
    cortarle el acceso a datos clínicos por eso. Solo cuando Stripe cancela

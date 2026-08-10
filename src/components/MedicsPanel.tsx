@@ -653,7 +653,8 @@ export default function MedicsPanel() {
         center_id: newCenter.id,
         name: registerName.trim(),
         specialty: registerSpecialty.trim() || null,
-        plan: 'beta',
+        // El plan lo fija el trigger `doctors_set_trial_on_insert`: todo
+        // registro nuevo entra en el trial de 31 días ('test').
       });
       if (docErr) throw new Error(docErr.message);
       const { data: doctorData } = await supabase
