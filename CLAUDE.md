@@ -45,7 +45,7 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
   portada a mano (`stats.ts`, `dates.ts`, `bristol.ts`, `tiers.ts`, etc. en
   `src/lib/` ↔ `mobile/src/lib/`).
 - **MW ↔ MA**: la web de médicos y `mobile-medics/` comparten
-  `semaforo.ts`, `tags.ts` y `entryFilters.ts` (`src/lib/` ↔
+  `semaforo.ts`, `tags.ts`, `entryFilters.ts` y `plan.ts` (`src/lib/` ↔
   `mobile-medics/src/lib/`).
 - No hay monorepo/workspaces: todo el código compartido se sincroniza a
   mano. `src/lib/*.ts` es siempre la fuente canónica; si se corrige un bug

@@ -170,7 +170,8 @@ export async function completeGoogleDoctorProfile(
     center_id: newCenter.id,
     name: name.trim(),
     specialty: specialty?.trim() || null,
-    plan: 'beta',
+    // El plan lo fija el trigger `doctors_set_trial_on_insert`: todo registro
+    // nuevo entra en el trial de 31 días ('test').
   });
   if (docErr) return { doctor: null, error: docErr.message };
 

@@ -10,6 +10,7 @@ import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
+import { testPlanDaysLeft, isTrialExpired } from '../lib/plan';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICE_LABEL } from '../lib/billing';
 import type { CheckoutOutcome } from '../lib/billing';
 import {
@@ -90,15 +91,6 @@ interface DoctorInfo {
 // Free tier limit: 1 patient (accepted + pending). Beta: 100. Test/Pro are effectively unlimited.
 const FREE_PLAN_PATIENT_LIMIT = 1;
 const BETA_PLAN_PATIENT_LIMIT = 100;
-const TEST_PLAN_DURATION_DAYS = 31;
-
-// Returns days remaining in the 1-month free trial (0 once it has expired), or null if not started.
-function testPlanDaysLeft(startedAt: string | null | undefined): number | null {
-  if (!startedAt) return null;
-  const elapsedMs = Date.now() - new Date(startedAt).getTime();
-  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-  return Math.max(0, TEST_PLAN_DURATION_DAYS - elapsedDays);
-}
 
 interface PatientEntry {
   id: string;
@@ -303,7 +295,7 @@ export default function MedicsPanel() {
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
 
   const testDaysLeft = doctorInfo?.plan === 'test' ? testPlanDaysLeft(doctorInfo.test_plan_started_at) : null;
-  const testExpired = doctorInfo?.plan === 'test' && testDaysLeft !== null && testDaysLeft <= 0;
+  const testExpired = !!doctorInfo && isTrialExpired(doctorInfo.plan, doctorInfo.test_plan_started_at);
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
