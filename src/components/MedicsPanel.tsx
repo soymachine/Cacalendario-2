@@ -10,6 +10,8 @@ import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
+import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICE_LABEL } from '../lib/billing';
+import type { CheckoutOutcome } from '../lib/billing';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
@@ -79,6 +81,10 @@ interface DoctorInfo {
   plan: 'free' | 'beta' | 'test' | 'pro';
   test_plan_started_at: string | null;
   global_tags: string[];
+  stripe_customer_id: string | null;
+  stripe_status: string | null;
+  stripe_current_period_end: string | null;
+  stripe_cancel_at_period_end: boolean;
 }
 
 // Free tier limit: 1 patient (accepted + pending). Beta: 100. Test/Pro are effectively unlimited.
@@ -323,6 +329,10 @@ export default function MedicsPanel() {
     plan: (d.plan as 'free' | 'beta' | 'test' | 'pro') || 'free',
     test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
+    stripe_customer_id: d.stripe_customer_id || null,
+    stripe_status: d.stripe_status || null,
+    stripe_current_period_end: d.stripe_current_period_end || null,
+    stripe_cancel_at_period_end: d.stripe_cancel_at_period_end ?? false,
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -348,6 +358,53 @@ export default function MedicsPanel() {
 
     setConfigPalette(info.palette);
   };
+
+  // ── Stripe billing ──
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
+  const [checkoutOutcome, setCheckoutOutcome] = useState<CheckoutOutcome>(null);
+
+  const refreshDoctorInfo = async (doctorId: string) => {
+    const { data } = await supabase
+      .from('doctors').select('*, centers(name, image_url)').eq('id', doctorId).maybeSingle();
+    if (data) applyDoctorInfo(buildDoctorInfo(data));
+  };
+
+  const runBillingAction = async (action: () => Promise<void>) => {
+    setBillingError(null);
+    setBillingLoading(true);
+    try {
+      await action();  // redirige fuera de la página si todo va bien
+    } catch (err) {
+      setBillingError((err as Error).message);
+      setBillingLoading(false);
+    }
+  };
+
+  const handleUpgradeToPro = () => runBillingAction(startProCheckout);
+  const handleOpenBillingPortal = () => runBillingAction(openBillingPortal);
+
+  // Al volver de Stripe: leer ?checkout=... y refrescar el plan. El webhook
+  // suele llegar antes que la redirección, pero no está garantizado, así que
+  // se reintenta unas cuantas veces antes de rendirse.
+  useEffect(() => {
+    const outcome = readCheckoutOutcome();
+    if (outcome) setCheckoutOutcome(outcome);
+  }, []);
+
+  useEffect(() => {
+    if (checkoutOutcome !== 'success' || !doctorInfo?.id) return;
+    if (doctorInfo.plan === 'pro') return;
+
+    const doctorId = doctorInfo.id;
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      refreshDoctorInfo(doctorId);
+      if (attempts >= 5) clearInterval(timer);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [checkoutOutcome, doctorInfo?.id, doctorInfo?.plan]);
 
   // ── Recover session on mount + handle Google OAuth callback ──
   useEffect(() => {
@@ -1634,6 +1691,15 @@ export default function MedicsPanel() {
                     className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
                   >
                     Pasar a Pro
+                  </button>
+                )}
+                {doctorInfo?.stripe_customer_id && (
+                  <button
+                    onClick={() => { setAccountMenuOpen(false); handleOpenBillingPortal(); }}
+                    disabled={billingLoading}
+                    className="medics-account-menu__item w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm text-fx-text-secondary hover:bg-fx-ink-100 disabled:opacity-60"
+                  >
+                    {billingLoading ? 'Abriendo…' : 'Facturación y suscripción'}
                   </button>
                 )}
                 <button
@@ -3545,15 +3611,19 @@ export default function MedicsPanel() {
               <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Soporte prioritario en 24h</li>
             </ul>
             <div className="bg-fx-surface-2 rounded-xl p-4 mb-5 text-center">
-              <div className="text-[32px] font-extrabold text-fx-text">49 €<span className="text-[13px] font-medium text-fx-ink-400">/mes</span></div>
+              <div className="text-[32px] font-extrabold text-fx-text">{PRO_PRICE_LABEL}<span className="text-[13px] font-medium text-fx-ink-400">/mes</span></div>
               <div className="text-xs text-fx-ink-400 mt-0.5">Facturación mensual · Cancela cuando quieras</div>
             </div>
+            {billingError && (
+              <p className="text-[13px] text-fx-error-600 m-0 mb-3 text-center">{billingError}</p>
+            )}
             <button
-              onClick={() => { alert('Pronto: integración con Stripe para activar el plan Pro.'); }}
-              className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+              onClick={handleUpgradeToPro}
+              disabled={billingLoading}
+              className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
               style={{ backgroundColor: th.dark }}
             >
-              Activar plan Pro
+              {billingLoading ? 'Abriendo pago seguro…' : 'Activar plan Pro'}
             </button>
             <button
               onClick={() => setShowUpgradeModal(false)}
@@ -3800,6 +3870,32 @@ export default function MedicsPanel() {
       );
     })()}
 
+    {/* ── VUELTA DE STRIPE CHECKOUT ── */}
+    {checkoutOutcome && (
+      <div className="medics-checkout-toast fixed bottom-6 left-1/2 -translate-x-1/2 z-[2100] max-w-[520px] w-[calc(100%-2rem)] bg-white rounded-fx-lg shadow-fx-lg border border-fx-border-soft p-4 flex items-start gap-3">
+        <span className="text-[20px] leading-none">{checkoutOutcome === 'success' ? '✅' : 'ℹ️'}</span>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-fx-text m-0">
+            {checkoutOutcome === 'success' ? '¡Pago completado!' : 'Pago cancelado'}
+          </p>
+          <p className="text-[13px] text-fx-text-secondary m-0 mt-0.5 leading-relaxed">
+            {checkoutOutcome === 'success'
+              ? (doctorInfo?.plan === 'pro'
+                  ? 'Tu plan Pro ya está activo. Recibirás la factura por email.'
+                  : 'Estamos confirmando el pago con el banco. Tu plan se activará en unos segundos.')
+              : 'No se ha realizado ningún cargo. Puedes contratar el plan Pro cuando quieras.'}
+          </p>
+        </div>
+        <button
+          onClick={() => setCheckoutOutcome(null)}
+          className="bg-transparent border-none text-fx-ink-300 text-lg leading-none cursor-pointer"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+    )}
+
     {/* ── TEST PLAN EXPIRED MODAL ── */}
     {testExpired && (
       <div className="medics-test-expired-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[2000] p-6">
@@ -3810,12 +3906,16 @@ export default function MedicsPanel() {
             Has agotado los 31 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
             usando Fluxia sin límites: recuperarás automáticamente todos tus registros y pacientes guardados.
           </p>
+          {billingError && (
+            <p className="text-[13px] text-fx-error-600 m-0 mb-3">{billingError}</p>
+          )}
           <button
-            onClick={() => { alert('Pronto: integración con Stripe para activar el plan de pago.'); }}
-            className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer"
+            onClick={handleUpgradeToPro}
+            disabled={billingLoading}
+            className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
             style={{ backgroundColor: th.dark }}
           >
-            Pasar a la modalidad de pago
+            {billingLoading ? 'Abriendo pago seguro…' : `Pasar a la modalidad de pago — ${PRO_PRICE_LABEL}/mes`}
           </button>
           <button
             onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}
