@@ -128,10 +128,14 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
     <Modal visible animationType="slide" onRequestClose={onClose}>
       <SafeAreaProvider>
       <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
-        {/* Close button */}
-        <Pressable onPress={onClose} style={styles.closeButton}>
-          <CloseIcon size={24} />
-        </Pressable>
+        {/* Close button — en flujo, no absoluto: dentro de SafeAreaView un hijo
+            absoluto no hereda el padding del área segura y se cuela bajo la
+            barra de estado (batería, hora, notch). */}
+        <View style={styles.closeRow}>
+          <Pressable onPress={onClose} style={styles.closeButton} hitSlop={8}>
+            <CloseIcon size={24} />
+          </Pressable>
+        </View>
 
         {/* Scrollable content */}
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -504,18 +508,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: D.bg,
   },
+  closeRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 8,
+    paddingRight: 16,
+  },
   closeButton: {
-    position: 'absolute',
-    top: 20,
-    right: 16,
-    zIndex: 10,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   container: {
-    paddingTop: 60,
+    // 12 + los 48 que ocupa closeRow = los 60 originales bajo el área segura.
+    paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 8,
   },

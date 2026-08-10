@@ -97,10 +97,14 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Close button */}
-        <Pressable onPress={onClose} style={styles.closeButton}>
-          <CloseIcon />
-        </Pressable>
+        {/* Close button — en flujo, no absoluto: dentro de SafeAreaView un hijo
+            absoluto no hereda el padding del área segura y se cuela bajo la
+            barra de estado (batería, hora, notch). */}
+        <View style={styles.closeRow}>
+          <Pressable onPress={onClose} style={styles.closeButton} hitSlop={8}>
+            <CloseIcon />
+          </Pressable>
+        </View>
 
         {/* Logo */}
         <View style={styles.logoRow}>
@@ -264,11 +268,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: D.bg,
   },
+  closeRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 8,
+    paddingRight: 16,
+  },
   closeButton: {
-    position: 'absolute',
-    top: 20,
-    right: 16,
-    zIndex: 10,
     width: 40,
     height: 40,
     alignItems: 'center',
@@ -276,7 +282,8 @@ const styles = StyleSheet.create({
   },
   logoRow: {
     alignItems: 'center',
-    paddingTop: 48,
+    // closeRow ya aporta los 48 que este padding reservaba para el botón.
+    paddingTop: 0,
     paddingBottom: 24,
   },
   logo: {

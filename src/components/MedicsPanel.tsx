@@ -11,6 +11,7 @@ import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/s
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
 import { testPlanDaysLeft, isTrialExpired } from '../lib/plan';
+import EntryTypeIcon from './EntryTypeIcon';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICE_LABEL } from '../lib/billing';
 import type { CheckoutOutcome } from '../lib/billing';
 import {
@@ -2593,9 +2594,16 @@ export default function MedicsPanel() {
                       <div className="flex flex-col">
                         {/* Header row */}
                         <div className="flex items-center px-4 py-[7px] border-b border-fx-border-soft" style={{ backgroundColor: 'var(--fx-ink-50)' }}>
-                          <span className="w-8 text-[10px] font-bold text-fx-text-tertiary uppercase"></span>
+                          <span className="w-8 text-[10px] font-bold text-fx-text-tertiary uppercase">Tipo</span>
                           <span className="w-[130px] text-[10px] font-bold text-fx-text-tertiary uppercase">Fecha / Hora</span>
                           <span className="flex-1 text-[10px] font-bold text-fx-text-tertiary uppercase">Datos</span>
+                          {/* Leyenda: los iconos son nuevos para el médico, así que se
+                              nombran una vez en la cabecera en lugar de dejarlos solo
+                              en el tooltip. */}
+                          <span className="hidden sm:flex items-center gap-3 text-[10px] font-semibold text-fx-text-tertiary uppercase pr-7">
+                            <span className="flex items-center gap-1"><EntryTypeIcon isUrine={false} size={13} />Deposición</span>
+                            <span className="flex items-center gap-1"><EntryTypeIcon isUrine size={13} />Micción</span>
+                          </span>
                         </div>
                         {pagedEntries.map((entry, i) => {
                           const isUrine = entry.entry_type === 'urine';
@@ -2609,7 +2617,7 @@ export default function MedicsPanel() {
                               <div className="flex items-start px-4 py-2.5 relative">
                                 {/* Type icon */}
                                 <div className="w-8 pt-0.5">
-                                  <Circle size={10} weight="fill" color={isUrine ? 'var(--color-accent)' : 'var(--color-secondary)'} />
+                                  <EntryTypeIcon isUrine={isUrine} />
                                 </div>
                                 {/* Date / time */}
                                 <div className="w-[130px]">
