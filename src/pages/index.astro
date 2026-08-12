@@ -298,6 +298,31 @@ const benefits = [
   .price-name { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
   .price-amount { font-size: 40px; font-weight: 700; font-family: var(--font-display); color: var(--text-primary); line-height: 1; }
   .price-period { font-size: 13px; color: var(--text-tertiary); margin-bottom: 14px; }
+  /* Selector mensual / anual dentro de la tarjeta del plan de pago. */
+  .billing-toggle {
+    display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px;
+    background: var(--color-surface-sunken); border: 1px solid var(--border-soft); border-radius: var(--radius-pill);
+  }
+  .billing-toggle button {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; background: transparent; cursor: pointer; font: inherit;
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    padding: 6px 14px; border-radius: var(--radius-pill); transition: background .15s ease, color .15s ease;
+  }
+  .billing-toggle button:hover { color: var(--text-primary); }
+  .billing-toggle button[aria-pressed="true"] {
+    background: var(--color-surface); color: var(--text-primary); box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.08));
+  }
+  .billing-toggle .save-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .01em;
+    background: var(--color-success-soft, #E7F5EC); color: var(--color-success, #2F8A5C);
+    padding: 2px 7px; border-radius: var(--radius-pill);
+  }
+  .price-save {
+    font-size: 13px; font-weight: 600; color: var(--color-success, #2F8A5C);
+    margin: -6px 0 14px;
+  }
+  .price-save[hidden] { display: none; }
   .price-desc { font-size: 14.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 22px; }
   .price-hr { height: 1px; background: var(--border-soft); margin-bottom: 22px; }
   .price-features { display: flex; flex-direction: column; gap: 13px; margin-bottom: 28px; flex: 1; }
@@ -597,8 +622,13 @@ const benefits = [
       <div class="price-card price-card--featured">
         <span class="price-pill">Más popular</span>
         <div class="price-name">Profesional</div>
-        <div class="price-amount">19,95€</div>
-        <div class="price-period">/mes · IVA no incluido</div>
+        <div class="billing-toggle" role="group" aria-label="Periodo de facturación">
+          <button type="button" data-billing="month" aria-pressed="true">Mensual</button>
+          <button type="button" data-billing="year" aria-pressed="false">Anual <span class="save-tag">−16%</span></button>
+        </div>
+        <div class="price-amount" id="pro-amount">19,95€</div>
+        <div class="price-period" id="pro-period">/mes · IVA no incluido</div>
+        <p class="price-save" id="pro-save" hidden>Ahorras 39,45€ al año — sale a 16,66€/mes</p>
         <p class="price-desc">Para el profesional que quiere sacar el máximo partido al seguimiento.</p>
         <div class="price-hr"></div>
         <div class="price-features">
@@ -721,6 +751,45 @@ const benefits = [
 </dialog>
 
 <script is:inline>
+  // Selector mensual / anual del plan Profesional.
+  // Los importes viven aquí y en src/lib/billing.ts (que es lo que ve el
+  // médico dentro de MW); si cambian, hay que tocar los dos y el Price
+  // correspondiente en Stripe.
+  (function () {
+    var PRICING = {
+      month: { amount: '19,95€', period: '/mes · IVA no incluido', save: null },
+      year: {
+        amount: '199,95€',
+        period: '/año · IVA no incluido',
+        save: 'Ahorras 39,45€ al año — sale a 16,66€/mes',
+      },
+    };
+    var toggle = document.querySelector('.billing-toggle');
+    if (!toggle) return;
+    var amountEl = document.getElementById('pro-amount');
+    var periodEl = document.getElementById('pro-period');
+    var saveEl = document.getElementById('pro-save');
+
+    toggle.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-billing]');
+      if (!btn) return;
+      var plan = PRICING[btn.getAttribute('data-billing')];
+      if (!plan) return;
+
+      Array.prototype.forEach.call(toggle.querySelectorAll('button'), function (b) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      amountEl.textContent = plan.amount;
+      periodEl.textContent = plan.period;
+      if (plan.save) {
+        saveEl.textContent = plan.save;
+        saveEl.hidden = false;
+      } else {
+        saveEl.hidden = true;
+      }
+    });
+  })();
+
   // Sticky nav shadow on scroll
   var nav = document.getElementById('site-nav');
   window.addEventListener('scroll', function () {

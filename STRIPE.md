@@ -154,11 +154,28 @@ Configura también:
 > | | |
 > |---|---|
 > | Producto | `prod_V3h0dwRIftEwpV` — Fluxia Pro |
-> | Precio | `price_1U3ZcAANIg6DlLEVMuONWgUB` — 19,95 €/mes, IVA aparte |
+> | Precio mensual | `price_1U3ZcAANIg6DlLEVMuONWgUB` — 19,95 €/mes, IVA aparte |
 > | `lookup_key` | `fluxia_pro_monthly` |
 > | Registro fiscal | `taxreg_1U3ZhQANIg6DlLEVPMA3XQLn` (ES) |
 >
-> Queda pendiente repetirlo en **modo live**. Los pasos de abajo describen
+> **Falta el precio anual** (199,95 €/año). Es un Price más sobre el MISMO
+> producto — no un producto nuevo, o el médico no podría cambiar de periodo
+> desde el portal:
+>
+> ```bash
+> stripe prices create \
+>   --product prod_V3h0dwRIftEwpV \
+>   --currency eur \
+>   --unit-amount 19995 \
+>   --tax-behavior exclusive \
+>   --recurring.interval year \
+>   --lookup-key fluxia_pro_yearly \
+>   --nickname "Fluxia Pro · anual"
+> ```
+>
+> Y su secret: `supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_...`
+>
+> Queda pendiente repetirlo todo en **modo live**. Los pasos de abajo describen
 > cómo se hizo, por si hay que rehacerlo o crear otro plan.
 
 1. **Dashboard → Catálogo de productos → + Añadir producto** (asegúrate de

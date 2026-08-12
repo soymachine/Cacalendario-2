@@ -12,8 +12,8 @@ import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
 import { testPlanDaysLeft, isTrialExpired } from '../lib/plan';
 import EntryTypeIcon from './EntryTypeIcon';
-import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICE_LABEL } from '../lib/billing';
-import type { CheckoutOutcome } from '../lib/billing';
+import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
+import type { CheckoutOutcome, BillingInterval } from '../lib/billing';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
@@ -355,6 +355,7 @@ export default function MedicsPanel() {
   // ── Stripe billing ──
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
   const [checkoutOutcome, setCheckoutOutcome] = useState<CheckoutOutcome>(null);
 
   const refreshDoctorInfo = async (doctorId: string) => {
@@ -374,8 +375,49 @@ export default function MedicsPanel() {
     }
   };
 
-  const handleUpgradeToPro = () => runBillingAction(startProCheckout);
+  const handleUpgradeToPro = () => runBillingAction(() => startProCheckout(billingInterval));
   const handleOpenBillingPortal = () => runBillingAction(openBillingPortal);
+
+  // Selector mensual/anual, compartido por los dos modales de pago.
+  const billingIntervalPicker = (
+    <>
+      <div className="flex gap-2 mb-2" role="group" aria-label="Periodo de facturación">
+        {(['month', 'year'] as BillingInterval[]).map(iv => {
+          const p = PRO_PRICING[iv];
+          const selected = billingInterval === iv;
+          return (
+            <button
+              key={iv}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setBillingInterval(iv)}
+              className="flex-1 text-left rounded-fx-md px-3 py-2.5 cursor-pointer bg-white font-sans"
+              style={{
+                border: selected ? `2px solid ${th.dark}` : '1px solid var(--border)',
+                padding: selected ? '9px 11px' : '10px 12px',
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-fx-text-tertiary">{p.name}</span>
+                {p.badge && (
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-success-100 text-fx-success-700">
+                    {p.badge}
+                  </span>
+                )}
+              </span>
+              <span className="block text-[17px] font-extrabold text-fx-text mt-0.5">
+                {p.label}
+                <span className="text-[11px] font-medium text-fx-ink-400">{p.period}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[12px] text-fx-text-secondary m-0 mb-4 min-h-[18px]">
+        {PRO_PRICING[billingInterval].note || 'Cancela cuando quieras · IVA no incluido'}
+      </p>
+    </>
+  );
 
   // Al volver de Stripe: leer ?checkout=... y refrescar el plan. El webhook
   // suele llegar antes que la redirección, pero no está garantizado, así que
@@ -3611,10 +3653,7 @@ export default function MedicsPanel() {
               <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Informes PDF firmados</li>
               <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Soporte prioritario en 24h</li>
             </ul>
-            <div className="bg-fx-surface-2 rounded-xl p-4 mb-5 text-center">
-              <div className="text-[32px] font-extrabold text-fx-text">{PRO_PRICE_LABEL}<span className="text-[13px] font-medium text-fx-ink-400">/mes</span></div>
-              <div className="text-xs text-fx-ink-400 mt-0.5">Facturación mensual · Cancela cuando quieras</div>
-            </div>
+            {billingIntervalPicker}
             {billingError && (
               <p className="text-[13px] text-fx-error-600 m-0 mb-3 text-center">{billingError}</p>
             )}
@@ -3907,6 +3946,7 @@ export default function MedicsPanel() {
             Has agotado los 30 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
             usando Fluxia sin límites: recuperarás automáticamente todos tus registros y pacientes guardados.
           </p>
+          <div className="text-left">{billingIntervalPicker}</div>
           {billingError && (
             <p className="text-[13px] text-fx-error-600 m-0 mb-3">{billingError}</p>
           )}
@@ -3916,7 +3956,7 @@ export default function MedicsPanel() {
             className="w-full py-3.5 rounded-fx-pill text-white border-none text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
             style={{ backgroundColor: th.dark }}
           >
-            {billingLoading ? 'Abriendo pago seguro…' : `Pasar a la modalidad de pago — ${PRO_PRICE_LABEL}/mes`}
+            {billingLoading ? 'Abriendo pago seguro…' : 'Pasar a la modalidad de pago'}
           </button>
           <button
             onClick={() => { supabase.auth.signOut(); setLoggedIn(false); setDoctorInfo(null); }}

@@ -5,11 +5,45 @@
 // devuelve al usuario a /medics y el plan real lo escribe el webhook.
 import { supabaseMedics as supabase } from './supabase';
 
-/** Precio público del plan Pro. El importe que se cobra es el del Price de Stripe. */
-export const PRO_PRICE_LABEL = '19,95 €';
+export type BillingInterval = 'month' | 'year';
 
-async function invokeBilling(fn: 'stripe-checkout' | 'stripe-portal'): Promise<string> {
-  const { data, error } = await supabase.functions.invoke(fn, { body: {} });
+/**
+ * Precios públicos del plan Pro. Son solo para pintar la UI: el importe que se
+ * cobra de verdad es el del Price de Stripe, y el navegador nunca elige cuál
+ * (manda el intervalo, y la Edge Function lo traduce a un price concreto).
+ *
+ * Si cambian, hay que tocar también el bloque PRICING de src/pages/index.astro
+ * y el Price correspondiente en Stripe.
+ */
+export const PRO_PRICING: Record<BillingInterval, {
+  name: string;
+  label: string;
+  period: string;
+  badge: string | null;
+  note: string | null;
+}> = {
+  month: {
+    name: 'Mensual',
+    label: '19,95 €',
+    period: '/mes',
+    badge: null,
+    note: null,
+  },
+  year: {
+    name: 'Anual',
+    label: '199,95 €',
+    period: '/año',
+    // 19,95 × 12 = 239,40 → se ahorra 39,45 €, un 16%.
+    badge: '−16%',
+    note: 'Ahorras 39,45 € al año — sale a 16,66 €/mes',
+  },
+};
+
+async function invokeBilling(
+  fn: 'stripe-checkout' | 'stripe-portal',
+  body: Record<string, unknown> = {},
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke(fn, { body });
 
   if (error) {
     // `functions.invoke` no expone el cuerpo del error, así que el mensaje del
@@ -22,9 +56,9 @@ async function invokeBilling(fn: 'stripe-checkout' | 'stripe-portal'): Promise<s
   return data.url as string;
 }
 
-/** Abre Stripe Checkout para contratar el plan Pro. */
-export async function startProCheckout(): Promise<void> {
-  window.location.href = await invokeBilling('stripe-checkout');
+/** Abre Stripe Checkout para contratar el plan Pro, mensual o anual. */
+export async function startProCheckout(interval: BillingInterval = 'month'): Promise<void> {
+  window.location.href = await invokeBilling('stripe-checkout', { interval });
 }
 
 /** Abre el Customer Portal: cambiar tarjeta, ver facturas, cancelar. */

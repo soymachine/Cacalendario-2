@@ -9,7 +9,7 @@
 // Deploy:
 //   supabase functions deploy stripe-checkout
 // Secrets necesarios:
-//   STRIPE_SECRET_KEY, STRIPE_PRICE_PRO, SITE_URL
+//   STRIPE_SECRET_KEY, STRIPE_PRICE_PRO, STRIPE_PRICE_PRO_YEARLY, SITE_URL
 
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripe, siteUrl, requireDoctor } from '../_shared/stripe.ts';
@@ -28,8 +28,21 @@ Deno.serve(async (req) => {
       return json({ error: 'Ya tienes el plan Pro activo.' }, 400);
     }
 
-    const priceId = Deno.env.get('STRIPE_PRICE_PRO');
-    if (!priceId) return json({ error: 'STRIPE_PRICE_PRO no está configurado.' }, 500);
+    // Periodo de facturación. El cliente elige mensual o anual, pero NUNCA
+    // manda el price: se traduce contra esta lista blanca de variables de
+    // entorno. Aceptar un price del navegador dejaría que cualquiera se
+    // cobrase a sí mismo el importe que quisiera.
+    let interval: 'month' | 'year' = 'month';
+    try {
+      const body = await req.json();
+      if (body?.interval === 'year' || body?.interval === 'month') interval = body.interval;
+    } catch {
+      // Sin cuerpo o JSON inválido: se queda en mensual.
+    }
+
+    const priceEnv = interval === 'year' ? 'STRIPE_PRICE_PRO_YEARLY' : 'STRIPE_PRICE_PRO';
+    const priceId = Deno.env.get(priceEnv);
+    if (!priceId) return json({ error: `${priceEnv} no está configurado.` }, 500);
 
     // 1. Customer de Stripe: reutiliza el existente o crea uno y lo enlaza.
     let customerId = doctor.stripe_customer_id as string | null;
@@ -72,8 +85,8 @@ Deno.serve(async (req) => {
       locale: 'es',
       // `metadata` viaja en la sesión; `subscription_data.metadata` se copia a
       // la suscripción, que es lo que leen los eventos posteriores.
-      metadata: { doctor_id: doctor.id },
-      subscription_data: { metadata: { doctor_id: doctor.id } },
+      metadata: { doctor_id: doctor.id, interval },
+      subscription_data: { metadata: { doctor_id: doctor.id, interval } },
       success_url: `${base}/medics?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/medics?checkout=cancel`,
     });
