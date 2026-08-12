@@ -122,26 +122,44 @@ Configura también:
   "no reconozco este cargo", que cuestan 15 € cada una.
 - **Email de soporte** y teléfono: Stripe los muestra en el recibo.
 
-> **Sobre el IVA.** Fluxia vende a profesionales sanitarios en España: el
-> servicio SaaS lleva **21% de IVA**. Dos caminos:
+> **Sobre el IVA — ya decidido: usamos Stripe Tax.** Fluxia vende a
+> profesionales sanitarios, así que el SaaS lleva **21% de IVA** en España.
+> Stripe Tax lo calcula y lo aplica solo, también si algún día vendes a otro
+> país de la UE. Cuesta un 0,5% extra por transacción.
 >
-> - **Stripe Tax** (recomendado para empezar): calcula y aplica el impuesto
->   automáticamente, también si algún día vendes a otro país de la UE.
->   Se activa en **Configuración → Impuestos** y cuesta un 0,5% extra por
->   transacción. Para activarlo, añade `automatic_tax: { enabled: true }` a la
->   sesión en `supabase/functions/stripe-checkout/index.ts`.
-> - **Precio con IVA incluido**: creas el precio a 24,14 € (19,95 + 21%) y lo
->   liquidas tú en tu 303. Más barato, pero se rompe en cuanto vendas fuera de
->   España.
+> Lo que ya está configurado en **modo test**:
 >
-> El código ya activa `tax_id_collection`, así que el médico puede introducir
-> su NIF y le aparecerá en la factura, uses el camino que uses. **Consulta con
-> tu asesor fiscal antes de facturar de verdad**: esto es configuración, no
+> - `automatic_tax: { enabled: true }` en `stripe-checkout`.
+> - Precio con `tax_behavior: exclusive` — 19,95 € **sin** IVA, como anuncia
+>   la landing. Esto no se puede cambiar en un precio existente: para pasar a
+>   precio con IVA incluido habría que crear un precio nuevo.
+> - Código fiscal del producto `txcd_10103001` (SaaS · uso empresarial), y el
+>   mismo como valor por defecto de la cuenta.
+> - Registro fiscal de **ES** dado de alta en Stripe Tax. **Sin registro,
+>   Stripe Tax calcula 0 €**: es el fallo silencioso más fácil de cometer.
+> - `tax_id_collection` para que el profesional ponga su NIF en la factura.
+>
+> Al pasar a producción hay que **repetir el registro fiscal de ES en modo
+> live**, con la fecha desde la que realmente estás dado de alta en Hacienda.
+> Stripe solo lo anota: no te registra ante la AEAT. **Consulta con tu asesor
+> fiscal antes de facturar de verdad**: esto es configuración, no
 > asesoramiento fiscal.
 
 ---
 
 ## 3. Crear el producto y el precio
+
+> **Ya hecho en modo test** (cuenta `acct_1TEDMRANIg6DlLEV`, *Fluxia Health*):
+>
+> | | |
+> |---|---|
+> | Producto | `prod_V3h0dwRIftEwpV` — Fluxia Pro |
+> | Precio | `price_1U3ZcAANIg6DlLEVMuONWgUB` — 19,95 €/mes, IVA aparte |
+> | `lookup_key` | `fluxia_pro_monthly` |
+> | Registro fiscal | `taxreg_1U3ZhQANIg6DlLEVPMA3XQLn` (ES) |
+>
+> Queda pendiente repetirlo en **modo live**. Los pasos de abajo describen
+> cómo se hizo, por si hay que rehacerlo o crear otro plan.
 
 1. **Dashboard → Catálogo de productos → + Añadir producto** (asegúrate de
    estar en **modo Test**).

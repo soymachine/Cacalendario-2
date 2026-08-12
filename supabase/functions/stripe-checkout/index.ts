@@ -54,7 +54,17 @@ Deno.serve(async (req) => {
       customer: customerId,
       client_reference_id: doctor.id,
       line_items: [{ price: priceId, quantity: 1 }],
-      // Datos fiscales: los profesionales suelen necesitar factura con NIF/VAT.
+      // Impuestos con Stripe Tax: el precio es sin IVA (tax_behavior
+      // 'exclusive') y Stripe le suma el que corresponda según la dirección
+      // del médico — 21% en España. Requiere el registro fiscal de ES dado de
+      // alta en Stripe Tax; sin él calcularía 0.
+      //
+      // `tax_id_collection` deja al profesional introducir su NIF/VAT: aparece
+      // en la factura y, para clientes de otros países de la UE, activa la
+      // inversión del sujeto pasivo. `customer_update` es obligatorio con
+      // automatic_tax: sin él, Stripe no puede guardar la dirección con la que
+      // calcula el impuesto.
+      automatic_tax: { enabled: true },
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },
       customer_update: { name: 'auto', address: 'auto' },
