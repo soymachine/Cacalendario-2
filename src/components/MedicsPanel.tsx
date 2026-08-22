@@ -297,6 +297,14 @@ export default function MedicsPanel() {
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
 
+  // Nombre de pila para el saludo. Sin "Dr.": Fluxia no la usan solo médicos
+  // (nutrición, enfermería, fisioterapia…) y el prefijo fijo se equivocaba con
+  // cualquiera que no lo fuera. Además, el campo suele venir ya con el título
+  // escrito dentro ("Dr Moya"), así que se quita antes de coger el nombre para
+  // no acabar saludando "Hola, Dr".
+  const NAME_TITLE_RE = /^(?:dr|dra|d|dña|doctor|doctora|prof|profa|sr|sra)\.?\s+/i;
+  const doctorFirstName = (doctorInfo?.name || '').replace(NAME_TITLE_RE, '').trim().split(' ')[0] || '';
+
   const testDaysLeft = doctorInfo?.plan === 'test' ? testPlanDaysLeft(doctorInfo.test_plan_started_at) : null;
 
   // Resumen del plan (qué plan, periodicidad y hasta cuándo). Se pinta en el
@@ -1815,7 +1823,7 @@ export default function MedicsPanel() {
           return (
             <div className="medics-inicio">
               <div className="medics-inicio__hero mb-5">
-                <h1 className="text-[22px] md:text-[28px] font-extrabold text-fx-text m-0 tracking-tight">{`Hola, Dr. ${doctorInfo?.name?.split(' ')[0] || ''}`}</h1>
+                <h1 className="text-[22px] md:text-[28px] font-extrabold text-fx-text m-0 tracking-tight">{doctorFirstName ? `Hola, ${doctorFirstName}` : 'Hola'}</h1>
                 <p className="text-sm text-fx-text-secondary mt-1 mb-0">{patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos \u00B7 ${pending.length} invitaciones pendientes`}</p>
               </div>
               {patientsLoading ? (
