@@ -241,6 +241,19 @@ Supabase sola: no hay que declararlas.
 > desmarcar "Verify JWT" en los ajustes de la función, y los imports de
 > `../_shared/` habría que pegarlos inline.
 
+> **Blindaje de las columnas de facturación** (migración
+> `20260822_stripe_columns_guard.sql`): igual que `plan`, las columnas
+> `stripe_customer_id`, `stripe_subscription_id`, `stripe_status`,
+> `stripe_current_period_end` y `stripe_cancel_at_period_end` solo las puede
+> escribir el sistema de pagos — `service_role` o los RPC `billing_*`. Un
+> médico ya no puede falsear su estado de suscripción, desenlazarse el
+> customer para provocar un cobro duplicado ni apropiarse de un
+> `stripe_customer_id` ajeno (ni en UPDATE ni en el INSERT del registro).
+> La lectura de `doctors` también se acotó: cada médico ve su fila, un
+> paciente ve la del médico con el que está enlazado y los emails de admin
+> ven todas. Efecto secundario: el "Restaurar backup" de `/admin` no puede
+> reescribir `plan` ni las columnas `stripe_*` (para el plan ya era así).
+
 **Comprobación:** en el dashboard de Supabase, `Edge Functions`, deben
 aparecer las tres en verde. En `Database → Tables` debe existir
 `stripe_events`, y `doctors` debe tener las columnas `stripe_status`,
@@ -336,6 +349,14 @@ Para que el portal funcione hay que configurarlo una vez en
 **Stripe → Configuración → Portal de clientes**: activa "Cancelar
 suscripción", "Actualizar método de pago" e "Historial de facturas", y pega
 las URLs de tus condiciones y privacidad (`https://fluxia-health.com/privacy`).
+
+> **Pendiente en modo test**: la configuración `bpc_1U3ZwIANIg6DlLEVzs7XQ8BD`
+> tiene *Actualizar suscripción* **desactivado**, así que el médico no puede
+> pasar de mensual a anual desde el portal — que es justo la razón de colgar
+> los dos precios del mismo producto. Actívalo en
+> **Portal de clientes → Actualizar suscripciones**, marcando el producto
+> `Fluxia Pro` con sus dos precios y dejando "Cambiar de plan" permitido.
+> Faltan también ahí las URLs de privacidad y condiciones.
 
 ---
 
