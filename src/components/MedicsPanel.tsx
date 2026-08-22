@@ -246,6 +246,7 @@ export default function MedicsPanel() {
   const [sortBy, setSortBy] = useState<'estado' | 'nombre'>('estado');
   const [configName, setConfigName] = useState('');
   const [configCenterName, setConfigCenterName] = useState('');
+  const [configSpecialty, setConfigSpecialty] = useState('');
   const [configGreen, setConfigGreen] = useState(1);
   const [configRed, setConfigRed] = useState(3);
   const [configSaved, setConfigSaved] = useState(false);
@@ -355,6 +356,7 @@ export default function MedicsPanel() {
     setDoctorInfo(info);
     setConfigName(info.name);
     setConfigCenterName(info.center_name);
+    setConfigSpecialty(info.specialty || '');
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
     setGlobalTags(info.global_tags || []);
@@ -1208,13 +1210,16 @@ export default function MedicsPanel() {
     setLoading(true);
     const trimmedName = configName.trim() || doctorInfo.name;
     const trimmedCenter = configCenterName.trim() || doctorInfo.center_name;
+    // La especialidad sí puede quedarse vacía a propósito: es opcional en el
+    // alta y no todo el mundo quiere mostrarla.
+    const trimmedSpecialty = configSpecialty.trim() || null;
     const paletteToSave = configPalette === 'custom'
       ? `custom:${customColor1.replace('#', '')}:${customColor2.replace('#', '')}`
       : configPalette;
     const [{ error: doctorErr }, { error: centerErr }] = await Promise.all([
       supabase
         .from('doctors')
-        .update({ name: trimmedName, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
+        .update({ name: trimmedName, specialty: trimmedSpecialty, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave })
         .eq('id', doctorInfo.id),
       supabase
         .from('centers')
@@ -1223,7 +1228,7 @@ export default function MedicsPanel() {
     ]);
     setLoading(false);
     if (!doctorErr && !centerErr) {
-      const updated = { ...doctorInfo, name: trimmedName, center_name: trimmedCenter, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
+      const updated = { ...doctorInfo, name: trimmedName, specialty: trimmedSpecialty, center_name: trimmedCenter, semaforo_green: configGreen, semaforo_red: configRed, palette: paletteToSave };
       setDoctorInfo(updated);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 3000);
@@ -1744,8 +1749,8 @@ export default function MedicsPanel() {
               <div className="fixed inset-0 z-30" onClick={() => setAccountMenuOpen(false)} />
               <div className="medics-account-menu absolute right-0 top-full mt-2 w-64 bg-white rounded-fx-lg shadow-fx-lg border border-fx-border-soft p-2 z-40">
                 <div className="medics-account-menu__header px-3 py-2 border-b border-fx-border-soft mb-1">
-                  <div className="text-sm font-semibold text-fx-text truncate">Dr. {doctorInfo?.name}</div>
-                  <div className="text-xs text-fx-text-secondary truncate">{doctorInfo?.specialty || 'Médico'}</div>
+                  <div className="text-sm font-semibold text-fx-text truncate">{doctorInfo?.name}</div>
+                  <div className="text-xs text-fx-text-secondary truncate">{doctorInfo?.specialty || 'Profesional sanitario'}</div>
                 </div>
                 {planInfo && (
                   <div className={`medics-account-menu__plan mx-1 mb-1 rounded-fx-md border px-3 py-2 ${planTone.box}`}>
@@ -3280,6 +3285,18 @@ export default function MedicsPanel() {
                       onChange={(e) => setConfigCenterName(e.target.value)}
                       className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
                       placeholder="Nombre del centro o consulta"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">
+                      Especialidad <span className="font-normal text-fx-text-tertiary">(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={configSpecialty}
+                      onChange={(e) => setConfigSpecialty(e.target.value)}
+                      className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
+                      placeholder="Urología, Nutrición, Enfermería..."
                     />
                   </div>
                   {configSaved && (
