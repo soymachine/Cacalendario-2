@@ -254,6 +254,15 @@ Supabase sola: no hay que declararlas.
 > ven todas. Efecto secundario: el "Restaurar backup" de `/admin` no puede
 > reescribir `plan` ni las columnas `stripe_*` (para el plan ya era así).
 
+> **Periodicidad visible** (migración `20260822c_billing_interval.sql`):
+> `doctors.stripe_price_id` y `doctors.stripe_interval` guardan el precio y el
+> intervalo (`month` / `year`) que Stripe manda en cada evento, leídos de
+> `sub.items.data[0].price` — no de la metadata de Checkout, que se queda
+> obsoleta en cuanto el médico cambia de mensual a anual desde el portal. Con
+> eso, MW pinta en el menú de cuenta y en Configuración qué plan tiene, con qué
+> periodicidad paga, si se renueva o está cancelado y hasta qué día conserva
+> el acceso (`planSummary()` en `src/lib/plan.ts`).
+
 **Comprobación:** en el dashboard de Supabase, `Edge Functions`, deben
 aparecer las tres en verde. En `Database → Tables` debe existir
 `stripe_events`, y `doctors` debe tener las columnas `stripe_status`,

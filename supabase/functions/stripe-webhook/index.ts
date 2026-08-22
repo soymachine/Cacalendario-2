@@ -116,6 +116,18 @@ Deno.serve(async (req) => {
   return new Response(JSON.stringify({ received: true }), { status: 200 });
 });
 
+// Price e intervalo del item de la suscripción. Se leen de aquí y no de la
+// metadata de la sesión de Checkout: esa metadata se queda obsoleta en cuanto
+// el médico cambia de mensual a anual (o al revés) desde el Customer Portal,
+// mientras que el item siempre refleja lo que se le va a cobrar.
+function priceInfo(sub: Stripe.Subscription): { priceId: string | null; interval: string | null } {
+  const price = sub.items?.data?.[0]?.price;
+  return {
+    priceId: price?.id ?? null,
+    interval: price?.recurring?.interval ?? null,
+  };
+}
+
 async function apply(
   admin: ReturnType<typeof adminClient>,
   sub: Stripe.Subscription,
@@ -123,6 +135,7 @@ async function apply(
 ) {
   const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
   const entitled = sub.status !== 'canceled' && ENTITLED.has(sub.status);
+  const { priceId, interval } = priceInfo(sub);
 
   const { error } = await admin.rpc('billing_apply_subscription', {
     p_customer_id: customerId,
@@ -132,6 +145,8 @@ async function apply(
     p_status: sub.status,
     p_current_period_end: periodEnd(sub),
     p_cancel_at_period_end: sub.cancel_at_period_end ?? false,
+    p_price_id: priceId,
+    p_interval: interval,
   });
 
   if (error) throw new Error(error.message);

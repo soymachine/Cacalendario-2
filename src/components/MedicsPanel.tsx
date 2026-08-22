@@ -10,7 +10,7 @@ import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
-import { testPlanDaysLeft, isTrialExpired } from '../lib/plan';
+import { testPlanDaysLeft, isTrialExpired, planSummary } from '../lib/plan';
 import EntryTypeIcon from './EntryTypeIcon';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
 import type { CheckoutOutcome, BillingInterval } from '../lib/billing';
@@ -87,6 +87,8 @@ interface DoctorInfo {
   stripe_status: string | null;
   stripe_current_period_end: string | null;
   stripe_cancel_at_period_end: boolean;
+  stripe_price_id: string | null;
+  stripe_interval: string | null;
 }
 
 // Free tier limit: 1 patient (accepted + pending). Beta: 100. Test/Pro are effectively unlimited.
@@ -296,6 +298,17 @@ export default function MedicsPanel() {
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
 
   const testDaysLeft = doctorInfo?.plan === 'test' ? testPlanDaysLeft(doctorInfo.test_plan_started_at) : null;
+
+  // Resumen del plan (qué plan, periodicidad y hasta cuándo). Se pinta en el
+  // menú de cuenta y en Configuración: con solo la insignia PRO no había forma
+  // de distinguir una suscripción activa de una ya cancelada.
+  const planInfo = doctorInfo ? planSummary(doctorInfo) : null;
+  const PLAN_TONE = {
+    positive: { box: 'bg-fx-success-50 border-fx-border-soft', text: 'text-fx-success-700' },
+    warning: { box: 'bg-fx-warning-50 border-fx-warning-300', text: 'text-fx-warning-700' },
+    neutral: { box: 'bg-fx-ink-50 border-fx-border-soft', text: 'text-fx-text-secondary' },
+  } as const;
+  const planTone = PLAN_TONE[planInfo?.tone ?? 'neutral'];
   const testExpired = !!doctorInfo && isTrialExpired(doctorInfo.plan, doctorInfo.test_plan_started_at);
 
   const ENTRIES_PER_PAGE = 10;
@@ -326,6 +339,8 @@ export default function MedicsPanel() {
     stripe_status: d.stripe_status || null,
     stripe_current_period_end: d.stripe_current_period_end || null,
     stripe_cancel_at_period_end: d.stripe_cancel_at_period_end ?? false,
+    stripe_price_id: d.stripe_price_id || null,
+    stripe_interval: d.stripe_interval || null,
   });
 
   const applyDoctorInfo = (info: DoctorInfo) => {
@@ -1698,7 +1713,10 @@ export default function MedicsPanel() {
               {(doctorInfo?.name || 'D')[0].toUpperCase()}
             </div>
             {doctorInfo?.plan === 'pro' && (
-              <span className="absolute -top-1 -right-1 text-[8px] font-extrabold px-1 py-0.5 rounded-fx-pill bg-black text-white">PRO</span>
+              <span
+                className="absolute -top-1 -right-1 text-[8px] font-extrabold px-1 py-0.5 rounded-fx-pill bg-black text-white"
+                title={planInfo ? `${planInfo.title} — ${planInfo.detail}` : undefined}
+              >PRO</span>
             )}
             {doctorInfo?.plan === 'beta' && (
               <span className="absolute -top-1.5 -right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-fx-pill bg-fx-teal-100 text-fx-teal-700">BETA</span>
@@ -1721,6 +1739,12 @@ export default function MedicsPanel() {
                   <div className="text-sm font-semibold text-fx-text truncate">Dr. {doctorInfo?.name}</div>
                   <div className="text-xs text-fx-text-secondary truncate">{doctorInfo?.specialty || 'Médico'}</div>
                 </div>
+                {planInfo && (
+                  <div className={`medics-account-menu__plan mx-1 mb-1 rounded-fx-md border px-3 py-2 ${planTone.box}`}>
+                    <div className="text-[13px] font-bold text-fx-text">{planInfo.title}</div>
+                    <div className={`text-[11px] leading-snug mt-0.5 ${planTone.text}`}>{planInfo.detail}</div>
+                  </div>
+                )}
                 {doctorInfo?.plan === 'free' && (
                   <button
                     onClick={() => { setShowUpgradeModal(true); setAccountMenuOpen(false); }}
@@ -3429,6 +3453,46 @@ export default function MedicsPanel() {
                   )}
                 </div>
               </div>
+
+              {/* Cols 1–2 Row 4 — Tu suscripción */}
+              {planInfo && (
+                <div className="medics-config__plan bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
+                  <div className="py-3.5 px-5 border-b border-fx-border-soft">
+                    <span className="text-[15px] font-bold text-fx-text">Tu suscripción</span>
+                  </div>
+                  <div className="p-5 flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <div className="text-[15px] font-bold text-fx-text">{planInfo.title}</div>
+                      <div className={`text-[13px] mt-1 ${planTone.text}`}>{planInfo.detail}</div>
+                      {doctorInfo?.plan === 'pro' && doctorInfo?.stripe_interval && (
+                        <div className="text-xs text-fx-text-tertiary mt-1">
+                          {doctorInfo.stripe_interval === 'year'
+                            ? `${PRO_PRICING.year.label}${PRO_PRICING.year.period}`
+                            : `${PRO_PRICING.month.label}${PRO_PRICING.month.period}`} · IVA no incluido
+                        </div>
+                      )}
+                    </div>
+                    {doctorInfo?.stripe_customer_id ? (
+                      <button
+                        onClick={handleOpenBillingPortal}
+                        disabled={billingLoading}
+                        className="py-2.5 px-5 rounded-fx-pill border-none text-white text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
+                        style={{ backgroundColor: th.dark }}
+                      >
+                        {billingLoading ? 'Abriendo…' : 'Facturación y suscripción'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="py-2.5 px-5 rounded-fx-pill border-none text-white text-[15px] font-semibold font-sans cursor-pointer"
+                        style={{ backgroundColor: th.dark }}
+                      >
+                        Pasar a Pro
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Cols 1–2 Row 4 — Paleta de colores (temporalmente deshabilitada) */}
               {false && <div className="medics-config__palette bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-span-2 md:row-start-4">
