@@ -11,6 +11,7 @@ import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/s
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
 import { testPlanDaysLeft, isTrialExpired, planSummary } from '../lib/plan';
+import { professionalFirstName, stripTitle } from '../lib/doctorName';
 import EntryTypeIcon from './EntryTypeIcon';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
 import type { CheckoutOutcome, BillingInterval } from '../lib/billing';
@@ -298,13 +299,7 @@ export default function MedicsPanel() {
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
     : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
 
-  // Nombre de pila para el saludo. Sin "Dr.": Fluxia no la usan solo médicos
-  // (nutrición, enfermería, fisioterapia…) y el prefijo fijo se equivocaba con
-  // cualquiera que no lo fuera. Además, el campo suele venir ya con el título
-  // escrito dentro ("Dr Moya"), así que se quita antes de coger el nombre para
-  // no acabar saludando "Hola, Dr".
-  const NAME_TITLE_RE = /^(?:dr|dra|d|dña|doctor|doctora|prof|profa|sr|sra)\.?\s+/i;
-  const doctorFirstName = (doctorInfo?.name || '').replace(NAME_TITLE_RE, '').trim().split(' ')[0] || '';
+  const doctorFirstName = professionalFirstName(doctorInfo?.name);
 
   const testDaysLeft = doctorInfo?.plan === 'test' ? testPlanDaysLeft(doctorInfo.test_plan_started_at) : null;
 
@@ -4213,7 +4208,7 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   </div>
   <div class="header-right">
     <p><strong>${doctor?.center_name || 'Centro médico'}</strong></p>
-    <p>Dr. ${doctor?.name || ''} · ${doctor?.specialty || 'Medicina general'}</p>
+    <p>${stripTitle(doctor?.name) || ''}${doctor?.specialty ? ` · ${doctor.specialty}` : ''}</p>
     <p>Fecha: ${today}</p>
   </div>
 </div>

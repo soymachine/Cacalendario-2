@@ -1,5 +1,6 @@
 import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { professionalFirstName } from '../lib/doctorName';
 import type { DoctorInfo } from '../lib/doctor';
 import { getSemaforo, resolveSemaforoThresholds, type SemaforoKey } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
@@ -59,7 +60,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
     <SafeAreaView style={styles.wrapper} edges={['top']}>
       <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
         <Text style={styles.kicker}>HOLA,</Text>
-        <Text style={styles.title}>Dr. {doctor.name.split(' ')[0]}</Text>
+        <Text style={styles.title}>{professionalFirstName(doctor.name)}</Text>
         <Text style={styles.subtitle}>
           {patientsLoading ? ' ' : `${accepted.length} pacientes activos · ${pending.length} invitaciones pendientes`}
         </Text>
