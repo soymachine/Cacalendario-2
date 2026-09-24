@@ -10,7 +10,7 @@ import PatientDetailScreen from './PatientDetailScreen';
 import InviteScreen from './InviteScreen';
 import ConfigScreen from './ConfigScreen';
 import TrialExpiredScreen from './TrialExpiredScreen';
-import { isTrialExpired } from '../lib/plan';
+import { isAccessBlocked } from '../lib/plan';
 
 interface DoctorAppProps {
   doctor: DoctorInfo;
@@ -64,11 +64,12 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
     setDoctor((prev) => ({ ...prev, global_tags: tags }));
   };
 
-  // Trial agotado: se bloquea el panel entero, igual que en MW. El plan real lo
+  // Sin plan activo (trial agotado o Pro cancelado): se bloquea el panel entero,
+  // igual que en MW. El plan real lo
   // manda la base de datos, así que en cuanto el médico pague desde la web la
   // app se desbloquea sola al recargar el perfil.
-  if (isTrialExpired(doctor.plan, doctor.test_plan_started_at)) {
-    return <TrialExpiredScreen />;
+  if (isAccessBlocked(doctor.plan, doctor.test_plan_started_at)) {
+    return <TrialExpiredScreen proEnded={doctor.plan === 'free'} />;
   }
 
   return (

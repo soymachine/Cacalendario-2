@@ -26,6 +26,18 @@ export function isTrialExpired(plan: DoctorPlan, startedAt: string | null | unde
   return daysLeft !== null && daysLeft <= 0;
 }
 
+/**
+ * true si el médico no tiene ningún plan activo y hay que bloquearle el panel
+ * con el modal de pago: trial de 30 días agotado, o plan 'free'.
+ *
+ * 'free' ya no es un plan gratuito con límite de pacientes: es el estado al que
+ * baja un médico cuando se cancela su suscripción Pro (stripe-webhook). No
+ * recupera días de prueba: pasa directamente a la pantalla de pago.
+ */
+export function isAccessBlocked(plan: DoctorPlan, startedAt: string | null | undefined): boolean {
+  return plan === 'free' || isTrialExpired(plan, startedAt);
+}
+
 // ── Resumen del plan para la UI ──────────────────────────────────────────────
 // El médico tiene que poder ver de un vistazo qué plan tiene, con qué
 // periodicidad paga y hasta cuándo lo tiene garantizado. Con solo la insignia
@@ -122,5 +134,5 @@ export function planSummary(d: DoctorBillingFields): PlanSummary {
     };
   }
 
-  return { title: 'Plan Inicio', detail: 'Gratuito, con límite de pacientes', tone: 'neutral' };
+  return { title: 'Sin plan activo', detail: 'Pasa al plan Pro para seguir usando Fluxia', tone: 'warning' };
 }

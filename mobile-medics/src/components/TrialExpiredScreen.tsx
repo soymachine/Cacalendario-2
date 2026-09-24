@@ -1,4 +1,5 @@
-// Pantalla de bloqueo cuando caduca el trial de 30 días.
+// Pantalla de bloqueo cuando el médico no tiene plan activo: trial de 30 días
+// agotado, o suscripción Pro cancelada (`proEnded`).
 //
 // IMPORTANTE — reglas de App Store: esta pantalla NO puede incluir botones,
 // enlaces ni llamadas a la acción que lleven a pagar fuera de la app (App
@@ -9,14 +10,14 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 import { useAuth } from '../lib/auth';
 
-export default function TrialExpiredScreen() {
+export default function TrialExpiredScreen({ proEnded = false }: { proEnded?: boolean }) {
   const { signOut } = useAuth();
 
   return (
     <View style={styles.fill}>
       <View style={[styles.card, centered(FORM_MAX_WIDTH)]}>
         <Text style={styles.emoji}>🎁</Text>
-        <Text style={styles.title}>Tu mes de prueba ha finalizado</Text>
+        <Text style={styles.title}>{proEnded ? 'Tu plan Pro ha finalizado' : 'Tu mes de prueba ha finalizado'}</Text>
         <Text style={styles.body}>
           Tus pacientes y todos tus registros siguen guardados: no se ha borrado nada.
         </Text>

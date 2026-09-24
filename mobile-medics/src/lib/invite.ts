@@ -3,11 +3,11 @@ import { supabase } from './supabase';
 import type { DoctorInfo } from './doctor';
 import type { PatientLink } from './patients';
 
-export const FREE_PLAN_PATIENT_LIMIT = 1;
 export const BETA_PLAN_PATIENT_LIMIT = 100;
 
+// Solo Beta tiene límite de pacientes: el trial de 30 días y Pro son ilimitados,
+// y 'free' (Pro cancelado) tiene el panel bloqueado entero (isAccessBlocked).
 export function planLimitFor(plan: DoctorInfo['plan']): number | null {
-  if (plan === 'free') return FREE_PLAN_PATIENT_LIMIT;
   if (plan === 'beta') return BETA_PLAN_PATIENT_LIMIT;
   return null;
 }

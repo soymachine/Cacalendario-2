@@ -10,7 +10,7 @@ import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
-import { testPlanDaysLeft, isTrialExpired, planSummary } from '../lib/plan';
+import { testPlanDaysLeft, isAccessBlocked, planSummary } from '../lib/plan';
 import { professionalFirstName, stripTitle } from '../lib/doctorName';
 import EntryTypeIcon from './EntryTypeIcon';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
@@ -92,8 +92,8 @@ interface DoctorInfo {
   stripe_interval: string | null;
 }
 
-// Free tier limit: 1 patient (accepted + pending). Beta: 100. Test/Pro are effectively unlimited.
-const FREE_PLAN_PATIENT_LIMIT = 1;
+// Límite de pacientes solo en Beta (aceptados + pendientes). Test y Pro son ilimitados;
+// 'free' (Pro cancelado) tiene el panel bloqueado entero (isAccessBlocked).
 const BETA_PLAN_PATIENT_LIMIT = 100;
 
 interface PatientEntry {
@@ -313,7 +313,8 @@ export default function MedicsPanel() {
     neutral: { box: 'bg-fx-ink-50 border-fx-border-soft', text: 'text-fx-text-secondary' },
   } as const;
   const planTone = PLAN_TONE[planInfo?.tone ?? 'neutral'];
-  const testExpired = !!doctorInfo && isTrialExpired(doctorInfo.plan, doctorInfo.test_plan_started_at);
+  // Sin plan activo (trial agotado o Pro cancelado): panel bloqueado con el modal de pago.
+  const accessBlocked = !!doctorInfo && isAccessBlocked(doctorInfo.plan, doctorInfo.test_plan_started_at);
 
   const ENTRIES_PER_PAGE = 10;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -910,13 +911,9 @@ export default function MedicsPanel() {
     setEmailError('');
     setInviteSuccess(false);
     if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
-    // Free tier: enforce the 1-patient limit (accepted + pending combined)
+    // Beta: límite de pacientes (aceptados + pendientes). El trial y Pro son ilimitados.
     const activePatientsCount = patients.filter(p => !p.doctor_unlinked).length;
     if (doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    if (doctorInfo?.plan === 'free' && activePatientsCount >= FREE_PLAN_PATIENT_LIMIT) {
       setShowUpgradeModal(true);
       return;
     }
@@ -1472,7 +1469,7 @@ export default function MedicsPanel() {
       cardTitle = '¡Email enviado!';
       cardSubtitle = '';
     } else if (registerMode) {
-      if (registerStep === 'email') { cardTitle = 'Crea tu cuenta profesional'; cardSubtitle = 'Comienza gratis. Incluye 1 paciente sin coste.'; }
+      if (registerStep === 'email') { cardTitle = 'Crea tu cuenta profesional'; cardSubtitle = 'Empieza gratis: 30 días con pacientes ilimitados y sin tarjeta.'; }
       else if (registerStep === 'details') { cardTitle = 'Cuéntanos sobre ti'; cardSubtitle = 'Estos datos aparecerán en la app de tus pacientes.'; }
       else if (registerStep === 'password') { cardTitle = 'Elige tu contraseña'; cardSubtitle = registerIsSelfService ? `Consulta: ${registerCenterName}` : `Centro: ${pendingCenterName}`; }
       else { cardTitle = '¡Revisa tu email!'; cardSubtitle = ''; }
@@ -1587,8 +1584,8 @@ export default function MedicsPanel() {
             {/* ── Register: details ── */}
             {registerMode && registerStep === 'details' && (<>
               <div className="medics-auth__plan-banner bg-fx-success-50 rounded-[10px] px-3.5 py-2.5 mb-5 border-l-[3px] border-fx-success-500">
-                <p className="text-xs font-bold text-fx-success-700 m-0">Plan Free · 1 paciente gratis</p>
-                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0 leading-[1.4]">Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
+                <p className="text-xs font-bold text-fx-success-700 m-0">Prueba gratuita · 30 días</p>
+                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0 leading-[1.4]">Pacientes ilimitados y todas las funciones, sin tarjeta. Al terminar, pasa al plan Pro para seguir.</p>
               </div>
               <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Tu nombre</label>
               <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
@@ -1626,8 +1623,8 @@ export default function MedicsPanel() {
             {/* ── Google profile completion ── */}
             {googleProfileMode && (<>
               <div className="medics-auth__plan-banner bg-fx-success-50 rounded-[10px] px-3.5 py-2.5 mb-5 border-l-[3px] border-fx-success-500">
-                <p className="text-xs font-bold text-fx-success-700 m-0">Plan Free · 1 paciente gratis</p>
-                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0">Pasa al plan Pro en cualquier momento para añadir más pacientes.</p>
+                <p className="text-xs font-bold text-fx-success-700 m-0">Prueba gratuita · 30 días</p>
+                <p className="text-xs text-fx-text-secondary mt-0.5 mb-0">Pacientes ilimitados y todas las funciones, sin tarjeta. Al terminar, pasa al plan Pro para seguir.</p>
               </div>
               <label className="medics-auth__label block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Tu nombre</label>
               <input type="text" value={registerName} onChange={(e) => setRegisterName(e.target.value)} placeholder="Dra. Elena Márquez" className="medics-auth__input w-full px-3.5 py-3 rounded-fx-md border border-fx-border mb-4 text-[15px] outline-none box-border bg-fx-surface text-fx-text font-fx" />
@@ -1671,7 +1668,7 @@ export default function MedicsPanel() {
   return (
     <>
     <div
-      className={`medics-shell min-h-screen flex flex-col bg-transparent font-fx ${testExpired ? 'blur-md pointer-events-none select-none' : ''}`}
+      className={`medics-shell min-h-screen flex flex-col bg-transparent font-fx ${accessBlocked ? 'blur-md pointer-events-none select-none' : ''}`}
       style={{ '--medics-accent': th.primary, '--medics-accent-soft': th.navActive } as React.CSSProperties}
     >
       <style>{`@keyframes _mspin { to { transform: rotate(360deg); } }`}</style>
@@ -1753,7 +1750,7 @@ export default function MedicsPanel() {
                     <div className={`text-[11px] leading-snug mt-0.5 ${planTone.text}`}>{planInfo.detail}</div>
                   </div>
                 )}
-                {doctorInfo?.plan === 'free' && (
+                {doctorInfo?.plan === 'test' && (
                   <button
                     onClick={() => { setShowUpgradeModal(true); setAccountMenuOpen(false); }}
                     className="medics-account-menu__upgrade w-full flex items-center gap-2 text-left px-3 min-h-12 rounded-fx-md text-sm font-semibold text-fx-warning-700 bg-fx-warning-50 hover:bg-fx-warning-100 mb-1"
@@ -3123,19 +3120,15 @@ export default function MedicsPanel() {
             />
 
             {/* Plan banner */}
-            {(doctorInfo?.plan === 'free' || doctorInfo?.plan === 'beta') && (
+            {doctorInfo?.plan === 'beta' && (
               <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-5 mb-4 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <div>
                     <div className="text-[13px] font-bold text-fx-warning-700">
-                      {doctorInfo?.plan === 'beta'
-                        ? `Plan Beta · ${patients.filter(p => !p.doctor_unlinked).length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
-                        : `Plan Free · ${patients.filter(p => !p.doctor_unlinked).length}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
+                      {`Plan Beta · ${patients.filter(p => !p.doctor_unlinked).length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`}
                     </div>
                     <div className="text-xs text-fx-warning-600">
-                      {doctorInfo?.plan === 'beta'
-                        ? (patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.')
-                        : (patients.length >= FREE_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite gratuito. Pasa a Pro para añadir más pacientes.' : 'El primer paciente es gratis. Después, pasa al plan Pro.')}
+                      {patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.'}
                     </div>
                   </div>
                 </div>
@@ -3152,7 +3145,7 @@ export default function MedicsPanel() {
             <div className="medics-invitar__form bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
               <div className="p-6 flex flex-col gap-4">
                 {(() => {
-                  const atLimit = doctorInfo?.plan === 'free' && patients.length >= FREE_PLAN_PATIENT_LIMIT;
+                  const atLimit = doctorInfo?.plan === 'beta' && patients.filter(p => !p.doctor_unlinked).length >= BETA_PLAN_PATIENT_LIMIT;
                   return (
                     <div>
                       <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email del paciente</label>
@@ -3184,7 +3177,7 @@ export default function MedicsPanel() {
                       </div>
                       {atLimit && (
                         <p className="text-xs text-fx-warning-600 mt-2 flex items-center gap-1.5">
-                          <WarningCircle size={14} weight="fill" /> Límite del plan Free alcanzado.{' '}
+                          <WarningCircle size={14} weight="fill" /> Límite del plan Beta alcanzado.{' '}
                           <button onClick={() => setShowUpgradeModal(true)} className="bg-transparent border-none font-bold text-xs cursor-pointer underline p-0" style={{ color: th.dark }}>
                             Pasa a Pro
                           </button>{' '}
@@ -3728,14 +3721,15 @@ export default function MedicsPanel() {
             </button>
             <h2 className="text-[22px] font-extrabold text-fx-text m-0 mb-2">Pasa al plan Pro</h2>
             <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
-              Has alcanzado el límite del plan gratuito ({FREE_PLAN_PATIENT_LIMIT} paciente). Con Pro podrás añadir pacientes ilimitados,
-              acceder a alertas avanzadas y exportar informes PDF firmados.
+              {doctorInfo?.plan === 'beta'
+                ? `Has alcanzado el límite de ${BETA_PLAN_PATIENT_LIMIT} pacientes del plan Beta. Con Pro podrás añadir pacientes ilimitados.`
+                : 'Tu prueba gratuita ya incluye todas las funciones. Activa Pro ahora y seguirás usando Fluxia sin interrupciones cuando termine.'}
             </p>
             <ul className="list-none p-0 m-0 mb-6 flex flex-col gap-2">
-              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Hasta 200 pacientes en seguimiento</li>
-              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Dashboard con alertas y cohortes</li>
-              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Informes PDF firmados</li>
-              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Soporte prioritario en 24h</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Pacientes ilimitados</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Dashboard con semáforo y alertas</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Exportación de informes PDF</li>
+              <li className="text-[13.5px] text-fx-text flex gap-2"><span className="text-fx-success-500">✓</span> Soporte por email prioritario</li>
             </ul>
             {billingIntervalPicker}
             {billingError && (
@@ -4021,14 +4015,18 @@ export default function MedicsPanel() {
     )}
 
     {/* ── TEST PLAN EXPIRED MODAL ── */}
-    {testExpired && (
+    {accessBlocked && (
       <div className="medics-test-expired-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[2000] p-6">
         <div className="bg-white rounded-fx-lg p-8 max-w-[480px] w-full shadow-fx-xl text-center">
           <span className="text-[40px]">🎁</span>
-          <h2 className="text-[22px] font-extrabold text-fx-text m-0 mt-2 mb-2">Tu mes de prueba ha finalizado</h2>
+          <h2 className="text-[22px] font-extrabold text-fx-text m-0 mt-2 mb-2">
+            {doctorInfo?.plan === 'free' ? 'Tu plan Pro ha finalizado' : 'Tu mes de prueba ha finalizado'}
+          </h2>
           <p className="text-sm text-fx-text-secondary m-0 mb-5 leading-relaxed">
-            Has agotado los 30 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir
-            usando Fluxia sin límites: recuperarás automáticamente todos tus registros y pacientes guardados.
+            {doctorInfo?.plan === 'free'
+              ? 'Tu suscripción ya no está activa. Vuelve a activar el plan Pro para seguir usando Fluxia: '
+              : 'Has agotado los 30 días gratuitos de la modalidad de prueba. Pasa al plan de pago para seguir usando Fluxia sin límites: '}
+            recuperarás automáticamente todos tus registros y pacientes guardados.
           </p>
           <div className="text-left">{billingIntervalPicker}</div>
           {billingError && (

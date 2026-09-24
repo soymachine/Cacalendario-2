@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, KeyboardAvoid
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
-import { invitePatient, planLimitFor, FREE_PLAN_PATIENT_LIMIT, BETA_PLAN_PATIENT_LIMIT } from '../lib/invite';
+import { invitePatient, planLimitFor, BETA_PLAN_PATIENT_LIMIT } from '../lib/invite';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 
 interface InviteScreenProps {
@@ -42,17 +42,15 @@ export default function InviteScreen({ doctor, patients, onInvited }: InviteScre
           <Text style={styles.title}>Invitar paciente</Text>
           <Text style={styles.subtitle}>Envía una invitación por email a tu paciente</Text>
 
-          {(doctor.plan === 'free' || doctor.plan === 'beta') && (
+          {doctor.plan === 'beta' && (
             <View style={styles.planBanner}>
               <Text style={styles.planBannerTitle}>
-                {doctor.plan === 'beta'
-                  ? `Plan Beta · ${activeCount}/${BETA_PLAN_PATIENT_LIMIT} pacientes`
-                  : `Plan Free · ${activeCount}/${FREE_PLAN_PATIENT_LIMIT} paciente${FREE_PLAN_PATIENT_LIMIT === 1 ? '' : 's'}`}
+                {`Plan Beta · ${activeCount}/${BETA_PLAN_PATIENT_LIMIT} pacientes`}
               </Text>
               <Text style={styles.planBannerBody}>
                 {atLimit
                   ? 'Has alcanzado el límite de tu plan. Pasa a Pro desde la web para añadir más pacientes.'
-                  : doctor.plan === 'beta' ? 'Acceso beta · hasta 100 pacientes.' : 'El primer paciente es gratis.'}
+                  : 'Acceso beta · hasta 100 pacientes.'}
               </Text>
             </View>
           )}

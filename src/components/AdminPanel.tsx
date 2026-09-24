@@ -581,7 +581,7 @@ export default function AdminPanel() {
             />
             <div style={s.statsRow}>
               <StatCard emoji="🩺" label="TOTAL MÉDICOS" value={String(doctors.length)} />
-              <StatCard emoji="⭐" label="PLAN FREE" value={String(doctors.filter(d => d.plan === 'free').length)} />
+              <StatCard emoji="⭐" label="SIN PLAN" value={String(doctors.filter(d => d.plan === 'free').length)} />
               <StatCard emoji="🧪" label="PLAN BETA" value={String(doctors.filter(d => d.plan === 'beta').length)} />
               <StatCard emoji="🎁" label="PLAN TEST" value={String(doctors.filter(d => d.plan === 'test').length)} />
               <StatCard emoji="🚀" label="PLAN PRO" value={String(doctors.filter(d => d.plan === 'pro').length)} dark />
@@ -966,7 +966,7 @@ export default function AdminPanel() {
       {planConfirm && (() => {
         const { doctor, newPlan } = planConfirm;
         const planEmoji: Record<string, string> = { free: '⭐', beta: '🧪', test: '🎁', pro: '🚀' };
-        const planLabel: Record<string, string> = { free: 'Free', beta: 'Beta', test: 'Test (1 mes gratis)', pro: 'Pro' };
+        const planLabel: Record<string, string> = { free: 'Sin plan (bloqueado)', beta: 'Beta', test: 'Test (1 mes gratis)', pro: 'Pro' };
         return (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
@@ -981,7 +981,7 @@ export default function AdminPanel() {
                 </p>
                 {newPlan === 'free' && (
                   <p style={{ fontSize: 13, color: '#c0392b', marginTop: 10, backgroundColor: '#fdecea', borderRadius: 8, padding: '8px 12px' }}>
-                    El médico quedará limitado a 1 paciente.
+                    El médico se quedará sin plan activo: verá el panel bloqueado con el modal de pago hasta que active Pro. No cancela nada en Stripe.
                   </p>
                 )}
                 {newPlan === 'beta' && (
