@@ -15,12 +15,15 @@
 
 import { stripe, Stripe, adminClient } from '../_shared/stripe.ts';
 
-// Estados de Stripe que dan derecho a usar el plan de pago. `past_due` y
-// `unpaid` se mantienen como Pro a propósito: Stripe sigue reintentando el
-// cobro durante días y no queremos cortarle el acceso a un médico por un
-// rechazo puntual de la tarjeta. Cuando agota los reintentos, Stripe emite
-// `customer.subscription.deleted` (o pasa a `canceled`) y ahí sí baja a free.
-const ENTITLED = new Set(['active', 'trialing', 'past_due', 'unpaid']);
+// Estados de Stripe que dan derecho a usar el plan de pago. `past_due` se
+// mantiene como Pro a propósito: Stripe sigue reintentando el cobro durante
+// días y no queremos cortarle el acceso a un médico por un rechazo puntual de
+// la tarjeta. `unpaid` NO: es el estado en el que Stripe deja la suscripción
+// cuando agota los reintentos y la cuenta no está configurada para cancelarla;
+// si diera acceso, el médico seguiría en Pro para siempre sin pagar.
+// (Configuración recomendada en Stripe: Billing → Recuperación de ingresos →
+// al fallar todos los reintentos, "Cancelar la suscripción".)
+const ENTITLED = new Set(['active', 'trialing', 'past_due']);
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
@@ -96,7 +99,12 @@ Deno.serve(async (req) => {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription;
+        // Stripe no garantiza el orden de entrega: un `updated` antiguo
+        // (status active) puede llegar después del `deleted` y devolver al
+        // médico a Pro. Por eso no se usa la copia del evento sino el estado
+        // actual de la suscripción, igual que en checkout.session.completed.
+        const eventSub = event.data.object as Stripe.Subscription;
+        const sub = await stripe.subscriptions.retrieve(eventSub.id);
         await apply(admin, sub, sub.metadata?.doctor_id ?? null);
         break;
       }
