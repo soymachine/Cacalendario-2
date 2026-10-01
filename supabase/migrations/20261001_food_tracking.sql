@@ -27,6 +27,9 @@
 -- Todo es aditivo e idempotente: no cambia ninguna columna ni política
 -- existente, y los clientes antiguos (que no conocen las columnas food_*)
 -- siguen insertando/actualizando registros sin problemas.
+--
+-- Aplicada en producción el 2026-10-01 en varias partes equivalentes a este
+-- archivo (historial: food_tracking_1_entries … food_tracking_5_revoke_guard_rpc).
 -- ============================================================================
 
 -- ── 1. entries: columnas de comida ──
@@ -113,10 +116,13 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS guard_patient_food_config ON public.patient_links;
-CREATE TRIGGER guard_patient_food_config
+CREATE OR REPLACE TRIGGER guard_patient_food_config
   BEFORE UPDATE ON public.patient_links
   FOR EACH ROW EXECUTE FUNCTION public.guard_patient_food_config();
+
+-- Es una función de trigger: no debe quedar expuesta como RPC en la API.
+-- (El trigger sigue funcionando: EXECUTE solo se comprueba al crearlo.)
+REVOKE EXECUTE ON FUNCTION public.guard_patient_food_config() FROM PUBLIC, anon, authenticated;
 
 -- ── 3. Catálogo de etiquetas de comida del profesional ──
 ALTER TABLE public.doctors

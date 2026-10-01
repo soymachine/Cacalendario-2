@@ -137,16 +137,17 @@
     <button class="ctl" id="resetBtn" type="button">Reiniciar</button>
   </div>
 
-  <div class="callout warn">
-    <strong>Importante:</strong> al hacer push a <code>main</code>, GitHub Actions publica la web (MW y PW) automáticamente.
-    La web nueva funciona sin la migración (las funciones de comida simplemente no se pueden guardar), pero
-    <strong>aplica la migración del paso 1 cuanto antes</strong>.
+  <div class="callout ok">
+    <strong>Base de datos lista:</strong> la migración se aplicó en producción el 1 de octubre de 2026 desde Claude,
+    con el conector de Supabase, y está verificada: todo como se esperaba, 645 registros antiguos intactos y el
+    trigger de la pauta probado en producción con una transacción revertida.
+    Lo siguiente son las <strong>Edge Functions (fase 2)</strong>.
   </div>
 
   <!-- ─────────────────────────── FASE 1 ─────────────────────────── -->
   <section class="phase" data-phase>
     <h2><span class="num">1</span> Base de datos (Supabase) <span class="count"></span></h2>
-    <p class="intro">Proyecto <code>cacalendario</code> (vchzhwvbvnwrrgfrxfor). La migración es aditiva e idempotente: puedes ejecutarla dos veces sin problema y no cambia nada de deposición ni micción.</p>
+    <p class="intro">Proyecto <code>cacalendario</code> (vchzhwvbvnwrrgfrxfor). <strong>Hecho por Claude el 1-oct-2026.</strong> En el historial de migraciones aparece como <code>food_tracking_1_entries</code> … <code>food_tracking_5_revoke_guard_rpc</code>: son partes equivalentes al archivo del repo, aplicadas por separado porque el conector cortaba las peticiones largas. Los pasos siguen aquí como referencia.</p>
 
     <div class="step" data-id="db-backup">
       <input type="checkbox" id="c-db-backup" />
@@ -156,9 +157,9 @@
       </div>
     </div>
 
-    <div class="step" data-id="db-migrate">
+    <div class="step" data-id="db-migrate" data-done>
       <input type="checkbox" id="c-db-migrate" />
-      <label class="title" for="c-db-migrate">Aplicar la migración <code>20261001_food_tracking.sql</code> <span class="tag urgent">urgente</span></label>
+      <label class="title" for="c-db-migrate">Aplicar la migración <code>20261001_food_tracking.sql</code> <span class="tag where">hecho</span></label>
       <div class="body">
         <p>Supabase Dashboard → <em>SQL Editor → New query</em> → pega el SQL completo → <em>Run</em>.</p>
         <p>Qué crea: columnas <code>food_*</code> en <code>entries</code> con sus validaciones, <code>patient_links.food_config</code> (la pauta, solo editable por el profesional), <code>doctors.food_tag_catalog</code>, el bucket <strong>privado</strong> <code>food-photos</code> con sus políticas RLS y la tabla <code>food_reminder_log</code>.</p>
@@ -193,6 +194,9 @@
 -- Todo es aditivo e idempotente: no cambia ninguna columna ni política
 -- existente, y los clientes antiguos (que no conocen las columnas food_*)
 -- siguen insertando/actualizando registros sin problemas.
+--
+-- Aplicada en producción el 2026-10-01 en varias partes equivalentes a este
+-- archivo (historial: food_tracking_1_entries … food_tracking_5_revoke_guard_rpc).
 -- ============================================================================
 
 -- ── 1. entries: columnas de comida ──
@@ -279,10 +283,13 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS guard_patient_food_config ON public.patient_links;
-CREATE TRIGGER guard_patient_food_config
+CREATE OR REPLACE TRIGGER guard_patient_food_config
   BEFORE UPDATE ON public.patient_links
   FOR EACH ROW EXECUTE FUNCTION public.guard_patient_food_config();
+
+-- Es una función de trigger: no debe quedar expuesta como RPC en la API.
+-- (El trigger sigue funcionando: EXECUTE solo se comprueba al crearlo.)
+REVOKE EXECUTE ON FUNCTION public.guard_patient_food_config() FROM PUBLIC, anon, authenticated;
 
 -- ── 3. Catálogo de etiquetas de comida del profesional ──
 ALTER TABLE public.doctors
@@ -351,9 +358,9 @@ ALTER TABLE public.food_reminder_log ENABLE ROW LEVEL SECURITY;</pre></div>
       </div>
     </div>
 
-    <div class="step" data-id="db-verify">
+    <div class="step" data-id="db-verify" data-done>
       <input type="checkbox" id="c-db-verify" />
-      <label class="title" for="c-db-verify">Verificar que la migración ha quedado bien</label>
+      <label class="title" for="c-db-verify">Verificar que la migración ha quedado bien <span class="tag where">hecho</span></label>
       <div class="body">
         <p>En el SQL Editor, ejecuta esta consulta:</p>
         <div class="code"><button class="copy" type="button" data-copy="sql-verify">Copiar</button><pre id="sql-verify">select
@@ -378,6 +385,7 @@ ALTER TABLE public.food_reminder_log ENABLE ROW LEVEL SECURITY;</pre></div>
             <tr><td>bucket_publico</td><td><strong>false</strong> (si sale true, para y avísame)</td></tr>
             <tr><td>politicas_fotos</td><td>5</td></tr>
             <tr><td>registros_antiguos_intactos</td><td>igual que antes (645 a 1-oct-2026, solo poop/urine)</td></tr>
+            <tr><td colspan="2"><strong>Resultado real (1-oct-2026):</strong> 5 · 1 · 1 · false · 5 · 1 · 1 · 645 ✓</td></tr>
           </tbody>
         </table>
       </div>
@@ -538,7 +546,7 @@ eas submit --platform ios --latest</pre></div>
         <ul>
           <li>Con otra cuenta de médico <strong>no</strong> vinculada a ese paciente: no ve ni sus comidas ni sus fotos.</li>
           <li>Copia la URL de una foto en MW (clic derecho → copiar imagen/URL). Es una URL firmada que deja de funcionar a los 10 minutos.</li>
-          <li>Supabase → <em>Storage → food-photos</em>: el bucket aparece como <strong>Private</strong>.</li>
+          <li>Supabase → <em>Storage → food-photos</em>: el bucket aparece como <strong>Private</strong> (comprobado al migrar: <code>public = false</code>).</li>
         </ul>
       </div>
     </div>
@@ -646,7 +654,8 @@ limit 20;</pre></div>
   function refresh() {
     var done = 0;
     steps.forEach(function (s) {
-      var on = !!store[s.dataset.id];
+      var v = store[s.dataset.id];
+      var on = v === undefined ? s.hasAttribute('data-done') : !!v;
       s.classList.toggle('done', on);
       s.querySelector('input[type="checkbox"]').checked = on;
       if (on) done++;
@@ -656,7 +665,7 @@ limit 20;</pre></div>
     document.getElementById('barFill').style.width = (steps.length ? (done / steps.length) * 100 : 0) + '%';
     document.querySelectorAll('[data-phase]').forEach(function (ph) {
       var ss = ph.querySelectorAll('.step');
-      var d = 0; ss.forEach(function (s) { if (store[s.dataset.id]) d++; });
+      var d = 0; ss.forEach(function (s) { if (s.classList.contains('done')) d++; });
       ph.querySelector('.count').textContent = d + '/' + ss.length;
     });
   }

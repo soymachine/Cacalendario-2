@@ -238,6 +238,10 @@ COMMIT;
 
 SELECT pg_temp.assert_fails($$UPDATE public.patient_links SET food_config = '[1,2]' WHERE id = '11111111-0000-0000-0000-0000000000a1'$$,
   'food_config debe ser un objeto JSON');
+SELECT pg_temp.assert_eq(
+  (SELECT count(*) FROM (VALUES ('anon'), ('authenticated')) r(role)
+     WHERE has_function_privilege(r.role, 'public.guard_patient_food_config()', 'EXECUTE')), 0,
+  'la función del trigger no se puede invocar como RPC');
 
 -- ── 8. food_reminder_log es solo de sistema ──
 INSERT INTO public.food_reminder_log (patient_id, local_date, slot)
