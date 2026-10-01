@@ -19,8 +19,17 @@ const LAST_SYNCED_KEY = 'cacalendario_last_synced_at';
 // everything instead — the periodic safety net described above.
 const RECONCILE_AFTER_MS = 24 * 60 * 60 * 1000;
 
-const ENTRY_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
-const ENTRY_COLUMNS_WITH_CURSOR = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep, updated_at';
+const BASE_COLUMNS = 'entry_id, date, time, notes, timestamp, bristol, floats, color, quantity, duration, feces_texture, symptoms, entry_type, urine_type, urine_quantity, urine_color, urine_characteristics, urine_urgency, during_sleep';
+// Columnas del módulo de comidas (migración 20261001_food_tracking.sql).
+const FOOD_COLUMNS = 'food_meal_type, food_description, food_portion, food_tags, food_photo_path';
+
+// De más completa a más básica: si la base de datos aún no tiene una
+// migración, se cae a la siguiente en vez de romper la sincronización.
+const COLUMN_SETS: { columns: string; cursor: boolean }[] = [
+  { columns: `${BASE_COLUMNS}, ${FOOD_COLUMNS}, updated_at`, cursor: true },
+  { columns: `${BASE_COLUMNS}, updated_at`, cursor: true },
+  { columns: BASE_COLUMNS, cursor: false },
+];
 
 function rowToEntry(r: Record<string, unknown>): PoopEntry {
   return {
@@ -43,7 +52,19 @@ function rowToEntry(r: Record<string, unknown>): PoopEntry {
     urine_characteristics: (r.urine_characteristics as string[]) ?? [],
     urine_urgency: (r.urine_urgency as number) ?? null,
     during_sleep: (r.during_sleep as boolean) ?? null,
+    food_meal_type: (r.food_meal_type as PoopEntry['food_meal_type']) ?? null,
+    food_description: (r.food_description as string) ?? null,
+    food_portion: (r.food_portion as PoopEntry['food_portion']) ?? null,
+    food_tags: (r.food_tags as string[]) ?? [],
+    food_photo_path: (r.food_photo_path as string) ?? null,
   };
+}
+
+/** Las copias locales de fotos no viven en la nube: se conservan al fusionar. */
+function keepLocalPhotos(cloud: PoopEntry[], local: PoopEntry[]): PoopEntry[] {
+  const localUris = new Map(local.filter((e) => e.photo_local_uri).map((e) => [e.id, e.photo_local_uri]));
+  if (localUris.size === 0) return cloud;
+  return cloud.map((e) => (localUris.has(e.id) ? { ...e, photo_local_uri: localUris.get(e.id) } : e));
 }
 
 function getLocalEntries(): PoopEntry[] {
@@ -59,66 +80,46 @@ function setLastSyncedAt(iso: string | null): void {
 }
 
 /**
- * Full resync (existing behaviour): pages through every cloud entry for the
- * user. Also opportunistically reads `updated_at` to seed the incremental
- * cursor — but if that column doesn't exist yet (migration
- * supabase/migrations/20260804_entries_updated_at.sql not applied), retries
- * without it rather than breaking sync entirely. In that case no cursor is
- * set, so future syncs simply keep doing a full resync, matching today's
- * behaviour.
+ * Full resync: pages through every cloud entry for the user. Also reads
+ * `updated_at` to seed the incremental cursor. If a column doesn't exist yet
+ * (a migration not applied), falls back to the next, more basic column set
+ * (COLUMN_SETS) rather than breaking sync entirely; without `updated_at` no
+ * cursor is set, so future syncs simply keep doing a full resync.
  */
 async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntry[]; maxUpdatedAt: string | null; error: string | null }> {
   const entries: PoopEntry[] = [];
   let maxUpdatedAt: string | null = null;
-  let withCursor = true;
+  let setIdx = 0;
   let page = 0;
 
   while (true) {
     const from = page * SYNC_PAGE_SIZE;
     const to = from + SYNC_PAGE_SIZE - 1;
 
-    let data: Record<string, unknown>[] | null = null;
-    let error: { message: string } | null = null;
+    let res = await supabase
+      .from('entries')
+      .select(COLUMN_SETS[setIdx].columns)
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: true })
+      .range(from, to);
 
-    if (withCursor) {
-      const res = await supabase
+    // Column not there yet — fall back for the whole fetch.
+    while (res.error && page === 0 && setIdx < COLUMN_SETS.length - 1) {
+      setIdx++;
+      res = await supabase
         .from('entries')
-        .select(ENTRY_COLUMNS_WITH_CURSOR)
+        .select(COLUMN_SETS[setIdx].columns)
         .eq('user_id', userId)
         .order('timestamp', { ascending: true })
         .range(from, to);
-      data = res.data as Record<string, unknown>[] | null;
-      error = res.error;
-    } else {
-      const res = await supabase
-        .from('entries')
-        .select(ENTRY_COLUMNS)
-        .eq('user_id', userId)
-        .order('timestamp', { ascending: true })
-        .range(from, to);
-      data = res.data as Record<string, unknown>[] | null;
-      error = res.error;
     }
 
-    if (error && withCursor && page === 0) {
-      // Column not there yet — fall back for the whole fetch, no cursor.
-      withCursor = false;
-      const res = await supabase
-        .from('entries')
-        .select(ENTRY_COLUMNS)
-        .eq('user_id', userId)
-        .order('timestamp', { ascending: true })
-        .range(from, to);
-      data = res.data as Record<string, unknown>[] | null;
-      error = res.error;
-    }
+    if (res.error) return { entries: [], maxUpdatedAt: null, error: res.error.message };
 
-    if (error) return { entries: [], maxUpdatedAt: null, error: error.message };
-
-    const rows = data ?? [];
+    const rows = (res.data ?? []) as unknown as Record<string, unknown>[];
     for (const r of rows) {
       entries.push(rowToEntry(r));
-      const u = withCursor ? (r as Record<string, unknown>).updated_at as string | undefined : undefined;
+      const u = COLUMN_SETS[setIdx].cursor ? r.updated_at as string | undefined : undefined;
       if (u && (!maxUpdatedAt || u > maxUpdatedAt)) maxUpdatedAt = u;
     }
 
@@ -126,33 +127,41 @@ async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntr
     page++;
   }
 
-  return { entries, maxUpdatedAt: withCursor ? maxUpdatedAt : null, error: null };
+  return { entries, maxUpdatedAt: COLUMN_SETS[setIdx].cursor ? maxUpdatedAt : null, error: null };
 }
 
 /** Only entries changed since `since` — the common case on session restore. */
 async function fetchChangedCloudEntries(userId: string, since: string): Promise<{ entries: PoopEntry[]; maxUpdatedAt: string | null; error: string | null }> {
   const entries: PoopEntry[] = [];
   let maxUpdatedAt: string | null = since;
+  let setIdx = 0;
   let page = 0;
 
   while (true) {
     const from = page * SYNC_PAGE_SIZE;
     const to = from + SYNC_PAGE_SIZE - 1;
 
-    const { data, error } = await supabase
+    const query = (columns: string) => supabase
       .from('entries')
-      .select(ENTRY_COLUMNS_WITH_CURSOR)
+      .select(columns)
       .eq('user_id', userId)
       .gt('updated_at', since)
       .order('updated_at', { ascending: true })
       .range(from, to);
 
+    let res = await query(COLUMN_SETS[setIdx].columns);
+    if (res.error && page === 0 && setIdx === 0) {
+      setIdx = 1; // sin columnas de comida todavía
+      res = await query(COLUMN_SETS[setIdx].columns);
+    }
+    const { data, error } = res;
+
     if (error) return { entries: [], maxUpdatedAt: null, error: error.message };
 
-    const rows = data ?? [];
+    const rows = (data ?? []) as unknown as Record<string, unknown>[];
     for (const r of rows) {
       entries.push(rowToEntry(r));
-      const u = (r as Record<string, unknown>).updated_at as string | undefined;
+      const u = r.updated_at as string | undefined;
       if (u && u > (maxUpdatedAt ?? '')) maxUpdatedAt = u;
     }
 
@@ -176,7 +185,8 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     }
 
     const changedIds = new Set(changed.map((e) => e.id));
-    const merged = [...getLocalEntries().filter((e) => !changedIds.has(e.id)), ...changed];
+    const local = getLocalEntries();
+    const merged = [...local.filter((e) => !changedIds.has(e.id)), ...keepLocalPhotos(changed, local)];
     merged.sort((a, b) => a.timestamp - b.timestamp);
 
     localStore.setItem(ENTRIES_KEY, JSON.stringify(merged));
@@ -203,7 +213,7 @@ export async function syncOnLogin(userId: string): Promise<PoopEntry[]> {
     saveEntryToCloud(userId, entry).catch((e) => console.error('[sync] Failed to upload local entry:', e));
   }
 
-  const merged = [...cloudEntries, ...localOnly];
+  const merged = [...keepLocalPhotos(cloudEntries, localEntries), ...localOnly];
   merged.sort((a, b) => a.timestamp - b.timestamp);
 
   localStore.setItem(ENTRIES_KEY, JSON.stringify(merged));
@@ -234,6 +244,15 @@ export async function saveEntryToCloud(userId: string, entry: PoopEntry): Promis
       urine_characteristics: entry.urine_characteristics ?? [],
       urine_urgency: entry.urine_urgency ?? null,
       during_sleep: entry.during_sleep ?? null,
+      // Columnas food_* solo en comidas: así las deposiciones/micciones se
+      // siguen guardando igual aunque la migración de comidas no esté aplicada.
+      ...(entry.entry_type === 'food' ? {
+        food_meal_type: entry.food_meal_type ?? null,
+        food_description: entry.food_description ?? null,
+        food_portion: entry.food_portion ?? null,
+        food_tags: entry.food_tags ?? [],
+        food_photo_path: entry.food_photo_path ?? null,
+      } : {}),
     },
     { onConflict: 'user_id,entry_id' }
   );

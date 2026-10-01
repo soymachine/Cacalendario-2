@@ -1,6 +1,7 @@
 // Portado de src/components/MedicsPanel.tsx (loadPatients + practice stats) —
 // mantener sincronizado a mano.
 import { supabase } from './supabase';
+import { normalizeFoodConfig, patientDaysSinceLast } from './food';
 
 export interface PatientLink {
   id: string;
@@ -22,6 +23,8 @@ export interface PatientLink {
   unlinked_at?: string | null;
   hidden_fields?: string[];
   entry_type_mode?: string;
+  /** Pauta de comidas (patient_links.food_config, ver lib/food.ts). */
+  food_config?: unknown;
   push_min_hours?: number;
   push_disabled?: boolean;
   dob?: string | null;
@@ -65,21 +68,28 @@ export async function loadPatients(doctorId: string): Promise<PatientLink[]> {
       display_name = profile?.display_name || null;
       patient_email = p.patient_email || profile?.email || null;
 
-      let lastEntryQuery = supabase
-        .from('entries')
-        .select('date')
-        .eq('user_id', p.patient_id)
-        .order('date', { ascending: false })
-        .limit(1);
-      if (p.doctor_unlinked && p.unlinked_at) {
-        lastEntryQuery = lastEntryQuery.lte('created_at', p.unlinked_at);
-      }
-      const { data: lastEntry } = await lastEntryQuery.single();
-
-      if (lastEntry) {
-        lastEntryDate = lastEntry.date;
-        daysSinceLast = Math.floor((Date.now() - new Date(lastEntry.date).getTime()) / (1000 * 60 * 60 * 24));
-      }
+      // Último registro por módulo (deposición/micción y comida): el semáforo
+      // refleja el módulo esperado más retrasado (lib/food.ts).
+      const lastDateOf = async (type: 'core' | 'food') => {
+        let q = supabase
+          .from('entries')
+          .select('date')
+          .eq('user_id', p.patient_id)
+          .order('date', { ascending: false })
+          .limit(1);
+        q = type === 'food' ? q.eq('entry_type', 'food') : q.neq('entry_type', 'food');
+        if (p.doctor_unlinked && p.unlinked_at) q = q.lte('created_at', p.unlinked_at);
+        const { data } = await q.maybeSingle();
+        return (data?.date as string | undefined) ?? null;
+      };
+      const [lastCore, lastFood] = await Promise.all([
+        lastDateOf('core'),
+        normalizeFoodConfig(p.food_config).enabled ? lastDateOf('food') : Promise.resolve(null),
+      ]);
+      lastEntryDate = [lastCore, lastFood].filter((d): d is string => !!d).sort().pop() ?? null;
+      daysSinceLast = patientDaysSinceLast({
+        entryTypeMode: p.entry_type_mode, foodConfig: p.food_config, lastCoreDate: lastCore, lastFoodDate: lastFood,
+      });
     }
 
     let hasPushSub: boolean | null = null;

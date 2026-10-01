@@ -1,4 +1,4 @@
-// Iconos de tipo de registro (deposición / micción) para MW.
+// Iconos de tipo de registro (deposición / micción / comida) para MW.
 //
 // Los trazos salen de public/Switch-Caca-Icono.svg y public/Switch-Miccion-Icono.svg,
 // los mismos iconos que ve el paciente en el selector al registrar: médico y
@@ -27,14 +27,33 @@ const URINE_PATHS: string[] = [
   'M43.8101 45.78C40.5201 45.78 37.3901 44.69 35.0001 42.71C32.2801 40.46 30.7001 37.26 30.4401 33.46C29.6401 21.79 41.62 11.34 42.13 10.9C43.09 10.07 44.52 10.07 45.48 10.9C45.99 11.34 57.9701 21.79 57.1701 33.46C56.9101 37.26 55.3301 40.45 52.6101 42.71C50.2201 44.69 47.0901 45.78 43.8001 45.78H43.8101ZM35.5601 33.11C35.9201 38.32 39.9601 40.65 43.8101 40.65C47.6601 40.65 51.7001 38.32 52.0601 33.11C52.3801 28.48 49.75 23.82 47.48 20.72C46.17 18.93 44.8301 17.44 43.8101 16.4C42.8001 17.44 41.45 18.93 40.14 20.72C37.88 23.82 35.2501 28.48 35.5601 33.11Z',
 ];
 
+export type EntryKind = 'poop' | 'urine' | 'food';
+
+export const ENTRY_KIND_LABEL: Record<EntryKind, string> = {
+  poop: 'Deposición',
+  urine: 'Micción',
+  food: 'Comida',
+};
+
+/** Color identificativo (sutil) de cada tipo de registro en MW. */
+export const ENTRY_KIND_COLOR: Record<EntryKind, string> = {
+  poop: 'var(--color-secondary)',
+  urine: 'var(--color-accent)',
+  food: 'var(--fx-violet-500)',
+};
+
 interface EntryTypeIconProps {
-  isUrine: boolean;
+  /** Compatibilidad: deposición (false) / micción (true). */
+  isUrine?: boolean;
+  /** Tipo de registro; tiene prioridad sobre isUrine. */
+  kind?: EntryKind;
   size?: number;
 }
 
-export default function EntryTypeIcon({ isUrine, size = 18 }: EntryTypeIconProps) {
-  const label = isUrine ? 'Micción' : 'Deposición';
-  const color = isUrine ? 'var(--color-accent)' : 'var(--color-secondary)';
+export default function EntryTypeIcon({ isUrine = false, kind, size = 18 }: EntryTypeIconProps) {
+  const k: EntryKind = kind ?? (isUrine ? 'urine' : 'poop');
+  const label = ENTRY_KIND_LABEL[k];
+  const color = ENTRY_KIND_COLOR[k];
   return (
     <svg
       width={size}
@@ -45,9 +64,22 @@ export default function EntryTypeIcon({ isUrine, size = 18 }: EntryTypeIconProps
       className="inline-block align-middle flex-shrink-0"
     >
       <title>{label}</title>
-      {(isUrine ? URINE_PATHS : POOP_PATHS).map((d, i) => (
-        <path key={i} d={d} fill={color} />
-      ))}
+      {k === 'food' ? (
+        // Mismo aro exterior que los otros dos; dentro, plato con tenedor y
+        // cuchillo (igual que el selector de la app del paciente).
+        <g fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx={43.8} cy={43.8} r={41.2} strokeWidth={5.1} />
+          <circle cx={45} cy={46} r={15} strokeWidth={4.2} />
+          <circle cx={45} cy={46} r={7.5} strokeWidth={2.6} />
+          <path d="M20 24V35C20 38 22 40 24.5 40C27 40 29 38 29 35V24" strokeWidth={3.4} />
+          <path d="M24.5 24V34M24.5 40V67" strokeWidth={3.4} />
+          <path d="M68 67V24C64 27 62.5 33 62.5 41C62.5 45 64.5 47 68 47" strokeWidth={3.4} />
+        </g>
+      ) : (
+        (k === 'urine' ? URINE_PATHS : POOP_PATHS).map((d, i) => (
+          <path key={i} d={d} fill={color} />
+        ))
+      )}
     </svg>
   );
 }

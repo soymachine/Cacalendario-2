@@ -4,7 +4,8 @@ import { getMonthName, getDaysInMonth, getFirstDayOfMonth, toDateKey } from '../
 import { getEntriesForMonth, type PoopEntry } from '../lib/storage';
 import { onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { D } from '../lib/design';
-import { ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { ChevronLeftIcon, ChevronRightIcon, FoodSwitchIcon } from './icons';
+import { isBowelEntry } from '../lib/food';
 import CacaIcon from '../assets/Switch-Caca-Icono.svg';
 import MiccionIcon from '../assets/Switch-Miccion-Icono.svg';
 
@@ -84,8 +85,11 @@ export default function Calendar({ onDayClick }: CalendarProps) {
           const hasEntry = dayEntries.length > 0;
           const count = dayEntries.length;
           const isFuture = dateKey > todayKey;
-          const hasPoop = dayEntries.some((e) => e.entry_type !== 'urine');
+          const hasPoop = dayEntries.some((e) => isBowelEntry(e));
+          const hasUrine = dayEntries.some((e) => e.entry_type === 'urine');
           const Icon = hasPoop ? CacaIcon : MiccionIcon;
+          // Día solo con comidas: icono de comida
+          const onlyFood = !hasPoop && !hasUrine;
 
           return (
             <View key={dateKey} style={styles.cell}>
@@ -99,7 +103,9 @@ export default function Calendar({ onDayClick }: CalendarProps) {
                 {hasEntry ? (
                   <>
                     {/* fill="white" tints the icon like the web's brightness(0) invert(1) filter */}
-                    <Icon width={22} height={22} fill="#ffffff" color="#ffffff" />
+                    {onlyFood
+                      ? <FoodSwitchIcon color="#ffffff" size={22} />
+                      : <Icon width={22} height={22} fill="#ffffff" color="#ffffff" />}
                     {count > 1 && (
                       <View style={styles.countBadge}>
                         <Text style={styles.countText}>{count}</Text>

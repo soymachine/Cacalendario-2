@@ -3,13 +3,14 @@
 // sincronizado a mano.
 import { supabase } from './supabase';
 import type { PatientLink } from './patients';
+import { patientDaysSinceLast } from './food';
 
 export interface PatientEntry {
   id: string;
   date: string;
   time: string;
   notes: string;
-  entry_type: 'poop' | 'urine';
+  entry_type: 'poop' | 'urine' | 'food';
   bristol: number | null;
   floats: 'floats' | 'sinks' | 'both' | null;
   color: string | null;
@@ -22,6 +23,11 @@ export interface PatientEntry {
   urine_characteristics: string[];
   urine_urgency: number | null;
   during_sleep: boolean | null;
+  food_meal_type: string | null;
+  food_description: string | null;
+  food_portion: string | null;
+  food_tags: string[];
+  food_photo_path: string | null;
   entry_id: string;
   created_at: string;
   doctor_note?: string;
@@ -73,6 +79,11 @@ export async function loadPatientDetail(patient: PatientLink, doctorId: string):
     urine_characteristics: e.urine_characteristics ?? [],
     urine_urgency: e.urine_urgency ?? null,
     during_sleep: e.during_sleep ?? null,
+    food_meal_type: e.food_meal_type ?? null,
+    food_description: e.food_description ?? null,
+    food_portion: e.food_portion ?? null,
+    food_tags: e.food_tags ?? [],
+    food_photo_path: e.food_photo_path ?? null,
     entry_id: e.entry_id || '',
     created_at: e.created_at,
   }));
@@ -92,7 +103,12 @@ export async function loadPatientDetail(patient: PatientLink, doctorId: string):
   const bristolValues = entryListWithNotes.filter((e) => e.bristol != null).map((e) => e.bristol as number);
   const bristolAvg = bristolValues.length > 0 ? bristolValues.reduce((a, b) => a + b, 0) / bristolValues.length : null;
   const lastEntryDate = entryListWithNotes.length > 0 ? entryListWithNotes[0].date : null;
-  const daysSinceLast = lastEntryDate ? Math.floor((Date.now() - new Date(lastEntryDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
+  const daysSinceLast = patientDaysSinceLast({
+    entryTypeMode: patient.entry_type_mode,
+    foodConfig: patient.food_config,
+    lastCoreDate: entryListWithNotes.find((e) => e.entry_type !== 'food')?.date ?? null,
+    lastFoodDate: entryListWithNotes.find((e) => e.entry_type === 'food')?.date ?? null,
+  });
 
   return { entries: entryListWithNotes, totalEntries: entryList.length, bristolAvg, lastEntryDate, daysSinceLast };
 }

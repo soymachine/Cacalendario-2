@@ -98,3 +98,61 @@ export function UrineSwitchIcon({ color, size = 38 }: { color: string; size?: nu
     </Svg>
   );
 }
+
+// Comida: mismo lenguaje que los iconos de deposición/micción (aro exterior +
+// símbolo interior, viewBox 88x88): plato con tenedor y cuchillo.
+export function FoodSwitchIcon({ color, size = 38 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 88 88" fill="none">
+      <Circle cx={43.8} cy={43.8} r={41.2} stroke={color} strokeWidth={5.1} />
+      <Circle cx={45} cy={46} r={15} stroke={color} strokeWidth={4.2} />
+      <Circle cx={45} cy={46} r={7.5} stroke={color} strokeWidth={2.6} />
+      {/* Tenedor */}
+      <Path d="M20 24V35C20 38 22 40 24.5 40C27 40 29 38 29 35V24" stroke={color} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M24.5 24V34M24.5 40V67" stroke={color} strokeWidth={3.4} strokeLinecap="round" />
+      {/* Cuchillo */}
+      <Path d="M68 67V24C64 27 62.5 33 62.5 41C62.5 45 64.5 47 68 47" stroke={color} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// Plato de tamaño variable para el selector de cantidad (pequeña/normal/grande).
+export function PortionIcon({ level, color }: { level: 0 | 1 | 2; color: string }) {
+  const fill = [7, 11, 15][level];
+  return (
+    <Svg width={44} height={44} viewBox="0 0 44 44" fill="none">
+      <Circle cx={22} cy={22} r={19} stroke={color} strokeWidth={2.5} />
+      <Circle cx={22} cy={22} r={fill} fill={color} opacity={0.85} />
+    </Svg>
+  );
+}
+
+export function CameraIcon({ color, size = 26 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <Circle cx={12} cy={13} r={4} />
+    </Svg>
+  );
+}
+
+export function GalleryIcon({ color, size = 26 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <Circle cx={8.5} cy={8.5} r={1.5} />
+      <Path d="M21 15l-5-5L5 21" />
+    </Svg>
+  );
+}
+
+export function RepeatIcon({ color, size = 22 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M17 1l4 4-4 4" />
+      <Path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <Path d="M7 23l-4-4 4-4" />
+      <Path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </Svg>
+  );
+}

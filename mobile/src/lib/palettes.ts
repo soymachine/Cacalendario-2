@@ -5,29 +5,40 @@ export interface DoctorConfig {
   hiddenFields: string[];
   centerImageUrl: string | null;
   entryTypeMode: EntryTypeMode;
+  /** patient_links.food_config tal cual (se normaliza con normalizeFoodConfig). */
+  foodConfig: unknown;
 }
 
-/** Fetch the doctor config (hidden fields + center image) for the patient's linked doctor. */
+const DEFAULT_CONFIG: DoctorConfig = { hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both', foodConfig: null };
+
+/** Fetch the doctor config (hidden fields, center image, entry types, food protocol) for the patient's linked doctor. */
 export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
   try {
-    const { data: link } = await supabase
+    const query = (columns: string) => supabase
       .from('patient_links')
-      .select('center_id, hidden_fields, entry_type_mode')
+      .select(columns)
       .eq('patient_id', userId)
       .eq('status', 'accepted')
       .limit(1)
       .single();
 
-    if (!link?.center_id) return { hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both' };
+    let res = await query('center_id, hidden_fields, entry_type_mode, food_config');
+    // Sin la migración de comidas aún aplicada: la pauta de siempre.
+    if (res.error && res.error.code !== 'PGRST116') res = await query('center_id, hidden_fields, entry_type_mode');
+    const link = res.data as { center_id?: string | null; hidden_fields?: string[] | null; entry_type_mode?: string | null; food_config?: unknown } | null;
+    if (!link) return DEFAULT_CONFIG;
+
+    const base: DoctorConfig = {
+      hiddenFields: link.hidden_fields || [],
+      centerImageUrl: null,
+      entryTypeMode: (link.entry_type_mode as EntryTypeMode) || 'both',
+      foodConfig: link.food_config ?? null,
+    };
+    if (!link.center_id) return base;
 
     const { data: center } = await supabase.from('centers').select('image_url').eq('id', link.center_id).single();
-
-    return {
-      hiddenFields: link?.hidden_fields || [],
-      centerImageUrl: center?.image_url || null,
-      entryTypeMode: (link?.entry_type_mode as EntryTypeMode) || 'both',
-    };
+    return { ...base, centerImageUrl: center?.image_url || null };
   } catch {
-    return { hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both' };
+    return DEFAULT_CONFIG;
   }
 }

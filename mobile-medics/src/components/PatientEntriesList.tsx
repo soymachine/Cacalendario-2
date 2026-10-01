@@ -5,6 +5,19 @@ import { filterEntriesByDateRange } from '../lib/entryFilters';
 import type { PatientEntry } from '../lib/patientDetail';
 import { FLOATS_LABEL, DURATION_LABEL, SYMPTOM_LABEL, URINE_TYPE_LABEL, URINE_CHAR_LABEL } from '../lib/entryLabels';
 import { D } from '../lib/design';
+import { mealTypeLabel, portionLabel } from '../lib/food';
+import { tagColor } from '../lib/tags';
+import FoodPhotoThumb from './FoodPhotoThumb';
+
+type TypeFilter = 'all' | 'poop' | 'urine' | 'food';
+const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
+  { key: 'all', label: 'Todos' },
+  { key: 'poop', label: 'Deposiciones' },
+  { key: 'urine', label: 'Micciones' },
+  { key: 'food', label: 'Comida' },
+];
+const FOOD_COLOR = '#8480C9'; // --fx-violet-500
+const FOOD_SOFT = '#E8E7F7';  // --fx-violet-100
 
 const ENTRIES_PER_PAGE = 10;
 
@@ -33,11 +46,14 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
   const [showToPicker, setShowToPicker] = useState(false);
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<{ entryId: string; draft: string } | null>(null);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
-  const filtered = filterEntriesByDateRange(entries, filterFrom, filterTo);
+  const dateFiltered = filterEntriesByDateRange(entries, filterFrom, filterTo);
+  const filtered = typeFilter === 'all' ? dateFiltered : dateFiltered.filter((e) => e.entry_type === typeFilter);
+  const hasFood = entries.some((e) => e.entry_type === 'food');
   const totalPages = Math.max(1, Math.ceil(filtered.length / ENTRIES_PER_PAGE));
   const paged = filtered.slice(page * ENTRIES_PER_PAGE, (page + 1) * ENTRIES_PER_PAGE);
-  const hasFilter = !!(filterFrom || filterTo);
+  const hasFilter = !!(filterFrom || filterTo || typeFilter !== 'all');
 
   const toDateKey = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -48,10 +64,27 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
           Historial {hasFilter ? `(${filtered.length} de ${totalEntries})` : `(${totalEntries})`}
         </Text>
         {hasFilter && (
-          <Pressable onPress={() => { setFilterFrom(''); setFilterTo(''); setPage(0); }}>
+          <Pressable onPress={() => { setFilterFrom(''); setFilterTo(''); setTypeFilter('all'); setPage(0); }}>
             <Text style={styles.clearFilter}>✕ Limpiar</Text>
           </Pressable>
         )}
+      </View>
+
+      <View style={styles.typeRow}>
+        {TYPE_FILTERS.filter((f) => f.key !== 'food' || hasFood).map((f) => {
+          const active = typeFilter === f.key;
+          return (
+            <Pressable
+              key={f.key}
+              onPress={() => { setTypeFilter(f.key); setPage(0); }}
+              style={[styles.typeChip, active && styles.typeChipActive]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{f.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.filterRow}>
@@ -81,18 +114,19 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
 
       {filtered.length === 0 ? (
         <Text style={styles.emptyText}>
-          {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
+          {hasFilter ? 'No hay registros con estos filtros.' : 'Este paciente no tiene registros aún.'}
         </Text>
       ) : (
         paged.map((entry, i) => {
           const isUrine = entry.entry_type === 'urine';
+          const isFood = entry.entry_type === 'food';
           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? D.success : entry.bristol < 3 ? '#C0832B' : D.danger;
           const bristolBg = bristolColor === D.success ? '#E7F5EC' : bristolColor === '#C0832B' ? '#FCF4E7' : D.dangerBg;
           const isEditing = editing?.entryId === entry.entry_id;
           return (
             <View key={entry.entry_id || i} style={[styles.entryRow, i < paged.length - 1 && styles.entryRowBorder]}>
               <View style={styles.entryTop}>
-                <View style={[styles.dot, { backgroundColor: isUrine ? D.accent : D.secondary }]} />
+                <View style={[styles.dot, { backgroundColor: isFood ? FOOD_COLOR : isUrine ? D.accent : D.secondary }]} />
                 <Text style={styles.entryDate}>{shortDate(entry.date)}</Text>
                 {!!entry.time && <Text style={styles.entryTime}>{entry.time}</Text>}
                 <Pressable
@@ -104,7 +138,14 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
               </View>
 
               <View style={styles.chipsRow}>
-                {isUrine ? (
+                {isFood ? (
+                  <>
+                    <Chip label={mealTypeLabel(entry.food_meal_type) ?? 'Comida'} bg={FOOD_SOFT} color={D.text} />
+                    {!!entry.food_description && <Text style={styles.foodDescription}>{entry.food_description}</Text>}
+                    {portionLabel(entry.food_portion) && <Chip label={portionLabel(entry.food_portion)!} bg={D.accentSoft} color={D.accent} />}
+                    {entry.food_tags.map((t) => <Chip key={t} label={t} bg={`${tagColor(t)}18`} color={tagColor(t)} />)}
+                  </>
+                ) : isUrine ? (
                   <>
                     {entry.urine_type != null && <Chip label={URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type} bg="#EAF2FB" color={D.primary} />}
                     {entry.urine_quantity != null && entry.urine_quantity > 0 && <Chip label={`${entry.urine_quantity} ml`} bg={D.accentSoft} color={D.accent} />}
@@ -122,6 +163,10 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
                   </>
                 )}
               </View>
+
+              {isFood && !!entry.food_photo_path && (
+                <View style={styles.foodPhotoRow}><FoodPhotoThumb path={entry.food_photo_path} size={72} /></View>
+              )}
 
               {!!entry.notes && <Text style={styles.patientNote}>{entry.notes}</Text>}
 
@@ -178,6 +223,13 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
 }
 
 const styles = StyleSheet.create({
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  typeChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, borderWidth: 1, borderColor: D.border },
+  typeChipActive: { backgroundColor: D.primary, borderColor: D.primary },
+  typeChipText: { fontSize: 12, fontWeight: '700', color: D.textMuted },
+  typeChipTextActive: { color: '#fff' },
+  foodDescription: { fontSize: 13, color: D.text, flexShrink: 1 },
+  foodPhotoRow: { marginTop: 6 },
   card: { backgroundColor: D.card, borderRadius: 16, padding: 14, marginBottom: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   title: { fontSize: 14, fontWeight: '800', color: D.text },

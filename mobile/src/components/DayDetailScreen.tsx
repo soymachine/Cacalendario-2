@@ -6,7 +6,9 @@ import { getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { getBristolType, getBristolHealthColor } from '../lib/bristol';
 import { D } from '../lib/design';
-import { CloseIcon, ChevronSmallIcon } from './icons';
+import { CloseIcon, ChevronSmallIcon, FoodSwitchIcon } from './icons';
+import { mealTypeLabel, portionLabel } from '../lib/food';
+import FoodPhotoView from './FoodPhotoView';
 import PoopSmallIcon from '../assets/poop-small.svg';
 import PoopButtonIcon from '../assets/poop-button.svg';
 
@@ -53,6 +55,37 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
         {/* Entries list */}
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {entries.map((entry) => {
+            if (entry.entry_type === 'food') {
+              const meal = mealTypeLabel(entry.food_meal_type);
+              const hasPhoto = !!(entry.photo_local_uri || entry.food_photo_path);
+              const details = [portionLabel(entry.food_portion), ...(entry.food_tags ?? [])].filter(Boolean).join(' · ');
+              return (
+                <Pressable key={entry.id} onPress={() => onEditEntry(entry)} style={styles.entryCard} accessibilityRole="button">
+                  <View style={styles.entryRow}>
+                    <View style={styles.entryIcon}>
+                      <FoodSwitchIcon color={D.accent} size={28} />
+                    </View>
+                    <View style={styles.entryInfo}>
+                      <View style={styles.entryBadges}>
+                        <Text style={styles.entryTime}>{entry.time}</Text>
+                        <Text style={[styles.badge, { backgroundColor: D.accentSoft, color: D.accent }]}>{meal ?? 'Comida'}</Text>
+                      </View>
+                      {!!entry.food_description && (
+                        <Text style={styles.foodDescription} numberOfLines={2}>{entry.food_description}</Text>
+                      )}
+                      {!!details && <Text style={styles.entryNotes} numberOfLines={1}>{details}</Text>}
+                      {!!entry.notes && <Text style={styles.entryNotes} numberOfLines={1}>{entry.notes}</Text>}
+                    </View>
+                    {hasPhoto && (
+                      <FoodPhotoView localUri={entry.photo_local_uri} path={entry.food_photo_path} style={styles.foodThumb} accessibilityLabel="Foto de la comida" />
+                    )}
+                    <View style={styles.chevron}>
+                      <ChevronSmallIcon />
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            }
             const bristolType = getBristolType(entry.bristol);
             return (
               <Pressable key={entry.id} onPress={() => onEditEntry(entry)} style={styles.entryCard}>
@@ -219,6 +252,17 @@ const styles = StyleSheet.create({
   entryMeta: {
     fontSize: 12,
     color: D.textMuted,
+  },
+  foodDescription: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: D.text,
+    marginTop: 4,
+  },
+  foodThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
   },
   entryNotes: {
     fontSize: 12,

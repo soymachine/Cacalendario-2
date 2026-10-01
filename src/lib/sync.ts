@@ -84,6 +84,7 @@ async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntr
         .from('entries')
         .select(ENTRY_COLUMNS_WITH_CURSOR)
         .eq('user_id', userId)
+        .neq('entry_type', 'food')
         .order('timestamp', { ascending: true })
         .range(from, to);
       data = res.data as Record<string, unknown>[] | null;
@@ -93,6 +94,7 @@ async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntr
         .from('entries')
         .select(ENTRY_COLUMNS)
         .eq('user_id', userId)
+        .neq('entry_type', 'food')
         .order('timestamp', { ascending: true })
         .range(from, to);
       data = res.data as Record<string, unknown>[] | null;
@@ -106,6 +108,7 @@ async function fetchAllCloudEntries(userId: string): Promise<{ entries: PoopEntr
         .from('entries')
         .select(ENTRY_COLUMNS)
         .eq('user_id', userId)
+        .neq('entry_type', 'food')
         .order('timestamp', { ascending: true })
         .range(from, to);
       data = res.data as Record<string, unknown>[] | null;
@@ -142,6 +145,7 @@ async function fetchChangedCloudEntries(userId: string, since: string): Promise<
       .from('entries')
       .select(ENTRY_COLUMNS_WITH_CURSOR)
       .eq('user_id', userId)
+      .neq('entry_type', 'food')
       .gt('updated_at', since)
       .order('updated_at', { ascending: true })
       .range(from, to);

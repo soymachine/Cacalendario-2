@@ -12,7 +12,16 @@ import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
 import { testPlanDaysLeft, isAccessBlocked, planSummary } from '../lib/plan';
 import { professionalFirstName, stripTitle } from '../lib/doctorName';
-import EntryTypeIcon from './EntryTypeIcon';
+import EntryTypeIcon, { ENTRY_KIND_LABEL, type EntryKind } from './EntryTypeIcon';
+import FoodConfigEditor from './FoodConfigEditor';
+import FoodStatsCard from './FoodStatsCard';
+import FoodEntryDetail from './FoodEntryDetail';
+import FoodPhoto from './FoodPhoto';
+import ClinicalTimeline from './ClinicalTimeline';
+import {
+  normalizeFoodConfig, patientDaysSinceLast as semaforoDays, localDateKey,
+  mealTypeLabel, portionLabel, addTag, removeTag, type FoodTrackingConfig,
+} from '../lib/food';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
 import type { CheckoutOutcome, BillingInterval } from '../lib/billing';
 import {
@@ -58,6 +67,8 @@ interface PatientLink {
   semaforo_red_override?: number | null;
   hidden_fields?: string[];
   entry_type_mode?: string;
+  /** Pauta de comidas (jsonb). Ausente si la migración de comidas no está aplicada. */
+  food_config?: unknown;
   push_min_hours?: number;
   push_frequency?: number;
   push_disabled?: boolean;
@@ -84,6 +95,7 @@ interface DoctorInfo {
   plan: 'free' | 'beta' | 'test' | 'pro';
   test_plan_started_at: string | null;
   global_tags: string[];
+  food_tag_catalog: string[];
   stripe_customer_id: string | null;
   stripe_status: string | null;
   stripe_current_period_end: string | null;
@@ -101,7 +113,7 @@ interface PatientEntry {
   date: string;
   time: string;
   notes: string;
-  entry_type: 'poop' | 'urine';
+  entry_type: EntryKind;
   bristol: number | null;
   floats: 'floats' | 'sinks' | 'both' | null;
   color: string | null;
@@ -114,6 +126,11 @@ interface PatientEntry {
   urine_characteristics: string[];
   urine_urgency?: number | null;
   during_sleep?: boolean | null;
+  food_meal_type: string | null;
+  food_description: string | null;
+  food_portion: string | null;
+  food_tags: string[];
+  food_photo_path: string | null;
   entry_id: string;
   created_at: string;
   doctor_note?: string;
@@ -291,6 +308,11 @@ export default function MedicsPanel() {
   const [globalTagsSaving, setGlobalTagsSaving] = useState(false);
   const [configTagInput, setConfigTagInput] = useState('');
   const [clearTagsConfirm, setClearTagsConfirm] = useState(false);
+  const [patientFoodConfig, setPatientFoodConfig] = useState<FoodTrackingConfig>(() => normalizeFoodConfig(null));
+  const [entryTypeFilter, setEntryTypeFilter] = useState<'all' | EntryKind>('all');
+  const [historyView, setHistoryView] = useState<'list' | 'timeline'>('list');
+  const [foodDetail, setFoodDetail] = useState<PatientEntry | null>(null);
+  const [foodTagCatalog, setFoodTagCatalog] = useState<string[]>([]);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
   const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
   const [bristolAlerts, setBristolAlerts] = useState<{ patientId: string; curr: number; prev: number }[]>([]);
@@ -317,6 +339,7 @@ export default function MedicsPanel() {
   const accessBlocked = !!doctorInfo && isAccessBlocked(doctorInfo.plan, doctorInfo.test_plan_started_at);
 
   const ENTRIES_PER_PAGE = 10;
+  const TIMELINE_DAYS_PER_PAGE = 7;
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
@@ -340,6 +363,7 @@ export default function MedicsPanel() {
     plan: (d.plan as 'free' | 'beta' | 'test' | 'pro') || 'free',
     test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
+    food_tag_catalog: d.food_tag_catalog || [],
     stripe_customer_id: d.stripe_customer_id || null,
     stripe_status: d.stripe_status || null,
     stripe_current_period_end: d.stripe_current_period_end || null,
@@ -356,6 +380,7 @@ export default function MedicsPanel() {
     setConfigGreen(info.semaforo_green);
     setConfigRed(info.semaforo_red);
     setGlobalTags(info.global_tags || []);
+    setFoodTagCatalog(info.food_tag_catalog || []);
 
     const imageUrl = info.center_image_url || null;
     setCenterImageUrl(imageUrl);
@@ -760,22 +785,29 @@ export default function MedicsPanel() {
         display_name = profile?.display_name || null;
         patient_email = p.patient_email || profile?.email || null;
 
-        // Fetch last entry (capped at unlinked_at for unlinked patients)
-        let lastEntryQuery = supabase
-          .from('entries')
-          .select('date')
-          .eq('user_id', p.patient_id)
-          .order('date', { ascending: false })
-          .limit(1);
-        if (p.doctor_unlinked && p.unlinked_at) {
-          lastEntryQuery = lastEntryQuery.lte('created_at', p.unlinked_at);
-        }
-        const { data: lastEntry } = await lastEntryQuery.single();
-
-        if (lastEntry) {
-          lastEntryDate = lastEntry.date;
-          daysSinceLast = Math.floor((Date.now() - new Date(lastEntry.date).getTime()) / (1000 * 60 * 60 * 24));
-        }
+        // Fetch last entry per module (capped at unlinked_at for unlinked
+        // patients): deposición/micción por un lado y comida por otro, para
+        // que el semáforo refleje el módulo que el profesional espera y que
+        // más se ha retrasado (ver effectiveDaysSinceLast en lib/food.ts).
+        const lastDateOf = async (type: 'core' | 'food') => {
+          let q = supabase
+            .from('entries')
+            .select('date')
+            .eq('user_id', p.patient_id)
+            .order('date', { ascending: false })
+            .limit(1);
+          q = type === 'food' ? q.eq('entry_type', 'food') : q.neq('entry_type', 'food');
+          if (p.doctor_unlinked && p.unlinked_at) q = q.lte('created_at', p.unlinked_at);
+          const { data } = await q.maybeSingle();
+          return (data?.date as string | undefined) ?? null;
+        };
+        const foodCfg = normalizeFoodConfig(p.food_config);
+        const [lastCore, lastFood] = await Promise.all([
+          lastDateOf('core'),
+          foodCfg.enabled ? lastDateOf('food') : Promise.resolve(null),
+        ]);
+        lastEntryDate = [lastCore, lastFood].filter((d): d is string => !!d).sort().pop() ?? null;
+        daysSinceLast = patientDaysSinceLast(p, lastCore, lastFood);
       }
 
       let hasPushSub: boolean | null = null;
@@ -1035,6 +1067,11 @@ export default function MedicsPanel() {
       urine_characteristics: e.urine_characteristics ?? [],
       urine_urgency: e.urine_urgency ?? null,
       during_sleep: e.during_sleep ?? null,
+      food_meal_type: e.food_meal_type ?? null,
+      food_description: e.food_description ?? null,
+      food_portion: e.food_portion ?? null,
+      food_tags: e.food_tags ?? [],
+      food_photo_path: e.food_photo_path ?? null,
       entry_id: e.entry_id || '',
       created_at: e.created_at,
     }));
@@ -1055,7 +1092,9 @@ export default function MedicsPanel() {
     const bristolValues = entryListWithNotes.filter(e => e.bristol != null).map(e => e.bristol!);
     const bristolAvg = bristolValues.length > 0 ? bristolValues.reduce((a, b) => a + b, 0) / bristolValues.length : null;
     const lastEntryDate = entryListWithNotes.length > 0 ? entryListWithNotes[0].date : null;
-    const daysSinceLast = lastEntryDate ? Math.floor((Date.now() - new Date(lastEntryDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const lastCore = entryListWithNotes.find(e => e.entry_type !== 'food')?.date ?? null;
+    const lastFood = entryListWithNotes.find(e => e.entry_type === 'food')?.date ?? null;
+    const daysSinceLast = patientDaysSinceLast(patient, lastCore, lastFood);
 
     // Reset calendar to current month when opening a patient
     setCalendarMonth(new Date().getMonth());
@@ -1067,6 +1106,10 @@ export default function MedicsPanel() {
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
+    setPatientFoodConfig(normalizeFoodConfig(patient.food_config));
+    setEntryTypeFilter('all');
+    setHistoryView('list');
+    setFoodDetail(null);
     setPatientConfigOpen(false);
     setPatientPushMinHours(patient.push_min_hours ?? 24);
     setPatientPushDisabled(patient.push_disabled ?? false);
@@ -1249,6 +1292,13 @@ export default function MedicsPanel() {
   const handleSavePatientConfig = async () => {
     if (!selectedPatient) return;
     setPatientConfigError(null);
+    // La pauta de comidas solo se escribe si el módulo se ha usado alguna vez
+    // (o se activa ahora): así un paciente que nunca lo tuvo sigue con NULL y
+    // el guardado funciona igual aunque la migración aún no esté aplicada.
+    const touchesFood = patientFoodConfig.enabled || selectedPatient.food_config != null;
+    const foodConfigToSave = touchesFood ? patientFoodConfig : undefined;
+    // "Solo comida" no tiene sentido sin comida: vuelve a ambos tipos
+    const entryTypeModeToSave = patientEntryTypeMode === 'none' && !patientFoodConfig.enabled ? 'both' : patientEntryTypeMode;
     const { error } = await supabase
       .from('patient_links')
       .update({
@@ -1256,8 +1306,9 @@ export default function MedicsPanel() {
         semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
         hidden_fields: patientHiddenFields,
-        entry_type_mode: patientEntryTypeMode,
+        entry_type_mode: entryTypeModeToSave,
         tags: patientTagsDraft,
+        ...(foodConfigToSave ? { food_config: foodConfigToSave } : {}),
       })
       .eq('id', selectedPatient.id);
     if (error) {
@@ -1270,9 +1321,19 @@ export default function MedicsPanel() {
         semaforo_green_override: patientSemaforoOverride ? patientSemaforoGreen : null,
         semaforo_red_override: patientSemaforoOverride ? patientSemaforoRed : null,
         hidden_fields: patientHiddenFields,
-        entry_type_mode: patientEntryTypeMode,
+        entry_type_mode: entryTypeModeToSave,
         tags: patientTagsDraft,
+        ...(foodConfigToSave ? { food_config: foodConfigToSave } : {}),
       };
+      setPatientEntryTypeMode(entryTypeModeToSave);
+      // El semáforo depende de la pauta de comidas
+      if (patientDetail) {
+        const lastCore = patientDetail.entries.find(e => e.entry_type !== 'food')?.date ?? null;
+        const lastFood = patientDetail.entries.find(e => e.entry_type === 'food')?.date ?? null;
+        const days = patientDaysSinceLast(updated, lastCore, lastFood);
+        updated.daysSinceLast = days;
+        setPatientDetail({ ...patientDetail, daysSinceLast: days });
+      }
       setSelectedPatient(updated);
       setPatients(prev => prev.map(p => p.id === selectedPatient.id ? updated : p));
       setPatientConfigSaved(true);
@@ -1320,6 +1381,17 @@ export default function MedicsPanel() {
     setGlobalTags(newTags);
     setDoctorInfo(prev => prev ? { ...prev, global_tags: newTags } : prev);
     await supabase.from('doctors').update({ global_tags: newTags }).eq('id', doctorInfo.id);
+  };
+
+  // ── Catálogo de etiquetas de comida del profesional ──
+  // Las etiquetas activadas en la pauta de cada paciente (food_config.tags) se
+  // conservan aunque se quiten del catálogo: se desactivan paciente a paciente.
+  const saveFoodTagCatalog = async (next: string[]) => {
+    if (!doctorInfo) return;
+    setFoodTagCatalog(next);
+    setDoctorInfo(prev => prev ? { ...prev, food_tag_catalog: next } : prev);
+    const { error } = await supabase.from('doctors').update({ food_tag_catalog: next }).eq('id', doctorInfo.id);
+    if (error) console.error('[medics] saveFoodTagCatalog error:', error.message);
   };
 
   // ── Delete global tag + cascade remove from all patients ──
@@ -2564,7 +2636,8 @@ export default function MedicsPanel() {
                         return {
                           label: w === 0 ? 'Hoy' : w === 1 ? '-1s' : `-${w}s`,
                           count: patientDetail.entries.filter(en =>
-                            en.date >= start.toISOString().slice(0, 10) && en.date < end.toISOString().slice(0, 10)
+                            en.entry_type !== 'food'
+                            && en.date >= start.toISOString().slice(0, 10) && en.date < end.toISOString().slice(0, 10)
                           ).length,
                         };
                       }).reverse();
@@ -2618,14 +2691,58 @@ export default function MedicsPanel() {
                 </div>
               </div>
 
+              {(patientFoodConfig.enabled || patientDetail.entries.some(e => e.entry_type === 'food')) && (
+                <FoodStatsCard entries={patientDetail.entries} config={patientFoodConfig} today={todayKey()} />
+              )}
+
               </div>{/* end left column */}
 
               {/* Right column: entry list */}
               {(() => {
-                const filteredEntries = filterEntriesByDateRange(patientDetail.entries, entryFilterFrom, entryFilterTo);
-                const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
-                const pagedEntries = filteredEntries.slice(entryPage * ENTRIES_PER_PAGE, (entryPage + 1) * ENTRIES_PER_PAGE);
-                const hasFilter = entryFilterFrom || entryFilterTo;
+                const dateFiltered = filterEntriesByDateRange(patientDetail.entries, entryFilterFrom, entryFilterTo);
+                const filteredEntries = entryTypeFilter === 'all' ? dateFiltered : dateFiltered.filter(e => e.entry_type === entryTypeFilter);
+                // Lista: 10 registros por página · Línea temporal: 7 días por página
+                const timelineDays = [...new Set(filteredEntries.map(e => e.date))];
+                const totalPages = historyView === 'timeline'
+                  ? Math.ceil(timelineDays.length / TIMELINE_DAYS_PER_PAGE)
+                  : Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+                const pagedEntries = historyView === 'timeline'
+                  ? (() => {
+                      const days = new Set(timelineDays.slice(entryPage * TIMELINE_DAYS_PER_PAGE, (entryPage + 1) * TIMELINE_DAYS_PER_PAGE));
+                      return filteredEntries.filter(e => days.has(e.date));
+                    })()
+                  : filteredEntries.slice(entryPage * ENTRIES_PER_PAGE, (entryPage + 1) * ENTRIES_PER_PAGE);
+                const hasFilter = entryFilterFrom || entryFilterTo || entryTypeFilter !== 'all';
+                const typeCounts: Record<EntryKind, number> = { poop: 0, urine: 0, food: 0 };
+                dateFiltered.forEach(e => { typeCounts[e.entry_type] = (typeCounts[e.entry_type] ?? 0) + 1; });
+                const summarize = (e: PatientEntry): { title: string; detail: string } => {
+                  if (e.entry_type === 'food') {
+                    return {
+                      title: mealTypeLabel(e.food_meal_type) ?? ENTRY_KIND_LABEL.food,
+                      detail: [e.food_description, portionLabel(e.food_portion), ...e.food_tags, e.notes].filter(Boolean).join(' · '),
+                    };
+                  }
+                  if (e.entry_type === 'urine') {
+                    return {
+                      title: ENTRY_KIND_LABEL.urine,
+                      detail: [
+                        e.urine_type ? URINE_TYPE_LABEL[e.urine_type] : null,
+                        e.urine_quantity ? `${e.urine_quantity} ml` : null,
+                        e.urine_urgency != null ? `Urgencia ${e.urine_urgency}/5` : null,
+                        ...e.urine_characteristics.map(c => URINE_CHAR_LABEL[c] || c),
+                        e.notes,
+                      ].filter(Boolean).join(' · '),
+                    };
+                  }
+                  return {
+                    title: ENTRY_KIND_LABEL.poop,
+                    detail: [
+                      e.bristol != null ? `Bristol ${e.bristol}` : null,
+                      ...e.symptoms.map(sy => SYMPTOM_LABEL[sy] || sy),
+                      e.notes,
+                    ].filter(Boolean).join(' · '),
+                  };
+                };
 
                 return (
                   <div className="medics-patient-detail__entries bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft flex-1 min-w-0 box-border overflow-hidden" style={{ width: isMobile ? '100%' : undefined }}>
@@ -2639,11 +2756,57 @@ export default function MedicsPanel() {
                             : ` (${patientDetail.totalEntries})`}
                         </span>
                         {hasFilter && (
-                          <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryPage(0); }}
+                          <button onClick={() => { setEntryFilterFrom(''); setEntryFilterTo(''); setEntryTypeFilter('all'); setEntryPage(0); }}
                             className="text-[11px] bg-transparent border-none cursor-pointer font-semibold" style={{ color: 'var(--color-error)' }}>
                             ✕ Limpiar filtro
                           </button>
                         )}
+                      </div>
+                      {/* Tipo de registro + vista */}
+                      <div className="flex gap-2 items-center justify-between flex-wrap mb-2.5">
+                        <div className="flex gap-1 flex-wrap" role="tablist" aria-label="Tipo de registro">
+                          {([
+                            { key: 'all', label: 'Todos', count: dateFiltered.length },
+                            { key: 'poop', label: 'Deposiciones', count: typeCounts.poop },
+                            { key: 'urine', label: 'Micciones', count: typeCounts.urine },
+                            { key: 'food', label: 'Comida', count: typeCounts.food },
+                          ] as { key: 'all' | EntryKind; label: string; count: number }[])
+                            .filter(o => o.key !== 'food' || patientFoodConfig.enabled || o.count > 0)
+                            .map(o => {
+                              const active = entryTypeFilter === o.key;
+                              return (
+                                <button
+                                  key={o.key}
+                                  role="tab"
+                                  aria-selected={active}
+                                  onClick={() => { setEntryTypeFilter(o.key); setEntryPage(0); }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-fx-pill text-[11px] font-bold cursor-pointer border font-fx"
+                                  style={{
+                                    backgroundColor: active ? th.primary : 'transparent',
+                                    borderColor: active ? th.primary : 'var(--border)',
+                                    color: active ? '#fff' : 'var(--text-secondary)',
+                                  }}
+                                >
+                                  {o.key !== 'all' && <EntryTypeIcon kind={o.key} size={12} />}
+                                  {o.label}
+                                  <span className="font-semibold opacity-70">{o.count}</span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                        <div className="flex rounded-lg border border-fx-border overflow-hidden" role="group" aria-label="Vista">
+                          {([['list', 'Lista'], ['timeline', 'Línea temporal']] as const).map(([v, label]) => (
+                            <button
+                              key={v}
+                              aria-pressed={historyView === v}
+                              onClick={() => { setHistoryView(v); setEntryPage(0); }}
+                              className="px-2.5 py-1 text-[11px] font-semibold border-none cursor-pointer font-fx"
+                              style={{ backgroundColor: historyView === v ? 'var(--fx-ink-100)' : 'transparent', color: historyView === v ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                       <div className="flex gap-2 items-center flex-wrap">
                         <span className="text-[11px] font-semibold text-fx-text-tertiary">De</span>
@@ -2659,8 +2822,15 @@ export default function MedicsPanel() {
 
                     {filteredEntries.length === 0 ? (
                       <div className="p-10 text-center text-fx-text-tertiary text-sm">
-                        {hasFilter ? 'No hay registros en ese rango de fechas.' : 'Este paciente no tiene registros aún.'}
+                        {hasFilter ? 'No hay registros con estos filtros.' : 'Este paciente no tiene registros aún.'}
                       </div>
+                    ) : historyView === 'timeline' ? (
+                      <ClinicalTimeline
+                        entries={pagedEntries}
+                        summarize={summarize}
+                        formatDay={(d) => new Date(`${d}T12:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                        onOpen={(e) => { if (e.entry_type === 'food') setFoodDetail(e); }}
+                      />
                     ) : (
                       <div className="flex flex-col">
                         {/* Header row */}
@@ -2674,10 +2844,14 @@ export default function MedicsPanel() {
                           <span className="hidden sm:flex items-center gap-3 text-[10px] font-semibold text-fx-text-tertiary uppercase pr-7">
                             <span className="flex items-center gap-1"><EntryTypeIcon isUrine={false} size={13} />Deposición</span>
                             <span className="flex items-center gap-1"><EntryTypeIcon isUrine size={13} />Micción</span>
+                            {(patientFoodConfig.enabled || typeCounts.food > 0) && (
+                              <span className="flex items-center gap-1"><EntryTypeIcon kind="food" size={13} />Comida</span>
+                            )}
                           </span>
                         </div>
                         {pagedEntries.map((entry, i) => {
                           const isUrine = entry.entry_type === 'urine';
+                          const isFood = entry.entry_type === 'food';
                           const bristolColor = entry.bristol == null ? null : entry.bristol >= 3 && entry.bristol <= 5 ? 'var(--color-success)' : entry.bristol < 3 ? 'var(--color-warning)' : 'var(--color-error)';
                           const bristolBg = bristolColor === 'var(--color-success)' ? 'var(--color-success-soft)' : bristolColor === 'var(--color-warning)' ? 'var(--color-warning-soft)' : 'var(--color-error-soft)';
                           const chip = (label: string, bg: string, color: string) => (
@@ -2688,7 +2862,7 @@ export default function MedicsPanel() {
                               <div className="flex items-start px-4 py-2.5 relative">
                                 {/* Type icon */}
                                 <div className="w-8 pt-0.5">
-                                  <EntryTypeIcon isUrine={isUrine} />
+                                  <EntryTypeIcon kind={entry.entry_type} />
                                 </div>
                                 {/* Date / time */}
                                 <div className="w-[130px]">
@@ -2697,7 +2871,27 @@ export default function MedicsPanel() {
                                 </div>
                                 {/* Type-specific data */}
                                 <div className="flex-1 flex flex-wrap gap-1 items-center pr-7">
-                                  {isUrine ? (
+                                  {isFood ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFoodDetail(entry)}
+                                      title="Ver detalle de la comida"
+                                      className="flex flex-wrap gap-1 items-center text-left bg-transparent border-none p-0 cursor-pointer font-fx min-w-0"
+                                    >
+                                      {chip(mealTypeLabel(entry.food_meal_type) ?? ENTRY_KIND_LABEL.food, 'var(--fx-violet-100)', 'var(--fx-ink-700)')}
+                                      {entry.food_photo_path && (
+                                        <FoodPhoto path={entry.food_photo_path} alt="Foto de la comida" className="w-7 h-7 rounded-md" />
+                                      )}
+                                      {entry.food_description && (
+                                        <span className="text-xs text-fx-text max-w-[260px] truncate">{entry.food_description}</span>
+                                      )}
+                                      {portionLabel(entry.food_portion) && chip(portionLabel(entry.food_portion)!, 'var(--fx-teal-50)', 'var(--color-accent)')}
+                                      {entry.food_tags.map(t => (
+                                        <span key={t}>{chip(t, `${tagColor(t)}18`, tagColor(t))}</span>
+                                      ))}
+                                      {!entry.food_meal_type && !entry.food_description && !entry.food_photo_path && entry.food_tags.length === 0 && !entry.food_portion && <span className="text-xs" style={{ color: 'var(--fx-ink-300)' }}>—</span>}
+                                    </button>
+                                  ) : isUrine ? (
                                     <>
                                       {entry.urine_type != null && chip(URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type, 'var(--fx-blue-50)', 'var(--color-primary)')}
                                       {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, 'var(--fx-teal-50)', 'var(--color-accent)')}
@@ -2877,6 +3071,15 @@ export default function MedicsPanel() {
               })()}
             </div>
 
+            {/* ── Detalle de una comida ── */}
+            {foodDetail && (
+              <FoodEntryDetail
+                entry={foodDetail}
+                formatDay={(d) => shortDate(d)}
+                onClose={() => setFoodDetail(null)}
+              />
+            )}
+
             {/* ── Config modal ── */}
             {patientConfigOpen && (
               <>
@@ -3018,6 +3221,19 @@ export default function MedicsPanel() {
                       </form>
                     </div>
 
+                    {/* Comidas — pauta del módulo de seguimiento de comidas */}
+                    <FoodConfigEditor
+                      value={patientFoodConfig}
+                      onChange={(next) => {
+                        setPatientFoodConfig(next);
+                        if (!next.enabled && patientEntryTypeMode === 'none') setPatientEntryTypeMode('both');
+                      }}
+                      catalog={foodTagCatalog}
+                      onCreateTag={(t) => { if (!foodTagCatalog.some(x => x.toLowerCase() === t.toLowerCase())) saveFoodTagCatalog(addTag(foodTagCatalog, t)); }}
+                      accent={th.primary}
+                      today={todayKey()}
+                    />
+
                     {/* Campos del formulario */}
                     <div className="medics-patient-config__fields bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                       <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
@@ -3031,6 +3247,7 @@ export default function MedicsPanel() {
                               { value: 'both', label: 'Ambas opciones' },
                               { value: 'poop_only', label: 'Solo deposición' },
                               { value: 'urine_only', label: 'Solo micción' },
+                              ...(patientFoodConfig.enabled ? [{ value: 'none', label: 'Solo comida' }] : []),
                             ].map(opt => (
                               <button
                                 key={opt.value}
@@ -3061,6 +3278,7 @@ export default function MedicsPanel() {
                           { id: 'urine_color', label: 'Color', group: null, section: 'urine' },
                           { id: 'urine_characteristics', label: 'Características', group: null, section: 'urine' },
                         ].filter(field => {
+                          if (patientEntryTypeMode === 'none') return false;
                           if (patientEntryTypeMode === 'urine_only' && field.section === 'poop') return false;
                           if (patientEntryTypeMode === 'poop_only' && field.section === 'urine') return false;
                           return true;
@@ -3425,6 +3643,53 @@ export default function MedicsPanel() {
                     </button>
                   </form>
                   {globalTagsSaving && <span className="text-[11px] text-fx-ink-300">Guardando…</span>}
+
+                  {/* Etiquetas de comida (módulo de comidas): catálogo que se activa por paciente */}
+                  <div className="border-t border-fx-border-soft pt-3.5 flex flex-col gap-2.5">
+                    <span className="text-[13px] font-bold text-fx-text flex items-center gap-1.5"><EntryTypeIcon kind="food" size={15} />Etiquetas de comida</span>
+                    <p className="text-[13px] text-fx-text-secondary m-0 leading-snug">
+                      Opciones que el paciente puede marcar al registrar una comida (p. ej. Lácteos, Gluten, Café). Se activan por paciente en su configuración.
+                      Quitar una del catálogo no la desactiva en los pacientes que ya la tienen.
+                    </p>
+                    <div className="flex flex-wrap gap-2 min-h-8">
+                      {foodTagCatalog.length === 0 ? (
+                        <span className="text-[13px] text-fx-ink-300 italic self-center">Sin etiquetas de comida todavía</span>
+                      ) : foodTagCatalog.map(t => (
+                        <span key={t} className="inline-flex items-center gap-[5px] text-[13px] py-1 px-3 rounded-full font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>
+                          {t}
+                          <button
+                            onClick={() => saveFoodTagCatalog(removeTag(foodTagCatalog, t))}
+                            title={`Quitar "${t}" del catálogo`}
+                            className="bg-transparent border-none cursor-pointer pl-0.5 text-sm leading-none opacity-50"
+                            style={{ color: tagColor(t) }}>
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        const input = (e.currentTarget.elements.namedItem('foodTag') as HTMLInputElement);
+                        const v = input.value.trim();
+                        input.value = '';
+                        if (v) saveFoodTagCatalog(addTag(foodTagCatalog, v));
+                      }}
+                      className="flex gap-2 items-center">
+                      <input
+                        name="foodTag"
+                        maxLength={40}
+                        placeholder="Nueva etiqueta de comida…"
+                        className="flex-1 min-w-0 py-2 px-3 rounded-lg border border-fx-border text-[13px] outline-none"
+                      />
+                      <button type="submit"
+                        className="flex-shrink-0 py-2 px-4 text-[13px] rounded-lg text-white border-none font-semibold font-sans cursor-pointer"
+                        style={{ backgroundColor: th.dark }}>
+                        Añadir
+                      </button>
+                    </form>
+                  </div>
+
                   {patients.some(p => (p.tags || []).length > 0) && (
                     <div className="border-t border-fx-border-soft pt-3 flex items-center gap-2.5">
                       {clearTagsConfirm ? (
@@ -4165,10 +4430,16 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
   const patientName = patient.display_name || patient.patient_email || 'Paciente';
 
   // Build entries table rows
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const entryRows = detail.entries.slice(0, 50).map(e => {
+    if (e.entry_type === 'food') {
+      const meal = esc(`Comida · ${mealTypeLabel(e.food_meal_type) ?? '—'}`);
+      const what = esc([e.food_description, portionLabel(e.food_portion), ...e.food_tags, e.notes].filter(Boolean).join(' · ') || '-');
+      return `<tr><td>${e.date}</td><td>${e.time || '-'}</td><td>${meal}</td><td>-</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${what}</td></tr>`;
+    }
     const bristol = e.bristol != null ? `Tipo ${e.bristol}` : '-';
     const floats = e.floats === true ? 'Sí' : e.floats === false ? 'No' : '-';
-    const notes = (e.notes || '-').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const notes = esc(e.notes || '-');
     return `<tr><td>${e.date}</td><td>${e.time || '-'}</td><td>${bristol}</td><td>${floats}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notes}</td></tr>`;
   }).join('');
 
@@ -4259,6 +4530,18 @@ ${detail.bristolAvg !== null && (detail.bristolAvg < 3 || detail.bristolAvg > 5)
 }
 
 // ── Section Header ──
+/** Fecha local de hoy (YYYY-MM-DD) del navegador del profesional. */
+const todayKey = () => localDateKey();
+
+/** Días sin registrar para el semáforo (ver patientDaysSinceLast en lib/food.ts). */
+function patientDaysSinceLast(
+  p: { entry_type_mode?: string | null; food_config?: unknown },
+  lastCore: string | null,
+  lastFood: string | null,
+): number | null {
+  return semaforoDays({ entryTypeMode: p.entry_type_mode, foodConfig: p.food_config, lastCoreDate: lastCore, lastFoodDate: lastFood });
+}
+
 function SectionHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle: string; actions?: React.ReactNode }) {
   return (
     <div className="medics-section-header flex flex-col md:flex-row md:items-start justify-between gap-3 mb-5">

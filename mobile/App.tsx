@@ -7,6 +7,7 @@ import DaysSinceCounter from './src/components/DaysSinceCounter';
 import InlineStats from './src/components/InlineStats';
 import RegisterScreen from './src/components/RegisterScreen';
 import EditScreen from './src/components/EditScreen';
+import FoodEditScreen from './src/components/FoodEditScreen';
 import DayDetailScreen from './src/components/DayDetailScreen';
 import CongratsScreen from './src/components/CongratsScreen';
 import AccountScreen from './src/components/AccountScreen';
@@ -20,12 +21,13 @@ import { syncOnLogin } from './src/lib/sync';
 import { fetchDoctorConfig } from './src/lib/palettes';
 import {
   setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage,
-  setDoctorEntryTypeMode, clearDoctorEntryTypeMode,
+  setDoctorEntryTypeMode, clearDoctorEntryTypeMode, setDoctorFoodConfig, clearDoctorFoodConfig,
+  type RegisterType,
 } from './src/lib/preferences';
 import { registerPushSubscription } from './src/lib/push';
 import { hydrateLocalStore } from './src/lib/localStore';
 import { emitEvent, FLUXIA_UPDATED } from './src/lib/events';
-import { type PoopEntry, getEntryById } from './src/lib/storage';
+import { type PoopEntry, getEntryById, retryPendingFoodPhotos } from './src/lib/storage';
 import { D } from './src/lib/design';
 
 type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
@@ -54,18 +56,22 @@ function AppContent() {
       setSyncing(true);
       syncOnLogin(user.id)
         .then(() => emitEvent(FLUXIA_UPDATED))
-        .finally(() => setSyncing(false));
+        .finally(() => setSyncing(false))
+        // Fotos de comidas que no se pudieron subir (sin conexión) la última vez
+        .then(() => retryPendingFoodPhotos());
       fetchDoctorConfig(user.id).then(config => {
         setDoctorHiddenFields(config.hiddenFields);
         if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
         else clearDoctorImage();
         setDoctorEntryTypeMode(config.entryTypeMode);
+        setDoctorFoodConfig(config.foodConfig);
       });
       registerPushSubscription(user.id);
     } else {
       clearDoctorHiddenFields();
       clearDoctorImage();
       clearDoctorEntryTypeMode();
+      clearDoctorFoodConfig();
     }
   }, [user]);
 
@@ -79,7 +85,16 @@ function AppContent() {
     }
   };
 
-  const handleRegisterSuccess = (date: string, time: string, entryType: 'poop' | 'urine', entryId: string) => {
+  const handleRegisterSuccess = (date: string, time: string, entryType: RegisterType, entryId: string) => {
+    // Comida: registro rápido, sin pantalla intermedia. El formulario muestra
+    // la confirmación; si se abrió desde el calendario, se cierra.
+    if (entryType === 'food') {
+      if (overlay === 'registerDate') {
+        setRegisterDate(null);
+        setOverlay('none');
+      }
+      return;
+    }
     setCongratsData({ date, time, entryType, entryId });
     setOverlay('congrats');
   };
@@ -173,7 +188,17 @@ function AppContent() {
         />
       )}
 
-      {overlay === 'edit' && editEntry && (
+      {overlay === 'edit' && editEntry && editEntry.entry_type === 'food' && (
+        <FoodEditScreen
+          entry={editEntry}
+          onClose={() => {
+            setEditEntry(null);
+            setOverlay(detailDate ? 'dayDetail' : 'none');
+          }}
+        />
+      )}
+
+      {overlay === 'edit' && editEntry && editEntry.entry_type !== 'food' && (
         <EditScreen
           entry={editEntry}
           onClose={() => {

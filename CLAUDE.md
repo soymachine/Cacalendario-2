@@ -51,6 +51,13 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
   mano. `src/lib/*.ts` es siempre la fuente canónica; si se corrige un bug
   ahí, replicarlo en la copia del proyecto app correspondiente (y viceversa
   si el bug se detecta primero en la app).
+- **Módulo de comidas** (`entry_type = 'food'`): toda la lógica pura vive en
+  `src/lib/food.ts` (pauta, validación, repetir comida, estadísticas,
+  adherencia/semáforo, línea temporal, recordatorios) y se copia **idéntica**
+  a `mobile/src/lib/`, `mobile-medics/src/lib/` y
+  `supabase/functions/_shared/` (`npm test` falla si divergen). Esquema y RLS
+  en `supabase/migrations/20261001_food_tracking.sql`; fotos en el bucket
+  privado `food-photos` (solo signed URLs). PW ignora los registros de comida.
 - Auth compartida: mismo proyecto Supabase (misma URL/anon key) en los 4
   proyectos, diferenciados por `user_metadata.is_doctor` + tabla `doctors`.
 
@@ -59,3 +66,6 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
 - **PW / MW / LP** (web): `npx astro build` desde la raíz del repo.
 - **PA / MA** (apps): `npx tsc --noEmit` y `npx expo export --platform ios`
   desde `mobile/` o `mobile-medics/` respectivamente.
+- **Lógica compartida y Edge Functions**: `npm test` (node:test, sin dependencias).
+- **Migraciones y RLS**: `npm run test:sql` (Postgres local efímero con un mock
+  mínimo de Supabase; como root: `su postgres -c 'bash supabase/tests/run.sh'`).
