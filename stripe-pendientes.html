@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fluxia — Pendientes de Stripe</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --surface-2: #f0eee9;
+    --text: #1d1b18;
+    --muted: #6b665e;
+    --border: #e3e0d8;
+    --accent: #0f7b6c;
+    --accent-soft: #e2f3ef;
+    --warn: #a15c07;
+    --warn-soft: #fdf1dc;
+    --done: #9a958c;
+    --code-bg: #f3f1ec;
+    --you: #2f5bd3;     --you-soft: #e7edfc;
+    --claude: #8a4fd1;  --claude-soft: #f1e9fb;
+    --ext: #b4502a;     --ext-soft: #fbe9e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151413; --surface: #1e1d1b; --surface-2: #262522; --text: #ecebe8;
+      --muted: #a29d94; --border: #34322e; --accent: #4cc3ad; --accent-soft: #173430;
+      --warn: #f0b45c; --warn-soft: #3a2c15; --done: #6f6b64; --code-bg: #262522;
+      --you: #8aa8ff; --you-soft: #1f2a4a; --claude: #c39bf3; --claude-soft: #2f2342;
+      --ext: #f29a77; --ext-soft: #3d241a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151413; --surface: #1e1d1b; --surface-2: #262522; --text: #ecebe8;
+    --muted: #a29d94; --border: #34322e; --accent: #4cc3ad; --accent-soft: #173430;
+    --warn: #f0b45c; --warn-soft: #3a2c15; --done: #6f6b64; --code-bg: #262522;
+    --you: #8aa8ff; --you-soft: #1f2a4a; --claude: #c39bf3; --claude-soft: #2f2342;
+    --ext: #f29a77; --ext-soft: #3d241a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 80px; }
+  header h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .progress-card {
+    position: sticky; top: 0; z-index: 5; margin: 24px 0 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px;
+  }
+  .progress-num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .progress-num small { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .bar { flex: 1 1 200px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.ctl {
+    font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 99px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  }
+  button.ctl[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+  section.group { margin-top: 34px; }
+  section.group > h2 { font-size: 18px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  section.group > h2 .count { font-size: 13px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  section.group > p.intro { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+  section.group.blocked > h2::before { content: ""; }
+
+  .task {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin: 10px 0; display: grid; grid-template-columns: 26px 1fr; gap: 4px 12px;
+  }
+  .task > * { min-width: 0; }
+  .task input[type=checkbox] { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
+  .task label.title { font-weight: 600; cursor: pointer; }
+  .task .body { grid-column: 2; color: var(--muted); font-size: 14px; }
+  .task .body p { margin: 4px 0; }
+  .task .body ol, .task .body ul { margin: 4px 0; padding-left: 20px; }
+  .task.done { background: var(--surface-2); }
+  .task.done label.title { color: var(--done); text-decoration: line-through; }
+  .task.done .body { opacity: .65; }
+  .hide-done .task.done { display: none; }
+
+  .tags { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: 1px; }
+  .tag { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+  .tag.you { color: var(--you); background: var(--you-soft); }
+  .tag.claude { color: var(--claude); background: var(--claude-soft); }
+  .tag.ext { color: var(--ext); background: var(--ext-soft); }
+  .tag.block { color: var(--warn); background: var(--warn-soft); }
+
+  .note { border-left: 3px solid var(--warn); background: var(--warn-soft); color: var(--text); padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13.5px; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+  .cmd { position: relative; margin: 8px 0; }
+  .cmd pre {
+    margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; padding-right: 74px; overflow-x: auto; white-space: pre; color: var(--text);
+  }
+  .cmd button {
+    position: absolute; top: 6px; right: 6px; font: inherit; font-size: 12px; cursor: pointer;
+    padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  }
+  a { color: var(--accent); }
+  table.ids { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  table.ids th, table.ids td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.ids th { width: 34%; color: var(--muted); font-weight: 500; }
+  table.ids tr:last-child th, table.ids tr:last-child td { border-bottom: 0; }
+  .table-wrap { overflow-x: auto; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 520px) {
+    header h1 { font-size: 23px; }
+    .task { padding: 12px; grid-template-columns: 24px 1fr; }
+    table.ids th { width: 40%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fluxia · Pendientes para cobrar con Stripe</h1>
+    <p>Cuenta que factura: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>). Actualizado el 1 de octubre de 2026. Las casillas se guardan en este navegador.</p>
+  </header>
+
+  <div class="progress-card" aria-live="polite">
+    <div class="progress-num"><span id="done-n">0</span> <small>de <span id="total-n">0</span> hechas</small></div>
+    <div class="bar" role="progressbar" aria-label="Progreso" aria-valuemin="0" aria-valuemax="100"><span id="bar"></span></div>
+    <div class="controls">
+      <button class="ctl" id="toggle-done" aria-pressed="false">Ocultar hechas</button>
+      <button class="ctl" id="reset">Desmarcar todo</button>
+    </div>
+  </div>
+  <div class="legend">
+    Quién lo hace: <span class="tag you">Tú</span> <span class="tag claude">Claude</span> <span class="tag ext">Gestoría / Holded</span> <span class="tag block">Bloquea a otras</span>
+  </div>
+
+  <main id="tasks">
+
+  <!-- ───────────────────────────── 1 -->
+  <section class="group">
+    <h2>1. Desbloquear a Claude <span class="count"></span></h2>
+    <p class="intro">Claude puede hacer estas tareas en cuanto le des el dato o la confirmación.</p>
+
+    <div class="task" data-id="tax-address">
+      <input type="checkbox" id="t-tax-address" />
+      <label class="title" for="t-tax-address">Pasar a Claude el domicilio fiscal de Thinkthink <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body">
+        <p>Con él, Claude configura en Stripe Tax el domicilio de la empresa y el <strong>registro fiscal de España</strong>.</p>
+        <div class="note">Sin registro fiscal, Stripe calcula <strong>0 € de IVA</strong> y no avisa. Es el fallo más fácil de cometer.</div>
+      </div>
+    </div>
+
+    <div class="task" data-id="tax-registration">
+      <input type="checkbox" id="t-tax-registration" />
+      <label class="title" for="t-tax-registration">Registro fiscal ES y domicilio en Stripe Tax (modo test) <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Después, comprobar en un Checkout de prueba que se suma el 21&nbsp;% de IVA.</p></div>
+    </div>
+
+    <div class="task" data-id="clean-test-customers">
+      <input type="checkbox" id="t-clean-test-customers" />
+      <label class="title" for="t-clean-test-customers">Limpiar las dos cuentas de prueba con clientes de la cuenta antigua <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body">
+        <p>“Dani Moya” y “Dani” tienen <code>stripe_customer_id</code> de la cuenta <em>Fluxia Health</em>, que con las claves nuevas no existe: “Activar Pro” les daría error.</p>
+        <p>Hay que vaciar las columnas <code>stripe_*</code> y pasarlas a <code>test</code> o a <code>free</code>. Dile a Claude cuál prefieres.</p>
+        <div class="note">Hazlo justo después de cambiar los secrets (paso 3), no antes: mientras tanto siguen apuntando a la cuenta antigua.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 2 -->
+  <section class="group">
+    <h2>2. Stripe Dashboard · modo test <span class="count"></span></h2>
+    <p class="intro">Estos ajustes no se pueden cambiar por API. Entra en <a href="https://dashboard.stripe.com/test/dashboard" target="_blank" rel="noopener">dashboard.stripe.com</a> con la cuenta Think Things y el interruptor de <em>modo de prueba</em> activado.</p>
+
+    <div class="task" data-id="dunning">
+      <input type="checkbox" id="t-dunning" />
+      <label class="title" for="t-dunning">Reintentos de cobro: al fallar todos, “Cancelar la suscripción” <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <p>Configuración → Billing → Recuperación de ingresos → <strong>Reintentos</strong>. En “Si fallan todos los reintentos”, elige <strong>Cancelar la suscripción</strong>.</p>
+        <p>Así el médico que no paga baja a <code>free</code> y ve el panel bloqueado con el modal de pago.</p>
+      </div>
+    </div>
+
+    <div class="task" data-id="invoice-emails">
+      <input type="checkbox" id="t-invoice-emails" />
+      <label class="title" for="t-invoice-emails">Desactivar el envío de facturas de Stripe por email <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <p>Configuración → Billing → Facturas / Emails a clientes. Las facturas las emitirá <strong>Holded</strong> en la serie FX: si Stripe también las envía, el médico recibe dos.</p>
+        <p>Deja activados los <strong>recibos</strong> de pago, que no son facturas.</p>
+      </div>
+    </div>
+
+    <div class="task" data-id="public-details">
+      <input type="checkbox" id="t-public-details" />
+      <label class="title" for="t-public-details">Datos públicos: descriptor <code>FLUXIA</code>, email y teléfono de soporte <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <p>Configuración → Datos públicos de la empresa. El producto ya usa el descriptor <code>FLUXIA</code>, pero conviene que la cuenta lo tenga también: si en el extracto aparece algo irreconocible, llegan disputas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 3 -->
+  <section class="group">
+    <h2>3. Supabase: apuntar a Think Things <span class="count"></span></h2>
+    <p class="intro">Desde la raíz del repo, con la CLI de Supabase enlazada al proyecto <code>vchzhwvbvnwrrgfrxfor</code>.</p>
+
+    <div class="task" data-id="secrets">
+      <input type="checkbox" id="t-secrets" />
+      <label class="title" for="t-secrets">Cambiar los 4 secrets de Stripe <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body">
+        <p>La clave secreta está en <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener">Desarrolladores → Claves de API</a>. El secreto del webhook está en <a href="https://dashboard.stripe.com/test/webhooks" target="_blank" rel="noopener">Webhooks</a> → <code>we_1UJWi2IHm4XDpveIIF3sf088</code> → “Revelar”.</p>
+        <div class="cmd"><pre>supabase secrets set STRIPE_SECRET_KEY=sk_test_PEGA_AQUI
+supabase secrets set STRIPE_PRICE_PRO=price_1UJWfeIHm4XDpveImRN5srnL
+supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_1UJWfjIHm4XDpveI9QW7ypqA
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PEGA_AQUI</pre><button type="button">Copiar</button></div>
+        <div class="note">Nunca pegues la clave <code>sk_</code> en un chat ni en el repositorio.</div>
+      </div>
+    </div>
+
+    <div class="task" data-id="deploy">
+      <input type="checkbox" id="t-deploy" />
+      <label class="title" for="t-deploy">Redesplegar las tres funciones de pago <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <p>Recarga los secrets nuevos y sube el webhook corregido, que ya no deja en Pro a quien no paga y resiste eventos desordenados.</p>
+        <div class="cmd"><pre>git pull origin main
+supabase functions deploy stripe-checkout
+supabase functions deploy stripe-portal
+supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="button">Copiar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 4 -->
+  <section class="group">
+    <h2>4. Probar de punta a punta (modo test) <span class="count"></span></h2>
+    <p class="intro">Con una cuenta de médico de prueba en <code>/medics</code>. Tarjeta OK: <code>4242 4242 4242 4242</code>, cualquier fecha futura, CVC <code>123</code>.</p>
+
+    <div class="task" data-id="test-pay">
+      <input type="checkbox" id="t-test-pay" />
+      <label class="title" for="t-test-pay">Pagar → la insignia PRO aparece en unos segundos <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Si se queda en “Estamos confirmando el pago”, revisa los intentos del webhook en Stripe: <code>400</code> significa que el <code>whsec_</code> no coincide y <code>401</code> que se desplegó sin <code>--no-verify-jwt</code>.</p></div>
+    </div>
+
+    <div class="task" data-id="test-tax">
+      <input type="checkbox" id="t-test-tax" />
+      <label class="title" for="t-test-tax">El Checkout suma el 21 % de IVA a 19,95 € <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Depende del registro fiscal del paso 1.</p></div>
+    </div>
+
+    <div class="task" data-id="test-portal">
+      <input type="checkbox" id="t-test-portal" />
+      <label class="title" for="t-test-portal">Portal: cambiar de mensual a anual y ver “Plan Pro · Anual” en MW <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Menú de cuenta → “Facturación y suscripción”.</p></div>
+    </div>
+
+    <div class="task" data-id="test-cancel">
+      <input type="checkbox" id="t-test-cancel" />
+      <label class="title" for="t-test-cancel">Cancelar: sigue Pro hasta fin de periodo y después el panel se bloquea <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Para no esperar un mes, usa un <strong>Test clock</strong> (Stripe → Clientes → Relojes de prueba) y adelanta el tiempo. Al terminar debe aparecer “Tu plan Pro ha finalizado” en MW y en MA.</p></div>
+    </div>
+
+    <div class="task" data-id="test-dunning">
+      <input type="checkbox" id="t-test-dunning" />
+      <label class="title" for="t-test-dunning">Impago: <code>past_due</code> (sigue Pro con aviso) y, al agotar reintentos, bloqueo <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Con un Test clock y la tarjeta <code>4000 0000 0000 0341</code> (se acepta al guardarla y falla en la renovación). Comprueba también el paso 2 de reintentos.</p></div>
+    </div>
+
+    <div class="task" data-id="test-trial">
+      <input type="checkbox" id="t-test-trial" />
+      <label class="title" for="t-test-trial">Alta nueva: prueba de 30 días con pacientes ilimitados <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Invitar más de un paciente sin que aparezca ningún límite.</p></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 5 -->
+  <section class="group">
+    <h2>5. Facturación: gestoría y Holded <span class="count"></span></h2>
+
+    <div class="task" data-id="email-ramon">
+      <input type="checkbox" id="t-email-ramon" />
+      <label class="title" for="t-email-ramon">Enviar a Ramón el correo en catalán <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Sobre series, Verifactu, IAE, comisiones de Stripe (303/349), conciliación y rectificativas. Antes, revisa la razón social exacta de la empresa.</p></div>
+    </div>
+
+    <div class="task" data-id="ramon-ok">
+      <input type="checkbox" id="t-ramon-ok" />
+      <label class="title" for="t-ramon-ok">Recibir el visto bueno de la gestoría <span class="tags"><span class="tag ext">Gestoría</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body"><p>Sobre todo la fecha de Verifactu y si hace falta un epígrafe de IAE nuevo (modelo 036).</p></div>
+    </div>
+
+    <div class="task" data-id="holded-series">
+      <input type="checkbox" id="t-holded-series" />
+      <label class="title" for="t-holded-series">Holded: crear las series <code>FX</code> y <code>FXR</code> (rectificativas) <span class="tags"><span class="tag ext">Holded</span></span></label>
+      <div class="body"><p>Separadas de la numeración actual de diseño, que va por la 52.</p></div>
+    </div>
+
+    <div class="task" data-id="holded-stripe">
+      <input type="checkbox" id="t-holded-stripe" />
+      <label class="title" for="t-holded-stripe">Holded: conectar Stripe y comprobar una factura de prueba <span class="tags"><span class="tag ext">Holded</span></span></label>
+      <div class="body"><p>Un pago de test debe generar una factura en la serie FX con la base, el IVA y el NIF del cliente correctos. Si no encaja, habrá que valorar Quaderno o una exportación mensual.</p></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 6 -->
+  <section class="group">
+    <h2>6. Web y legal <span class="count"></span></h2>
+
+    <div class="task" data-id="privacy">
+      <input type="checkbox" id="t-privacy" />
+      <label class="title" for="t-privacy">Política de privacidad: Thinkthink como responsable del tratamiento <span class="tags"><span class="tag claude">Claude</span><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Razón social, NIF y domicilio en <code>src/pages/privacy.astro</code>. Pásale los datos a Claude y lo actualiza.</p></div>
+    </div>
+
+    <div class="task" data-id="terms">
+      <input type="checkbox" id="t-terms" />
+      <label class="title" for="t-terms">Página de condiciones de uso y su URL en el portal de Stripe <span class="tags"><span class="tag claude">Claude</span><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Todavía no existe. Stripe y el portal la muestran al pagar. El texto legal debe revisarlo un profesional.</p></div>
+    </div>
+
+    <div class="task" data-id="dpa">
+      <input type="checkbox" id="t-dpa" />
+      <label class="title" for="t-dpa">Contrato de encargo de tratamiento (DPA) para los profesionales <span class="tags"><span class="tag ext">Asesor RGPD</span></span></label>
+      <div class="body"><p>La landing lo promete y Fluxia trata datos de salud.</p></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 7 -->
+  <section class="group">
+    <h2>7. Producción (live) <span class="count"></span></h2>
+    <p class="intro">Nada de lo hecho en test existe en live: hay que repetirlo.</p>
+
+    <div class="task" data-id="activate">
+      <input type="checkbox" id="t-activate" />
+      <label class="title" for="t-activate">Activar la cuenta Think Things para cobros reales <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body"><p>CIF, razón social, domicilio fiscal, IBAN, DNI de los administradores y de quien tenga ≥25 %, y la URL <code>https://fluxia-health.com</code>. Stripe puede tardar días en revisarlo.</p></div>
+    </div>
+
+    <div class="task" data-id="live-access">
+      <input type="checkbox" id="t-live-access" />
+      <label class="title" for="t-live-access">Dar a Claude acceso a Stripe en modo live <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Desde la gestión de cuentas del conector de Stripe. Ahora solo tiene acceso de test.</p></div>
+    </div>
+
+    <div class="task" data-id="live-objects">
+      <input type="checkbox" id="t-live-objects" />
+      <label class="title" for="t-live-objects">Live: producto, 2 precios, portal, webhook y registro fiscal ES <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>El registro fiscal, con la fecha real de alta en Hacienda. Los IDs serán distintos de los de test.</p></div>
+    </div>
+
+    <div class="task" data-id="live-dashboard">
+      <input type="checkbox" id="t-live-dashboard" />
+      <label class="title" for="t-live-dashboard">Live: reintentos, facturas por email y datos públicos (como en el paso 2) <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>La configuración de test no se copia a live.</p></div>
+    </div>
+
+    <div class="task" data-id="live-secrets">
+      <input type="checkbox" id="t-live-secrets" />
+      <label class="title" for="t-live-secrets">Live: secrets <code>sk_live_…</code>, precios y <code>whsec_…</code> nuevos, y redesplegar <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Los mismos comandos del paso 3, con los valores de live.</p></div>
+    </div>
+
+    <div class="task" data-id="live-real-payment">
+      <input type="checkbox" id="t-live-real-payment" />
+      <label class="title" for="t-live-real-payment">Pago real con tu tarjeta, cancelación y reembolso <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Es la única forma de verificar toda la cadena en live, incluida la factura en Holded.</p></div>
+    </div>
+
+    <div class="task" data-id="webhook-alerts">
+      <input type="checkbox" id="t-webhook-alerts" />
+      <label class="title" for="t-webhook-alerts">Activar las alertas por email de webhooks que fallan <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Un webhook caído significa médicos que pagan y no reciben su plan.</p></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 8 -->
+  <section class="group">
+    <h2>8. App de médicos (MA) <span class="count"></span></h2>
+
+    <div class="task" data-id="ma-testflight">
+      <input type="checkbox" id="t-ma-testflight" />
+      <label class="title" for="t-ma-testflight">Generar una build nueva de Fluxia Pro y subirla a TestFlight <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Incluye la pantalla “Tu plan Pro ha finalizado” y la retirada del límite de 1 paciente.</p></div>
+    </div>
+  </section>
+
+  </main>
+
+  <section class="group">
+    <h2>Referencia: IDs en Think Things (modo test)</h2>
+    <div class="table-wrap">
+    <table class="ids">
+      <tr><th>Producto Fluxia Pro</th><td><code>prod_VKB1Z0cxx4z3tP</code></td></tr>
+      <tr><th>Precio mensual (19,95 € + IVA)</th><td><code>price_1UJWfeIHm4XDpveImRN5srnL</code> · <code>fluxia_pro_monthly</code></td></tr>
+      <tr><th>Precio anual (199,95 € + IVA)</th><td><code>price_1UJWfjIHm4XDpveI9QW7ypqA</code> · <code>fluxia_pro_yearly</code></td></tr>
+      <tr><th>Portal de clientes</th><td><code>bpc_1UJWg8IHm4XDpveI9sIIYLvu</code> (por defecto)</td></tr>
+      <tr><th>Webhook</th><td><code>we_1UJWi2IHm4XDpveIIF3sf088</code> → <code>…/functions/v1/stripe-webhook</code></td></tr>
+      <tr><th>Cuenta antigua (obsoleta)</th><td><em>Fluxia Health</em> · <code>acct_1TEDMRANIg6DlLEV</code></td></tr>
+    </table>
+    </div>
+  </section>
+
+  <footer>Guía completa en <code>STRIPE.md</code>. Este archivo guarda las casillas en el almacenamiento local de tu navegador: si lo abres en otro ordenador, empezará en blanco.</footer>
+</div>
+
+<script>
+(function () {
+  var KEY = 'fluxia-stripe-pendientes-v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var tasks = Array.prototype.slice.call(document.querySelectorAll('.task'));
+  var hideDone = !!state.__hideDone;
+
+  function render() {
+    var done = 0;
+    tasks.forEach(function (t) {
+      var on = !!state[t.dataset.id];
+      t.querySelector('input').checked = on;
+      t.classList.toggle('done', on);
+      if (on) done++;
+    });
+    document.querySelectorAll('section.group').forEach(function (g) {
+      var ts = g.querySelectorAll('.task');
+      var c = g.querySelector('.count');
+      if (!c || !ts.length) return;
+      var d = g.querySelectorAll('.task.done').length;
+      c.textContent = d + '/' + ts.length;
+    });
+    document.getElementById('done-n').textContent = done;
+    document.getElementById('total-n').textContent = tasks.length;
+    var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+    document.getElementById('bar').style.width = pct + '%';
+    document.querySelector('.bar').setAttribute('aria-valuenow', pct);
+    document.getElementById('tasks').classList.toggle('hide-done', hideDone);
+    var tb = document.getElementById('toggle-done');
+    tb.setAttribute('aria-pressed', hideDone ? 'true' : 'false');
+  }
+
+  tasks.forEach(function (t) {
+    t.querySelector('input').addEventListener('change', function (e) {
+      state[t.dataset.id] = e.target.checked;
+      save(); render();
+    });
+  });
+
+  document.getElementById('toggle-done').addEventListener('click', function () {
+    hideDone = !hideDone; state.__hideDone = hideDone; save(); render();
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    if (!confirm('¿Desmarcar todas las tareas?')) return;
+    state = { __hideDone: hideDone }; save(); render();
+  });
+
+  document.querySelectorAll('.cmd button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var text = b.parentNode.querySelector('pre').textContent;
+      var ok = function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, function () { b.textContent = 'Selecciona y copia'; });
+      } else { b.textContent = 'Selecciona y copia'; }
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
