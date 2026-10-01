@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fluxia — Comidas: pasos pendientes</title>
+<style>
+  :root {
+    --bg: #F4F7F3;
+    --surface: #ffffff;
+    --surface-2: #EEF2EE;
+    --text: #2D3539;
+    --muted: #586269;
+    --border: #DCE2DF;
+    --accent: #3C7DB8;
+    --accent-soft: #EEF4FB;
+    --green: #3F9E6E;
+    --green-soft: #EAF6EF;
+    --warn: #99681F;
+    --warn-soft: #FCF4E7;
+    --danger: #9B4040;
+    --danger-soft: #FBEDED;
+    --food: #6A65B8;
+    --food-soft: #E8E7F7;
+    --done: #95A0A5;
+    --code-bg: #F4F7F3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161B1D; --surface: #1F2629; --surface-2: #283034; --text: #E8ECEA;
+      --muted: #A5AFB4; --border: #343D41; --accent: #7FB0E0; --accent-soft: #1C2B3A;
+      --green: #6CC49A; --green-soft: #18302A; --warn: #E9B866; --warn-soft: #3A2E17;
+      --danger: #EC9A9A; --danger-soft: #3A2020; --food: #B3AEEA; --food-soft: #2A2843;
+      --done: #6F7A7F; --code-bg: #283034;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161B1D; --surface: #1F2629; --surface-2: #283034; --text: #E8ECEA;
+    --muted: #A5AFB4; --border: #343D41; --accent: #7FB0E0; --accent-soft: #1C2B3A;
+    --green: #6CC49A; --green-soft: #18302A; --warn: #E9B866; --warn-soft: #3A2E17;
+    --danger: #EC9A9A; --danger-soft: #3A2020; --food: #B3AEEA; --food-soft: #2A2843;
+    --done: #6F7A7F; --code-bg: #283034;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 16px 80px; }
+  header h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 0 0 6px; color: var(--muted); }
+  .theme { float: right; }
+  .progress-card {
+    position: sticky; top: 0; z-index: 5; margin: 22px 0 8px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  }
+  .progress-num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .progress-num small { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .bar { flex: 1 1 200px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; width: 0; background: var(--green); border-radius: 99px; transition: width .25s ease; }
+  button.ctl {
+    font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 99px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  }
+  button.ctl[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  .callout { border-radius: 12px; padding: 12px 14px; margin: 14px 0; font-size: 14px; border: 1px solid var(--border); background: var(--surface); }
+  .callout.warn { background: var(--warn-soft); border-color: transparent; }
+  .callout.warn strong { color: var(--warn); }
+  .callout.danger { background: var(--danger-soft); border-color: transparent; }
+  .callout.danger strong { color: var(--danger); }
+  .callout.ok { background: var(--green-soft); border-color: transparent; }
+  .callout.ok strong { color: var(--green); }
+
+  section.phase { margin-top: 34px; }
+  section.phase > h2 { font-size: 19px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  section.phase > h2 .num {
+    display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 99px;
+    background: var(--food-soft); color: var(--food); font-size: 14px; font-weight: 800; flex-shrink: 0; align-self: center;
+  }
+  section.phase > h2 .count { font-size: 13px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  section.phase > p.intro { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin: 10px 0; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 10px;
+  }
+  .step > input[type="checkbox"] { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--green); cursor: pointer; }
+  .step .title { font-weight: 700; cursor: pointer; }
+  .step .body { grid-column: 2; font-size: 14px; color: var(--text); }
+  .step .body p { margin: 6px 0; }
+  .step .body ul, .step .body ol { margin: 6px 0; padding-left: 20px; }
+  .step .body li { margin: 3px 0; }
+  .step.done { opacity: .62; }
+  .step.done .title { text-decoration: line-through; color: var(--done); }
+  .hide-done .step.done { display: none; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+  .tag.urgent { background: var(--danger-soft); color: var(--danger); }
+  .tag.opt { background: var(--surface-2); color: var(--muted); }
+  .tag.where { background: var(--accent-soft); color: var(--accent); }
+
+  .step .body, .step .title { min-width: 0; overflow-wrap: anywhere; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  .code { position: relative; margin: 8px 0; }
+  .code pre {
+    margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre;
+  }
+  .code pre.tall { max-height: 320px; overflow: auto; }
+  .code button.copy {
+    position: absolute; top: 8px; right: 8px; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; }
+  table.expect { border-collapse: collapse; font-size: 13px; margin: 8px 0; width: 100%; }
+  table.expect th, table.expect td { border-bottom: 1px solid var(--border); padding: 5px 8px; text-align: left; }
+  table.expect th { color: var(--muted); font-weight: 600; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 560px) { header h1 { font-size: 23px; } .theme { float: none; margin-bottom: 8px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="ctl theme" id="themeBtn" type="button">Tema</button>
+    <h1>Módulo de comidas: lo que te toca hacer</h1>
+    <p>Pasos para poner en marcha el seguimiento de comidas (entry_type = <code>food</code>) en Fluxia, en orden.
+      El código ya está en <code>main</code>. Marca cada paso al terminarlo; el progreso se guarda en este navegador.</p>
+  </header>
+
+  <div class="progress-card" role="status" aria-live="polite">
+    <div class="progress-num"><span id="doneCount">0</span> <small>de <span id="totalCount">0</span> pasos</small></div>
+    <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+    <button class="ctl" id="hideDone" type="button" aria-pressed="false">Ocultar hechos</button>
+    <button class="ctl" id="resetBtn" type="button">Reiniciar</button>
+  </div>
+
+  <div class="callout warn">
+    <strong>Importante:</strong> al hacer push a <code>main</code>, GitHub Actions publica la web (MW y PW) automáticamente.
+    La web nueva funciona sin la migración (las funciones de comida simplemente no se pueden guardar), pero
+    <strong>aplica la migración del paso 1 cuanto antes</strong>.
+  </div>
+
+  <!-- ─────────────────────────── FASE 1 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">1</span> Base de datos (Supabase) <span class="count"></span></h2>
+    <p class="intro">Proyecto <code>cacalendario</code> (vchzhwvbvnwrrgfrxfor). La migración es aditiva e idempotente: puedes ejecutarla dos veces sin problema y no cambia nada de deposición ni micción.</p>
+
+    <div class="step" data-id="db-backup">
+      <input type="checkbox" id="c-db-backup" />
+      <label class="title" for="c-db-backup">Comprobar que hay copia de seguridad reciente <span class="tag opt">recomendado</span></label>
+      <div class="body">
+        <p>Supabase Dashboard → <em>Database → Backups</em>. Debe haber una copia diaria reciente. No hace falta nada más.</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="db-migrate">
+      <input type="checkbox" id="c-db-migrate" />
+      <label class="title" for="c-db-migrate">Aplicar la migración <code>20261001_food_tracking.sql</code> <span class="tag urgent">urgente</span></label>
+      <div class="body">
+        <p>Supabase Dashboard → <em>SQL Editor → New query</em> → pega el SQL completo → <em>Run</em>.</p>
+        <p>Qué crea: columnas <code>food_*</code> en <code>entries</code> con sus validaciones, <code>patient_links.food_config</code> (la pauta, solo editable por el profesional), <code>doctors.food_tag_catalog</code>, el bucket <strong>privado</strong> <code>food-photos</code> con sus políticas RLS y la tabla <code>food_reminder_log</code>.</p>
+        <details>
+          <summary>Ver y copiar el SQL de la migración</summary>
+          <div class="code"><button class="copy" type="button" data-copy="sql-migration">Copiar</button><pre class="tall" id="sql-migration">-- ============================================================================
+-- Fluxia — Módulo de seguimiento de comidas (entry_type = 'food')
+-- ----------------------------------------------------------------------------
+-- Fluxia ya guarda todos los registros clínicos en una única tabla genérica,
+-- `entries`, discriminada por `entry_type` ('poop' | 'urine'), y la pauta de
+-- cada paciente vive en su fila de `patient_links` (hidden_fields,
+-- entry_type_mode, semáforo, push...). La comida se integra igual:
+--
+--   * un tercer `entry_type`, 'food', con columnas propias prefijadas `food_*`
+--     (mismo convenio que las `urine_*`). Fecha/hora clínica = date/time/
+--     timestamp de siempre; las observaciones del paciente = `notes`. Así las
+--     políticas RLS de `entries` (paciente: solo lo suyo; médico: solo
+--     pacientes vinculados y aceptados) cubren la comida sin tocar nada.
+--   * la pauta de comida del paciente en `patient_links.food_config` (jsonb).
+--     NULL = módulo desactivado, que es el estado de todos los pacientes
+--     existentes: deposición y micción siguen funcionando exactamente igual.
+--   * el catálogo de etiquetas de comida del médico en
+--     `doctors.food_tag_catalog` (mismo patrón que `global_tags`); qué
+--     etiquetas ve cada paciente va en su `food_config.tags`.
+--   * fotos en un bucket PRIVADO de Storage (`food-photos`), carpeta = id del
+--     paciente. Nunca URLs públicas: el panel médico pide signed URLs de vida
+--     corta, y las políticas de storage.objects replican las de `entries`.
+--   * `food_reminder_log`: deduplicación de recordatorios de comida (un aviso
+--     por comida y día como máximo). Solo la escribe la Edge Function
+--     check-inactive-patients con service_role.
+--
+-- Todo es aditivo e idempotente: no cambia ninguna columna ni política
+-- existente, y los clientes antiguos (que no conocen las columnas food_*)
+-- siguen insertando/actualizando registros sin problemas.
+-- ============================================================================
+
+-- ── 1. entries: columnas de comida ──
+ALTER TABLE public.entries
+  ADD COLUMN IF NOT EXISTS food_meal_type   text,
+  ADD COLUMN IF NOT EXISTS food_description text,
+  ADD COLUMN IF NOT EXISTS food_portion     text,
+  ADD COLUMN IF NOT EXISTS food_tags        text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS food_photo_path  text;
+
+-- Tipos de registro conocidos. Un módulo nuevo (hidratación, peso, sueño...)
+-- añade aquí su valor y sus columnas `&lt;modulo&gt;_*`.
+ALTER TABLE public.entries DROP CONSTRAINT IF EXISTS entries_entry_type_check;
+ALTER TABLE public.entries
+  ADD CONSTRAINT entries_entry_type_check
+  CHECK (entry_type IN ('poop', 'urine', 'food')) NOT VALID;
+ALTER TABLE public.entries VALIDATE CONSTRAINT entries_entry_type_check;
+
+ALTER TABLE public.entries DROP CONSTRAINT IF EXISTS entries_food_meal_type_check;
+ALTER TABLE public.entries
+  ADD CONSTRAINT entries_food_meal_type_check
+  CHECK (food_meal_type IS NULL OR food_meal_type IN
+    ('breakfast', 'mid_morning', 'lunch', 'afternoon_snack', 'dinner', 'other'));
+
+ALTER TABLE public.entries DROP CONSTRAINT IF EXISTS entries_food_portion_check;
+ALTER TABLE public.entries
+  ADD CONSTRAINT entries_food_portion_check
+  CHECK (food_portion IS NULL OR food_portion IN ('small', 'normal', 'large'));
+
+-- La foto solo puede apuntar a la carpeta del propio paciente: impide que un
+-- registro "tome prestada" la ruta de una foto ajena.
+ALTER TABLE public.entries DROP CONSTRAINT IF EXISTS entries_food_photo_path_check;
+ALTER TABLE public.entries
+  ADD CONSTRAINT entries_food_photo_path_check
+  CHECK (food_photo_path IS NULL OR food_photo_path LIKE user_id::text || '/%');
+
+-- Los campos de comida solo tienen sentido en registros de comida.
+ALTER TABLE public.entries DROP CONSTRAINT IF EXISTS entries_food_fields_only_on_food;
+ALTER TABLE public.entries
+  ADD CONSTRAINT entries_food_fields_only_on_food
+  CHECK (
+    entry_type = 'food'
+    OR (food_meal_type IS NULL AND food_description IS NULL AND food_portion IS NULL
+        AND food_photo_path IS NULL AND food_tags = '{}')
+  );
+
+CREATE INDEX IF NOT EXISTS entries_user_id_entry_type_date_idx
+  ON public.entries (user_id, entry_type, date);
+
+-- ── 2. Pauta de comida por paciente ──
+ALTER TABLE public.patient_links
+  ADD COLUMN IF NOT EXISTS food_config jsonb;
+
+ALTER TABLE public.patient_links DROP CONSTRAINT IF EXISTS patient_links_food_config_object;
+ALTER TABLE public.patient_links
+  ADD CONSTRAINT patient_links_food_config_object
+  CHECK (food_config IS NULL OR jsonb_typeof(food_config) = 'object');
+
+COMMENT ON COLUMN public.patient_links.food_config IS
+  'Pauta de seguimiento de comidas (ver src/lib/food.ts → FoodTrackingConfig). NULL = desactivado.';
+COMMENT ON COLUMN public.patient_links.entry_type_mode IS
+  'Registros de deposición/micción permitidos: both | poop_only | urine_only | none (none = solo módulos adicionales, p. ej. comida).';
+
+-- La política "Patients can update own links" deja al paciente escribir toda
+-- su fila (la usa para aceptar invitaciones). La pauta de comida la decide el
+-- profesional: el paciente no puede cambiársela.
+CREATE OR REPLACE FUNCTION public.guard_patient_food_config()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Solo se vigilan las peticiones de usuarios de la app (PostgREST con JWT);
+  -- service_role y el SQL editor pueden corregir pautas.
+  IF auth.role() IS DISTINCT FROM 'authenticated' THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.food_config IS DISTINCT FROM OLD.food_config
+     AND auth.uid() IS DISTINCT FROM OLD.doctor_id THEN
+    RAISE EXCEPTION 'La pauta de comidas solo puede modificarla el profesional.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS guard_patient_food_config ON public.patient_links;
+CREATE TRIGGER guard_patient_food_config
+  BEFORE UPDATE ON public.patient_links
+  FOR EACH ROW EXECUTE FUNCTION public.guard_patient_food_config();
+
+-- ── 3. Catálogo de etiquetas de comida del profesional ──
+ALTER TABLE public.doctors
+  ADD COLUMN IF NOT EXISTS food_tag_catalog text[] NOT NULL DEFAULT '{}';
+
+-- ── 4. Fotos: bucket privado + RLS ──
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('food-photos', 'food-photos', false, 5242880,
+        ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+ON CONFLICT (id) DO UPDATE
+  SET public = false,
+      file_size_limit = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Paciente: solo su carpeta (&lt;patient_id&gt;/&lt;entry_id&gt;.jpg).
+DROP POLICY IF EXISTS "food_photos_patient_select" ON storage.objects;
+CREATE POLICY "food_photos_patient_select" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'food-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "food_photos_patient_insert" ON storage.objects;
+CREATE POLICY "food_photos_patient_insert" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'food-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "food_photos_patient_update" ON storage.objects;
+CREATE POLICY "food_photos_patient_update" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'food-photos' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'food-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "food_photos_patient_delete" ON storage.objects;
+CREATE POLICY "food_photos_patient_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'food-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Profesional: lectura de las fotos de sus pacientes vinculados y aceptados
+-- (mismo criterio que "Doctors can read linked patient entries").
+DROP POLICY IF EXISTS "food_photos_doctor_select" ON storage.objects;
+CREATE POLICY "food_photos_doctor_select" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'food-photos'
+    AND EXISTS (
+      SELECT 1 FROM public.patient_links pl
+      WHERE pl.doctor_id = auth.uid()
+        AND pl.status = 'accepted'
+        AND pl.patient_id IS NOT NULL
+        AND pl.patient_id::text = (storage.foldername(name))[1]
+    )
+  );
+
+-- ── 5. Deduplicación de recordatorios de comida ──
+CREATE TABLE IF NOT EXISTS public.food_reminder_log (
+  patient_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  local_date date NOT NULL,
+  slot       text NOT NULL,   -- meal_type o 'daily_target'
+  sent_at    timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (patient_id, local_date, slot)
+);
+
+-- Sin políticas: solo service_role (que salta RLS) la lee y escribe.
+ALTER TABLE public.food_reminder_log ENABLE ROW LEVEL SECURITY;</pre></div>
+        </details>
+        <p>Mejor <strong>no</strong> uses <code>supabase db push</code>: intentaría aplicar también migraciones antiguas que en producción se aplicaron a mano desde el SQL Editor.</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="db-verify">
+      <input type="checkbox" id="c-db-verify" />
+      <label class="title" for="c-db-verify">Verificar que la migración ha quedado bien</label>
+      <div class="body">
+        <p>En el SQL Editor, ejecuta esta consulta:</p>
+        <div class="code"><button class="copy" type="button" data-copy="sql-verify">Copiar</button><pre id="sql-verify">select
+  (select count(*) from information_schema.columns
+     where table_schema = 'public' and table_name = 'entries' and column_name like 'food\_%') as columnas_food_entries,
+  (select count(*) from information_schema.columns
+     where table_schema = 'public' and table_name = 'patient_links' and column_name = 'food_config') as food_config,
+  (select count(*) from information_schema.columns
+     where table_schema = 'public' and table_name = 'doctors' and column_name = 'food_tag_catalog') as catalogo_etiquetas,
+  (select public from storage.buckets where id = 'food-photos') as bucket_publico,
+  (select count(*) from pg_policies
+     where schemaname = 'storage' and policyname like 'food_photos_%') as politicas_fotos,
+  (select count(*) from pg_trigger where tgname = 'guard_patient_food_config') as trigger_pauta,
+  (select count(*) from information_schema.tables
+     where table_schema = 'public' and table_name = 'food_reminder_log') as tabla_avisos,
+  (select count(*) from public.entries where entry_type in ('poop', 'urine')) as registros_antiguos_intactos;</pre></div>
+        <table class="expect">
+          <thead><tr><th>Columna</th><th>Resultado esperado</th></tr></thead>
+          <tbody>
+            <tr><td>columnas_food_entries</td><td>5</td></tr>
+            <tr><td>food_config / catalogo_etiquetas / tabla_avisos / trigger_pauta</td><td>1 cada una</td></tr>
+            <tr><td>bucket_publico</td><td><strong>false</strong> (si sale true, para y avísame)</td></tr>
+            <tr><td>politicas_fotos</td><td>5</td></tr>
+            <tr><td>registros_antiguos_intactos</td><td>igual que antes (645 a 1-oct-2026, solo poop/urine)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 2 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">2</span> Edge Functions <span class="count"></span></h2>
+    <p class="intro">Hay que desplegar con la CLI de Supabase: <code>check-inactive-patients</code> ahora importa archivos de <code>supabase/functions/_shared/</code> (<code>food.ts</code> y <code>foodReminderJob.ts</code>), y el editor del dashboard no los incluye.</p>
+
+    <div class="step" data-id="fn-cron">
+      <input type="checkbox" id="c-fn-cron" />
+      <label class="title" for="c-fn-cron">Desplegar <code>check-inactive-patients</code> (recordatorios)</label>
+      <div class="body">
+        <div class="code"><button class="copy" type="button" data-copy="cmd-cron">Copiar</button><pre id="cmd-cron">supabase functions deploy check-inactive-patients --project-ref vchzhwvbvnwrrgfrxfor</pre></div>
+        <p>Comprueba que la programación sigue siendo cada hora (<code>0 * * * *</code>) en <em>Edge Functions → check-inactive-patients → Schedule</em>. No hace falta tocarla.</p>
+        <p>La respuesta de la función incluye ahora <code>food_sent</code> y <code>food_failed</code>, además de <code>sent</code> y <code>failed</code>.</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="fn-delete">
+      <input type="checkbox" id="c-fn-delete" />
+      <label class="title" for="c-fn-delete">Desplegar <code>delete-user</code> (borra también las fotos de comidas)</label>
+      <div class="body">
+        <div class="code"><button class="copy" type="button" data-copy="cmd-delete">Copiar</button><pre id="cmd-delete">supabase functions deploy delete-user --project-ref vchzhwvbvnwrrgfrxfor</pre></div>
+        <div class="callout danger"><strong>Aviso:</strong> esta función parece que ya fallaba antes de este cambio. Borra de <code>patient_links</code> y <code>user_profiles</code> por una columna <code>user_id</code> que esas tablas no tienen, así que la baja de cuenta probablemente no termina nunca. Lo tienes como tarea sugerida aparte (ver fase 7).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 3 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">3</span> Web (MW / PW) <span class="count"></span></h2>
+    <p class="intro">Se despliega sola con el push a <code>main</code> (GitHub Pages).</p>
+
+    <div class="step" data-id="web-deploy">
+      <input type="checkbox" id="c-web-deploy" />
+      <label class="title" for="c-web-deploy">Confirmar que el despliegue de GitHub Actions ha terminado en verde</label>
+      <div class="body">
+        <p>GitHub → repo <code>soymachine/Cacalendario-2</code> → pestaña <em>Actions</em> → workflow <em>Deploy to GitHub Pages</em> del último commit de <code>main</code>.</p>
+        <p>Después, en <code>/medics</code>, recarga forzada (Cmd/Ctrl + Shift + R).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 4 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">4</span> App del paciente (PA, <code>mobile/</code>) <span class="count"></span></h2>
+    <p class="intro">Necesita <strong>build nativo nuevo</strong>: se añaden <code>expo-image-picker</code> y <code>expo-image-manipulator</code> (cámara y galería) y textos de permiso de iOS. No sirve una actualización over-the-air.</p>
+
+    <div class="step" data-id="pa-install">
+      <input type="checkbox" id="c-pa-install" />
+      <label class="title" for="c-pa-install">Instalar dependencias</label>
+      <div class="body">
+        <div class="code"><button class="copy" type="button" data-copy="cmd-pa-install">Copiar</button><pre id="cmd-pa-install">cd mobile
+npm install
+npx tsc --noEmit</pre></div>
+      </div>
+    </div>
+
+    <div class="step" data-id="pa-build">
+      <input type="checkbox" id="c-pa-build" />
+      <label class="title" for="c-pa-build">Build de producción y envío a TestFlight</label>
+      <div class="body">
+        <div class="code"><button class="copy" type="button" data-copy="cmd-pa-build">Copiar</button><pre id="cmd-pa-build">eas build --platform ios --profile production
+eas submit --platform ios --latest</pre></div>
+        <p>El número de build se incrementa solo (<code>autoIncrement</code> con versión remota). Si publicas en Google Play, repite con <code>--platform android</code>.</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="pa-privacy">
+      <input type="checkbox" id="c-pa-privacy" />
+      <label class="title" for="c-pa-privacy">Actualizar privacidad: App Store Connect y política de privacidad <span class="tag where">antes de publicar</span></label>
+      <div class="body">
+        <ul>
+          <li>App Store Connect → <em>Privacidad de la app</em>: añadir <strong>Fotos o vídeos</strong> (vinculado al usuario, finalidad: funcionalidad de la app). Revisa también que los datos de salud declarados cubran los registros de comida.</li>
+          <li>Texto de privacidad (<code>/privacy</code> y la pantalla de privacidad de la app): mencionar las fotos de comidas. Se guardan cifradas en servidores europeos, en un almacenamiento privado, solo las ven el paciente y su profesional, y se borran al eliminar la cuenta.</li>
+          <li>Textos de permiso que verá el paciente (ya incluidos en <code>app.json</code>): «Fluxia usa la cámara para que puedas fotografiar tus comidas…» y «Fluxia usa tus fotos solo si eliges una…». Cámbialos si quieres otra redacción.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 5 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">5</span> App de médicos (MA, <code>mobile-medics/</code>) <span class="count"></span></h2>
+    <p class="intro">Ahora muestra las comidas (filtro, miniatura y foto ampliada) y usa el mismo semáforo que la web. No hay dependencias nuevas, pero tampoco <code>expo-updates</code>, así que necesita build.</p>
+
+    <div class="step" data-id="ma-build">
+      <input type="checkbox" id="c-ma-build" />
+      <label class="title" for="c-ma-build">Build de producción y envío a TestFlight</label>
+      <div class="body">
+        <div class="code"><button class="copy" type="button" data-copy="cmd-ma-build">Copiar</button><pre id="cmd-ma-build">cd mobile-medics
+npm install
+eas build --platform ios --profile production
+eas submit --platform ios --latest</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 6 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">6</span> Pruebas manuales de extremo a extremo <span class="count"></span></h2>
+    <p class="intro">No se han podido hacer desde el entorno de desarrollo (sin simulador ni sesión real). Usa un paciente de prueba vinculado a tu cuenta de médico.</p>
+
+    <div class="step" data-id="t-config">
+      <input type="checkbox" id="c-t-config" />
+      <label class="title" for="c-t-config">MW: activar y configurar comidas para el paciente de prueba</label>
+      <div class="body">
+        <ol>
+          <li><em>Configuración</em> → bloque «Etiquetas globales» → «Etiquetas de comida»: crea Lácteos, Gluten y Café.</li>
+          <li>Ficha del paciente → <em>Configuración</em> → activa «Seguimiento de comidas».</li>
+          <li>Campos: Foto <strong>Obligatorio</strong>, Observaciones <strong>Oculto</strong>, el resto Opcional.</li>
+          <li>Objetivo: «Comidas concretas» → Desayuno, Comida y Cena. Activa las tres etiquetas.</li>
+          <li>Recordatorios activados. Pon la hora de la comida unas 2 h antes de ahora (para la prueba de recordatorios).</li>
+          <li><em>Guardar configuración</em> → debe salir «Configuración guardada».</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="step" data-id="t-patient">
+      <input type="checkbox" id="c-t-patient" />
+      <label class="title" for="c-t-patient">PA: registrar comidas como paciente</label>
+      <div class="body">
+        <ol>
+          <li>Abre la app (desde TestFlight) e inicia sesión con el paciente. Cierra y vuelve a abrir si no ves el cambio. En el selector debe aparecer un tercer botón (plato con cubiertos).</li>
+          <li>Comprueba que <strong>no</strong> aparece «Observaciones» y que «Foto» pone «obligatorio».</li>
+          <li>Pulsa «Guardar registro» sin foto → debe avisar «Falta por completar: Foto».</li>
+          <li>«Hacer foto» → acepta el permiso → foto → «Guardar registro» (registro rápido en 3–4 toques).</li>
+          <li>Haz otro registro cambiando el día a ayer con «Cambiar día» (registro retrospectivo).</li>
+          <li>«Repetir comida» → elige una anterior → copia tipo, descripción, cantidad y etiquetas, pero <strong>no</strong> la foto.</li>
+          <li>Historial → toca el día → aparecen las comidas con miniatura → abre una y edítala.</li>
+          <li>Prueba en modo avión: guarda una comida con foto, vuelve a tener conexión y reabre la app. La foto debe acabar subiendo.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="step" data-id="t-clinician">
+      <input type="checkbox" id="c-t-clinician" />
+      <label class="title" for="c-t-clinician">MW: ver los registros como profesional</label>
+      <div class="body">
+        <ul>
+          <li>Historial: filtros Todos / Deposiciones / Micciones / Comida; la comida sale con miniatura y etiquetas.</li>
+          <li>Al pulsar una comida se abre el detalle con la foto grande.</li>
+          <li>Vista «Línea temporal»: comidas, deposiciones y micciones mezcladas por hora y agrupadas por día.</li>
+          <li>Tarjeta «Comidas»: registros, adherencia, comidas por tipo y etiquetas más frecuentes.</li>
+          <li>Semáforo: si el paciente registra deposiciones pero deja de registrar comidas, debe ir pasando a ámbar/rojo con los umbrales de siempre.</li>
+          <li>MA: la misma comida aparece en la ficha del paciente, con el filtro «Comida» y la foto.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step" data-id="t-security">
+      <input type="checkbox" id="c-t-security" />
+      <label class="title" for="c-t-security">Permisos y privacidad</label>
+      <div class="body">
+        <ul>
+          <li>Con otra cuenta de médico <strong>no</strong> vinculada a ese paciente: no ve ni sus comidas ni sus fotos.</li>
+          <li>Copia la URL de una foto en MW (clic derecho → copiar imagen/URL). Es una URL firmada que deja de funcionar a los 10 minutos.</li>
+          <li>Supabase → <em>Storage → food-photos</em>: el bucket aparece como <strong>Private</strong>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step" data-id="t-reminders">
+      <input type="checkbox" id="c-t-reminders" />
+      <label class="title" for="c-t-reminders">Recordatorios</label>
+      <div class="body">
+        <ol>
+          <li>Con el paciente sin registrar la comida de hoy y la hora configurada en el paso anterior, espera a la siguiente hora en punto, o ejecuta la función a mano: <em>Edge Functions → check-inactive-patients → Test</em>.</li>
+          <li>Debe llegar <strong>una sola</strong> notificación: «Todavía no has registrado la comida.»</li>
+          <li>En la siguiente ejecución no debe repetirse. Compruébalo con:
+            <div class="code"><button class="copy" type="button" data-copy="sql-log">Copiar</button><pre id="sql-log">select patient_id, local_date, slot, sent_at
+from public.food_reminder_log
+order by sent_at desc
+limit 20;</pre></div>
+          </li>
+          <li>Desactiva «Notificaciones al paciente» en MW → ya no llegan recordatorios de comida.</li>
+          <li>Entre las 23:00 y las 08:00 nunca se envían; como máximo, 3 al día.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="step" data-id="t-regression">
+      <input type="checkbox" id="c-t-regression" />
+      <label class="title" for="c-t-regression">Regresión: todo lo de antes sigue igual</label>
+      <div class="body">
+        <ul>
+          <li>Un paciente <strong>sin</strong> comidas activadas no ve el botón de comida, y su semáforo no cambia.</li>
+          <li>Registrar y editar deposición y micción en PA funciona igual. El contador «Desde la última vez» y las estadísticas de inicio no cuentan comidas.</li>
+          <li>La web del paciente (<code>/user</code>) funciona igual y no muestra las comidas.</li>
+          <li>El PDF de MW sale bien; las comidas aparecen como «Comida · tipo».</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────── FASE 7 ─────────────────────────── -->
+  <section class="phase" data-phase>
+    <h2><span class="num">7</span> Decisiones y pendientes <span class="count"></span></h2>
+    <p class="intro">Cosas que he decidido por defecto y que conviene que confirmes, y lo que ha quedado fuera.</p>
+
+    <div class="step" data-id="d-timezone">
+      <input type="checkbox" id="c-d-timezone" />
+      <label class="title" for="c-d-timezone">Decidir: zona horaria de los recordatorios</label>
+      <div class="body">
+        <p>La app nueva envía la zona horaria del móvil. Mientras un paciente no actualice la app, se usa <strong>Europe/Madrid</strong>, así que para pacientes de Canarias los recordatorios llegarían una hora antes. ¿Te vale?</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="d-foodonly">
+      <input type="checkbox" id="c-d-foodonly" />
+      <label class="title" for="c-d-foodonly">Decidir: opción «Solo comida»</label>
+      <div class="body">
+        <p>En «Tipo de registro permitido» he añadido «Solo comida» (sin deposición ni micción), visible solo con las comidas activadas. Pensado para consultas de nutrición. ¿La mantenemos?</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="d-quick">
+      <input type="checkbox" id="c-d-quick" />
+      <label class="title" for="c-d-quick">Decidir: sin pantalla de «Registro correcto» en comidas</label>
+      <div class="body">
+        <p>Para que registrar sea rápido, al guardar una comida no aparece la pantalla grande de confirmación (sí en deposición y micción): sale un aviso verde en el propio formulario. ¿Te parece bien para pacientes mayores?</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="p-delete-user">
+      <input type="checkbox" id="c-p-delete-user" />
+      <label class="title" for="c-p-delete-user">Arreglar <code>delete-user</code> (baja de cuenta) <span class="tag urgent">RGPD</span></label>
+      <div class="body">
+        <p>Es un fallo anterior a este módulo y está explicado en la fase 2. Lo tienes como tarea sugerida en la app de Claude («Fix delete-user failing on missing user_id columns»).</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="p-ma-config">
+      <input type="checkbox" id="c-p-ma-config" />
+      <label class="title" for="c-p-ma-config">Pendiente: editar la pauta de comidas desde MA <span class="tag opt">futuro</span></label>
+      <div class="body">
+        <p>La app de médicos ya muestra las comidas, pero la pauta (campos, objetivo, periodo, etiquetas y recordatorios) de momento solo se configura desde la web.</p>
+      </div>
+    </div>
+
+    <div class="step" data-id="p-ci">
+      <input type="checkbox" id="c-p-ci" />
+      <label class="title" for="c-p-ci">Opcional: ejecutar los tests en CI <span class="tag opt">futuro</span></label>
+      <div class="body">
+        <p>Hay dos comandos nuevos: <code>npm test</code> (lógica compartida y recordatorios, sin dependencias) y <code>npm run test:sql</code> (migración y RLS en un Postgres local). Ahora mismo no se ejecutan en GitHub Actions.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Generado el 1 de octubre de 2026 · commit del módulo: «Módulo de seguimiento de comidas (PA, MW, MA, Supabase)».
+  </footer>
+</div>
+
+<script>
+(function () {
+  var KEY = 'fluxia-food-todo-v1';
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { store = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* sin almacenamiento */ } }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  function refresh() {
+    var done = 0;
+    steps.forEach(function (s) {
+      var on = !!store[s.dataset.id];
+      s.classList.toggle('done', on);
+      s.querySelector('input[type="checkbox"]').checked = on;
+      if (on) done++;
+    });
+    document.getElementById('doneCount').textContent = done;
+    document.getElementById('totalCount').textContent = steps.length;
+    document.getElementById('barFill').style.width = (steps.length ? (done / steps.length) * 100 : 0) + '%';
+    document.querySelectorAll('[data-phase]').forEach(function (ph) {
+      var ss = ph.querySelectorAll('.step');
+      var d = 0; ss.forEach(function (s) { if (store[s.dataset.id]) d++; });
+      ph.querySelector('.count').textContent = d + '/' + ss.length;
+    });
+  }
+  steps.forEach(function (s) {
+    s.querySelector('input[type="checkbox"]').addEventListener('change', function (ev) {
+      store[s.dataset.id] = ev.target.checked; save(); refresh();
+    });
+  });
+
+  var hideBtn = document.getElementById('hideDone');
+  function applyHide() {
+    var on = !!store.__hide;
+    document.body.classList.toggle('hide-done', on);
+    hideBtn.setAttribute('aria-pressed', String(on));
+  }
+  hideBtn.addEventListener('click', function () { store.__hide = !store.__hide; save(); applyHide(); });
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('¿Desmarcar todos los pasos?')) return;
+    var hide = store.__hide, theme = store.__theme; store = { __hide: hide, __theme: theme }; save(); refresh();
+  });
+
+  var themeBtn = document.getElementById('themeBtn');
+  function applyTheme() {
+    if (store.__theme) document.documentElement.setAttribute('data-theme', store.__theme);
+    else document.documentElement.removeAttribute('data-theme');
+    themeBtn.textContent = store.__theme === 'dark' ? 'Tema: oscuro' : store.__theme === 'light' ? 'Tema: claro' : 'Tema: sistema';
+  }
+  themeBtn.addEventListener('click', function () {
+    store.__theme = !store.__theme ? 'light' : store.__theme === 'light' ? 'dark' : undefined; save(); applyTheme();
+  });
+
+  document.querySelectorAll('button.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var text = document.getElementById(b.dataset.copy).textContent;
+      var ok = function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, function () { fallback(text); ok(); });
+      } else { fallback(text); ok(); }
+    });
+  });
+  function fallback(text) {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+  }
+
+  applyTheme(); applyHide(); refresh();
+})();
+</script>
+</body>
+</html>
