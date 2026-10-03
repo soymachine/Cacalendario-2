@@ -1,0 +1,121 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const lastUpdated = '3 de octubre de 2026';
+---
+<LegalLayout
+  title="Acuerdo RGPD (encargo de tratamiento) — Fluxia"
+  description="Condiciones del encargo de tratamiento entre el centro o profesional sanitario (responsable) y Fluxia (encargado), conforme al artículo 28 del RGPD."
+  heading="Acuerdo RGPD"
+  lede="Condiciones del encargo de tratamiento entre el profesional o centro sanitario, como responsable, y Fluxia, como encargado, conforme al artículo 28 del RGPD."
+  updated={lastUpdated}
+>
+  <article class="legal-doc">
+    <section>
+      <h2>1. Partes</h2>
+      <div class="legal-id">
+        <dl>
+          <dt>Encargado</dt><dd>Think Things Studio Barcelona S.L. (Fluxia) · NIF ESB66920810 · Barcelona 29, 2n 1a, 08901 L'Hospitalet de Llobregat, España</dd>
+          <dt>Responsable</dt><dd>El profesional sanitario o el centro titular de la cuenta de Fluxia Pro</dd>
+          <dt>Contacto</dt><dd><a href="mailto:hola@fluxia-health.com">hola@fluxia-health.com</a></dd>
+        </dl>
+      </div>
+      <p>
+        Este acuerdo forma parte de los <a href="/terms">términos de uso</a> y
+        se acepta al contratar Fluxia Pro. Los centros que lo necesiten pueden
+        solicitar una copia firmada escribiéndonos.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Objeto del encargo</h2>
+      <ul>
+        <li><strong>Finalidad:</strong> prestar el servicio de registro y seguimiento de la evolución intestinal, miccional y alimentaria de los pacientes vinculados al responsable.</li>
+        <li><strong>Duración:</strong> mientras la cuenta del responsable esté activa.</li>
+        <li><strong>Tipo de datos:</strong> datos identificativos y de contacto, y datos de salud (categoría especial, art. 9 RGPD): registros de deposiciones, micciones y alimentación —incluidas las fotografías de comidas—, etiquetas, pautas y notas clínicas.</li>
+        <li><strong>Categorías de interesados:</strong> pacientes que han aceptado expresamente vincularse con el responsable.</li>
+        <li><strong>Operaciones:</strong> recogida, registro, conservación, estructuración, consulta, exportación y supresión.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Obligaciones de Fluxia como encargado</h2>
+      <ul>
+        <li>Tratar los datos únicamente siguiendo instrucciones documentadas del responsable, sin usarlos para fines propios ni cederlos a terceros.</li>
+        <li>Garantizar que las personas autorizadas para tratar datos se comprometen a la confidencialidad.</li>
+        <li>Aplicar las medidas técnicas y organizativas del artículo 32 RGPD descritas en el apartado 6.</li>
+        <li>Asistir al responsable en la atención de los derechos de los interesados y en las evaluaciones de impacto y consultas previas que procedan.</li>
+        <li>Notificar al responsable, sin dilación indebida, cualquier violación de seguridad de la que tenga conocimiento, con la información disponible para su comunicación a la autoridad de control.</li>
+        <li>Poner a disposición del responsable la información necesaria para acreditar el cumplimiento y permitir auditorías razonables.</li>
+        <li>Suprimir o devolver los datos al finalizar la prestación, en los términos del apartado 7.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Obligaciones del responsable</h2>
+      <ul>
+        <li>Disponer de base jurídica para el tratamiento e informar adecuadamente a sus pacientes.</li>
+        <li>Invitar únicamente a pacientes a los que efectivamente atiende, y mantener actualizados los vínculos.</li>
+        <li>Configurar las pautas de registro y los umbrales de atención conforme a criterios clínicos.</li>
+        <li>Custodiar sus credenciales y gestionar los accesos de su equipo.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Subencargados</h2>
+      <p>
+        El responsable autoriza con carácter general el recurso a los
+        proveedores de infraestructura necesarios para prestar el servicio
+        (alojamiento, base de datos, autenticación, almacenamiento de archivos,
+        envío de notificaciones y pasarela de pago), con tratamiento en la Unión
+        Europea. Fluxia suscribe con ellos las garantías exigidas por el
+        artículo 28.4 RGPD e informará de cualquier incorporación o sustitución,
+        pudiendo el responsable oponerse motivadamente.
+      </p>
+      <p>
+        No se realizan transferencias internacionales de datos clínicos fuera
+        del Espacio Económico Europeo. Si alguna llegara a ser necesaria, se
+        ampararía en las garantías del capítulo V del RGPD y se comunicaría
+        previamente.
+      </p>
+    </section>
+
+    <section>
+      <h2>6. Medidas de seguridad</h2>
+      <ul>
+        <li>Cifrado de las comunicaciones (HTTPS/TLS) y de los datos en reposo.</li>
+        <li>Row Level Security a nivel de base de datos: cada cuenta accede únicamente a sus datos o a los expresamente vinculados.</li>
+        <li>Fotografías de comidas en almacenamiento privado, accesible solo mediante enlaces firmados y caducables.</li>
+        <li>Autenticación mediante tokens y contraseñas hasheadas con bcrypt.</li>
+        <li>Copias de seguridad, registro de accesos y revisión periódica de permisos.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. Fin del encargo</h2>
+      <p>
+        Al terminar la relación, Fluxia suprimirá los datos tratados por cuenta
+        del responsable —perfil del centro, pautas, etiquetas y notas clínicas—
+        salvo que deba conservarlos para cumplir una obligación legal. Los
+        registros de salud siguen perteneciendo a cada paciente y permanecen en
+        su cuenta, que simplemente deja de estar vinculada al responsable. El
+        responsable puede exportar previamente la información de sus pacientes
+        en los formatos que ofrece el panel.
+      </p>
+    </section>
+
+    <section>
+      <h2>8. Reclamaciones</h2>
+      <p>
+        Los interesados pueden ejercer sus derechos ante el responsable o
+        escribiendo a <a href="mailto:hola@fluxia-health.com">hola@fluxia-health.com</a>,
+        y reclamar ante la Agencia Española de Protección de Datos
+        (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">aepd.es</a>).
+      </p>
+    </section>
+  </article>
+
+  <p class="legal-contact">
+    ¿Necesitas una copia firmada para tu centro? Escríbenos a <a href="mailto:hola@fluxia-health.com">hola@fluxia-health.com</a>.
+  </p>
+</LegalLayout>
