@@ -200,54 +200,73 @@
   <!-- ───────────────────────────── 3 -->
   <section class="group">
     <h2>3. Supabase <span class="count"></span></h2>
-    <p class="intro">Los secrets ya apuntan a Fluxia Health, el entorno de pruebas: los avisos de cancelación del 4/10 llegaron y se procesaron. No hay que cambiarlos hasta pasar a live (paso 7).</p>
+    <p class="intro">Los secrets ya apuntan a Fluxia Health (pruebas). No hay que cambiarlos hasta pasar a live (paso 7).</p>
 
-    <div class="task" data-id="deploy">
+    <div class="task" data-id="deploy" data-done="true">
       <input type="checkbox" id="t-deploy" />
-      <label class="title" for="t-deploy">Redesplegar las funciones de pago con el código de <code>main</code> <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body">
-        <p>Sube el webhook corregido, que ya no deja en Pro a quien no paga y resiste avisos que llegan desordenados.</p>
-        <div class="cmd"><pre>git pull origin main
-supabase functions deploy stripe-checkout
-supabase functions deploy stripe-portal
-supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="button">Copiar</button></div>
-      </div>
+      <label class="title" for="t-deploy">Desplegar el webhook corregido <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Hecho el 4/10 (versión 4 de <code>stripe-webhook</code>): <code>unpaid</code> ya no da Pro y se consulta el estado real de la suscripción. <code>stripe-checkout</code> y <code>stripe-portal</code> no han cambiado.</p></div>
+    </div>
+
+    <div class="task" data-id="migration-keep-trial" data-done="true">
+      <input type="checkbox" id="t-migration-keep-trial" />
+      <label class="title" for="t-migration-keep-trial">Un pago fallido ya no quita la prueba gratuita <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Fallo encontrado en las pruebas: una tarjeta rechazada pasaba al médico en prueba a <code>free</code> (panel bloqueado). Corregido con la migración <code>20261004_billing_keep_trial.sql</code>, aplicada en producción y cubierta por un test SQL.</p></div>
     </div>
   </section>
 
   <!-- ───────────────────────────── 4 -->
   <section class="group">
-    <h2>4. Probar de punta a punta (modo test) <span class="count"></span></h2>
-    <p class="intro">Con una cuenta de médico de prueba en <code>/medics</code>. Tarjeta OK: <code>4242 4242 4242 4242</code>, cualquier fecha futura, CVC <code>123</code>.</p>
+    <h2>4. Probar de punta a punta (pruebas) <span class="count"></span></h2>
+    <p class="intro">El 4/10 Claude probó la parte de Stripe, el webhook y la base de datos simulando desde la API lo que haría el médico. Falta mirarlo en pantalla: entra en <code>/medics</code> con una cuenta de prueba. Tarjeta que funciona: <code>4242 4242 4242 4242</code>, fecha futura, CVC <code>123</code>.</p>
 
-    <div class="task" data-id="test-pay">
+    <div class="task" data-id="test-pay" data-done="true">
       <input type="checkbox" id="t-test-pay" />
-      <label class="title" for="t-test-pay">Pagar → la insignia PRO aparece en unos segundos <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Si se queda en “Estamos confirmando el pago”, revisa los intentos del webhook en Stripe: <code>400</code> significa que el <code>whsec_</code> no coincide y <code>401</code> que se desplegó sin <code>--no-verify-jwt</code>.</p></div>
+      <label class="title" for="t-test-pay">Pagar → Pro <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Correcto: el médico pasa a Pro, con suscripción activa, mensual y renovación al mes.</p></div>
     </div>
 
-    <div class="task" data-id="test-tax">
+    <div class="task" data-id="test-tax" data-done="true">
       <input type="checkbox" id="t-test-tax" />
-      <label class="title" for="t-test-tax">El Checkout suma el 21 % de IVA a 19,95 € <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Depende del registro fiscal del paso 1.</p></div>
+      <label class="title" for="t-test-tax">IVA del 21 % sobre 19,95 € <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Correcto: 19,95 € + 4,19 € = 24,14 € en la factura.</p></div>
     </div>
 
-    <div class="task" data-id="test-portal">
+    <div class="task" data-id="test-portal" data-done="true">
       <input type="checkbox" id="t-test-portal" />
-      <label class="title" for="t-test-portal">Portal: cambiar de mensual a anual y ver “Plan Pro · Anual” en MW <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Menú de cuenta → “Facturación y suscripción”.</p></div>
+      <label class="title" for="t-test-portal">Cambiar de mensual a anual <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Correcto: queda en anual, con renovación al año. Stripe descuenta lo no gastado del mes y cobra la diferencia (180 € + 37,80 € de IVA).</p></div>
     </div>
 
-    <div class="task" data-id="test-cancel">
+    <div class="task" data-id="test-cancel" data-done="true">
       <input type="checkbox" id="t-test-cancel" />
-      <label class="title" for="t-test-cancel">Cancelar: sigue Pro hasta fin de periodo y después el panel se bloquea <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Para no esperar un mes, usa un <strong>Test clock</strong> (Stripe → Clientes → Relojes de prueba) y adelanta el tiempo. Al terminar debe aparecer “Tu plan Pro ha finalizado” en MW y en MA.</p></div>
+      <label class="title" for="t-test-cancel">Cancelar: sigue Pro hasta fin de periodo y después baja a <code>free</code> <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Correcto: tras cancelar sigue en Pro marcado “cancelada” y, al terminar la suscripción, pasa a <code>free</code>. El final del periodo se simuló cancelando de inmediato, que genera el mismo aviso: la herramienta no permite adelantar el reloj de prueba.</p></div>
+    </div>
+
+    <div class="task" data-id="test-failed-payment" data-done="true">
+      <input type="checkbox" id="t-test-failed-payment" />
+      <label class="title" for="t-test-failed-payment">Tarjeta rechazada: no da Pro y no quita la prueba <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Correcto después de la corrección del paso 3.</p></div>
+    </div>
+
+    <div class="task" data-id="test-screens">
+      <input type="checkbox" id="t-test-screens" />
+      <label class="title" for="t-test-screens">Comprobar las pantallas en MW y MA <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <ul>
+          <li>Botón “Pasar a Pro” → pantalla de pago de Stripe en español, 19,95 € + IVA.</li>
+          <li>Vuelta a <code>/medics?checkout=success</code> → insignia PRO en unos segundos.</li>
+          <li>Menú de cuenta → “Facturación y suscripción” abre el portal (cambiar a anual, cancelar).</li>
+          <li>Con el plan en <code>free</code>, MW muestra “Tu plan Pro ha finalizado” y MA la pantalla de bloqueo.</li>
+        </ul>
+      </div>
     </div>
 
     <div class="task" data-id="test-dunning">
       <input type="checkbox" id="t-test-dunning" />
-      <label class="title" for="t-test-dunning">Impago: <code>past_due</code> (sigue Pro con aviso) y, al agotar reintentos, bloqueo <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Con un Test clock y la tarjeta <code>4000 0000 0000 0341</code> (se acepta al guardarla y falla en la renovación). Comprueba también el paso 2 de reintentos.</p></div>
+      <label class="title" for="t-test-dunning">Impago en la renovación: <code>past_due</code> y, al agotar los reintentos, bloqueo <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Requiere adelantar un reloj de prueba desde el Dashboard (Stripe → Clientes → Relojes de prueba). El reloj “Fluxia QA 2026-10-04” sigue disponible. Antes, configura los reintentos del paso 2.</p></div>
     </div>
 
     <div class="task" data-id="test-trial">
