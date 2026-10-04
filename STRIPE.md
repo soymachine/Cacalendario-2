@@ -149,41 +149,42 @@ Configura también:
 
 ## 3. Crear el producto y el precio
 
-> **Cuenta que factura: Think Things** (`acct_1AMgI9IHm4XDpveI`). Fluxia se
-> cobra desde la empresa Thinkthink; "Fluxia" es solo el nombre comercial y el
-> descriptor de extracto. La primera cuenta de pruebas (*Fluxia Health*,
-> `acct_1TEDMRANIg6DlLEV`) queda obsoleta.
+> **Dos cuentas, cada una para una cosa:**
 >
-> **Ya hecho en modo test en Think Things:**
+> | | Pruebas (test) | Cobros reales (live) |
+> |---|---|---|
+> | Cuenta | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`) | *Think Things* (`acct_1AMgI9IHm4XDpveI`) |
+> | Estado | Completa: es la que usan hoy los secrets de Supabase | Por montar: solo tiene productos antiguos de 2020 |
+>
+> Factura Think Things Studio Barcelona S.L. (NIF B66920810, NIF-IVA
+> ESB66920810, c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat);
+> "Fluxia" es el nombre comercial y el descriptor de extracto. En pruebas da
+> igual qué cuenta se use, porque no hay dinero ni facturas reales; la que
+> cuenta legalmente es la de live.
+>
+> **Pruebas — Fluxia Health:**
 >
 > | | |
 > |---|---|
-> | Producto | `prod_VKB1Z0cxx4z3tP` — Fluxia Pro (`txcd_10103001`, descriptor `FLUXIA`) |
-> | Precio mensual | `price_1UJWfeIHm4XDpveImRN5srnL` — 19,95 €/mes, IVA aparte |
-> | Precio anual | `price_1UJWfjIHm4XDpveI9QW7ypqA` — 199,95 €/año, IVA aparte |
+> | Producto | `prod_V3h0dwRIftEwpV` — Fluxia Pro |
+> | Precio mensual | `price_1U3ZcAANIg6DlLEVMuONWgUB` — 19,95 €/mes, IVA aparte |
+> | Precio anual | `price_1U6sVFANIg6DlLEVtlbBPgnC` — 199,95 €/año, IVA aparte |
 > | `lookup_key` | `fluxia_pro_monthly` · `fluxia_pro_yearly` |
-> | Portal de clientes | `bpc_1UJWg8IHm4XDpveI9sIIYLvu` (por defecto) — cancelar a fin de periodo, cambiar mensual ↔ anual, tarjeta, facturas, NIF |
-> | Webhook | `we_1UJWi2IHm4XDpveIIF3sf088` — los 4 eventos del paso 6 |
-> | Registro fiscal | **Pendiente**. Domicilio de la sede (Stripe Tax → `head_office`): Think Things Studio Barcelona S.L., NIF B66920810 (NIF-IVA ESB66920810), c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat, España |
+> | Portal de clientes | `bpc_1U3ZwIANIg6DlLEVzs7XQ8BD` (por defecto) — cancelar a fin de periodo, cambiar mensual ↔ anual (cantidad fija), tarjeta, facturas, NIF, URLs de privacidad y condiciones |
+> | Webhook | `we_1U79LcANIg6DlLEVcHp1u3YS` — los 4 eventos del paso 6 |
+> | Stripe Tax | Sede con el domicilio de Think Things; registro ES `taxreg_1U3ZhQANIg6DlLEVPMA3XQLn` activo |
+>
+> En el modo test de Think Things quedan objetos sin usar (`prod_VKB1Z0cxx4z3tP`,
+> portal `bpc_1UJWg8…`, webhook `we_1UJWi2…`): se pueden ignorar o borrar.
 >
 > Los dos precios cuelgan del **mismo producto**, no de dos productos
 > distintos: es lo que permite que el médico cambie de mensual a anual desde
 > el Customer Portal sin acabar con dos suscripciones a la vez.
 >
-> Sus secrets:
+> Al pasar a live, los `stripe_customer_id` de pruebas guardados en `doctors`
+> dejan de existir: hay que vaciarlos.
 >
-> ```bash
-> supabase secrets set STRIPE_SECRET_KEY=sk_test_…   # la de Think Things
-> supabase secrets set STRIPE_PRICE_PRO=price_1UJWfeIHm4XDpveImRN5srnL
-> supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_1UJWfjIHm4XDpveI9QW7ypqA
-> supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_… # Webhooks → we_1UJWi2… → Revelar
-> ```
->
-> Al cambiar de cuenta, los `stripe_customer_id` guardados en `doctors` de la
-> cuenta antigua dejan de existir: hay que vaciarlos (y bajar a `test`/`free`
-> a quien estuviera en `pro` por una suscripción de pruebas).
->
-> Queda pendiente repetirlo todo en **modo live**. Los pasos de abajo describen
+> Queda pendiente repetirlo todo en **live, en Think Things**. Los pasos de abajo describen
 > cómo se hizo, por si hay que rehacerlo o crear otro plan.
 
 1. **Dashboard → Catálogo de productos → + Añadir producto** (asegúrate de
@@ -372,10 +373,10 @@ Para que el portal funcione hay que configurarlo una vez en
 suscripción", "Actualizar método de pago" e "Historial de facturas", y pega
 las URLs de tus condiciones y privacidad (`https://fluxia-health.com/privacy`).
 
-> **Hecho en modo test (Think Things)**: `bpc_1UJWg8IHm4XDpveI9sIIYLvu`, con
-> *Actualizar suscripción* activado para los dos precios de `Fluxia Pro` (el
-> paso de anual a mensual se programa a fin de periodo) y la URL de
-> privacidad. Falta la de condiciones de uso, que aún no existe en la web.
+> **Hecho en pruebas (Fluxia Health)**: `bpc_1U3ZwIANIg6DlLEVzs7XQ8BD`, con
+> *Actualizar suscripción* activado para los dos precios de `Fluxia Pro`,
+> **cantidad fija** (sin ella el médico podría contratar 2 licencias) y las
+> URLs de privacidad y condiciones. Pendiente repetirlo en live.
 
 ---
 

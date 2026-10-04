@@ -121,7 +121,7 @@
 <div class="wrap">
   <header>
     <h1>Fluxia · Pendientes para cobrar con Stripe</h1>
-    <p>Cuenta que factura: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>). Actualizado el 4 de octubre de 2026. Las casillas se guardan en este navegador.</p>
+    <p>Pruebas: <strong>Fluxia Health</strong> (<code>acct_1TEDMRANIg6DlLEV</code>). Cobros reales: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>, live). Actualizado el 4 de octubre de 2026. Las casillas se guardan en este navegador.</p>
   </header>
 
   <div class="progress-card" aria-live="polite">
@@ -140,46 +140,44 @@
 
   <!-- ───────────────────────────── 1 -->
   <section class="group">
-    <h2>1. Desbloquear a Claude <span class="count"></span></h2>
-    <p class="intro">Claude puede hacer estas tareas en cuanto le des el dato o la confirmación.</p>
+    <h2>1. Ya resuelto <span class="count"></span></h2>
+    <p class="intro">Se queda aquí como registro. Si desmarcas alguna, se mantiene desmarcada.</p>
 
     <div class="task" data-id="tax-address" data-done="true">
       <input type="checkbox" id="t-tax-address" />
-      <label class="title" for="t-tax-address">Pasar a Claude el domicilio fiscal de Thinkthink <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
-      <div class="body">
-        <p>Con él, Claude configura en Stripe Tax el domicilio de la empresa y el <strong>registro fiscal de España</strong>.</p>
-        <p><strong>Recibido el 4/10:</strong> Think Things Studio Barcelona S.L. · B66920810 · c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat.</p>
-        <div class="note">Sin registro fiscal, Stripe calcula <strong>0 € de IVA</strong> y no avisa. Es el fallo más fácil de cometer.</div>
-      </div>
+      <label class="title" for="t-tax-address">Domicilio fiscal de Think Things <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Think Things Studio Barcelona S.L. · B66920810 · c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat.</p></div>
     </div>
 
-    <div class="task" data-id="stripe-reauth">
+    <div class="task" data-id="stripe-reauth" data-done="true">
       <input type="checkbox" id="t-stripe-reauth" />
-      <label class="title" for="t-stripe-reauth">Volver a autorizar el conector de Stripe para Claude <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
-      <div class="body"><p>Se desconectó y pide autorización de nuevo, desde los ajustes de conectores de claude.ai. Sin él, Claude no puede dar de alta el registro fiscal.</p></div>
+      <label class="title" for="t-stripe-reauth">Volver a autorizar el conector de Stripe <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Hecho el 4/10. Claude ve <em>Fluxia Health</em> en test. Think Things en live también ha estado accesible.</p></div>
     </div>
 
-    <div class="task" data-id="tax-registration">
+    <div class="task" data-id="tax-registration" data-done="true">
       <input type="checkbox" id="t-tax-registration" />
-      <label class="title" for="t-tax-registration">Registro fiscal ES y domicilio en Stripe Tax (modo test) <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>Ya tiene el domicilio; solo falta el conector. Después, comprobar en un Checkout de prueba que se suma el 21&nbsp;% de IVA.</p></div>
+      <label class="title" for="t-tax-registration">Stripe Tax en el entorno de pruebas <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Fluxia Health ya tenía la sede con el domicilio de Think Things y el registro fiscal de España activo. No hacía falta tocar nada.</p></div>
+    </div>
+
+    <div class="task" data-id="portal-test" data-done="true">
+      <input type="checkbox" id="t-portal-test" />
+      <label class="title" for="t-portal-test">Portal de clientes de pruebas: URLs legales y cantidad fija <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Añadidas <code>/privacy</code> y <code>/terms</code> y la vuelta a <code>/medics</code>. El médico ya no puede cambiar la cantidad de licencias, con lo que no puede pagar 2 sin querer.</p></div>
     </div>
 
     <div class="task" data-id="clean-test-customers" data-done="true">
       <input type="checkbox" id="t-clean-test-customers" />
-      <label class="title" for="t-clean-test-customers">Limpiar las dos cuentas de prueba con clientes de la cuenta antigua <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body">
-        <p>“Dani Moya” y “Dani” tienen <code>stripe_customer_id</code> de la cuenta <em>Fluxia Health</em>, que con las claves nuevas no existe: “Activar Pro” les daría error.</p>
-        <p><strong>Hecho el 4/10:</strong> las dos están en <code>test</code> con 30 días de prueba nuevos y sin datos de Stripe.</p>
-        <div class="note">Hasta que cambies los secrets (paso 3), una renovación de sus suscripciones en la cuenta antigua podría volver a ponerlas en Pro. Si pasa, avisa a Claude.</div>
-      </div>
+      <label class="title" for="t-clean-test-customers">Cuentas de prueba de Dani en <code>test</code> <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Sus dos suscripciones de prueba están canceladas. El webhook las bajó a <code>free</code> (prueba de que la cancelación funciona) y después se pasaron a <code>test</code> con 30 días nuevos. Conservan su cliente de Stripe de pruebas.</p></div>
     </div>
   </section>
 
   <!-- ───────────────────────────── 2 -->
   <section class="group">
-    <h2>2. Stripe Dashboard · modo test <span class="count"></span></h2>
-    <p class="intro">Estos ajustes no se pueden cambiar por API. Entra en <a href="https://dashboard.stripe.com/test/dashboard" target="_blank" rel="noopener">dashboard.stripe.com</a> con la cuenta Think Things y el interruptor de <em>modo de prueba</em> activado.</p>
+    <h2>2. Stripe Dashboard · pruebas (Fluxia Health) <span class="count"></span></h2>
+    <p class="intro">Estos ajustes no se pueden cambiar por API. En <a href="https://dashboard.stripe.com/test/dashboard" target="_blank" rel="noopener">dashboard.stripe.com</a>, entra en la cuenta o entorno de pruebas <strong>Fluxia Health</strong>.</p>
 
     <div class="task" data-id="dunning">
       <input type="checkbox" id="t-dunning" />
@@ -194,43 +192,21 @@
       <input type="checkbox" id="t-invoice-emails" />
       <label class="title" for="t-invoice-emails">Desactivar el envío de facturas de Stripe por email <span class="tags"><span class="tag you">Tú</span></span></label>
       <div class="body">
-        <p>Configuración → Billing → Facturas / Emails a clientes. Las facturas las emitirá <strong>Holded</strong> en la serie FX: si Stripe también las envía, el médico recibe dos.</p>
-        <p>Deja activados los <strong>recibos</strong> de pago, que no son facturas.</p>
-      </div>
-    </div>
-
-    <div class="task" data-id="public-details">
-      <input type="checkbox" id="t-public-details" />
-      <label class="title" for="t-public-details">Datos públicos: descriptor <code>FLUXIA</code>, email y teléfono de soporte <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body">
-        <p>Configuración → Datos públicos de la empresa. El producto ya usa el descriptor <code>FLUXIA</code>, pero conviene que la cuenta lo tenga también: si en el extracto aparece algo irreconocible, llegan disputas.</p>
+        <p>Configuración → Billing → Facturas / Emails a clientes. Las facturas las emitirá <strong>Holded</strong> en la serie FX: si Stripe también las envía, el médico recibe dos. Deja activados los <strong>recibos</strong>.</p>
       </div>
     </div>
   </section>
 
   <!-- ───────────────────────────── 3 -->
   <section class="group">
-    <h2>3. Supabase: apuntar a Think Things <span class="count"></span></h2>
-    <p class="intro">Desde la raíz del repo, con la CLI de Supabase enlazada al proyecto <code>vchzhwvbvnwrrgfrxfor</code>.</p>
-
-    <div class="task" data-id="secrets">
-      <input type="checkbox" id="t-secrets" />
-      <label class="title" for="t-secrets">Cambiar los 4 secrets de Stripe <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
-      <div class="body">
-        <p>La clave secreta está en <a href="https://dashboard.stripe.com/test/apikeys" target="_blank" rel="noopener">Desarrolladores → Claves de API</a>. El secreto del webhook está en <a href="https://dashboard.stripe.com/test/webhooks" target="_blank" rel="noopener">Webhooks</a> → <code>we_1UJWi2IHm4XDpveIIF3sf088</code> → “Revelar”.</p>
-        <div class="cmd"><pre>supabase secrets set STRIPE_SECRET_KEY=sk_test_PEGA_AQUI
-supabase secrets set STRIPE_PRICE_PRO=price_1UJWfeIHm4XDpveImRN5srnL
-supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_1UJWfjIHm4XDpveI9QW7ypqA
-supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PEGA_AQUI</pre><button type="button">Copiar</button></div>
-        <div class="note">Nunca pegues la clave <code>sk_</code> en un chat ni en el repositorio.</div>
-      </div>
-    </div>
+    <h2>3. Supabase <span class="count"></span></h2>
+    <p class="intro">Los secrets ya apuntan a Fluxia Health, el entorno de pruebas: los avisos de cancelación del 4/10 llegaron y se procesaron. No hay que cambiarlos hasta pasar a live (paso 7).</p>
 
     <div class="task" data-id="deploy">
       <input type="checkbox" id="t-deploy" />
-      <label class="title" for="t-deploy">Redesplegar las tres funciones de pago <span class="tags"><span class="tag you">Tú</span></span></label>
+      <label class="title" for="t-deploy">Redesplegar las funciones de pago con el código de <code>main</code> <span class="tags"><span class="tag you">Tú</span></span></label>
       <div class="body">
-        <p>Recarga los secrets nuevos y sube el webhook corregido, que ya no deja en Pro a quien no paga y resiste eventos desordenados.</p>
+        <p>Sube el webhook corregido, que ya no deja en Pro a quien no paga y resiste avisos que llegan desordenados.</p>
         <div class="cmd"><pre>git pull origin main
 supabase functions deploy stripe-checkout
 supabase functions deploy stripe-portal
@@ -320,10 +296,10 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
       <div class="body"><p><strong>Hecho</strong> en <code>src/pages/privacy.astro</code>, junto con el aviso legal y la política de cookies: Think Things figura como titular, responsable de las cuentas y encargada de los datos clínicos.</p></div>
     </div>
 
-    <div class="task" data-id="terms">
+    <div class="task" data-id="terms" data-done="true">
       <input type="checkbox" id="t-terms" />
-      <label class="title" for="t-terms">Añadir la URL de las condiciones de uso al portal de Stripe <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>La página ya existe (<code>/terms</code>). Falta poner <code>https://fluxia-health.com/terms</code> en el portal de clientes cuando el conector de Stripe vuelva a estar autorizado.</p></div>
+      <label class="title" for="t-terms">URL de las condiciones de uso en el portal de Stripe (pruebas) <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Hecho el 4/10 en Fluxia Health. En live se añadirá al crear el portal (paso 7).</p></div>
     </div>
 
     <div class="task" data-id="dpa">
@@ -335,37 +311,47 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
 
   <!-- ───────────────────────────── 7 -->
   <section class="group">
-    <h2>7. Producción (live) <span class="count"></span></h2>
-    <p class="intro">Nada de lo hecho en test existe en live: hay que repetirlo.</p>
+    <h2>7. Producción (live, cuenta Think Things) <span class="count"></span></h2>
+    <p class="intro">Nada de lo hecho en pruebas existe en live: hay que repetirlo. Hoy la cuenta live solo tiene 5 productos antiguos de 2020 (“Cumple…”), sin cobros, sin webhook y sin Stripe Tax.</p>
 
     <div class="task" data-id="activate">
       <input type="checkbox" id="t-activate" />
-      <label class="title" for="t-activate">Activar la cuenta Think Things para cobros reales <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
-      <div class="body"><p>CIF, razón social, domicilio fiscal, IBAN, DNI de los administradores y de quien tenga ≥25 %, y la URL <code>https://fluxia-health.com</code>. Stripe puede tardar días en revisarlo.</p></div>
+      <label class="title" for="t-activate">Comprobar que Think Things puede cobrar en live <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body"><p>Configuración → Detalles de la empresa: CIF, razón social, domicilio, IBAN, DNI de los administradores y de quien tenga ≥25 %, y la URL <code>https://fluxia-health.com</code>. Si Stripe pide algo pendiente, aparece arriba en el Dashboard.</p></div>
     </div>
 
-    <div class="task" data-id="live-access">
-      <input type="checkbox" id="t-live-access" />
-      <label class="title" for="t-live-access">Dar a Claude acceso a Stripe en modo live <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Desde la gestión de cuentas del conector de Stripe. Ahora solo tiene acceso de test.</p></div>
+    <div class="task" data-id="live-tax">
+      <input type="checkbox" id="t-live-tax" />
+      <label class="title" for="t-live-tax">Live: Stripe Tax con la sede de Think Things y registro fiscal ES <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Necesita que el conector dé acceso a Think Things en live y tu confirmación. Solo afecta a los pagos con impuesto automático, que solo usa Fluxia.</p></div>
     </div>
 
     <div class="task" data-id="live-objects">
       <input type="checkbox" id="t-live-objects" />
-      <label class="title" for="t-live-objects">Live: producto, 2 precios, portal, webhook y registro fiscal ES <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>El registro fiscal, con la fecha real de alta en Hacienda. Los IDs serán distintos de los de test.</p></div>
+      <label class="title" for="t-live-objects">Live: producto, 2 precios, portal (con URLs legales y cantidad fija) y webhook <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>Los IDs serán distintos de los de pruebas. El secreto del nuevo webhook se ve en el Dashboard → Webhooks → “Revelar”.</p></div>
     </div>
 
     <div class="task" data-id="live-dashboard">
       <input type="checkbox" id="t-live-dashboard" />
-      <label class="title" for="t-live-dashboard">Live: reintentos, facturas por email y datos públicos (como en el paso 2) <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>La configuración de test no se copia a live.</p></div>
+      <label class="title" for="t-live-dashboard">Live: reintentos, facturas por email y datos públicos <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>Igual que en el paso 2, más el descriptor de extracto <code>FLUXIA</code> y el email y teléfono de soporte. La configuración de pruebas no se copia a live.</p></div>
     </div>
 
     <div class="task" data-id="live-secrets">
       <input type="checkbox" id="t-live-secrets" />
-      <label class="title" for="t-live-secrets">Live: secrets <code>sk_live_…</code>, precios y <code>whsec_…</code> nuevos, y redesplegar <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Los mismos comandos del paso 3, con los valores de live.</p></div>
+      <label class="title" for="t-live-secrets">Live: cambiar los secrets de Supabase y redesplegar <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body">
+        <p>A partir de aquí Fluxia cobra de verdad. Claude te dará los IDs de los precios de live.</p>
+        <div class="cmd"><pre>supabase secrets set STRIPE_SECRET_KEY=sk_live_PEGA_AQUI
+supabase secrets set STRIPE_PRICE_PRO=price_LIVE_MENSUAL
+supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_LIVE_ANUAL
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PEGA_AQUI
+supabase functions deploy stripe-checkout
+supabase functions deploy stripe-portal
+supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="button">Copiar</button></div>
+        <div class="note">Los médicos con <code>stripe_customer_id</code> de pruebas (las cuentas de Dani) tendrán que vaciarlo al pasar a live: Claude lo hace.</div>
+      </div>
     </div>
 
     <div class="task" data-id="live-real-payment">
@@ -395,15 +381,16 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
   </main>
 
   <section class="group">
-    <h2>Referencia: IDs en Think Things (modo test)</h2>
+    <h2>Referencia: IDs de pruebas (Fluxia Health)</h2>
     <div class="table-wrap">
     <table class="ids">
-      <tr><th>Producto Fluxia Pro</th><td><code>prod_VKB1Z0cxx4z3tP</code></td></tr>
-      <tr><th>Precio mensual (19,95 € + IVA)</th><td><code>price_1UJWfeIHm4XDpveImRN5srnL</code> · <code>fluxia_pro_monthly</code></td></tr>
-      <tr><th>Precio anual (199,95 € + IVA)</th><td><code>price_1UJWfjIHm4XDpveI9QW7ypqA</code> · <code>fluxia_pro_yearly</code></td></tr>
-      <tr><th>Portal de clientes</th><td><code>bpc_1UJWg8IHm4XDpveI9sIIYLvu</code> (por defecto)</td></tr>
-      <tr><th>Webhook</th><td><code>we_1UJWi2IHm4XDpveIIF3sf088</code> → <code>…/functions/v1/stripe-webhook</code></td></tr>
-      <tr><th>Cuenta antigua (obsoleta)</th><td><em>Fluxia Health</em> · <code>acct_1TEDMRANIg6DlLEV</code></td></tr>
+      <tr><th>Producto Fluxia Pro</th><td><code>prod_V3h0dwRIftEwpV</code></td></tr>
+      <tr><th>Precio mensual (19,95 € + IVA)</th><td><code>price_1U3ZcAANIg6DlLEVMuONWgUB</code> · <code>fluxia_pro_monthly</code></td></tr>
+      <tr><th>Precio anual (199,95 € + IVA)</th><td><code>price_1U6sVFANIg6DlLEVtlbBPgnC</code> · <code>fluxia_pro_yearly</code></td></tr>
+      <tr><th>Portal de clientes</th><td><code>bpc_1U3ZwIANIg6DlLEVzs7XQ8BD</code> (por defecto)</td></tr>
+      <tr><th>Webhook</th><td><code>we_1U79LcANIg6DlLEVcHp1u3YS</code> → <code>…/functions/v1/stripe-webhook</code></td></tr>
+      <tr><th>Registro fiscal</th><td><code>taxreg_1U3ZhQANIg6DlLEVPMA3XQLn</code> (ES, activo)</td></tr>
+      <tr><th>Sin usar</th><td>Modo test de Think Things: <code>prod_VKB1Z0cxx4z3tP</code>, portal y webhook <code>we_1UJWi2…</code>. Se pueden ignorar o borrar.</td></tr>
     </table>
     </div>
   </section>
