@@ -339,16 +339,16 @@
       <div class="body"><p>Configuración → Detalles de la empresa: CIF, razón social, domicilio, IBAN, DNI de los administradores y de quien tenga ≥25 %, y la URL <code>https://fluxia-health.com</code>. Si Stripe pide algo pendiente, aparece arriba en el Dashboard.</p></div>
     </div>
 
-    <div class="task" data-id="live-tax">
+    <div class="task" data-id="live-tax" data-done="true">
       <input type="checkbox" id="t-live-tax" />
       <label class="title" for="t-live-tax">Live: Stripe Tax con la sede de Think Things y registro fiscal ES <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>Necesita que el conector dé acceso a Fluxia Health en live.</p></div>
+      <div class="body"><p>Hecho el 4/10: la sede ya estaba; registro ES <code>taxreg_1UMlxqANIg6DlLEVPtqM3ROd</code> activo desde hoy; precios sin IVA incluido y código fiscal de SaaS por defecto.</p></div>
     </div>
 
-    <div class="task" data-id="live-objects">
+    <div class="task" data-id="live-objects" data-done="true">
       <input type="checkbox" id="t-live-objects" />
       <label class="title" for="t-live-objects">Live: producto, 2 precios, portal (con URLs legales y cantidad fija) y webhook <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>Los IDs serán distintos de los de pruebas. El secreto del nuevo webhook se ve en el Dashboard → Webhooks → “Revelar”.</p></div>
+      <div class="body"><p>Hecho el 4/10. IDs en la tabla de referencia de abajo. El secreto del webhook está en el Dashboard (live) → Webhooks → <code>we_1UMlyfANIg6DlLEVpPx3kAzA</code> → “Revelar”.</p></div>
     </div>
 
     <div class="task" data-id="live-dashboard">
@@ -361,15 +361,15 @@
       <input type="checkbox" id="t-live-secrets" />
       <label class="title" for="t-live-secrets">Live: cambiar los secrets de Supabase y redesplegar <span class="tags"><span class="tag you">Tú</span></span></label>
       <div class="body">
-        <p>A partir de aquí Fluxia cobra de verdad. Claude te dará los IDs de los precios de live.</p>
+        <p>A partir de aquí Fluxia cobra de verdad. Hazlo cuando la cuenta esté activada y los ajustes de arriba hechos.</p>
         <div class="cmd"><pre>supabase secrets set STRIPE_SECRET_KEY=sk_live_PEGA_AQUI
-supabase secrets set STRIPE_PRICE_PRO=price_LIVE_MENSUAL
-supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_LIVE_ANUAL
+supabase secrets set STRIPE_PRICE_PRO=price_1UMlyJANIg6DlLEVCdMPfWZF
+supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_1UMlyMANIg6DlLEVlmati3Tn
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PEGA_AQUI
 supabase functions deploy stripe-checkout
 supabase functions deploy stripe-portal
 supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="button">Copiar</button></div>
-        <div class="note">Los médicos con <code>stripe_customer_id</code> de pruebas (las cuentas de Dani) tendrán que vaciarlo al pasar a live: Claude lo hace.</div>
+        <div class="note">Justo después, avisa a Claude: vaciará los <code>stripe_customer_id</code> de pruebas (las cuentas de Dani), que en live no existen.</div>
       </div>
     </div>
 
@@ -400,7 +400,21 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
   </main>
 
   <section class="group">
-    <h2>Referencia: IDs de pruebas (Fluxia Health)</h2>
+    <h2>Referencia: IDs reales (Fluxia Health, live)</h2>
+    <div class="table-wrap">
+    <table class="ids">
+      <tr><th>Producto Fluxia Pro</th><td><code>prod_VNX1h1cpWq8NLv</code></td></tr>
+      <tr><th>Precio mensual (19,95 € + IVA)</th><td><code>price_1UMlyJANIg6DlLEVCdMPfWZF</code> · <code>fluxia_pro_monthly</code></td></tr>
+      <tr><th>Precio anual (199,95 € + IVA)</th><td><code>price_1UMlyMANIg6DlLEVlmati3Tn</code> · <code>fluxia_pro_yearly</code></td></tr>
+      <tr><th>Portal de clientes</th><td><code>bpc_1UMlyTANIg6DlLEVMQWQD3K1</code> (por defecto)</td></tr>
+      <tr><th>Webhook</th><td><code>we_1UMlyfANIg6DlLEVpPx3kAzA</code> → <code>…/functions/v1/stripe-webhook</code></td></tr>
+      <tr><th>Registro fiscal</th><td><code>taxreg_1UMlxqANIg6DlLEVPtqM3ROd</code> (ES, activo)</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Referencia: IDs de pruebas (Fluxia Health, test)</h2>
     <div class="table-wrap">
     <table class="ids">
       <tr><th>Producto Fluxia Pro</th><td><code>prod_V3h0dwRIftEwpV</code></td></tr>

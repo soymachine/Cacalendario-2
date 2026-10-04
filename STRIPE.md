@@ -154,7 +154,7 @@ Configura también:
 > | | Pruebas (test) | Cobros reales (live) |
 > |---|---|---|
 > | Cuenta | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo test | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo live, a nombre de Think Things S.L. |
-> | Estado | Completa: es la que usan hoy los secrets de Supabase | Por activar y montar |
+> | Estado | Completa: es la que usan hoy los secrets de Supabase | Objetos creados; falta activar la cuenta, ajustes del Dashboard y cambiar los secrets |
 >
 > Factura Think Things Studio Barcelona S.L. (NIF B66920810, NIF-IVA
 > ESB66920810, c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat);
@@ -174,6 +174,17 @@ Configura también:
 > | Portal de clientes | `bpc_1U3ZwIANIg6DlLEVzs7XQ8BD` (por defecto) — cancelar a fin de periodo, cambiar mensual ↔ anual (cantidad fija), tarjeta, facturas, NIF, URLs de privacidad y condiciones |
 > | Webhook | `we_1U79LcANIg6DlLEVcHp1u3YS` — los 4 eventos del paso 6 |
 > | Stripe Tax | Sede con el domicilio de Think Things; registro ES `taxreg_1U3ZhQANIg6DlLEVPMA3XQLn` activo |
+>
+> **Live — Fluxia Health** (creado el 4/10/2026):
+>
+> | | |
+> |---|---|
+> | Producto | `prod_VNX1h1cpWq8NLv` — Fluxia Pro (`txcd_10103001`, descriptor `FLUXIA`) |
+> | Precio mensual | `price_1UMlyJANIg6DlLEVCdMPfWZF` — 19,95 €/mes, IVA aparte |
+> | Precio anual | `price_1UMlyMANIg6DlLEVlmati3Tn` — 199,95 €/año, IVA aparte |
+> | Portal de clientes | `bpc_1UMlyTANIg6DlLEVMQWQD3K1` (por defecto), igual que el de test |
+> | Webhook | `we_1UMlyfANIg6DlLEVpPx3kAzA` — los 4 eventos; secreto en Dashboard → Webhooks → Revelar |
+> | Stripe Tax | Sede de Think Things; registro ES `taxreg_1UMlxqANIg6DlLEVPtqM3ROd`; por defecto `exclusive` + `txcd_10103001` |
 >
 > En el modo test de Think Things quedan objetos sin usar (`prod_VKB1Z0cxx4z3tP`,
 > portal `bpc_1UJWg8…`, webhook `we_1UJWi2…`): se pueden ignorar o borrar.
