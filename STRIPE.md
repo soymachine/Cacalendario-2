@@ -154,7 +154,7 @@ Configura también:
 > | | Pruebas (test) | Cobros reales (live) |
 > |---|---|---|
 > | Cuenta | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo test | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo live, a nombre de Think Things S.L. |
-> | Estado | Completa: es la que usan hoy los secrets de Supabase | Objetos creados; falta activar la cuenta, ajustes del Dashboard y cambiar los secrets |
+> | Estado | Completa; ya no la usa Supabase | **En uso desde el 4/10/2026**: secrets de Supabase en live, verificado con una suscripción de 0 € |
 >
 > Factura Think Things Studio Barcelona S.L. (NIF B66920810, NIF-IVA
 > ESB66920810, c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat);

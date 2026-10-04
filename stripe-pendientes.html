@@ -357,11 +357,11 @@
       <div class="body"><p>Igual que en el paso 2, más el descriptor de extracto <code>FLUXIA</code> y el email y teléfono de soporte. La configuración de pruebas no se copia a live.</p></div>
     </div>
 
-    <div class="task" data-id="live-secrets">
+    <div class="task" data-id="live-secrets" data-done="true">
       <input type="checkbox" id="t-live-secrets" />
       <label class="title" for="t-live-secrets">Live: cambiar los secrets de Supabase y redesplegar <span class="tags"><span class="tag you">Tú</span></span></label>
       <div class="body">
-        <p>A partir de aquí Fluxia cobra de verdad. Hazlo cuando la cuenta esté activada y los ajustes de arriba hechos.</p>
+        <p><strong>Hecho el 4/10.</strong> Fluxia ya cobra de verdad. Claude lo verificó con una suscripción de 0 € en live (cupón del 100 %): el webhook la recibió con firma válida, el médico pasó a Pro y, al cancelarla, a <code>free</code>. Después se restauró todo y se borró el cupón.</p>
         <div class="cmd"><pre>supabase secrets set STRIPE_SECRET_KEY=sk_live_PEGA_AQUI
 supabase secrets set STRIPE_PRICE_PRO=price_1UMlyJANIg6DlLEVCdMPfWZF
 supabase secrets set STRIPE_PRICE_PRO_YEARLY=price_1UMlyMANIg6DlLEVlmati3Tn
@@ -369,14 +369,14 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PEGA_AQUI
 supabase functions deploy stripe-checkout
 supabase functions deploy stripe-portal
 supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="button">Copiar</button></div>
-        <div class="note">Justo después, avisa a Claude: vaciará los <code>stripe_customer_id</code> de pruebas (las cuentas de Dani), que en live no existen.</div>
+        <div class="note">Hecho: ya no queda ningún <code>stripe_customer_id</code> de pruebas en la base de datos. En live queda el cliente “QA Fluxia (verificación live, 0 €)” con una factura de 0 €: bórralo desde el Dashboard si quieres. Ojo si Holded importa el histórico, porque podría crear una factura FX de 0 €.</div>
       </div>
     </div>
 
     <div class="task" data-id="live-real-payment">
       <input type="checkbox" id="t-live-real-payment" />
-      <label class="title" for="t-live-real-payment">Pago real con tu tarjeta, cancelación y reembolso <span class="tags"><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Es la única forma de verificar toda la cadena en live, incluida la factura en Holded.</p></div>
+      <label class="title" for="t-live-real-payment">Pago real con tu tarjeta desde <code>/medics</code>, cancelación y reembolso <span class="tags"><span class="tag you">Tú</span></span></label>
+      <div class="body"><p>El webhook y las claves ya están verificados. Esto comprueba lo que falta: la pantalla de pago (Checkout) con 24,14 € (IVA incluido), la vuelta a <code>/medics</code> con la insignia PRO, el portal y la factura en Holded. Después cancela y reembolsa desde el Dashboard.</p></div>
     </div>
 
     <div class="task" data-id="webhook-alerts">
