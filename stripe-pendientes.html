@@ -121,7 +121,7 @@
 <div class="wrap">
   <header>
     <h1>Fluxia · Pendientes para cobrar con Stripe</h1>
-    <p>Pruebas: <strong>Fluxia Health</strong> (<code>acct_1TEDMRANIg6DlLEV</code>). Cobros reales: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>, live). Actualizado el 4 de octubre de 2026. Las casillas se guardan en este navegador.</p>
+    <p>Pruebas: <strong>Fluxia Health</strong> (<code>acct_1TEDMRANIg6DlLEV</code>). Cobros reales: la misma cuenta <strong>Fluxia Health</strong> en modo live, a nombre de Think Things Studio Barcelona S.L. Actualizado el 4 de octubre de 2026. Las casillas se guardan en este navegador.</p>
   </header>
 
   <div class="progress-card" aria-live="polite">
@@ -330,19 +330,19 @@
 
   <!-- ───────────────────────────── 7 -->
   <section class="group">
-    <h2>7. Producción (live, cuenta Think Things) <span class="count"></span></h2>
-    <p class="intro">Nada de lo hecho en pruebas existe en live: hay que repetirlo. Hoy la cuenta live solo tiene 5 productos antiguos de 2020 (“Cumple…”), sin cobros, sin webhook y sin Stripe Tax.</p>
+    <h2>7. Producción (live, cuenta Fluxia Health) <span class="count"></span></h2>
+    <p class="intro">Es la misma cuenta que usamos para pruebas, pero en modo live. Nada de lo hecho en pruebas existe en live: hay que repetirlo. La cuenta Think Things no se usa para Fluxia.</p>
 
     <div class="task" data-id="activate">
       <input type="checkbox" id="t-activate" />
-      <label class="title" for="t-activate">Comprobar que Think Things puede cobrar en live <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <label class="title" for="t-activate">Activar Fluxia Health en live con los datos de Think Things S.L. <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
       <div class="body"><p>Configuración → Detalles de la empresa: CIF, razón social, domicilio, IBAN, DNI de los administradores y de quien tenga ≥25 %, y la URL <code>https://fluxia-health.com</code>. Si Stripe pide algo pendiente, aparece arriba en el Dashboard.</p></div>
     </div>
 
     <div class="task" data-id="live-tax">
       <input type="checkbox" id="t-live-tax" />
       <label class="title" for="t-live-tax">Live: Stripe Tax con la sede de Think Things y registro fiscal ES <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>Necesita que el conector dé acceso a Think Things en live y tu confirmación. Solo afecta a los pagos con impuesto automático, que solo usa Fluxia.</p></div>
+      <div class="body"><p>Necesita que el conector dé acceso a Fluxia Health en live.</p></div>
     </div>
 
     <div class="task" data-id="live-objects">

@@ -153,14 +153,15 @@ Configura también:
 >
 > | | Pruebas (test) | Cobros reales (live) |
 > |---|---|---|
-> | Cuenta | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`) | *Think Things* (`acct_1AMgI9IHm4XDpveI`) |
-> | Estado | Completa: es la que usan hoy los secrets de Supabase | Por montar: solo tiene productos antiguos de 2020 |
+> | Cuenta | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo test | *Fluxia Health* (`acct_1TEDMRANIg6DlLEV`), modo live, a nombre de Think Things S.L. |
+> | Estado | Completa: es la que usan hoy los secrets de Supabase | Por activar y montar |
 >
 > Factura Think Things Studio Barcelona S.L. (NIF B66920810, NIF-IVA
 > ESB66920810, c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat);
-> "Fluxia" es el nombre comercial y el descriptor de extracto. En pruebas da
-> igual qué cuenta se use, porque no hay dinero ni facturas reales; la que
-> cuenta legalmente es la de live.
+> "Fluxia" es el nombre comercial y el descriptor de extracto. Fluxia tiene su
+> propia cuenta de Stripe (separada de la de Think Things, que se usa para
+> otros servicios) activada con los datos legales de Think Things S.L.: así
+> los cobros, comisiones y payouts de Fluxia no se mezclan con el resto.
 >
 > **Pruebas — Fluxia Health:**
 >
@@ -184,7 +185,7 @@ Configura también:
 > Al pasar a live, los `stripe_customer_id` de pruebas guardados en `doctors`
 > dejan de existir: hay que vaciarlos.
 >
-> Queda pendiente repetirlo todo en **live, en Think Things**. Los pasos de abajo describen
+> Queda pendiente repetirlo todo en **live, en Fluxia Health**. Los pasos de abajo describen
 > cómo se hizo, por si hay que rehacerlo o crear otro plan.
 
 1. **Dashboard → Catálogo de productos → + Añadir producto** (asegúrate de
