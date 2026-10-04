@@ -1,5 +1,6 @@
 import type { PoopEntry } from './storage';
 import { getEntries } from './storage';
+import { isFoodEntry } from './food';
 
 const DAYS_SHORT = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const TIME_SLOTS = [
@@ -30,7 +31,8 @@ export interface Stats {
 }
 
 export function computeStats(daysLimit?: number): Stats {
-  let entries = getEntries();
+  // Estadísticas de deposición/micción: las comidas tienen las suyas en el panel médico
+  let entries = getEntries().filter((e) => !isFoodEntry(e));
 
   // Filter entries to daysLimit if specified
   if (daysLimit && daysLimit !== Infinity) {

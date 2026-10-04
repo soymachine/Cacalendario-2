@@ -2,7 +2,10 @@
 // Marketing landing page for Fluxia Health
 // Design: Fluxia-design-system-rebuild/FluxiaWebsite.dc.html
 import { asset } from '../lib/config';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import '../styles/fluxia-tokens.css';
+import '../styles/site-chrome.css';
 
 // Inline Lucide icon paths (no runtime CDN dependency).
 const ICONS: Record<string, string> = {
@@ -25,6 +28,19 @@ const ICONS: Record<string, string> = {
   syringe: '<path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/>',
   'heart-pulse': '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/><path d="M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
   apple: '<path d="M12 6.528V3a1 1 0 0 1 1-1h0"/><path d="M18.237 21A15 15 0 0 0 22 11a6 6 0 0 0-10-4.472A6 6 0 0 0 2 11a15.1 15.1 0 0 0 3.763 10 3 3 0 0 0 3.648.648 5.5 5.5 0 0 1 5.178 0A3 3 0 0 0 18.237 21"/>',
+  'list-checks': '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  'sliders-horizontal': '<path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/>',
+  gauge: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+  toilet: '<path d="M7 12h13a1 1 0 0 1 1 1 5 5 0 0 1-5 5h-.598a.5.5 0 0 0-.424.765l1.544 2.47a.5.5 0 0 1-.424.765H5.402a.5.5 0 0 1-.424-.765L7 18"/><path d="M8 18a5 5 0 0 1-5-5V4a2 2 0 0 1 2-2h3"/>',
+  utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  'calendar-range': '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M3 10h18"/><path d="M8 2v4"/><path d="M17 14h-6"/><path d="M13 18H7"/><path d="M7 14h.01"/><path d="M17 18h.01"/>',
+  'eye-off': '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.8 10.8 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+  palette: '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>',
+  'image-up': '<path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7"/><path d="m14 19 3-3 3 3"/><path d="M17 22v-6"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.814.014L6 21"/>',
+  smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  megaphone: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  'building-2': '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
 };
@@ -32,7 +48,10 @@ const ICONS: Record<string, string> = {
 const faqs = [
   ['¿El paciente tiene que pagar?', 'No. La aplicación es gratuita para el paciente y puede descargarse desde App Store y Google Play.'],
   ['¿Cómo se vincula un paciente con su sanitario?', 'El profesional genera una invitación desde el panel clínico. Cuando el paciente acepta la invitación y accede a la aplicación, queda vinculado automáticamente con su prescriptor.'],
-  ['¿Puedo decidir qué debe registrar cada paciente?', 'Sí. Puedes seleccionar las variables necesarias y adaptar el protocolo de seguimiento a cada caso.'],
+  ['¿Qué puede registrar el paciente?', 'Deposiciones, micciones y comidas. Para las deposiciones, la escala de Bristol, el color, la flotación, la cantidad, la duración y los síntomas; para las micciones, el tipo, la cantidad, el color y las características; y para la alimentación, el tipo de comida, la descripción, la ración, etiquetas, notas y una fotografía opcional del plato.'],
+  ['¿Puedo decidir qué debe registrar cada paciente?', 'Sí, y con bastante detalle. Primero eliges qué tipos de registro necesitas (deposiciones, micciones y/o comidas); después, qué variables quieres dentro de cada uno; y por último, en qué situaciones consideras que el caso requiere tu atención. El paciente solo ve lo que has activado para él.'],
+  ['¿Cómo funciona el registro de alimentación?', 'Defines la pauta: qué campos son obligatorios, opcionales u ocultos, si esperas todas las comidas, un número de ingestas al día o comidas concretas, durante qué periodo y con qué recordatorios por franja horaria. Fluxia calcula la adherencia a esa pauta y la muestra junto al resto del seguimiento.'],
+  ['¿Puedo poner la marca de mi clínica en la app del paciente?', 'Sí. Puedes subir el logotipo de tu centro y definir su nombre, y Fluxia puede proponerte una paleta de colores extraída de tu propio logotipo. Tus pacientes ven tu identidad cada vez que abren la aplicación.'],
   ['¿Qué ocurre si un paciente deja de registrar?', 'Fluxia le envía recordatorios automáticos cuando supera el periodo que hayas configurado.'],
   ['¿Puedo ver todos mis pacientes desde un mismo lugar?', 'Sí. El panel ofrece una visión global y utiliza un sistema de colores para ayudarte a identificar rápidamente los casos que pueden requerir atención.'],
   ['¿Quién puede acceder a los datos clínicos?', 'Únicamente el profesional sanitario autorizado y las personas a las que este conceda acceso dentro de su organización.'],
@@ -53,10 +72,50 @@ const specialties = [
   ['nutricion', 'Nutrición'],
 ];
 
+// Personalización del seguimiento (sección #customization). Los campos
+// enumerados son los que el profesional activa/desactiva realmente en la
+// configuración por paciente (ver MedicsPanel y src/lib/food.ts).
+const recordTypes: [string, string, string][] = [
+  ['toilet', 'Deposiciones', 'Escala de Bristol · Color · Flotación · Cantidad · Duración · Síntomas'],
+  ['droplets', 'Micciones', 'Tipo de micción · Cantidad (ml) · Color · Características'],
+  ['utensils', 'Comidas', 'Tipo de comida · Descripción · Ración · Etiquetas · Fotografía'],
+];
+
+const pillars: [string, string, string, string[]][] = [
+  ['list-checks', 'Elige qué se registra',
+   'Activa para cada paciente únicamente los tipos de registro que su caso requiere. El resto ni siquiera aparece en su aplicación.',
+   ['Solo deposiciones', 'Solo micciones', 'Ambas', '+ Comidas']],
+  ['sliders-horizontal', 'Elige qué variables',
+   'Dentro de cada tipo de registro decides campo a campo qué debe anotar el paciente. En el módulo de comidas, además, cada campo puede ser obligatorio, opcional u oculto.',
+   ['Bristol', 'Color', 'Flotación', 'Cantidad', 'Duración', 'Síntomas', 'Ración', 'Foto del plato']],
+  ['gauge', 'Define cuándo requiere atención',
+   'Tú fijas los umbrales del semáforo: cuántos días sin registrar son normales, cuándo empieza la demora y a partir de qué momento el paciente debe aparecer en rojo. Para toda tu consulta o paciente a paciente.',
+   ['Al día', 'Se demora', 'Requiere atención']],
+];
+
+const protocolDetails: [string, string, string][] = [
+  ['calendar-range', 'Frecuencia y periodo',
+   'Define si esperas todas las comidas, un número de ingestas al día o comidas concretas, y durante qué periodo debe mantenerse el seguimiento.'],
+  ['bell', 'Recordatorios a medida',
+   'Ajusta la hora esperada de cada comida, el margen antes de avisar y cuántos recordatorios como máximo puede recibir al día.'],
+  ['tag', 'Tus propias etiquetas',
+   'Crea el catálogo de etiquetas de tu consulta y activa en cada paciente solo las que tengan sentido en su caso.'],
+  ['eye-off', 'El paciente ve solo lo suyo',
+   'Todo lo que desactivas desaparece de su formulario: menos preguntas, menos fricción y mejor adherencia.'],
+];
+
+// Personalización del diseño de la app (sección #brand).
+const brandPoints: [string, string, string][] = [
+  ['image-up', 'Tu logotipo', 'Sube la imagen de tu clínica o de tu marca personal desde el panel o desde la app, y define el nombre con el que te verán tus pacientes.'],
+  ['palette', 'Tus colores', 'Fluxia puede extraer los colores dominantes de tu logotipo y proponerte la paleta automáticamente. También puedes elegirla a mano.'],
+  ['smartphone', 'En la app del paciente', 'Tu identidad acompaña al paciente cada vez que abre la aplicación para registrar. Deja de ser una herramienta genérica para ser la de tu centro.'],
+  ['megaphone', 'Difusión de tu marca', 'Un recordatorio diario de quién está detrás del seguimiento: refuerza la imagen de tu clínica y facilita que te recomienden.'],
+];
+
 const benefits = [
-  ['folder-open', 'Seguimiento más fiable', 'Los datos se registran cuando ocurren y permanecen organizados en un único lugar.'],
+  ['folder-open', 'Seguimiento más fiable', 'Deposiciones, micciones y comidas se registran cuando ocurren y permanecen organizadas en un único lugar.'],
   ['bell', 'Mayor adherencia', 'Los recordatorios automáticos ayudan al paciente a mantener la continuidad del registro.'],
-  ['zap', 'Revisión más rápida', 'El sistema visual te permite detectar de un vistazo qué pacientes pueden requerir atención.'],
+  ['zap', 'Revisión más rápida', 'El sistema visual te permite detectar de un vistazo qué pacientes pueden requerir atención, según los criterios que tú has definido.'],
   ['clipboard-list', 'Consultas mejor preparadas', 'Accede al historial antes o durante la visita sin tener que reconstruir semanas de información.'],
   ['rocket', 'En marcha en menos de 10 minutos', 'Invita a tus pacientes y empieza a usar Fluxia sin formación previa ni procesos de implantación complejos.'],
   ['file-text', 'Informes exportables', 'Genera informes estructurados listos para adjuntar directamente a la historia clínica.'],
@@ -67,8 +126,8 @@ const benefits = [
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fluxia Health — Seguimiento clínico de deposiciones y micciones</title>
-<meta name="description" content="Fluxia conecta el registro diario del paciente con el panel clínico del profesional sanitario. Registros estructurados, recordatorios automáticos y datos listos para la consulta." />
+<title>Fluxia Health — Seguimiento clínico de deposiciones, micciones y alimentación</title>
+<meta name="description" content="Fluxia conecta el registro diario del paciente —deposiciones, micciones y alimentación— con el panel clínico del profesional sanitario. Registros estructurados, configurables paciente a paciente, con recordatorios automáticos y datos listos para la consulta." />
 
 <!-- Favicon -->
 <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
@@ -82,92 +141,6 @@ const benefits = [
 <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
 
 <style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; overflow-x: clip; }
-  body {
-    font-family: var(--font-sans);
-    background: var(--gradient-page);
-    background-attachment: fixed;
-    color: var(--text-primary);
-    line-height: var(--leading-normal);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: var(--tracking-snug); font-weight: 600; }
-  p { margin: 0; }
-  img { max-width: 100%; display: block; }
-  a { color: var(--text-link); text-decoration: none; }
-  a:hover { color: var(--color-primary-hover); }
-  button { font: inherit; cursor: pointer; }
-  :focus-visible { outline: none; box-shadow: var(--focus-ring, 0 0 0 3px rgba(60,125,184,.35)); border-radius: var(--radius-sm); }
-
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
-
-  /* ————————————————————— Buttons (mirrors design-system Button component) */
-  .btn {
-    --_bg: var(--color-primary); --_fg: var(--color-on-primary); --_bd: transparent;
-    --_hover: var(--color-primary-hover); --_active: var(--color-primary-active);
-    display: inline-flex; align-items: center; justify-content: center; gap: .55em;
-    font-family: var(--font-sans); font-weight: 600; letter-spacing: -0.01em;
-    border: 1.5px solid var(--_bd); border-radius: var(--radius-pill); cursor: pointer;
-    background: var(--_bg); color: var(--_fg); text-decoration: none; white-space: nowrap;
-    min-height: 48px; padding: 0 22px; font-size: var(--text-body);
-    box-shadow: var(--shadow-primary);
-    transition: background .14s, color .14s, border-color .14s, box-shadow .14s, transform .14s var(--ease-out, ease);
-  }
-  .btn:hover { background: var(--_hover); color: var(--_fg); }
-  .btn:active { transform: scale(.98); background: var(--_active); }
-  .btn-lg { min-height: 56px; padding: 0 28px; font-size: var(--text-body-lg); }
-  .btn-block { width: 100%; }
-  .btn-ghost { --_bg: transparent; --_fg: var(--color-primary); --_bd: var(--border); --_hover: var(--color-primary-soft); box-shadow: none; }
-  .btn-ghost:hover { color: var(--color-primary-hover); }
-  .btn-ghost-inverse { --_bg: transparent; --_fg: #fff; --_bd: rgba(255,255,255,.6); box-shadow: none; }
-  .btn-ghost-inverse:hover { --_hover: rgba(255,255,255,.14); color: var(--color-primary); background: #fff; border-color: #fff; }
-  .btn-on-white { background: #fff; color: var(--color-primary); }
-  .btn-on-white:hover { background: #fff; color: var(--color-primary-hover); }
-
-  /* ————————————————————— Badge */
-  .badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: var(--text-caption); font-weight: 600; line-height: 1;
-    padding: 7px 13px; border-radius: var(--radius-pill);
-    background: rgba(255,255,255,.22); color: #fff;
-  }
-
-  /* ————————————————————— Nav */
-  .nav {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--color-surface-glass-strong);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    box-shadow: none; transition: box-shadow .2s ease;
-  }
-  .nav.is-scrolled { box-shadow: 0 2px 16px rgba(20,32,28,.08); }
-  .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; }
-  .nav-logo img { height: 44px; width: auto; }
-  .nav-links { display: flex; align-items: center; gap: 32px; }
-  .nav-links a { position: relative; font-size: 15.5px; font-weight: 700; color: var(--ink-800); }
-  .nav-links a:hover { color: var(--color-primary); }
-  .nav-links a::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px;
-    background: currentColor; transform: scaleX(0); transform-origin: left;
-    transition: transform .25s var(--ease-out, ease);
-  }
-  .nav-links a:hover::after { transform: scaleX(1); }
-  .nav-cta { display: flex; align-items: center; gap: 10px; }
-  .nav-toggle {
-    display: none; background: none; border: none; padding: 8px; color: var(--text-primary);
-  }
-  .nav-mobile { display: none; flex-direction: column; gap: 2px; padding: 8px 24px 20px; border-top: 1px solid var(--border-soft); }
-  .nav-mobile a { position: relative; padding: 12px 0; font-size: 16px; font-weight: 500; color: var(--text-primary); transition: background-color .2s ease, color .2s ease; }
-  .nav-mobile a:hover { color: var(--color-primary); background-color: var(--color-primary-soft); }
-  .nav-mobile .btn { margin-top: 8px; }
-  .nav.is-open .nav-mobile { display: flex; }
-
-  @media (max-width: 900px) {
-    .nav-links, .nav-cta { display: none; }
-    .nav-toggle { display: block; }
-  }
-
   /* ————————————————————— Sections */
   section { padding: 50px 24px; scroll-margin-top: 88px; }
   .section-brand { background: var(--gradient-brand); }
@@ -233,6 +206,81 @@ const benefits = [
   .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid white; }
   .legend-row span:last-child { font-size: 15.5px; color: #fff; }
   .split-reverse .split-visual img { max-width: 100%; filter: none; }
+
+  /* ————————————————————— Personalización del seguimiento (#customization) */
+  .record-types {
+    max-width: 1100px; margin: 36px auto 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;
+  }
+  .record-type {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--color-surface-sunken); border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .record-type svg { width: 26px; height: 26px; flex: none; color: var(--color-primary); margin-top: 2px; }
+  .record-type h3 { font-size: 16px; margin-bottom: 4px; }
+  .record-type p { font-size: 13.5px; line-height: 1.55; color: var(--text-tertiary); }
+
+  .pillars {
+    max-width: 1100px; margin: 20px auto 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px;
+  }
+  .pillar {
+    background: var(--color-surface); border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl); padding: 28px 26px; box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column;
+  }
+  .pillar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .pillar-icon {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--color-primary-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pillar-icon svg { width: 26px; height: 26px; color: var(--color-primary); }
+  .pillar-step { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--border); }
+  .pillar h3 { font-size: 18px; margin-bottom: 8px; }
+  .pillar p { font-size: 15px; line-height: var(--leading-relaxed); color: var(--text-secondary); margin-bottom: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; color: var(--color-primary);
+    background: var(--color-primary-soft); border-radius: var(--radius-pill); padding: 5px 11px;
+  }
+
+  .protocol-split { margin-top: 56px; }
+  .protocol-visual img {
+    max-width: 320px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-lg, 0 24px 48px rgba(34,66,100,.16));
+  }
+  .detail-list { display: flex; flex-direction: column; gap: 18px; margin: 22px 0 24px; }
+  .detail-item { display: flex; gap: 14px; align-items: flex-start; }
+  .detail-item svg { width: 22px; height: 22px; flex: none; color: var(--lime-500); margin-top: 3px; }
+  .detail-item h4 { font-size: 15.5px; margin-bottom: 3px; }
+  .detail-item p { font-size: 14.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+
+  /* ————————————————————— Personalización del diseño de la app (#brand) */
+  .brand-wrap { max-width: 1160px; margin: 0 auto; }
+  .brand-intro p { font-size: 16.5px; line-height: var(--leading-relaxed); color: rgba(255,255,255,.85); }
+  .brand-grid { display: flex; flex-wrap: wrap; gap: 48px; align-items: center; margin-top: 48px; }
+  .brand-mock { flex: 1 1 300px; min-width: 260px; display: flex; justify-content: center; }
+  .brand-mock-card {
+    width: 100%; max-width: 300px; background: #fff; border-radius: var(--radius-2xl);
+    padding: 32px 26px; text-align: center; box-shadow: 0 24px 48px rgba(20,32,28,.22);
+  }
+  .brand-mock-logo {
+    width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%;
+    border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center;
+  }
+  .brand-mock-logo svg { width: 34px; height: 34px; color: var(--text-tertiary); }
+  .brand-mock-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-primary); }
+  .brand-mock-sub { font-size: 13.5px; color: var(--text-tertiary); margin-top: 4px; }
+  .brand-mock-swatches { display: flex; justify-content: center; gap: 8px; margin: 22px 0 10px; }
+  .brand-mock-swatches span { width: 26px; height: 26px; border-radius: 50%; display: block; }
+  .brand-mock-caption { font-size: 12.5px; font-weight: 600; color: var(--text-tertiary); }
+  .brand-points { flex: 1 1 460px; min-width: 300px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+  .brand-point { background: rgba(255,255,255,.14); border-radius: var(--radius-lg); padding: 22px 20px; }
+  .brand-point svg { width: 26px; height: 26px; color: #fff; margin-bottom: 12px; display: block; }
+  .brand-point h3 { font-size: 16.5px; color: #fff; margin-bottom: 6px; }
+  .brand-point p { font-size: 14.5px; line-height: var(--leading-relaxed); color: rgba(255,255,255,.85); }
+  .brand-note { max-width: 760px; margin: 40px auto 0; text-align: center; font-size: 14.5px; color: rgba(255,255,255,.8); }
 
   /* ————————————————————— Benefits grid */
   .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
@@ -364,26 +412,6 @@ const benefits = [
   .final-cta .btn { margin-bottom: 16px; }
   .final-cta .fine { font-size: 13.5px; color: rgba(255,255,255,.78); }
 
-  /* ————————————————————— Footer */
-  footer { background: var(--gradient-page); color: var(--text-secondary); padding: 72px 24px 28px; border-top: 1px solid var(--border-soft); }
-  .footer-grid { display: flex; flex-wrap: wrap; gap: 48px; margin-bottom: 48px; }
-  .footer-brand { flex: 1 1 260px; min-width: 220px; }
-  .footer-brand img { height: 34px; width: auto; margin-bottom: 14px; }
-  .footer-brand .tag { font-size: 14.5px; color: var(--text-tertiary); margin-bottom: 16px; }
-  .footer-brand .cr { font-size: 13px; color: var(--text-tertiary); }
-  .footer-col { flex: 1 1 160px; min-width: 160px; }
-  .footer-col h5 { font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 16px; }
-  .footer-col-links { display: flex; flex-direction: column; gap: 11px; }
-  .footer-col-links a { position: relative; display: inline-block; width: fit-content; font-size: 14.5px; color: var(--text-secondary); }
-  .footer-col-links a::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1.5px;
-    background: currentColor; transform: scaleX(0); transform-origin: left;
-    transition: transform .25s var(--ease-out, ease);
-  }
-  .footer-col-links a:hover::after { transform: scaleX(1); }
-  .footer-hr { height: 1px; background: var(--border-soft); margin-bottom: 24px; }
-  .footer-legal { font-size: 12.5px; color: var(--text-tertiary); text-align: center; }
-
   @media (max-width: 640px) {
     section { padding: 64px 20px; }
     .hero { padding: 56px 20px 64px; }
@@ -403,35 +431,7 @@ const benefits = [
 </head>
 <body>
 
-<!-- ——————————————————————————— NAV -->
-<nav class="nav" id="site-nav">
-  <div class="nav-inner">
-    <a class="nav-logo" href="/"><img src="/fluxia-logo.png" alt="Fluxia" /></a>
-    <div class="nav-links">
-      <a href="#how">Cómo funciona</a>
-      <a href="#benefits">Ventajas</a>
-      <a href="#security">Seguridad</a>
-      <a href="#pricing">Precios</a>
-      <a href="#faq">Preguntas frecuentes</a>
-    </div>
-    <div class="nav-cta">
-      <a class="btn btn-ghost" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
-      <a class="btn" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
-    </div>
-    <button class="nav-toggle" id="nav-toggle" aria-label="Menú" aria-expanded="false">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
-    </button>
-  </div>
-  <div class="nav-mobile">
-    <a href="#how">Cómo funciona</a>
-    <a href="#benefits">Ventajas</a>
-    <a href="#security">Seguridad</a>
-    <a href="#pricing">Precios</a>
-    <a href="#faq">Preguntas frecuentes</a>
-    <a class="btn btn-ghost btn-block" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
-    <a class="btn btn-block" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
-  </div>
-</nav>
+<SiteNav home />
 
 <!-- ——————————————————————————— HERO -->
 <section class="hero section-brand">
@@ -439,7 +439,7 @@ const benefits = [
     <div class="hero-copy">
       <span class="badge">Para profesionales sanitarios</span>
       <h1>El seguimiento clínico no termina en la consulta</h1>
-      <p class="lede">Fluxia te permite conocer la evolución intestinal y miccional de tus pacientes tal como ocurre, no como la recuerdan. Registros estructurados, actualizados y accesibles desde un único panel.</p>
+      <p class="lede">Fluxia te permite conocer la evolución intestinal, miccional y alimentaria de tus pacientes tal como ocurre, no como la recuerdan. Registros estructurados, actualizados y accesibles desde un único panel.</p>
       <div class="hero-cta">
         <a class="btn btn-lg" href="#pricing">Pruébalo gratis</a>
         <a class="btn btn-lg btn-ghost-inverse" href="#video">Ver cómo funciona</a>
@@ -491,7 +491,7 @@ const benefits = [
       <div class="step">
         <div class="step-num">2</div>
         <h3>Configura el seguimiento</h3>
-        <p>Selecciona qué información debe registrar y configura cuánto tiempo puede pasar sin registrar antes de que reciba un recordatorio automático.</p>
+        <p>Elige qué debe registrar —deposiciones, micciones y/o comidas—, qué variables necesitas dentro de cada registro y cuándo debes considerar que el caso requiere tu atención.</p>
       </div>
       <div class="step">
         <div class="step-num">3</div>
@@ -511,8 +511,8 @@ const benefits = [
     </div>
     <div class="split-copy">
       <h2>Registrar su evolución debe ser sencillo</h2>
-      <p>El paciente utiliza Fluxia gratuitamente desde su teléfono móvil. Puede registrar deposiciones y micciones en pocos pasos, incluyendo la consistencia según la Escala de Bristol, características relevantes, síntomas y observaciones.</p>
-      <p>Cuando no registra dentro del periodo que has establecido, Fluxia le envía un recordatorio automático.</p>
+      <p>El paciente utiliza Fluxia gratuitamente desde su teléfono móvil. Puede registrar deposiciones y micciones en pocos pasos —consistencia según la Escala de Bristol, características relevantes, síntomas y observaciones— y también lo que come y bebe a lo largo del día: tipo de comida, descripción, ración, etiquetas y, si lo necesitas, una fotografía del plato.</p>
+      <p>Solo ve los tipos de registro y los campos que tú has activado para él. Cuando no registra dentro del periodo que has establecido —o se salta la franja de una comida pautada—, Fluxia le envía un recordatorio automático.</p>
       <div class="split-tag">Una experiencia clara y accesible, pensada también para pacientes de edad avanzada. Porque cuando el paciente registra bien, tú decides mejor.</div>
     </div>
   </div>
@@ -538,12 +538,105 @@ const benefits = [
 </section>
 
 <!-- ——————————————————————————— CUSTOM PROTOCOL -->
-<section class="section-surface">
+<section id="customization" class="section-surface">
   <div class="center">
     <h2 style="font-size:clamp(26px,3vw,34px);margin-bottom:20px">Cada paciente necesita un seguimiento diferente</h2>
-    <p style="font-size:17px;line-height:var(--leading-relaxed);color:var(--text-secondary);margin-bottom:30px">Tú decides qué datos debe registrar cada paciente. Selecciona únicamente las variables relevantes, define los tiempos de aviso y configura el protocolo de seguimiento según las necesidades clínicas de cada caso.</p>
-    <div style="font-size:17px;font-weight:600;color:var(--lime-500);margin-bottom:12px">El paciente ve solo lo que necesita registrar.</div>
-    <div style="font-size:17px;font-weight:600;color:var(--lime-500)">Tú recibes solo la información que necesitas consultar.</div>
+    <p style="font-size:17px;line-height:var(--leading-relaxed);color:var(--text-secondary);margin-bottom:12px">Un paciente en estudio de incontinencia, otro en control de estreñimiento crónico y otro en una pauta dietética no necesitan registrar lo mismo. En Fluxia el protocolo no viene impuesto: lo defines tú, paciente a paciente, y puedes cambiarlo en cualquier momento.</p>
+  </div>
+
+  <div class="record-types">
+    {recordTypes.map(([icon, title, vars]) => (
+      <div class="record-type">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS[icon]} />
+        <div>
+          <h3>{title}</h3>
+          <p>{vars}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="pillars">
+    {pillars.map(([icon, title, desc, chips], i) => (
+      <div class="pillar">
+        <div class="pillar-head">
+          <span class="pillar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS[icon]} />
+          </span>
+          <span class="pillar-step">{`0${i + 1}`}</span>
+        </div>
+        <h3>{title}</h3>
+        <p>{desc}</p>
+        <div class="chips">
+          {chips.map((c) => <span class="chip">{c}</span>)}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="split protocol-split">
+    <div class="split-visual protocol-visual">
+      <img src="/imgs/configuracion.jpg" alt="Pantalla de configuración de un paciente: umbrales del semáforo, etiquetas y campos del formulario" loading="lazy" />
+    </div>
+    <div class="split-copy">
+      <h2>Lo configuras una vez y se aplica a ese paciente</h2>
+      <p>Desde la ficha de cada paciente defines el semáforo, las etiquetas y los campos del formulario. El módulo de comidas añade además su propia pauta: qué se pide, con qué frecuencia y con qué recordatorios.</p>
+      <div class="detail-list">
+        {protocolDetails.map(([icon, title, desc]) => (
+          <div class="detail-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS[icon]} />
+            <div>
+              <h4>{title}</h4>
+              <p>{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="split-tag">El paciente ve solo lo que necesita registrar.<br />Tú recibes solo la información que necesitas consultar.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————————————— BRAND / APP DESIGN -->
+<section id="brand" class="section-brand brand-section">
+  <div class="brand-wrap">
+    <div class="center brand-intro">
+      <span class="badge">Personalización del diseño</span>
+      <h2 style="font-size:clamp(26px,3vw,34px);color:#fff;margin:18px 0 20px">La app que usan tus pacientes puede llevar tu marca</h2>
+      <p>El logotipo, el nombre y los colores de tu clínica acompañan al paciente dentro de Fluxia. No es un detalle estético: es tu marca presente en el seguimiento diario, fuera de la consulta.</p>
+    </div>
+
+    <div class="brand-grid">
+      <div class="brand-mock" aria-hidden="true">
+        <div class="brand-mock-card">
+          <div class="brand-mock-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS['building-2']} />
+          </div>
+          <div class="brand-mock-name">Tu clínica</div>
+          <div class="brand-mock-sub">Seguimiento con Fluxia</div>
+          <div class="brand-mock-swatches">
+            <span style="background:#dd8273"></span>
+            <span style="background:#4a9eca"></span>
+            <span style="background:#5aaa72"></span>
+            <span style="background:#9b6db5"></span>
+            <span style="background:#e8a048"></span>
+          </div>
+          <div class="brand-mock-caption">Tu logotipo → tu paleta</div>
+        </div>
+      </div>
+
+      <div class="brand-points">
+        {brandPoints.map(([icon, title, desc]) => (
+          <div class="brand-point">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS[icon]} />
+            <h3>{title}</h3>
+            <p>{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <p class="brand-note">Incluido desde el primer plan, sin coste adicional. La sugerencia automática de colores a partir del logotipo está disponible en la versión web del panel.</p>
   </div>
 </section>
 
@@ -569,7 +662,8 @@ const benefits = [
     <div class="security-copy">
       <h2>Información clínica protegida</h2>
       <p>Los datos clínicos se almacenan cifrados en infraestructura europea y están diseñados para que únicamente pueda acceder a ellos el profesional sanitario autorizado. Ni el equipo de Fluxia ni el proveedor de alojamiento tienen acceso al contenido clínico de los pacientes.</p>
-      <p>Fluxia opera en cumplimiento del Reglamento General de Protección de Datos (RGPD). Cada centro suscrito firma un acuerdo de encargado de tratamiento que regula el uso y la custodia de los datos clínicos de sus pacientes.</p>
+      <p>Las fotografías de las comidas se guardan en un almacenamiento privado y solo se muestran mediante enlaces firmados y temporales: nunca quedan accesibles en una dirección pública.</p>
+      <p>Fluxia opera en cumplimiento del Reglamento General de Protección de Datos (RGPD). Cada centro suscrito firma un <a href="/dpa">acuerdo de encargado de tratamiento</a> que regula el uso y la custodia de los datos clínicos de sus pacientes.</p>
       <div class="security-points">
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.lock} /><span>Datos cifrados</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.globe} /><span>Servidores en Europa</span></div>
@@ -587,7 +681,7 @@ const benefits = [
 <section class="section-brand">
   <div class="specialties-wrap">
     <h2 style="font-size:clamp(26px,3vw,34px)">Integra Fluxia en tu práctica clínica</h2>
-    <p>Diseñada para profesionales y equipos que necesitan un seguimiento continuado del hábito intestinal o la función miccional.</p>
+    <p>Diseñada para profesionales y equipos que necesitan un seguimiento continuado del hábito intestinal, la función miccional o la alimentación.</p>
     <div class="specialties-grid">
       {specialties.map(([icon, label]) => (
         <div class="specialty"><img src={`/especialidades/${icon}.png`} alt="" width="100" height="100" loading="lazy" /><div>{label}</div></div>
@@ -612,9 +706,10 @@ const benefits = [
         <div class="price-features">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />1 usuario</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pacientes ilimitados</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Registro de deposiciones y micciones</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel clínico con código de colores</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Recordatorios automáticos</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Registro de deposiciones, micciones y comidas</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pauta de registro configurable por paciente</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel clínico con código de colores y recordatorios</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Logotipo y nombre de tu centro en la app</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Acceso desde navegador y desde la App</div>
         </div>
         <a class="btn btn-ghost btn-block" href="/medics">Empieza gratis</a>
@@ -702,45 +797,7 @@ const benefits = [
   </div>
 </section>
 
-<!-- ——————————————————————————— FOOTER -->
-<footer>
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <img src="/fluxia-logo.png" alt="Fluxia" />
-        <div class="tag">Datos reales. Decisiones mejores.</div>
-        <div class="cr">© 2026 Fluxia. Todos los derechos reservados.</div>
-      </div>
-      <div class="footer-col">
-        <h5>Producto</h5>
-        <div class="footer-col-links">
-          <a href="#how">Cómo funciona</a>
-          <a href="#benefits">Ventajas</a>
-          <a href="#security">Seguridad</a>
-          <a href="#pricing">Precios</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h5>Legal</h5>
-        <div class="footer-col-links">
-          <a href="/privacy">Política de privacidad</a>
-          <a href="/privacy">Términos de uso</a>
-          <a href="/privacy">Política de cookies</a>
-          <a href="/privacy">Acuerdo RGPD</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h5>Contacto</h5>
-        <div class="footer-col-links">
-          <a href="mailto:hola@fluxia.health">hola@fluxia.health</a>
-          <a href="/support">Soporte</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-hr"></div>
-    <div class="footer-legal">© 2026 Fluxia. Todos los derechos reservados.</div>
-  </div>
-</footer>
+<SiteFooter home />
 
 <!-- ——————————————————————————— VIDEO MODAL -->
 <dialog id="demo-modal" style="position:relative;border:none;border-radius:16px;padding:0;background:#000;max-width:92vw;max-height:92vh;box-shadow:0 40px 80px rgba(0,0,0,0.5);overflow:hidden">
@@ -790,25 +847,6 @@ const benefits = [
       }
     });
   })();
-
-  // Sticky nav shadow on scroll
-  var nav = document.getElementById('site-nav');
-  window.addEventListener('scroll', function () {
-    nav.classList.toggle('is-scrolled', window.scrollY > 8);
-  });
-
-  // Mobile nav toggle
-  var navToggle = document.getElementById('nav-toggle');
-  navToggle.addEventListener('click', function () {
-    var open = nav.classList.toggle('is-open');
-    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  document.querySelectorAll('.nav-mobile a, .nav-mobile .btn').forEach(function (el) {
-    el.addEventListener('click', function () {
-      nav.classList.remove('is-open');
-      navToggle.setAttribute('aria-expanded', 'false');
-    });
-  });
 
   // Video modal
   var demoModal = document.getElementById('demo-modal');
@@ -990,6 +1028,33 @@ const benefits = [
       autoAlpha: 0,
       scale: 0.85,
       scrollTrigger: { trigger: '.security-icon', start: 'top 82%', toggleActions: 'play none none none', once: true },
+    });
+
+    // ————— Personalización: tipos de registro, pilares y módulo de marca
+    gsap.set('.record-type', { autoAlpha: 0, y: 18 });
+    ScrollTrigger.batch('.record-type', {
+      start: 'top 90%',
+      once: true,
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.08, overwrite: true }),
+    });
+
+    gsap.set('.pillar', { autoAlpha: 0, y: 26 });
+    ScrollTrigger.batch('.pillar', {
+      start: 'top 88%',
+      once: true,
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.1, overwrite: true }),
+    });
+
+    gsap.from('.brand-mock-card', {
+      autoAlpha: 0,
+      scale: 0.94,
+      scrollTrigger: { trigger: '.brand-grid', start: 'top 82%', toggleActions: 'play none none none', once: true },
+    });
+    gsap.set('.brand-point', { autoAlpha: 0, y: 20 });
+    ScrollTrigger.batch('.brand-point', {
+      start: 'top 90%',
+      once: true,
+      onEnter: (els) => gsap.to(els, { autoAlpha: 1, y: 0, stagger: 0.08, overwrite: true }),
     });
 
     // ————— Specialty tiles (staggered)

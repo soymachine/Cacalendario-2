@@ -1,0 +1,60 @@
+---
+// Navegación pública (LP). La comparten la landing y las páginas legales
+// —estas últimas solo se enlazan desde el footer, pero llevan el mismo
+// menú que el resto de la web—. Con `home` los enlaces son anclas de la
+// propia página; sin él, apuntan a la landing.
+interface Props { home?: boolean }
+const { home = false } = Astro.props;
+const base = home ? '' : '/';
+const links: [string, string][] = [
+  ['#how', 'Cómo funciona'],
+  ['#customization', 'Personalización'],
+  ['#benefits', 'Ventajas'],
+  ['#security', 'Seguridad'],
+  ['#pricing', 'Precios'],
+  ['#faq', 'Preguntas frecuentes'],
+];
+---
+<nav class="nav" id="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/"><img src="/fluxia-logo.png" alt="Fluxia" /></a>
+    <div class="nav-links">
+      {links.map(([href, label]) => <a href={`${base}${href}`}>{label}</a>)}
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
+      <a class="btn" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menú" aria-expanded="false">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+    </button>
+  </div>
+  <div class="nav-mobile">
+    {links.map(([href, label]) => <a href={`${base}${href}`}>{label}</a>)}
+    <a class="btn btn-ghost btn-block" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
+    <a class="btn btn-block" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
+  </div>
+</nav>
+
+<script is:inline>
+  (function () {
+    var nav = document.getElementById('site-nav');
+    var navToggle = document.getElementById('nav-toggle');
+    if (!nav || !navToggle) return;
+
+    window.addEventListener('scroll', function () {
+      nav.classList.toggle('is-scrolled', window.scrollY > 8);
+    });
+
+    navToggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('is-open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.querySelectorAll('.nav-mobile a, .nav-mobile .btn').forEach(function (el) {
+      el.addEventListener('click', function () {
+        nav.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  })();
+</script>

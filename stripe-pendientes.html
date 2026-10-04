@@ -317,19 +317,19 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
     <div class="task" data-id="privacy" data-done="true">
       <input type="checkbox" id="t-privacy" />
       <label class="title" for="t-privacy">Política de privacidad: Thinkthink como responsable del tratamiento <span class="tags"><span class="tag claude">Claude</span><span class="tag you">Tú</span></span></label>
-      <div class="body"><p><strong>Hecho el 4/10</strong> en <code>src/pages/privacy.astro</code>: razón social, NIF y domicilio. Se publica con el próximo despliegue de la web.</p></div>
+      <div class="body"><p><strong>Hecho</strong> en <code>src/pages/privacy.astro</code>, junto con el aviso legal y la política de cookies: Think Things figura como titular, responsable de las cuentas y encargada de los datos clínicos.</p></div>
     </div>
 
     <div class="task" data-id="terms">
       <input type="checkbox" id="t-terms" />
-      <label class="title" for="t-terms">Página de condiciones de uso y su URL en el portal de Stripe <span class="tags"><span class="tag claude">Claude</span><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Todavía no existe. Stripe y el portal la muestran al pagar. El texto legal debe revisarlo un profesional.</p></div>
+      <label class="title" for="t-terms">Añadir la URL de las condiciones de uso al portal de Stripe <span class="tags"><span class="tag claude">Claude</span></span></label>
+      <div class="body"><p>La página ya existe (<code>/terms</code>). Falta poner <code>https://fluxia-health.com/terms</code> en el portal de clientes cuando el conector de Stripe vuelva a estar autorizado.</p></div>
     </div>
 
     <div class="task" data-id="dpa">
       <input type="checkbox" id="t-dpa" />
-      <label class="title" for="t-dpa">Contrato de encargo de tratamiento (DPA) para los profesionales <span class="tags"><span class="tag ext">Asesor RGPD</span></span></label>
-      <div class="body"><p>La landing lo promete y Fluxia trata datos de salud.</p></div>
+      <label class="title" for="t-dpa">Revisión profesional de las páginas legales (condiciones, DPA, privacidad) <span class="tags"><span class="tag ext">Asesor RGPD</span></span></label>
+      <div class="body"><p>Ya están publicadas (<code>/terms</code>, <code>/dpa</code>, <code>/privacy</code>, <code>/aviso-legal</code>, <code>/cookies</code>). Como Fluxia trata datos de salud, conviene que las revise un asesor de RGPD antes de cobrar.</p></div>
     </div>
   </section>
 

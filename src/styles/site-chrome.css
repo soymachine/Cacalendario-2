@@ -1,0 +1,115 @@
+/* ———————————————————————————————————————————————————————————————
+   Chrome común de la web pública (LP): reset, tipografía base, botones,
+   navegación y footer. Vive en un CSS global —y no en el <style> de una
+   página— para que lo compartan la landing (src/pages/index.astro) y las
+   páginas legales (src/layouts/LegalLayout.astro), que usan los mismos
+   componentes SiteNav/SiteFooter.
+   ——————————————————————————————————————————————————————————————— */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow-x: clip; }
+body {
+  font-family: var(--font-sans);
+  background: var(--gradient-page);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); color: var(--text-primary); letter-spacing: var(--tracking-snug); font-weight: 600; }
+p { margin: 0; }
+img { max-width: 100%; display: block; }
+a { color: var(--text-link); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring, 0 0 0 3px rgba(60,125,184,.35)); border-radius: var(--radius-sm); }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+/* ————————————————————— Buttons (mirrors design-system Button component) */
+.btn {
+  --_bg: var(--color-primary); --_fg: var(--color-on-primary); --_bd: transparent;
+  --_hover: var(--color-primary-hover); --_active: var(--color-primary-active);
+  display: inline-flex; align-items: center; justify-content: center; gap: .55em;
+  font-family: var(--font-sans); font-weight: 600; letter-spacing: -0.01em;
+  border: 1.5px solid var(--_bd); border-radius: var(--radius-pill); cursor: pointer;
+  background: var(--_bg); color: var(--_fg); text-decoration: none; white-space: nowrap;
+  min-height: 48px; padding: 0 22px; font-size: var(--text-body);
+  box-shadow: var(--shadow-primary);
+  transition: background .14s, color .14s, border-color .14s, box-shadow .14s, transform .14s var(--ease-out, ease);
+}
+.btn:hover { background: var(--_hover); color: var(--_fg); }
+.btn:active { transform: scale(.98); background: var(--_active); }
+.btn-lg { min-height: 56px; padding: 0 28px; font-size: var(--text-body-lg); }
+.btn-block { width: 100%; }
+.btn-ghost { --_bg: transparent; --_fg: var(--color-primary); --_bd: var(--border); --_hover: var(--color-primary-soft); box-shadow: none; }
+.btn-ghost:hover { color: var(--color-primary-hover); }
+.btn-ghost-inverse { --_bg: transparent; --_fg: #fff; --_bd: rgba(255,255,255,.6); box-shadow: none; }
+.btn-ghost-inverse:hover { --_hover: rgba(255,255,255,.14); color: var(--color-primary); background: #fff; border-color: #fff; }
+.btn-on-white { background: #fff; color: var(--color-primary); }
+.btn-on-white:hover { background: #fff; color: var(--color-primary-hover); }
+
+/* ————————————————————— Badge */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--text-caption); font-weight: 600; line-height: 1;
+  padding: 7px 13px; border-radius: var(--radius-pill);
+  background: rgba(255,255,255,.22); color: #fff;
+}
+
+/* ————————————————————— Nav */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--color-surface-glass-strong);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: none; transition: box-shadow .2s ease;
+}
+.nav.is-scrolled { box-shadow: 0 2px 16px rgba(20,32,28,.08); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; }
+.nav-logo img { height: 44px; width: auto; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-links a { position: relative; font-size: 15.5px; font-weight: 700; color: var(--ink-800); white-space: nowrap; }
+.nav-links a:hover { color: var(--color-primary); }
+.nav-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px;
+  background: currentColor; transform: scaleX(0); transform-origin: left;
+  transition: transform .25s var(--ease-out, ease);
+}
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.nav-toggle {
+  display: none; background: none; border: none; padding: 8px; color: var(--text-primary);
+}
+.nav-mobile { display: none; flex-direction: column; gap: 2px; padding: 8px 24px 20px; border-top: 1px solid var(--border-soft); }
+.nav-mobile a { position: relative; padding: 12px 0; font-size: 16px; font-weight: 500; color: var(--text-primary); transition: background-color .2s ease, color .2s ease; }
+.nav-mobile a:hover { color: var(--color-primary); background-color: var(--color-primary-soft); }
+.nav-mobile .btn { margin-top: 8px; }
+.nav.is-open .nav-mobile { display: flex; }
+
+@media (max-width: 1150px) {
+  .nav-links, .nav-cta { display: none; }
+  .nav-toggle { display: block; }
+}
+
+/* ————————————————————— Footer */
+.site-footer { background: var(--gradient-page); color: var(--text-secondary); padding: 72px 24px 28px; border-top: 1px solid var(--border-soft); }
+.footer-grid { display: flex; flex-wrap: wrap; gap: 48px; margin-bottom: 48px; }
+.footer-brand { flex: 1 1 260px; min-width: 220px; }
+.footer-brand img { height: 34px; width: auto; margin-bottom: 14px; }
+.footer-brand .tag { font-size: 14.5px; color: var(--text-tertiary); margin-bottom: 16px; }
+.footer-brand .cr { font-size: 13px; color: var(--text-tertiary); }
+.footer-col { flex: 1 1 160px; min-width: 160px; }
+.footer-col h5 { font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 16px; }
+.footer-col-links { display: flex; flex-direction: column; gap: 11px; }
+.footer-col-links a { position: relative; display: inline-block; width: fit-content; font-size: 14.5px; color: var(--text-secondary); }
+.footer-col-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1.5px;
+  background: currentColor; transform: scaleX(0); transform-origin: left;
+  transition: transform .25s var(--ease-out, ease);
+}
+.footer-col-links a:hover::after { transform: scaleX(1); }
+.footer-hr { height: 1px; background: var(--border-soft); margin-bottom: 24px; }
+.footer-legal { font-size: 12.5px; color: var(--text-tertiary); text-align: center; }
+.footer-legal p { margin: 0 0 4px; }
+.footer-legal p:last-child { margin-bottom: 0; }

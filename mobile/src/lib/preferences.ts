@@ -2,6 +2,7 @@
 
 import { localStore } from './localStore';
 import { emitEvent, FLUXIA_PREFS_CHANGED } from './events';
+import { normalizeFoodConfig, isFoodActiveOn, type FoodTrackingConfig } from './food';
 
 const PREFS_KEY = 'cacalendario_prefs';
 
@@ -112,7 +113,8 @@ export function clearDoctorHiddenFields(): void {
 // ── Doctor entry type mode ──
 
 const DOCTOR_ENTRY_TYPE_MODE_KEY = 'cacalendario_entry_type_mode';
-export type EntryTypeMode = 'both' | 'poop_only' | 'urine_only';
+// 'none' = el profesional solo pide módulos adicionales (p. ej. comida).
+export type EntryTypeMode = 'both' | 'poop_only' | 'urine_only' | 'none';
 
 export function getDoctorEntryTypeMode(): EntryTypeMode {
   return (localStore.getItem(DOCTOR_ENTRY_TYPE_MODE_KEY) as EntryTypeMode) || 'both';
@@ -124,4 +126,40 @@ export function setDoctorEntryTypeMode(mode: EntryTypeMode): void {
 
 export function clearDoctorEntryTypeMode(): void {
   localStore.removeItem(DOCTOR_ENTRY_TYPE_MODE_KEY);
+}
+
+// ── Doctor food tracking protocol (patient_links.food_config) ──
+
+const DOCTOR_FOOD_CONFIG_KEY = 'cacalendario_food_config';
+
+export function getDoctorFoodConfig(): FoodTrackingConfig {
+  try {
+    const raw = localStore.getItem(DOCTOR_FOOD_CONFIG_KEY);
+    return normalizeFoodConfig(raw ? JSON.parse(raw) : null);
+  } catch {
+    return normalizeFoodConfig(null);
+  }
+}
+
+export function setDoctorFoodConfig(config: unknown): void {
+  localStore.setItem(DOCTOR_FOOD_CONFIG_KEY, JSON.stringify(config ?? null));
+  emitEvent(FLUXIA_PREFS_CHANGED);
+}
+
+export function clearDoctorFoodConfig(): void {
+  localStore.removeItem(DOCTOR_FOOD_CONFIG_KEY);
+}
+
+export type RegisterType = 'poop' | 'urine' | 'food';
+
+/** Tipos de registro que el paciente puede crear hoy según la pauta de su profesional. */
+export function getAvailableRegisterTypes(today: string): RegisterType[] {
+  const mode = getDoctorEntryTypeMode();
+  const types: RegisterType[] = mode === 'poop_only' ? ['poop']
+    : mode === 'urine_only' ? ['urine']
+    : mode === 'none' ? []
+    : ['poop', 'urine'];
+  if (isFoodActiveOn(getDoctorFoodConfig(), today)) types.push('food');
+  // Nunca dejar al paciente sin nada que registrar
+  return types.length > 0 ? types : ['poop', 'urine'];
 }

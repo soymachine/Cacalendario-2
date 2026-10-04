@@ -44,6 +44,32 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // 4a. Fotos de comidas (bucket privado food-photos, carpeta = id del usuario).
+    // Antes que las tablas: si falla, no se borra nada más.
+    while (true) {
+      const { data: photos, error: listError } = await supabaseAdmin.storage
+        .from('food-photos')
+        .list(user.id, { limit: 1000 });
+      if (listError) {
+        console.error('Error listing food photos:', listError.message);
+        return new Response(
+          JSON.stringify({ error: `Failed to delete user data (food-photos): ${listError.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (!photos || photos.length === 0) break;
+      const { error: removeError } = await supabaseAdmin.storage
+        .from('food-photos')
+        .remove(photos.map((p) => `${user.id}/${p.name}`));
+      if (removeError) {
+        console.error('Error deleting food photos:', removeError.message);
+        return new Response(
+          JSON.stringify({ error: `Failed to delete user data (food-photos): ${removeError.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // 4. Delete all user data first (must succeed before touching auth)
     const tables = ['entries', 'push_subscriptions', 'patient_links', 'user_profiles'] as const;
     for (const table of tables) {

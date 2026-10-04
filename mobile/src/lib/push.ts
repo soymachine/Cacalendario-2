@@ -52,7 +52,8 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
     await supabase.from('push_subscriptions').upsert(
       {
         user_id: userId,
-        subscription: { type: 'expo', token, platform: Platform.OS },
+        // timezone: los recordatorios de comida se calculan en hora local del paciente
+        subscription: { type: 'expo', token, platform: Platform.OS, timezone: deviceTimezone() },
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },
@@ -61,6 +62,14 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
   } catch (err) {
     console.error('[Push] Registration error:', err);
     return false;
+  }
+}
+
+function deviceTimezone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
   }
 }
 

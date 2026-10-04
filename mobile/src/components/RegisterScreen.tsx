@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import {
   View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
 } from 'react-native';
@@ -7,15 +7,16 @@ import Slider from '@react-native-community/slider';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
-import { getDoctorHiddenFields, getDoctorImage, getDoctorEntryTypeMode } from '../lib/preferences';
-import { emitEvent, FLUXIA_UPDATED } from '../lib/events';
+import { getDoctorHiddenFields, getDoctorImage, getAvailableRegisterTypes, type RegisterType } from '../lib/preferences';
+import { emitEvent, onEvent, FLUXIA_UPDATED, FLUXIA_PREFS_CHANGED } from '../lib/events';
 import {
   FLOAT_OPTIONS, COLOR_OPTIONS, URINE_COLOR_OPTIONS, URINE_TYPE_OPTIONS,
   URINE_CHARACTERISTICS, DURATION_OPTIONS, FECES_TEXTURE_OPTIONS, SYMPTOMS,
 } from '../lib/formOptions';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
-import { CloseIcon, EditIcon, PoopSwitchIcon, UrineSwitchIcon } from './icons';
+import { CloseIcon, EditIcon, PoopSwitchIcon, UrineSwitchIcon, FoodSwitchIcon } from './icons';
+import FoodEntryForm from './FoodEntryForm';
 import { BOTTOM_NAV_HEIGHT } from './BottomNav';
 import LigeroIcon from '../assets/Ligero-icon.svg';
 import PesadoIcon from '../assets/Pesado-icon.svg';
@@ -24,18 +25,22 @@ interface RegisterScreenProps {
   date?: string | null;
   isTab?: boolean;
   onClose?: () => void;
-  onSuccess: (date: string, time: string, entryType: 'poop' | 'urine', entryId: string) => void;
+  onSuccess: (date: string, time: string, entryType: RegisterType, entryId: string) => void;
 }
 
 export default function RegisterScreen({ date, isTab, onClose, onSuccess }: RegisterScreenProps) {
   const hiddenFields = getDoctorHiddenFields();
   const show = (field: string) => !hiddenFields.includes(field);
-  const entryTypeMode = getDoctorEntryTypeMode();
+  // La pauta del profesional llega tras el login con la pantalla ya montada
+  const [, refreshTypes] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => onEvent(FLUXIA_PREFS_CHANGED, refreshTypes), []);
 
   const now = new Date();
-  const [entryType, setEntryType] = useState<'poop' | 'urine'>(
-    entryTypeMode === 'urine_only' ? 'urine' : 'poop'
-  );
+  const availableTypes = getAvailableRegisterTypes(toDateKey(now));
+
+  const [entryType, setEntryType] = useState<RegisterType>(availableTypes[0]);
+  // La pauta puede cambiar (sincronización) con la pantalla montada
+  const currentType: RegisterType = availableTypes.includes(entryType) ? entryType : availableTypes[0];
   const [hours, setHours] = useState(now.getHours());
   const [minutes, setMinutes] = useState(now.getMinutes());
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -63,7 +68,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const dayText = formatDateForDisplay(targetDate);
   const timeText = formatTime(hours, minutes);
   const quantityLabel = quantity <= 25 ? 'Ligero' : quantity <= 50 ? 'Moderado' : quantity <= 75 ? 'Abundante' : 'Pesado';
-  const isUrine = entryType === 'urine';
+  const isUrine = currentType === 'urine';
+  const isFood = currentType === 'food';
   const doctorImage = getDoctorImage();
 
   const toggleSymptom = (key: string) =>
@@ -94,7 +100,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       time: timeText,
       notes,
       timestamp: new Date(y, mo - 1, d, hours, minutes).getTime(),
-      entry_type: entryType,
+      entry_type: currentType as 'poop' | 'urine',
       bristol: isUrine ? null : bristol,
       floats: isUrine ? null : floats,
       color: isUrine ? null : color,
@@ -110,7 +116,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       during_sleep: isUrine ? duringSleep : null,
     });
     emitEvent(FLUXIA_UPDATED);
-    onSuccess(targetDate, timeText, entryType, entryId);
+    onSuccess(targetDate, timeText, currentType, entryId);
   };
 
   const chip = (active: boolean) => [styles.chip, active ? styles.chipActive : styles.chipInactive];
@@ -147,6 +153,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       </View>
 
       {/* Date + time row */}
+      {!isFood && <>
       <View style={styles.dateRow}>
         <Text style={styles.dateText}>
           {dayText} {timeText}
@@ -172,27 +179,43 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           )}
         </View>
       )}
+      </>}
 
-      {/* Entry type toggle — only shown when both types are allowed */}
-      {entryTypeMode === 'both' && (
+      {/* Entry type toggle — only shown when more than one type is allowed */}
+      {availableTypes.length > 1 && (
         <View style={styles.typeToggle}>
-          <Pressable
-            onPress={() => setEntryType('poop')}
-            style={[styles.typeButton, entryType === 'poop' && styles.typeButtonActive]}
-          >
-            <PoopSwitchIcon color={entryType === 'poop' ? D.primary : '#ffffff'} />
-          </Pressable>
-          <Pressable
-            onPress={() => setEntryType('urine')}
-            style={[styles.typeButton, entryType === 'urine' && styles.typeButtonActive]}
-          >
-            <UrineSwitchIcon color={entryType === 'urine' ? D.primary : '#ffffff'} />
-          </Pressable>
+          {availableTypes.map((t) => {
+            const active = currentType === t;
+            const color = active ? D.primary : '#ffffff';
+            const label = t === 'poop' ? 'Deposición' : t === 'urine' ? 'Micción' : 'Comida';
+            return (
+              <Pressable
+                key={t}
+                onPress={() => setEntryType(t)}
+                style={[styles.typeButton, active && styles.typeButtonActive]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={label}
+              >
+                {t === 'poop' ? <PoopSwitchIcon color={color} />
+                  : t === 'urine' ? <UrineSwitchIcon color={color} />
+                  : <FoodSwitchIcon color={color} />}
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
+      {/* ── FOOD FORM (fecha/hora, campos y guardado propios) ── */}
+      {isFood && (
+        <FoodEntryForm
+          initialDate={date}
+          onSaved={(e) => onSuccess(e.date, e.time, 'food', e.id)}
+        />
+      )}
+
       {/* ── POOP FORM ── */}
-      {!isUrine && <>
+      {!isUrine && !isFood && <>
         {show('bristol') && (
           <View style={styles.sectionCard}>
             <Text style={styles.sectionLabel}>Forma</Text>
@@ -464,6 +487,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       </>}
 
       {/* Notes */}
+      {!isFood && <>
       <View style={styles.sectionCard}>
         <Text style={styles.sectionLabel}>Notas</Text>
         <TextInput
@@ -481,6 +505,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       <Pressable onPress={handleSave} style={styles.saveButton}>
         <Text style={styles.saveButtonText}>Registrar</Text>
       </Pressable>
+      </>}
     </ScrollView>
   );
 

@@ -1,0 +1,92 @@
+/* ———————————————————————————————————————————————————————————————
+   Páginas legales (aviso legal, privacidad, términos, cookies, RGPD) y
+   soporte. Mismo lenguaje visual que la landing: cabecera con el degradado
+   de marca y el documento sobre una tarjeta de superficie.
+   Global —y no scoped en el layout— porque el contenido llega por <slot/>
+   desde cada página.
+   ——————————————————————————————————————————————————————————————— */
+
+.legal-hero { background: var(--gradient-brand); padding: 56px 24px 64px; }
+.legal-hero-inner { max-width: 820px; margin: 0 auto; }
+.legal-hero h1 {
+  font-size: clamp(28px, 3.6vw, 40px); font-weight: 700; color: #fff;
+  letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); margin: 14px 0 12px;
+}
+.legal-hero .legal-lede { font-size: 16.5px; line-height: var(--leading-relaxed); color: rgba(255,255,255,.85); max-width: 62ch; }
+.legal-hero .legal-updated { font-size: 13.5px; color: rgba(255,255,255,.75); margin-top: 14px; }
+
+.legal-main { padding: 0 24px 72px; margin-top: -32px; }
+.legal-card {
+  max-width: 820px; margin: 0 auto;
+  background: var(--color-surface); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm); padding: var(--card-pad-lg, 32px);
+}
+
+.legal-doc { display: flex; flex-direction: column; gap: 30px; }
+.legal-doc > section { scroll-margin-top: 96px; }
+.legal-doc h2 { font-size: 19px; margin: 0 0 10px; }
+.legal-doc h3 {
+  font-size: 13px; font-weight: 700; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: .04em; margin: 18px 0 6px;
+}
+.legal-doc p, .legal-doc ul, .legal-doc ol {
+  font-size: 15.5px; line-height: var(--leading-relaxed); color: var(--text-secondary); margin: 0 0 12px;
+}
+.legal-doc ul { list-style: disc; padding-left: 20px; }
+.legal-doc ol { list-style: decimal; padding-left: 20px; }
+.legal-doc li::marker { color: var(--text-tertiary); }
+.legal-doc li { margin-bottom: 6px; }
+.legal-doc li:last-child { margin-bottom: 0; }
+.legal-doc p:last-child, .legal-doc ul:last-child, .legal-doc ol:last-child { margin-bottom: 0; }
+.legal-doc strong { color: var(--text-primary); font-weight: 700; }
+.legal-doc a { text-decoration: underline; }
+
+/* Ficha del responsable / datos identificativos */
+.legal-id {
+  background: var(--color-surface-sunken); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); padding: 20px 22px;
+}
+.legal-id dl { margin: 0; display: grid; grid-template-columns: minmax(130px, auto) 1fr; gap: 8px 18px; }
+.legal-id dt { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.legal-id dd { margin: 0; font-size: 14.5px; color: var(--text-secondary); }
+@media (max-width: 520px) {
+  .legal-id dl { grid-template-columns: 1fr; gap: 2px; }
+  .legal-id dd { margin-bottom: 10px; }
+}
+
+/* FAQ de soporte: mismo acordeón que la landing, sin GSAP */
+.legal-faq { border-bottom: 1px solid var(--border-soft); }
+.legal-faq summary {
+  list-style: none; padding: 16px 0; cursor: pointer;
+  font-size: 16px; font-weight: 600; color: var(--text-primary);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.legal-faq summary::-webkit-details-marker { display: none; }
+.legal-faq summary::after {
+  content: '+'; font-size: 20px; font-weight: 400; color: var(--color-primary); flex: none; line-height: 1;
+}
+.legal-faq[open] summary::after { content: '–'; }
+.legal-faq p { padding-bottom: 18px; }
+
+.legal-contact {
+  margin-top: 28px; text-align: center; font-size: 14.5px; color: var(--text-tertiary);
+}
+.legal-contact a { text-decoration: underline; }
+
+/* Tarjeta de contacto directo (soporte) */
+.legal-contact-card {
+  background: var(--color-surface-sunken); border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg); padding: 22px 24px; text-align: center; margin-bottom: 32px;
+}
+.legal-contact-card .label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-tertiary); margin: 0 0 8px;
+}
+.legal-contact-card .email { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+.legal-contact-card .hint { font-size: 13px; color: var(--text-tertiary); margin: 8px 0 0; }
+
+/* Agrupadores de preguntas */
+.legal-group-title {
+  font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--color-primary); margin: 0 0 10px;
+}

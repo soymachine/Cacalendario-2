@@ -1,0 +1,50 @@
+---
+// Layout de las páginas legales y de soporte. Solo se accede a ellas desde
+// el footer, pero llevan el mismo menú, footer y estilo que el resto de la
+// web pública (sin la marca suelta en negro que tenían antes).
+import { asset } from '../lib/config';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import '../styles/fluxia-tokens.css';
+import '../styles/site-chrome.css';
+import '../styles/legal.css';
+
+interface Props {
+  title: string;
+  description: string;
+  heading: string;
+  lede?: string;
+  updated?: string;
+}
+const { title, description, heading, lede, updated } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="generator" content={Astro.generator} />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
+</head>
+<body>
+  <SiteNav />
+
+  <header class="legal-hero">
+    <div class="legal-hero-inner">
+      <h1>{heading}</h1>
+      {lede && <p class="legal-lede">{lede}</p>}
+      {updated && <p class="legal-updated">Última actualización: {updated}</p>}
+    </div>
+  </header>
+
+  <main class="legal-main">
+    <div class="legal-card">
+      <slot />
+    </div>
+  </main>
+
+  <SiteFooter />
+</body>
+</html>

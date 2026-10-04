@@ -1,6 +1,9 @@
 import { saveEntryToCloud, deleteEntryFromCloud } from './sync';
 import { supabase } from './supabase';
 import { localStore } from './localStore';
+import { emitEvent, FLUXIA_UPDATED } from './events';
+import { isFoodEntry, type MealType, type PortionSize } from './food';
+import { uploadFoodPhoto, deleteRemoteFoodPhoto, deleteLocalPhoto } from './foodPhotos';
 
 export interface PoopEntry {
   id: string; // unique entry ID
@@ -8,7 +11,7 @@ export interface PoopEntry {
   time: string; // HH:mm
   notes: string;
   timestamp: number; // full timestamp for sorting
-  entry_type?: 'poop' | 'urine'; // default 'poop' if absent
+  entry_type?: 'poop' | 'urine' | 'food'; // default 'poop' if absent
   // ── Poop fields ──
   bristol?: number | null; // Bristol scale 1-7
   floats?: 'floats' | 'sinks' | 'both' | null; // float behaviour
@@ -24,6 +27,13 @@ export interface PoopEntry {
   urine_characteristics?: string[]; // ['blood', 'odor', 'pain']
   urine_urgency?: number | null; // 1-5
   during_sleep?: boolean | null;
+  // ── Food fields (módulo de comidas, ver lib/food.ts) ──
+  food_meal_type?: MealType | null;
+  food_description?: string | null;
+  food_portion?: PortionSize | null;
+  food_tags?: string[];
+  food_photo_path?: string | null; // ruta en el bucket privado food-photos
+  photo_local_uri?: string | null; // solo local: copia en el dispositivo (subida pendiente o caché)
 }
 
 const STORAGE_KEY = 'cacalendario_entries';
@@ -114,6 +124,12 @@ export function deleteEntry(id: string): void {
   const entries = getEntries().filter((e) => e.id !== id);
   localStore.setItem(STORAGE_KEY, JSON.stringify(entries));
 
+  // Una comida borrada se lleva su foto (copia local y objeto en Storage)
+  if (entry && isFoodEntry(entry)) {
+    deleteLocalPhoto(entry.photo_local_uri);
+    deleteRemoteFoodPhoto(entry.food_photo_path);
+  }
+
   // Also delete from cloud if user is logged in
   if (entry) {
     getCurrentUserId().then((userId) => {
@@ -128,8 +144,10 @@ export function clearLocalEntries(): void {
   localStore.removeItem(STORAGE_KEY);
 }
 
+// "Desde la última vez" y las estadísticas de la home hablan de deposiciones y
+// micciones: las comidas no cuentan.
 export function getLastEntry(): PoopEntry | undefined {
-  const entries = getEntries();
+  const entries = getEntries().filter((e) => !isFoodEntry(e));
   if (entries.length === 0) return undefined;
   return entries[entries.length - 1];
 }
@@ -148,4 +166,35 @@ export function getDaysSinceLastEntry(): { days: number; hours: number; minutes:
   const seconds = totalSeconds % 60;
 
   return { days, hours, minutes, seconds, lastEntry: last };
+}
+
+// ── Comidas: fotos ──
+
+export function getFoodEntries(): PoopEntry[] {
+  return getEntries().filter(isFoodEntry);
+}
+
+/**
+ * Sube en segundo plano la foto local de una comida y, si va bien, guarda la
+ * ruta en el registro. Si falla (sin conexión), queda pendiente y
+ * retryPendingFoodPhotos lo reintenta en el siguiente inicio de sesión.
+ */
+export async function syncFoodPhoto(entryId: string): Promise<void> {
+  const entry = getEntryById(entryId);
+  if (!entry || !isFoodEntry(entry) || !entry.photo_local_uri || entry.food_photo_path) return;
+  const path = await uploadFoodPhoto(entry.id, entry.photo_local_uri);
+  if (!path) return;
+  const latest = getEntryById(entryId);
+  // El registro pudo cambiar o borrarse mientras subía
+  if (!latest || latest.photo_local_uri !== entry.photo_local_uri) {
+    if (!latest) deleteRemoteFoodPhoto(path);
+    return;
+  }
+  saveEntry({ ...latest, food_photo_path: path });
+  emitEvent(FLUXIA_UPDATED);
+}
+
+export async function retryPendingFoodPhotos(): Promise<void> {
+  const pending = getEntries().filter((e) => isFoodEntry(e) && e.photo_local_uri && !e.food_photo_path);
+  for (const e of pending) await syncFoodPhoto(e.id);
 }

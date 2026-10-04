@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { computeStats, type Stats } from '../lib/stats';
 import { getEntries } from '../lib/storage';
+import { isBowelEntry } from '../lib/food';
 import { onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { D } from '../lib/design';
 import CacaIcon from '../assets/Switch-Caca-Icono.svg';
@@ -34,13 +35,13 @@ export default function InlineStats() {
   const refresh = () => {
     setStats(computeStats(Infinity));
     const entries = getEntries();
-    setTotalPoop(entries.filter(e => e.entry_type !== 'urine').length);
+    setTotalPoop(entries.filter(isBowelEntry).length);
     setTotalUrine(entries.filter(e => e.entry_type === 'urine').length);
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
     const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
     const lastWeek = entries.filter(e => e.date >= cutoffStr);
-    setLastWeekPoop(lastWeek.filter(e => e.entry_type !== 'urine').length);
+    setLastWeekPoop(lastWeek.filter(isBowelEntry).length);
     setLastWeekUrine(lastWeek.filter(e => e.entry_type === 'urine').length);
   };
 

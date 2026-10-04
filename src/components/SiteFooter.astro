@@ -1,0 +1,57 @@
+---
+// Footer público (LP). Única vía de acceso a las páginas legales, que por
+// lo demás llevan el mismo menú y estilo que el resto de la web.
+interface Props { home?: boolean }
+const { home = false } = Astro.props;
+const base = home ? '' : '/';
+const product: [string, string][] = [
+  ['#how', 'Cómo funciona'],
+  ['#customization', 'Personalización'],
+  ['#brand', 'Tu marca en la app'],
+  ['#benefits', 'Ventajas'],
+  ['#security', 'Seguridad'],
+  ['#pricing', 'Precios'],
+];
+const legal: [string, string][] = [
+  ['/aviso-legal', 'Aviso legal'],
+  ['/privacy', 'Política de privacidad'],
+  ['/terms', 'Términos de uso'],
+  ['/cookies', 'Política de cookies'],
+  ['/dpa', 'Acuerdo RGPD'],
+];
+---
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/fluxia-logo.png" alt="Fluxia" />
+        <div class="tag">Datos reales. Decisiones mejores.</div>
+        <div class="cr">© 2026 Fluxia. Todos los derechos reservados.</div>
+      </div>
+      <div class="footer-col">
+        <h5>Producto</h5>
+        <div class="footer-col-links">
+          {product.map(([href, label]) => <a href={`${base}${href}`}>{label}</a>)}
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <div class="footer-col-links">
+          {legal.map(([href, label]) => <a href={href}>{label}</a>)}
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Contacto</h5>
+        <div class="footer-col-links">
+          <a href="mailto:hola@fluxia.health">hola@fluxia.health</a>
+          <a href="/support">Soporte</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-hr"></div>
+    <div class="footer-legal">
+      <p>Fluxia es un producto de Think Things Studio Barcelona S.L. · NIF ESB66920810 · Barcelona 29, 2n 1a, 08901 L'Hospitalet de Llobregat (España).</p>
+      <p>© 2026 Fluxia. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
