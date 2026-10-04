@@ -164,7 +164,7 @@ Configura también:
 > | `lookup_key` | `fluxia_pro_monthly` · `fluxia_pro_yearly` |
 > | Portal de clientes | `bpc_1UJWg8IHm4XDpveI9sIIYLvu` (por defecto) — cancelar a fin de periodo, cambiar mensual ↔ anual, tarjeta, facturas, NIF |
 > | Webhook | `we_1UJWi2IHm4XDpveIIF3sf088` — los 4 eventos del paso 6 |
-> | Registro fiscal | **Pendiente**: Stripe Tax necesita el domicilio fiscal de Thinkthink |
+> | Registro fiscal | **Pendiente**. Domicilio de la sede (Stripe Tax → `head_office`): Think Things Studio Barcelona S.L., NIF B66920810 (NIF-IVA ESB66920810), c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat, España |
 >
 > Los dos precios cuelgan del **mismo producto**, no de dos productos
 > distintos: es lo que permite que el médico cambie de mensual a anual desde

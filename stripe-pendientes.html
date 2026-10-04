@@ -121,7 +121,7 @@
 <div class="wrap">
   <header>
     <h1>Fluxia · Pendientes para cobrar con Stripe</h1>
-    <p>Cuenta que factura: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>). Actualizado el 1 de octubre de 2026. Las casillas se guardan en este navegador.</p>
+    <p>Cuenta que factura: <strong>Think Things</strong> (<code>acct_1AMgI9IHm4XDpveI</code>). Actualizado el 4 de octubre de 2026. Las casillas se guardan en este navegador.</p>
   </header>
 
   <div class="progress-card" aria-live="polite">
@@ -143,28 +143,35 @@
     <h2>1. Desbloquear a Claude <span class="count"></span></h2>
     <p class="intro">Claude puede hacer estas tareas en cuanto le des el dato o la confirmación.</p>
 
-    <div class="task" data-id="tax-address">
+    <div class="task" data-id="tax-address" data-done="true">
       <input type="checkbox" id="t-tax-address" />
       <label class="title" for="t-tax-address">Pasar a Claude el domicilio fiscal de Thinkthink <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
       <div class="body">
         <p>Con él, Claude configura en Stripe Tax el domicilio de la empresa y el <strong>registro fiscal de España</strong>.</p>
+        <p><strong>Recibido el 4/10:</strong> Think Things Studio Barcelona S.L. · B66920810 · c/ Barcelona 29, 2.º 1.ª, 08901 L’Hospitalet de Llobregat.</p>
         <div class="note">Sin registro fiscal, Stripe calcula <strong>0 € de IVA</strong> y no avisa. Es el fallo más fácil de cometer.</div>
       </div>
+    </div>
+
+    <div class="task" data-id="stripe-reauth">
+      <input type="checkbox" id="t-stripe-reauth" />
+      <label class="title" for="t-stripe-reauth">Volver a autorizar el conector de Stripe para Claude <span class="tags"><span class="tag you">Tú</span><span class="tag block">Bloquea</span></span></label>
+      <div class="body"><p>Se desconectó y pide autorización de nuevo, desde los ajustes de conectores de claude.ai. Sin él, Claude no puede dar de alta el registro fiscal.</p></div>
     </div>
 
     <div class="task" data-id="tax-registration">
       <input type="checkbox" id="t-tax-registration" />
       <label class="title" for="t-tax-registration">Registro fiscal ES y domicilio en Stripe Tax (modo test) <span class="tags"><span class="tag claude">Claude</span></span></label>
-      <div class="body"><p>Después, comprobar en un Checkout de prueba que se suma el 21&nbsp;% de IVA.</p></div>
+      <div class="body"><p>Ya tiene el domicilio; solo falta el conector. Después, comprobar en un Checkout de prueba que se suma el 21&nbsp;% de IVA.</p></div>
     </div>
 
-    <div class="task" data-id="clean-test-customers">
+    <div class="task" data-id="clean-test-customers" data-done="true">
       <input type="checkbox" id="t-clean-test-customers" />
       <label class="title" for="t-clean-test-customers">Limpiar las dos cuentas de prueba con clientes de la cuenta antigua <span class="tags"><span class="tag claude">Claude</span></span></label>
       <div class="body">
         <p>“Dani Moya” y “Dani” tienen <code>stripe_customer_id</code> de la cuenta <em>Fluxia Health</em>, que con las claves nuevas no existe: “Activar Pro” les daría error.</p>
-        <p>Hay que vaciar las columnas <code>stripe_*</code> y pasarlas a <code>test</code> o a <code>free</code>. Dile a Claude cuál prefieres.</p>
-        <div class="note">Hazlo justo después de cambiar los secrets (paso 3), no antes: mientras tanto siguen apuntando a la cuenta antigua.</div>
+        <p><strong>Hecho el 4/10:</strong> las dos están en <code>test</code> con 30 días de prueba nuevos y sin datos de Stripe.</p>
+        <div class="note">Hasta que cambies los secrets (paso 3), una renovación de sus suscripciones en la cuenta antigua podría volver a ponerlas en Pro. Si pasa, avisa a Claude.</div>
       </div>
     </div>
   </section>
@@ -307,10 +314,10 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
   <section class="group">
     <h2>6. Web y legal <span class="count"></span></h2>
 
-    <div class="task" data-id="privacy">
+    <div class="task" data-id="privacy" data-done="true">
       <input type="checkbox" id="t-privacy" />
       <label class="title" for="t-privacy">Política de privacidad: Thinkthink como responsable del tratamiento <span class="tags"><span class="tag claude">Claude</span><span class="tag you">Tú</span></span></label>
-      <div class="body"><p>Razón social, NIF y domicilio en <code>src/pages/privacy.astro</code>. Pásale los datos a Claude y lo actualiza.</p></div>
+      <div class="body"><p><strong>Hecho el 4/10</strong> en <code>src/pages/privacy.astro</code>: razón social, NIF y domicilio. Se publica con el próximo despliegue de la web.</p></div>
     </div>
 
     <div class="task" data-id="terms">
@@ -417,7 +424,8 @@ supabase functions deploy stripe-webhook --no-verify-jwt</pre><button type="butt
   function render() {
     var done = 0;
     tasks.forEach(function (t) {
-      var on = !!state[t.dataset.id];
+      var id = t.dataset.id;
+      var on = Object.prototype.hasOwnProperty.call(state, id) ? !!state[id] : t.dataset.done === 'true';
       t.querySelector('input').checked = on;
       t.classList.toggle('done', on);
       if (on) done++;
