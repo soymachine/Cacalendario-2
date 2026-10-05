@@ -66,6 +66,13 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
 - **PW / MW / LP** (web): `npx astro build` desde la raíz del repo.
 - **PA / MA** (apps): `npx tsc --noEmit` y `npx expo export --platform ios`
   desde `mobile/` o `mobile-medics/` respectivamente.
+- **Módulos nativos en PA / MA**: todos los `expo-*` deben ir en la misma
+  revisión de la SDK. Vienen precompilados contra un `expo-modules-core`
+  concreto, y un módulo nuevo se instala en su última versión: si `expo` se
+  queda atrás, la app se cierra al abrirse (dyld "Symbol not found …
+  ExpoModulesCore"). Al añadir uno, sube antes `expo` a la última revisión
+  (`npm install expo@~57.0.x`) y alinea el resto con
+  `EXPO_OFFLINE=1 npx expo install --fix`.
 - **Lógica compartida y Edge Functions**: `npm test` (node:test, sin dependencias).
 - **Migraciones y RLS**: `npm run test:sql` (Postgres local efímero con un mock
   mínimo de Supabase; como root: `su postgres -c 'bash supabase/tests/run.sh'`).
