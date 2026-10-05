@@ -121,3 +121,30 @@ export function hasLocalPhoto(uri: string | null | undefined): boolean {
   if (!uri) return false;
   try { return new File(uri).exists; } catch { return false; }
 }
+
+/**
+ * Baja de cuenta: borra todas las fotos de comidas del paciente en Storage
+ * (la RLS le deja borrar su propia carpeta) y las copias del dispositivo.
+ * Lo usa el plan B de AccountScreen si la Edge Function delete-user falla.
+ */
+export async function deleteAllOwnFoodPhotos(userId: string): Promise<void> {
+  try {
+    for (let i = 0; i < 20; i++) {
+      const { data, error } = await supabase.storage.from(BUCKET).list(userId, { limit: 1000 });
+      if (error || !data || data.length === 0) break;
+      const { error: rmError } = await supabase.storage.from(BUCKET).remove(data.map((f) => `${userId}/${f.name}`));
+      if (rmError) break;
+    }
+  } catch (err) {
+    console.error('[foodPhotos] delete all error:', err instanceof Error ? err.message : String(err));
+  }
+  signedUrlCache.clear();
+}
+
+/** Borra las copias locales de fotos de comidas (baja de cuenta). */
+export function clearLocalFoodPhotos(): void {
+  try {
+    const dir = new Directory(Paths.document, 'food-photos');
+    if (dir.exists) dir.delete();
+  } catch { /* nada que limpiar */ }
+}

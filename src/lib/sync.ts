@@ -250,3 +250,21 @@ export async function deleteEntryFromCloud(userId: string, entryId: string): Pro
     .eq('user_id', userId)
     .eq('entry_id', entryId);
 }
+
+/**
+ * Baja de cuenta (plan B si la Edge Function delete-user falla): borra las
+ * fotos de comidas del paciente en Storage. Las sube la app nativa (PA), pero
+ * la cuenta es la misma, así que la baja desde la web también debe borrarlas.
+ */
+export async function deleteOwnFoodPhotos(userId: string): Promise<void> {
+  try {
+    for (let i = 0; i < 20; i++) {
+      const { data, error } = await supabase.storage.from('food-photos').list(userId, { limit: 1000 });
+      if (error || !data || data.length === 0) break;
+      const { error: rmError } = await supabase.storage.from('food-photos').remove(data.map((f) => `${userId}/${f.name}`));
+      if (rmError) break;
+    }
+  } catch (err) {
+    console.error('[sync] deleteOwnFoodPhotos error:', err instanceof Error ? err.message : String(err));
+  }
+}

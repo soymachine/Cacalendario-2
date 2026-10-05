@@ -101,6 +101,26 @@ CREATE TABLE public.entries (
   UNIQUE (user_id, entry_id)
 );
 
+-- Tablas que intervienen en la baja de un paciente (delete-user), con las
+-- mismas reglas ON DELETE que producción (pg_constraint, 2026-10-05).
+CREATE TABLE public.user_profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email text,
+  display_name text
+);
+
+CREATE TABLE public.push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  subscription jsonb NOT NULL
+);
+
+CREATE TABLE public.patient_clinical_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  link_id uuid NOT NULL REFERENCES public.patient_links(id) ON DELETE CASCADE,
+  note text NOT NULL
+);
+
 ALTER TABLE public.doctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.patient_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entries ENABLE ROW LEVEL SECURITY;

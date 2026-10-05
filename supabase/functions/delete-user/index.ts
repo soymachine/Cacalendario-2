@@ -1,108 +1,100 @@
 // Supabase Edge Function: delete-user
-// Deletes the authenticated user's data and auth account permanently.
+// Baja de cuenta del PACIENTE (PA y PW): borra sus datos y su usuario de auth
+// de forma permanente. Las cuentas de profesional se eliminan desde MW con el
+// RPC doctor_self_delete_account.
 // Deploy via: supabase functions deploy delete-user
-// Or paste this code in the Supabase Dashboard Edge Functions editor.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+// Tablas con datos del paciente y la columna que lo identifica. entries,
+// push_subscriptions, user_profiles y food_reminder_log también caen en
+// cascada al borrar el usuario de auth, pero se borran explícitamente para
+// no depender de ello. patient_links NO tiene cascada (FK NO ACTION): hay que
+// borrarlo antes que el usuario; arrastra la bitácora del profesional sobre
+// ese paciente (patient_clinical_notes, ON DELETE CASCADE).
+const PATIENT_TABLES = [
+  { table: 'entries', column: 'user_id' },
+  { table: 'push_subscriptions', column: 'user_id' },
+  { table: 'food_reminder_log', column: 'patient_id' },
+  { table: 'patient_links', column: 'patient_id' },
+  { table: 'user_profiles', column: 'id' },
+] as const
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // 1. Get the user's JWT from the Authorization header
+    // 1. Identificar al usuario con su propio JWT
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    if (!authHeader) return json({ error: 'No authorization header' }, 401)
 
-    // 2. Create a client with the user's JWT to verify identity
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     )
-
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    if (userError || !user) return json({ error: 'Invalid token' }, 401)
 
-    // 3. Create an admin client to delete data and user
+    // 2. Cliente de servicio para borrar datos y usuario
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // 4a. Fotos de comidas (bucket privado food-photos, carpeta = id del usuario).
+    // 3. Los profesionales tienen su propia baja (y sus pacientes, bitácoras...)
+    const { data: doctorRow, error: doctorError } = await supabaseAdmin
+      .from('doctors').select('id').eq('id', user.id).maybeSingle()
+    if (doctorError) return json({ error: `Failed to check account type: ${doctorError.message}` }, 500)
+    if (doctorRow) {
+      return json({ error: 'Las cuentas de profesional se eliminan desde el panel médico (Configuración).' }, 400)
+    }
+
+    // 4. Fotos de comidas (bucket privado food-photos, carpeta = id del usuario).
     // Antes que las tablas: si falla, no se borra nada más.
     while (true) {
       const { data: photos, error: listError } = await supabaseAdmin.storage
         .from('food-photos')
-        .list(user.id, { limit: 1000 });
+        .list(user.id, { limit: 1000 })
       if (listError) {
-        console.error('Error listing food photos:', listError.message);
-        return new Response(
-          JSON.stringify({ error: `Failed to delete user data (food-photos): ${listError.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        console.error('Error listing food photos:', listError.message)
+        return json({ error: `Failed to delete user data (food-photos): ${listError.message}` }, 500)
       }
-      if (!photos || photos.length === 0) break;
+      if (!photos || photos.length === 0) break
       const { error: removeError } = await supabaseAdmin.storage
         .from('food-photos')
-        .remove(photos.map((p) => `${user.id}/${p.name}`));
+        .remove(photos.map((p) => `${user.id}/${p.name}`))
       if (removeError) {
-        console.error('Error deleting food photos:', removeError.message);
-        return new Response(
-          JSON.stringify({ error: `Failed to delete user data (food-photos): ${removeError.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        console.error('Error deleting food photos:', removeError.message)
+        return json({ error: `Failed to delete user data (food-photos): ${removeError.message}` }, 500)
       }
     }
 
-    // 4. Delete all user data first (must succeed before touching auth)
-    const tables = ['entries', 'push_subscriptions', 'patient_links', 'user_profiles'] as const;
-    for (const table of tables) {
-      const { error } = await supabaseAdmin.from(table).delete().eq('user_id', user.id);
+    // 5. Datos del paciente (deben borrarse antes de tocar auth)
+    for (const { table, column } of PATIENT_TABLES) {
+      const { error } = await supabaseAdmin.from(table).delete().eq(column, user.id)
       if (error) {
-        // Log and abort — do NOT delete the auth user if data cleanup failed
-        console.error(`Error deleting ${table}:`, error);
-        return new Response(
-          JSON.stringify({ error: `Failed to delete user data (${table}): ${error.message}` }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        // Registrar y abortar: NO borrar el usuario de auth si la limpieza falla
+        console.error(`Error deleting ${table}:`, error.message)
+        return json({ error: `Failed to delete user data (${table}): ${error.message}` }, 500)
       }
     }
 
-    // 5. Only delete the auth user after all data is confirmed deleted
+    // 6. Solo entonces, el usuario de auth
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
-
     if (deleteUserError) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to delete auth account: ' + deleteUserError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return json({ error: 'Failed to delete auth account: ' + deleteUserError.message }, 500)
     }
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'Account and all data deleted permanently' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    return json({ success: true, message: 'Account and all data deleted permanently' }, 200)
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: 'Internal error: ' + (err as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return json({ error: 'Internal error: ' + (err as Error).message }, 500)
   }
 })

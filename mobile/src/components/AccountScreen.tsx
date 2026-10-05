@@ -7,6 +7,7 @@ import * as Sharing from 'expo-sharing';
 import { useAuth } from '../lib/auth';
 import { getEntries, clearLocalEntries } from '../lib/storage';
 import { clearPreferences } from '../lib/preferences';
+import { deleteAllOwnFoodPhotos, clearLocalFoodPhotos } from '../lib/foodPhotos';
 import { supabase } from '../lib/supabase';
 import {
   registerPushSubscription, unregisterPushSubscription, getPushPermission, type PushPermission,
@@ -168,6 +169,9 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (fnError) {
+          // Plan B si la función falla: borrar lo que el propio paciente puede
+          // borrar (fotos de comidas y registros) y cerrar sesión.
+          await deleteAllOwnFoodPhotos(user.id);
           await supabase.from('entries').delete().eq('user_id', user.id);
           await supabase.auth.signOut();
         }
@@ -176,6 +180,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
         await supabase.auth.signOut();
       }
       clearLocalEntries();
+      clearLocalFoodPhotos();
       clearPreferences();
       emitEvent(FLUXIA_UPDATED);
     } catch (err) {
