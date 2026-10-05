@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth';
 import { usePreferences } from '../lib/usePreferences';
 import { getEntries } from '../lib/storage';
 import { supabase } from '../lib/supabase';
+import { deleteOwnFoodPhotos } from '../lib/sync';
 import { registerPushSubscription, unregisterPushSubscription } from '../lib/push';
 import { APP_VERSION } from '../lib/version';
 import { D } from '../lib/design';
@@ -187,6 +188,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (fnError) {
+          await deleteOwnFoodPhotos(user.id);
           await supabase.from('entries').delete().eq('user_id', user.id);
           await supabase.auth.signOut();
         }

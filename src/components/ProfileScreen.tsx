@@ -4,6 +4,7 @@ import { asset } from '../lib/config';
 import { usePreferences } from '../lib/usePreferences';
 import { getEntries } from '../lib/storage';
 import { supabase } from '../lib/supabase';
+import { deleteOwnFoodPhotos } from '../lib/sync';
 
 interface ProfileScreenProps {
   onClose: () => void;
@@ -62,7 +63,8 @@ export default function ProfileScreen({ onClose, onShowPrivacy }: ProfileScreenP
 
         if (fnError) {
           console.error('Edge function error, falling back to client-side delete:', fnError);
-          // Fallback: delete entries client-side
+          // Fallback: delete food photos and entries client-side
+          await deleteOwnFoodPhotos(user.id);
           await supabase.from('entries').delete().eq('user_id', user.id);
           await supabase.auth.signOut();
         }
