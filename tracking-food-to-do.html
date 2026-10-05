@@ -143,10 +143,10 @@
     corregida (la baja de cuenta no funcionaba).
   </div>
 
-  <div class="callout warn">
-    <strong>Ojo con la web (fase 3):</strong> el despliegue automático de GitHub Pages no se ejecuta desde el
-    <strong>2 de agosto</strong>, aunque ha habido muchos pushes a <code>main</code> después. Lo más probable es que la web
-    publicada no tenga ni el módulo de comidas ni los últimos cambios de Stripe. Lo siguiente que te toca es la fase 3.
+  <div class="callout ok">
+    <strong>Web publicada:</strong> el despliegue automático de GitHub Pages funciona. El módulo de comidas está en la web
+    desde el despliegue del 4-oct (run 411), y los cambios del 5-oct salieron con el run 412.
+    Lo siguiente que te toca son los builds de las apps (fases 4 y 5).
   </div>
 
   <!-- ─────────────────────────── FASE 1 ─────────────────────────── -->
@@ -433,28 +433,13 @@ ALTER TABLE public.food_reminder_log ENABLE ROW LEVEL SECURITY;</pre></div>
   <!-- ─────────────────────────── FASE 3 ─────────────────────────── -->
   <section class="phase" data-phase>
     <h2><span class="num">3</span> Web (MW / PW) <span class="count"></span></h2>
-    <p class="intro">En teoría se despliega sola con cada push a <code>main</code> (GitHub Pages, <code>.github/workflows/deploy.yml</code>). <strong>En la práctica el workflow no se ejecuta desde el 2 de agosto de 2026</strong> (última ejecución: run 371). Hay que averiguar por qué y publicar.</p>
+    <p class="intro">Se despliega sola con cada push a <code>main</code> (GitHub Pages, <code>.github/workflows/deploy.yml</code>).</p>
 
-    <div class="step" data-id="web-why">
-      <input type="checkbox" id="c-web-why" />
-      <label class="title" for="c-web-why">Averiguar por qué no se ejecuta el despliegue <span class="tag urgent">bloquea la web</span></label>
-      <div class="body">
-        <p>El workflow está activo en GitHub, pero no se ha creado ninguna ejecución desde entonces. Mira en este orden:</p>
-        <ol>
-          <li>GitHub → repo → <em>Settings → Actions → General</em>: que las Actions estén permitidas.</li>
-          <li>GitHub → <em>Settings → Billing</em> (o el aviso amarillo en la pestaña <em>Actions</em>): minutos agotados o problema de pago.</li>
-          <li><em>Settings → Pages</em>: que la fuente siga siendo «GitHub Actions» y que el dominio <code>fluxia-health.com</code> siga configurado.</li>
-          <li>Si la web se publica ahora por otra vía (Vercel, Netlify, Cloudflare…), dímelo y actualizo este paso.</li>
-        </ol>
-      </div>
-    </div>
-
-    <div class="step" data-id="web-deploy">
+    <div class="step" data-id="web-deploy" data-done>
       <input type="checkbox" id="c-web-deploy" />
-      <label class="title" for="c-web-deploy">Publicar y confirmar que el despliegue termina en verde</label>
+      <label class="title" for="c-web-deploy">Confirmar que el despliegue termina en verde <span class="tag where">hecho</span></label>
       <div class="body">
-        <div class="callout warn"><strong>Antes de publicar:</strong> se publicará todo lo que hay en <code>main</code>, también los cambios de Stripe en modo real de la otra sesión. Confirma que pueden salir ya.</div>
-        <p>Si nada se lanza solo, pulsa <em>Actions → Deploy to GitHub Pages → Run workflow</em> sobre <code>main</code>. O pídeme que lo lance yo y vigilo que termine.</p>
+        <p><strong>Comprobado por Claude el 5-oct:</strong> run 411 (4-oct) en verde, con el módulo de comidas ya en <code>main</code>; run 412 (5-oct): <span id="run412">en curso</span>.</p>
         <p>GitHub → repo <code>soymachine/Cacalendario-2</code> → pestaña <em>Actions</em> → workflow <em>Deploy to GitHub Pages</em> del último commit de <code>main</code>.</p>
         <p>Después, en <code>/medics</code>, recarga forzada (Cmd/Ctrl + Shift + R).</p>
       </div>
