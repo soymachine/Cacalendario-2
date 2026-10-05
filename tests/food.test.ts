@@ -8,7 +8,7 @@ import {
   normalizeFoodConfig, enableFoodConfig, isFoodActiveOn, isFoodExpectedOn, visibleFoodFields,
   validateFoodDraft, foodDraftToColumns, suggestMealType, recentMeals, repeatMealDraft,
   computeFoodStats, foodAdherence, effectiveDaysSinceLast, foodLagDays, buildTimeline,
-  planFoodReminder, localDateTimeIn, patientDaysSinceLast, entryTimestamp, isFutureOccurrence, foodPhotoPath,
+  planFoodReminder, localDateTimeIn, patientDaysSinceLast, availableRegisterTypes, entryTimestamp, isFutureOccurrence, foodPhotoPath,
   isBowelEntry, isUrineEntry, isFoodEntry, addTag, removeTag, addDays, daysBetween,
   type FoodTrackingConfig, type FoodEntryLike, type FoodDraft,
 } from '../src/lib/food.ts';
@@ -83,6 +83,24 @@ test('catálogo de etiquetas: crear y quitar sin duplicados', () => {
   tags = addTag(tags, 'Alcohol');
   assert.deepEqual(tags, ['Café', 'Alcohol']);
   assert.deepEqual(removeTag(tags, 'CAFÉ'), ['Alcohol']);
+});
+
+test('tipos de registro que ve el paciente según su pauta', () => {
+  const food = { enabled: true, enabled_at: '2026-10-01', period: { start_date: '2026-10-05', end_date: '2026-10-20' } };
+  // Pacientes existentes: lo de siempre
+  assert.deepEqual(availableRegisterTypes('both', null, '2026-10-10'), ['poop', 'urine']);
+  assert.deepEqual(availableRegisterTypes(undefined, null, '2026-10-10'), ['poop', 'urine']);
+  assert.deepEqual(availableRegisterTypes('poop_only', null, '2026-10-10'), ['poop']);
+  assert.deepEqual(availableRegisterTypes('urine_only', null, '2026-10-10'), ['urine']);
+  // Comida activada: se añade dentro del periodo, no fuera
+  assert.deepEqual(availableRegisterTypes('both', food, '2026-10-10'), ['poop', 'urine', 'food']);
+  assert.deepEqual(availableRegisterTypes('both', food, '2026-10-25'), ['poop', 'urine']);
+  // "Solo comida": siempre la comida, también fuera del periodo
+  assert.deepEqual(availableRegisterTypes('none', food, '2026-10-10'), ['food']);
+  assert.deepEqual(availableRegisterTypes('none', food, '2026-10-01'), ['food'], 'antes del inicio');
+  assert.deepEqual(availableRegisterTypes('none', food, '2026-10-25'), ['food'], 'después del fin');
+  // "Solo comida" sin comida activada (no debería guardarse así): nunca vacío
+  assert.deepEqual(availableRegisterTypes('none', { enabled: false }, '2026-10-10'), ['poop', 'urine']);
 });
 
 // ── Formulario del paciente ──

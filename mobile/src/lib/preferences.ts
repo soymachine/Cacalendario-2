@@ -2,7 +2,7 @@
 
 import { localStore } from './localStore';
 import { emitEvent, FLUXIA_PREFS_CHANGED } from './events';
-import { normalizeFoodConfig, isFoodActiveOn, type FoodTrackingConfig } from './food';
+import { normalizeFoodConfig, availableRegisterTypes, type FoodTrackingConfig, type RegisterType } from './food';
 
 const PREFS_KEY = 'cacalendario_prefs';
 
@@ -150,16 +150,12 @@ export function clearDoctorFoodConfig(): void {
   localStore.removeItem(DOCTOR_FOOD_CONFIG_KEY);
 }
 
-export type RegisterType = 'poop' | 'urine' | 'food';
+export type { RegisterType };
 
-/** Tipos de registro que el paciente puede crear hoy según la pauta de su profesional. */
+/**
+ * Tipos de registro que el paciente puede crear hoy según la pauta de su
+ * profesional (con "Solo comida", siempre la comida: ver availableRegisterTypes).
+ */
 export function getAvailableRegisterTypes(today: string): RegisterType[] {
-  const mode = getDoctorEntryTypeMode();
-  const types: RegisterType[] = mode === 'poop_only' ? ['poop']
-    : mode === 'urine_only' ? ['urine']
-    : mode === 'none' ? []
-    : ['poop', 'urine'];
-  if (isFoodActiveOn(getDoctorFoodConfig(), today)) types.push('food');
-  // Nunca dejar al paciente sin nada que registrar
-  return types.length > 0 ? types : ['poop', 'urine'];
+  return availableRegisterTypes(getDoctorEntryTypeMode(), getDoctorFoodConfig(), today);
 }

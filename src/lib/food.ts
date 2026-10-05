@@ -261,6 +261,29 @@ export function expectedMeals(cfg: FoodTrackingConfig): MealType[] {
   return [];
 }
 
+export type RegisterType = 'poop' | 'urine' | 'food';
+
+/**
+ * Tipos de registro que el paciente puede crear ese día según su pauta
+ * (patient_links.entry_type_mode + food_config). Con "Solo comida" ('none')
+ * la comida se ofrece siempre, también fuera del periodo de seguimiento
+ * (entonces no cuenta para la adherencia ni genera avisos): el profesional
+ * ha decidido que este paciente no registra deposiciones ni micciones.
+ * Nunca devuelve una lista vacía.
+ */
+export function availableRegisterTypes(
+  entryTypeMode: string | null | undefined,
+  foodConfig: unknown,
+  today: string,
+): RegisterType[] {
+  const cfg = normalizeFoodConfig(foodConfig);
+  const mode = entryTypeMode || 'both';
+  if (mode === 'none') return cfg.enabled ? ['food'] : ['poop', 'urine'];
+  const types: RegisterType[] = mode === 'poop_only' ? ['poop'] : mode === 'urine_only' ? ['urine'] : ['poop', 'urine'];
+  if (isFoodActiveOn(cfg, today)) types.push('food');
+  return types;
+}
+
 export function visibleFoodFields(cfg: FoodTrackingConfig): FoodField[] {
   return FOOD_FIELDS.filter((f) => cfg.fields[f] !== 'hidden');
 }
