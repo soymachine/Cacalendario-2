@@ -409,7 +409,7 @@ ALTER TABLE public.food_reminder_log ENABLE ROW LEVEL SECURITY;</pre></div>
         <div class="code"><button class="copy" type="button" data-copy="cmd-cron">Copiar</button><pre id="cmd-cron">supabase functions deploy check-inactive-patients --project-ref vchzhwvbvnwrrgfrxfor</pre></div>
         <p>Comprueba que la programación sigue siendo cada hora (<code>0 * * * *</code>) en <em>Edge Functions → check-inactive-patients → Schedule</em>. No hace falta tocarla.</p>
         <p>La respuesta de la función incluye ahora <code>food_sent</code> y <code>food_failed</code>, además de <code>sent</code> y <code>failed</code>.</p>
-        <p><strong>Estado:</strong> versión 20 desplegada el 5-oct a las 08:21 UTC. Antes se comprobó que la versión anterior en producción (v19) era la misma que la del repo antes del módulo, así que no se pisó ningún cambio hecho a mano. <span id="cron-verify">Verificación de la primera ejecución: pendiente.</span></p>
+        <p><strong>Estado:</strong> versión 20 desplegada el 5-oct a las 08:21 UTC. Antes se comprobó que la versión anterior en producción (v19) era la misma que la del repo antes del módulo, así que no se pisó ningún cambio hecho a mano. <span id="cron-verify"><strong>Verificado:</strong> la ejecución del cron de las 09:00 UTC del 5-oct usó la versión 20 (arranque en 453 ms, respuesta 200, sin errores en los logs). Detalle que ya pasaba con la v19: el cron (<code>pg_net</code>) solo espera 5 s y la función tarda 6–7 s, así que en <code>net._http_response</code> sale «Timeout». La función termina igualmente. Si quieres ver el resultado ahí, sube <code>timeout_milliseconds</code> en el job del cron.</span></p>
       </div>
     </div>
 
