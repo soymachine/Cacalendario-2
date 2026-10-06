@@ -19,7 +19,7 @@ import FoodEntryDetail from './FoodEntryDetail';
 import FoodPhoto from './FoodPhoto';
 import ClinicalTimeline from './ClinicalTimeline';
 import {
-  normalizeFoodConfig, patientDaysSinceLast as semaforoDays, localDateKey,
+  linkFoodConfig, enableFoodConfig, patientDaysSinceLast as semaforoDays, localDateKey,
   mealTypeLabel, portionLabel, addTag, removeTag, type FoodTrackingConfig,
 } from '../lib/food';
 import { startProCheckout, openBillingPortal, readCheckoutOutcome, PRO_PRICING } from '../lib/billing';
@@ -308,7 +308,9 @@ export default function MedicsPanel() {
   const [globalTagsSaving, setGlobalTagsSaving] = useState(false);
   const [configTagInput, setConfigTagInput] = useState('');
   const [clearTagsConfirm, setClearTagsConfirm] = useState(false);
-  const [patientFoodConfig, setPatientFoodConfig] = useState<FoodTrackingConfig>(() => normalizeFoodConfig(null));
+  const [patientFoodConfig, setPatientFoodConfig] = useState<FoodTrackingConfig>(() => linkFoodConfig(null));
+  // El profesional ha tocado la pauta de comidas en el panel de configuración
+  const [patientFoodTouched, setPatientFoodTouched] = useState(false);
   const [entryTypeFilter, setEntryTypeFilter] = useState<'all' | EntryKind>('all');
   const [historyView, setHistoryView] = useState<'list' | 'timeline'>('list');
   const [foodDetail, setFoodDetail] = useState<PatientEntry | null>(null);
@@ -801,7 +803,7 @@ export default function MedicsPanel() {
           const { data } = await q.maybeSingle();
           return (data?.date as string | undefined) ?? null;
         };
-        const foodCfg = normalizeFoodConfig(p.food_config);
+        const foodCfg = linkFoodConfig(p.food_config);
         const [lastCore, lastFood] = await Promise.all([
           lastDateOf('core'),
           foodCfg.enabled ? lastDateOf('food') : Promise.resolve(null),
@@ -1106,7 +1108,8 @@ export default function MedicsPanel() {
     setPatientSemaforoRed(patient.semaforo_red_override ?? doctorInfo?.semaforo_red ?? 3);
     setPatientHiddenFields(patient.hidden_fields || []);
     setPatientEntryTypeMode(patient.entry_type_mode || 'both');
-    setPatientFoodConfig(normalizeFoodConfig(patient.food_config));
+    setPatientFoodConfig(linkFoodConfig(patient.food_config));
+    setPatientFoodTouched(false);
     setEntryTypeFilter('all');
     setHistoryView('list');
     setFoodDetail(null);
@@ -1292,11 +1295,13 @@ export default function MedicsPanel() {
   const handleSavePatientConfig = async () => {
     if (!selectedPatient) return;
     setPatientConfigError(null);
-    // La pauta de comidas solo se escribe si el módulo se ha usado alguna vez
-    // (o se activa ahora): así un paciente que nunca lo tuvo sigue con NULL y
-    // el guardado funciona igual aunque la migración aún no esté aplicada.
-    const touchesFood = patientFoodConfig.enabled || selectedPatient.food_config != null;
-    const foodConfigToSave = touchesFood ? patientFoodConfig : undefined;
+    // La pauta de comidas solo se escribe si ya había una guardada o si el
+    // profesional la ha tocado: sin tocarla sigue en NULL, que equivale a la
+    // pauta por defecto (comidas activadas, sin objetivo ni avisos; ver
+    // linkFoodConfig). Al guardarla activada se fija el día de activación.
+    const touchesFood = patientFoodTouched || selectedPatient.food_config != null;
+    const foodConfigToSave = !touchesFood ? undefined
+      : patientFoodConfig.enabled ? enableFoodConfig(patientFoodConfig, todayKey()) : patientFoodConfig;
     // "Solo comida" no tiene sentido sin comida: vuelve a ambos tipos
     const entryTypeModeToSave = patientEntryTypeMode === 'none' && !patientFoodConfig.enabled ? 'both' : patientEntryTypeMode;
     const { error } = await supabase
@@ -1326,6 +1331,7 @@ export default function MedicsPanel() {
         ...(foodConfigToSave ? { food_config: foodConfigToSave } : {}),
       };
       setPatientEntryTypeMode(entryTypeModeToSave);
+      if (foodConfigToSave) setPatientFoodConfig(foodConfigToSave);
       // El semáforo depende de la pauta de comidas
       if (patientDetail) {
         const lastCore = patientDetail.entries.find(e => e.entry_type !== 'food')?.date ?? null;
@@ -3226,6 +3232,7 @@ export default function MedicsPanel() {
                       value={patientFoodConfig}
                       onChange={(next) => {
                         setPatientFoodConfig(next);
+                        setPatientFoodTouched(true);
                         if (!next.enabled && patientEntryTypeMode === 'none') setPatientEntryTypeMode('both');
                       }}
                       catalog={foodTagCatalog}
@@ -3234,10 +3241,10 @@ export default function MedicsPanel() {
                       today={todayKey()}
                     />
 
-                    {/* Campos del formulario */}
+                    {/* Deposiciones y micciones: tipo de registro y campos del formulario */}
                     <div className="medics-patient-config__fields bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
                       <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text">
-                        Campos del formulario
+                        Seguimiento de deposiciones y micciones
                       </div>
                       <div className="p-3 px-4 flex flex-col gap-0">
                         <div className="mb-3.5">

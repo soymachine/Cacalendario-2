@@ -1,11 +1,12 @@
 import { supabase } from './supabase';
+import { linkFoodConfig } from './food';
 import { type EntryTypeMode } from './preferences';
 
 export interface DoctorConfig {
   hiddenFields: string[];
   centerImageUrl: string | null;
   entryTypeMode: EntryTypeMode;
-  /** patient_links.food_config tal cual (se normaliza con normalizeFoodConfig). */
+  /** Pauta de comidas del vínculo ya resuelta (linkFoodConfig); null sin profesional. */
   foodConfig: unknown;
 }
 
@@ -23,8 +24,9 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       .single();
 
     let res = await query('center_id, hidden_fields, entry_type_mode, food_config');
-    // Sin la migración de comidas aún aplicada: la pauta de siempre.
-    if (res.error && res.error.code !== 'PGRST116') res = await query('center_id, hidden_fields, entry_type_mode');
+    // Sin la migración de comidas aún aplicada: la pauta de siempre, sin comidas.
+    const hasFoodColumn = !(res.error && res.error.code !== 'PGRST116');
+    if (!hasFoodColumn) res = await query('center_id, hidden_fields, entry_type_mode');
     const link = res.data as { center_id?: string | null; hidden_fields?: string[] | null; entry_type_mode?: string | null; food_config?: unknown } | null;
     if (!link) return DEFAULT_CONFIG;
 
@@ -32,7 +34,8 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       hiddenFields: link.hidden_fields || [],
       centerImageUrl: null,
       entryTypeMode: (link.entry_type_mode as EntryTypeMode) || 'both',
-      foodConfig: link.food_config ?? null,
+      // Sin pauta guardada, las comidas vienen activadas por defecto
+      foodConfig: hasFoodColumn ? linkFoodConfig(link.food_config) : null,
     };
     if (!link.center_id) return base;
 

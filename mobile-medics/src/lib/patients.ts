@@ -1,7 +1,7 @@
 // Portado de src/components/MedicsPanel.tsx (loadPatients + practice stats) —
 // mantener sincronizado a mano.
 import { supabase } from './supabase';
-import { normalizeFoodConfig, patientDaysSinceLast } from './food';
+import { linkFoodConfig, patientDaysSinceLast } from './food';
 
 export interface PatientLink {
   id: string;
@@ -84,7 +84,7 @@ export async function loadPatients(doctorId: string): Promise<PatientLink[]> {
       };
       const [lastCore, lastFood] = await Promise.all([
         lastDateOf('core'),
-        normalizeFoodConfig(p.food_config).enabled ? lastDateOf('food') : Promise.resolve(null),
+        linkFoodConfig(p.food_config).enabled ? lastDateOf('food') : Promise.resolve(null),
       ]);
       lastEntryDate = [lastCore, lastFood].filter((d): d is string => !!d).sort().pop() ?? null;
       daysSinceLast = patientDaysSinceLast({

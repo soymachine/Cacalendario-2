@@ -172,8 +172,8 @@ const isPortion = (v: unknown): v is PortionSize => typeof v === 'string' && (PO
 
 /**
  * Convierte lo que haya en la base de datos (NULL, versiones parciales, datos
- * manipulados) en una pauta completa y válida. Todo el código lee la pauta a
- * través de aquí: NULL ⇒ módulo desactivado.
+ * manipulados) en una pauta completa y válida. NULL ⇒ módulo desactivado (sin
+ * profesional no hay pauta). La pauta de un vínculo se lee con linkFoodConfig.
  */
 export function normalizeFoodConfig(raw: unknown): FoodTrackingConfig {
   const d = DEFAULT_FOOD_CONFIG;
@@ -236,6 +236,18 @@ function cloneConfig(c: FoodTrackingConfig): FoodTrackingConfig {
   };
 }
 
+/**
+ * Pauta de comidas de un vínculo con profesional (patient_links.food_config).
+ * Sin pauta guardada (NULL) las comidas vienen activadas, con la pauta por
+ * defecto: sin objetivo diario ni recordatorios, así que no cambian el
+ * semáforo ni envían avisos. Solo una pauta guardada con enabled = false las
+ * desactiva.
+ */
+export function linkFoodConfig(raw: unknown): FoodTrackingConfig {
+  if (raw == null) return { ...cloneConfig(DEFAULT_FOOD_CONFIG), enabled: true };
+  return normalizeFoodConfig(raw);
+}
+
 /** Pauta lista para guardar al activar el módulo (fija enabled_at si faltaba). */
 export function enableFoodConfig(cfg: FoodTrackingConfig, today: string): FoodTrackingConfig {
   return { ...cloneConfig(cfg), enabled: true, enabled_at: cfg.enabled_at ?? today };
@@ -269,7 +281,8 @@ export type RegisterType = 'poop' | 'urine' | 'food';
  * la comida se ofrece siempre, también fuera del periodo de seguimiento
  * (entonces no cuenta para la adherencia ni genera avisos): el profesional
  * ha decidido que este paciente no registra deposiciones ni micciones.
- * Nunca devuelve una lista vacía.
+ * foodConfig es la pauta ya resuelta del vínculo (linkFoodConfig), o null si
+ * el paciente no tiene profesional. Nunca devuelve una lista vacía.
  */
 export function availableRegisterTypes(
   entryTypeMode: string | null | undefined,
@@ -672,7 +685,7 @@ export function patientDaysSinceLast(input: {
   today?: string;
   now?: number;
 }): number | null {
-  const cfg = normalizeFoodConfig(input.foodConfig);
+  const cfg = linkFoodConfig(input.foodConfig);
   const today = input.today ?? localDateKey();
   const now = input.now ?? Date.now();
   const latest = [input.lastCoreDate, input.lastFoodDate].filter((d): d is string => !!d).sort().pop() ?? null;

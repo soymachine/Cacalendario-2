@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   DEFAULT_FOOD_CONFIG, EMPTY_FOOD_DRAFT, MAIN_MEALS,
-  normalizeFoodConfig, enableFoodConfig, isFoodActiveOn, isFoodExpectedOn, visibleFoodFields,
+  normalizeFoodConfig, linkFoodConfig, enableFoodConfig, isFoodActiveOn, isFoodExpectedOn, visibleFoodFields,
   validateFoodDraft, foodDraftToColumns, suggestMealType, recentMeals, repeatMealDraft,
   computeFoodStats, foodAdherence, effectiveDaysSinceLast, foodLagDays, buildTimeline,
   planFoodReminder, localDateTimeIn, patientDaysSinceLast, availableRegisterTypes, entryTimestamp, isFutureOccurrence, foodPhotoPath,
@@ -21,11 +21,28 @@ const food = (date: string, time: string, extra: Partial<FoodEntryLike> = {}): F
 
 // ── Configuración del profesional ──
 
-test('pacientes existentes (food_config NULL) tienen la comida desactivada', () => {
+test('sin profesional no hay pauta: la comida está desactivada', () => {
   const cfg = normalizeFoodConfig(null);
   assert.equal(cfg.enabled, false);
   assert.equal(isFoodActiveOn(cfg, '2026-10-01'), false);
   assert.equal(isFoodExpectedOn(cfg, '2026-10-01'), false);
+});
+
+test('con profesional y sin pauta guardada (NULL), la comida viene activada sin objetivo ni avisos', () => {
+  const cfg = linkFoodConfig(null);
+  assert.equal(cfg.enabled, true);
+  assert.equal(isFoodActiveOn(cfg, '2026-10-01'), true);
+  assert.equal(isFoodExpectedOn(cfg, '2026-10-01'), false, 'no cuenta para el semáforo');
+  assert.equal(cfg.frequency.type, 'none');
+  assert.equal(cfg.reminders.enabled, false);
+  // Una pauta guardada manda, también si el profesional la desactivó
+  assert.equal(linkFoodConfig({ ...cfg, enabled: false }).enabled, false);
+  const saved = cfgWith({ frequency: { type: 'all_meals' } });
+  assert.deepEqual(linkFoodConfig(JSON.parse(JSON.stringify(saved))), saved);
+  // No comparte objetos con la pauta por defecto
+  cfg.fields.photo = 'hidden';
+  assert.equal(linkFoodConfig(null).fields.photo, 'optional');
+  assert.equal(DEFAULT_FOOD_CONFIG.fields.photo, 'optional');
 });
 
 test('el profesional puede activar el seguimiento de comidas', () => {
@@ -87,7 +104,7 @@ test('catálogo de etiquetas: crear y quitar sin duplicados', () => {
 
 test('tipos de registro que ve el paciente según su pauta', () => {
   const food = { enabled: true, enabled_at: '2026-10-01', period: { start_date: '2026-10-05', end_date: '2026-10-20' } };
-  // Pacientes existentes: lo de siempre
+  // Sin profesional: lo de siempre
   assert.deepEqual(availableRegisterTypes('both', null, '2026-10-10'), ['poop', 'urine']);
   assert.deepEqual(availableRegisterTypes(undefined, null, '2026-10-10'), ['poop', 'urine']);
   assert.deepEqual(availableRegisterTypes('poop_only', null, '2026-10-10'), ['poop']);
@@ -99,6 +116,10 @@ test('tipos de registro que ve el paciente según su pauta', () => {
   assert.deepEqual(availableRegisterTypes('none', food, '2026-10-10'), ['food']);
   assert.deepEqual(availableRegisterTypes('none', food, '2026-10-01'), ['food'], 'antes del inicio');
   assert.deepEqual(availableRegisterTypes('none', food, '2026-10-25'), ['food'], 'después del fin');
+  // Con profesional y pauta por defecto: la comida se añade a lo de siempre
+  assert.deepEqual(availableRegisterTypes('both', linkFoodConfig(null), '2026-10-10'), ['poop', 'urine', 'food']);
+  assert.deepEqual(availableRegisterTypes('poop_only', linkFoodConfig(null), '2026-10-10'), ['poop', 'food']);
+  assert.deepEqual(availableRegisterTypes('none', linkFoodConfig(null), '2026-10-10'), ['food']);
   // "Solo comida" sin comida activada (no debería guardarse así): nunca vacío
   assert.deepEqual(availableRegisterTypes('none', { enabled: false }, '2026-10-10'), ['poop', 'urine']);
 });
@@ -272,6 +293,8 @@ test('semáforo de un paciente: sin pauta de comidas no cambia nada', () => {
   assert.equal(patientDaysSinceLast({ ...base, entryTypeMode: 'both', foodConfig: food, lastCoreDate: '2026-10-10', lastFoodDate: '2026-10-06' }), 4);
   // Solo comida: las deposiciones antiguas no penalizan
   assert.equal(patientDaysSinceLast({ ...base, entryTypeMode: 'none', foodConfig: food, lastCoreDate: '2026-09-01', lastFoodDate: '2026-10-10' }), 0);
+  // Solo comida con la pauta por defecto (NULL): días desde el último registro de cualquier tipo
+  assert.equal(patientDaysSinceLast({ ...base, entryTypeMode: 'none', foodConfig: null, lastCoreDate: '2026-09-01', lastFoodDate: '2026-10-08' }), 2);
 });
 
 // ── Línea temporal ──
