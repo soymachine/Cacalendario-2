@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "com.fluxiahealth.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#F4F7F3",
         "foregroundImage": "./assets/icon.png"
