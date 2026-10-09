@@ -62,10 +62,12 @@ const styles = StyleSheet.create({
     gap: 4,
     transform: [{ translateY: '20%' }],
   },
+  // Radio exacto (mitad del alto: icono 18 + 2×5): con borderRadius 999,
+  // Android puede pintar la píldora con esquinas rectas.
   iconWrap: {
     paddingHorizontal: 14,
     paddingVertical: 5,
-    borderRadius: 999,
+    borderRadius: 14,
   },
   iconWrapActive: {
     backgroundColor: 'rgba(255,255,255,0.28)',

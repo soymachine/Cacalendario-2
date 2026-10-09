@@ -2,17 +2,12 @@
   "expo": {
     "name": "Fluxia Pro",
     "slug": "fluxia-medics",
-    "version": "0.1.0",
+    "version": "0.90.0",
     "scheme": "fluxiamedics",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F4F7F3",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F4F7F3"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fluxiahealth.medics",
@@ -29,7 +24,16 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ]
     ]
   }
 }
