@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "143897949900",
+    "project_id": "fluxia-6c391",
+    "storage_bucket": "fluxia-6c391.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143897949900:android:4590523ff6b589b192f469",
+        "android_client_info": {
+          "package_name": "com.fluxiahealth.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpwsb9QfYXSfMHZGRt0JhrFy2DuqzuR-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
