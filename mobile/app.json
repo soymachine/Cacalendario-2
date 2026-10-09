@@ -30,7 +30,14 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#3C7DB8",
+          "defaultChannel": "default"
+        }
+      ],
       "expo-web-browser",
       [
         "expo-image-picker",

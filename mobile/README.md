@@ -203,8 +203,9 @@ propio scheme). Todo lo demás funciona.
    eas build:configure   # crea el projectId y eas.json
    eas build --profile development --platform android
    ```
-   Para push en Android, sube credenciales FCM con `eas credentials`
-   (en iOS, EAS gestiona el certificado APNs).
+   Antes de un build de Android, configura Firebase (ver
+   [Push en Android (Firebase / FCM)](#push-en-android-firebase--fcm)); en iOS, EAS
+   gestiona el certificado APNs.
 3. **Desplegar las Edge Functions con red de seguridad** (son retrocompatibles: la rama
    Expo solo se activa con suscripciones `{ type: 'expo' }`, el camino Web Push queda
    intacto). Orden recomendado:
@@ -227,6 +228,54 @@ propio scheme). Todo lo demás funciona.
 4. Ojo: activar push en el móvil **reemplaza la suscripción web de esa misma cuenta**
    (hay una fila por usuario en `push_subscriptions`) — otra razón para usar una cuenta
    de prueba y no la tuya personal.
+
+### Push en Android (Firebase / FCM)
+
+Android entrega las push a través de Firebase Cloud Messaging. El código ya está
+preparado: `app.config.js` añade `android.googleServicesFile` (y `expo prebuild`
+aplica el plugin de Google Services) y el plugin de `expo-notifications` en
+`app.json` fija el icono (`assets/notification-icon.png`, silueta blanca 96×96 del
+logo), el color (`#3C7DB8`) y el canal por defecto (`default`, el canal
+"Recordatorios" que crea `push.ts`). El backend no cambia: `send-push` y
+`check-inactive-patients` envían los tokens Expo por la API de Expo, que reenvía a
+FCM con la clave que subas a EAS. Falta lo que vive fuera del repo (una sola vez):
+
+1. **Firebase Console** → crea un proyecto (p. ej. "Fluxia"; Analytics no hace
+   falta) → *Añadir app* → **Android** con nombre de paquete
+   **`com.fluxiahealth.app`** (exacto; el SHA-1 no hace falta para FCM) →
+   descarga `google-services.json`. No sigas los pasos de "añadir el SDK" de la
+   consola: los hace `expo prebuild`.
+2. **`google-services.json` → EAS** como variable de entorno de tipo archivo (el
+   archivo está en `.gitignore`, así que EAS no lo recibe con el código):
+   ```bash
+   cd mobile
+   eas env:create --scope project --name GOOGLE_SERVICES_JSON --type file \
+     --value ./google-services.json \
+     --environment development --environment preview --environment production
+   ```
+   Deja también una copia en `mobile/google-services.json` para builds locales
+   (`npx expo run:android`). Sin ninguna de las dos, el build de Android falla en
+   el prebuild ("Cannot copy google-services.json…") — a propósito: sin Firebase
+   la app no puede obtener el token push.
+3. **Clave FCM V1 → EAS** (con ella el servicio de push de Expo envía a FCM):
+   Firebase Console → ⚙ *Configuración del proyecto* → *Cuentas de servicio* →
+   *Generar nueva clave privada*. Súbela con
+   ```bash
+   eas credentials -p android
+   # → perfil cualquiera → Google Service Account
+   # → Manage your Google Service Account Key for Push Notifications (FCM V1)
+   # → Set up … → Upload a new service account key → elige el JSON
+   ```
+   (o en expo.dev → proyecto → *Credentials* → Android → `com.fluxiahealth.app` →
+   *FCM V1 service account key*). Después borra el JSON local; nunca se commitea
+   (`*firebase-adminsdk*.json` está en `.gitignore`).
+4. **Nuevo build** — es configuración nativa, una actualización OTA no basta:
+   ```bash
+   eas build --profile preview --platform android   # APK instalable
+   ```
+   Prueba: entra con la cuenta de prueba, activa notificaciones en *Cuenta*,
+   comprueba que su fila de `push_subscriptions` tiene `platform: 'android'` y
+   envíale un push desde `/medics`.
 
 ### Fase 3 — Distribución interna
 

@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase (Android push): google-services.json reaches EAS Build as the file
+# env var GOOGLE_SERVICES_JSON; the FCM V1 service account key lives in EAS only
+google-services.json
+*firebase-adminsdk*.json
