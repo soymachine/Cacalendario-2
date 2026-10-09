@@ -20,6 +20,13 @@ Notifications.setNotificationHandler({
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 
+// Motivo del último fallo al activar las notificaciones (se muestra en Cuenta
+// para poder diagnosticarlo en el propio móvil).
+let lastPushError: string | null = null;
+export function getLastPushError(): string | null {
+  return lastPushError;
+}
+
 export async function getPushPermission(): Promise<PushPermission> {
   if (!Device.isDevice) return 'unsupported';
   const { status } = await Notifications.getPermissionsAsync();
@@ -27,6 +34,7 @@ export async function getPushPermission(): Promise<PushPermission> {
 }
 
 export async function registerPushSubscription(userId: string): Promise<boolean> {
+  lastPushError = null;
   if (!Device.isDevice) return false;
 
   try {
@@ -41,7 +49,10 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
     if (status !== 'granted') {
       ({ status } = await Notifications.requestPermissionsAsync());
     }
-    if (status !== 'granted') return false;
+    if (status !== 'granted') {
+      lastPushError = 'Permiso de notificaciones no concedido.';
+      return false;
+    }
 
     const projectId: string | undefined =
       Constants?.expoConfig?.extra?.eas?.projectId ?? (Constants as any)?.easConfig?.projectId;
@@ -49,7 +60,7 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
       projectId ? { projectId } : undefined,
     );
 
-    await supabase.from('push_subscriptions').upsert(
+    const { error } = await supabase.from('push_subscriptions').upsert(
       {
         user_id: userId,
         // timezone: los recordatorios de comida se calculan en hora local del paciente
@@ -58,9 +69,14 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
       },
       { onConflict: 'user_id' },
     );
+    if (error) {
+      lastPushError = `No se pudo guardar la suscripción: ${error.message}`;
+      return false;
+    }
     return true;
   } catch (err) {
     console.error('[Push] Registration error:', err);
+    lastPushError = err instanceof Error ? err.message : String(err);
     return false;
   }
 }

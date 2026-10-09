@@ -10,7 +10,7 @@ import { clearPreferences } from '../lib/preferences';
 import { deleteAllOwnFoodPhotos, clearLocalFoodPhotos } from '../lib/foodPhotos';
 import { supabase } from '../lib/supabase';
 import {
-  registerPushSubscription, unregisterPushSubscription, getPushPermission, type PushPermission,
+  registerPushSubscription, unregisterPushSubscription, getPushPermission, getLastPushError, type PushPermission,
 } from '../lib/push';
 import { emitEvent, onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { APP_VERSION } from '../lib/version';
@@ -41,6 +41,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const [linkedDoctor, setLinkedDoctor] = useState<string | null>(null);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushPermission, setPushPermission] = useState<PushPermission>('undetermined');
+  const [pushError, setPushError] = useState<string | null>(null);
   const [pushLoading, setPushLoading] = useState(false);
 
   // Profile state
@@ -116,6 +117,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   const handleTogglePush = async () => {
     if (!user) return;
     setPushLoading(true);
+    setPushError(null);
     if (pushSubscribed) {
       await unregisterPushSubscription(user.id);
       setPushSubscribed(false);
@@ -125,6 +127,8 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
       if (ok) {
         const { data } = await supabase.from('push_subscriptions').select('id').eq('user_id', user.id).maybeSingle();
         setPushSubscribed(!!data);
+      } else {
+        setPushError(getLastPushError());
       }
     }
     setPushLoading(false);
@@ -327,6 +331,9 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
                   >
                     <Text style={styles.primaryBtnText}>{pushLoading ? '...' : 'Activar notificaciones'}</Text>
                   </Pressable>
+                  {!!pushError && (
+                    <Text style={styles.errorText}>No se han podido activar: {pushError}</Text>
+                  )}
                 </>
               )}
             </View>
