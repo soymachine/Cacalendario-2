@@ -80,6 +80,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
   );
 }
 
+// Radios exactos (la mitad del lado): con borderRadius mayor que la mitad,
+// Android puede pintar el círculo como un cuadrado.
 const styles = StyleSheet.create({
   nav: {
     position: 'absolute',
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginHorizontal: 14,
     backgroundColor: '#C7CEA0',
-    borderRadius: 999,
+    borderRadius: 35,
   },
   registerButton: {
     flex: 1,
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   registerOuter: {
     width: 88,
     height: 88,
-    borderRadius: 999,
+    borderRadius: 44,
     backgroundColor: '#C7CEA0',
     alignItems: 'center',
     justifyContent: 'center',
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   registerInner: {
     width: 68,
     height: 68,
-    borderRadius: 999,
+    borderRadius: 34,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
   tabCircle: {
     width: 52,
     height: 52,
-    borderRadius: 999,
+    borderRadius: 26,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',

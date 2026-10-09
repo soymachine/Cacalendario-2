@@ -2,22 +2,19 @@
   "expo": {
     "name": "Fluxia",
     "slug": "fluxia",
-    "version": "0.1.0",
+    "version": "0.90.0",
     "scheme": "fluxia",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F4F7F3",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F4F7F3"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fluxiahealth.app",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -25,8 +22,8 @@
       "package": "com.fluxiahealth.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#F4F7F3",
-        "foregroundImage": "./assets/icon.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -39,6 +36,15 @@
           "photosPermission": "Fluxia usa tus fotos solo si eliges una para registrar una comida. La foto se comparte únicamente con tu profesional sanitario.",
           "cameraPermission": "Fluxia usa la cámara para que puedas fotografiar tus comidas. La foto se comparte únicamente con tu profesional sanitario.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],
