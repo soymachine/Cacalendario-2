@@ -15,6 +15,8 @@ export interface DoctorInfo {
   plan: 'free' | 'beta' | 'test' | 'pro';
   test_plan_started_at: string | null;
   global_tags: string[];
+  /** Catálogo de etiquetas de comida (módulo de comidas). */
+  food_tag_catalog: string[];
 }
 
 interface RawDoctorRow {
@@ -29,6 +31,7 @@ interface RawDoctorRow {
   plan: string | null;
   test_plan_started_at: string | null;
   global_tags: string[] | null;
+  food_tag_catalog?: string[] | null;
 }
 
 function buildDoctorInfo(d: RawDoctorRow): DoctorInfo {
@@ -45,6 +48,7 @@ function buildDoctorInfo(d: RawDoctorRow): DoctorInfo {
     plan: (d.plan as DoctorInfo['plan']) || 'free',
     test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
+    food_tag_catalog: d.food_tag_catalog || [],
   };
 }
 

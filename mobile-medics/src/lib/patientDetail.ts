@@ -3,7 +3,7 @@
 // sincronizado a mano.
 import { supabase } from './supabase';
 import type { PatientLink } from './patients';
-import { patientDaysSinceLast } from './food';
+import { patientDaysSinceLast, type FoodTrackingConfig } from './food';
 
 export interface PatientEntry {
   id: string;
@@ -149,6 +149,8 @@ export interface PatientConfigInput {
   hiddenFields: string[];
   entryTypeMode: string;
   tags: string[];
+  /** Pauta de comidas: solo se escribe si se pasa (ver PatientConfigModal). */
+  foodConfig?: FoodTrackingConfig;
 }
 
 export async function savePatientConfig(linkId: string, input: PatientConfigInput): Promise<{ error: string | null }> {
@@ -159,6 +161,7 @@ export async function savePatientConfig(linkId: string, input: PatientConfigInpu
     hidden_fields: input.hiddenFields,
     entry_type_mode: input.entryTypeMode,
     tags: input.tags,
+    ...(input.foodConfig ? { food_config: input.foodConfig } : {}),
   }).eq('id', linkId);
   return { error: error?.message ?? null };
 }

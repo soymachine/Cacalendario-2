@@ -64,6 +64,10 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
     setDoctor((prev) => ({ ...prev, global_tags: tags }));
   };
 
+  const handleFoodTagCatalogUpdated = (tags: string[]) => {
+    setDoctor((prev) => ({ ...prev, food_tag_catalog: tags }));
+  };
+
   // Sin plan activo (trial agotado o Pro cancelado): se bloquea el panel entero,
   // igual que en MW. El plan real lo
   // manda la base de datos, así que en cuanto el médico pague desde la web la
@@ -94,6 +98,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
               onBack={() => setSelectedPatient(null)}
               onPatientUpdated={handlePatientUpdated}
               onGlobalTagsUpdated={handleGlobalTagsUpdated}
+              onFoodTagCatalogUpdated={handleFoodTagCatalogUpdated}
             />
           ) : (
             <PatientListScreen

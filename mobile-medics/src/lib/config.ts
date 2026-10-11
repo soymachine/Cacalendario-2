@@ -32,6 +32,12 @@ export async function saveGlobalTags(doctorId: string, newTags: string[]): Promi
   return { error: error?.message ?? null };
 }
 
+/** Catálogo de etiquetas de comida del profesional (doctors.food_tag_catalog). */
+export async function saveFoodTagCatalog(doctorId: string, tags: string[]): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('doctors').update({ food_tag_catalog: tags }).eq('id', doctorId);
+  return { error: error?.message ?? null };
+}
+
 /** Deletes a global tag: updates the doctor's catalog and cascades removal from every patient that had it. */
 export async function deleteGlobalTag(
   doctorId: string,

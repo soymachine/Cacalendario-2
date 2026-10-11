@@ -5,7 +5,9 @@ import Slider from '@react-native-community/slider';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
 import { savePatientConfig, savePatientTags } from '../lib/patientDetail';
-import { saveGlobalTags } from '../lib/config';
+import { saveGlobalTags, saveFoodTagCatalog } from '../lib/config';
+import { linkFoodConfig, enableFoodConfig, addTag, localDateKey, type FoodTrackingConfig } from '../lib/food';
+import FoodConfigCard from './FoodConfigCard';
 import { tagColor } from '../lib/tags';
 import { ENTRY_TYPE_FIELDS } from '../lib/entryLabels';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
@@ -16,9 +18,10 @@ interface PatientConfigModalProps {
   onClose: () => void;
   onSaved: (patch: Partial<PatientLink>) => void;
   onGlobalTagsUpdated: (tags: string[]) => void;
+  onFoodTagCatalogUpdated: (tags: string[]) => void;
 }
 
-export default function PatientConfigModal({ doctor, patient, onClose, onSaved, onGlobalTagsUpdated }: PatientConfigModalProps) {
+export default function PatientConfigModal({ doctor, patient, onClose, onSaved, onGlobalTagsUpdated, onFoodTagCatalogUpdated }: PatientConfigModalProps) {
   const [semaforoOverride, setSemaforoOverride] = useState(patient.semaforo_override ?? false);
   const [green, setGreen] = useState(patient.semaforo_green_override ?? doctor.semaforo_green);
   const [red, setRed] = useState(patient.semaforo_red_override ?? doctor.semaforo_red);
@@ -29,6 +32,11 @@ export default function PatientConfigModal({ doctor, patient, onClose, onSaved, 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Pauta de comidas (igual que en MW): sin pauta guardada, comidas activadas
+  // por defecto (linkFoodConfig). Solo se escribe si el profesional la toca.
+  const [foodConfig, setFoodConfig] = useState<FoodTrackingConfig>(() => linkFoodConfig(patient.food_config));
+  const [foodTouched, setFoodTouched] = useState(false);
+  const [foodCatalog, setFoodCatalog] = useState<string[]>(doctor.food_tag_catalog || []);
 
   const globalTags = doctor.global_tags || [];
 
@@ -58,27 +66,52 @@ export default function PatientConfigModal({ doctor, patient, onClose, onSaved, 
     }
   };
 
+  const handleFoodChange = (next: FoodTrackingConfig) => {
+    setFoodConfig(next);
+    setFoodTouched(true);
+    // "Solo comida" no tiene sentido sin comida
+    if (!next.enabled && entryTypeMode === 'none') setEntryTypeMode('both');
+  };
+
+  const handleCreateFoodTag = async (tag: string) => {
+    if (foodCatalog.some((t) => t.toLowerCase() === tag.toLowerCase())) return;
+    const next = addTag(foodCatalog, tag);
+    setFoodCatalog(next);
+    const { error: err } = await saveFoodTagCatalog(doctor.id, next);
+    if (!err) onFoodTagCatalogUpdated(next);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    // Misma regla que MW (handleSavePatientConfig en MedicsPanel.tsx)
+    const touchesFood = foodTouched || patient.food_config != null;
+    const foodConfigToSave = !touchesFood ? undefined
+      : foodConfig.enabled ? enableFoodConfig(foodConfig, localDateKey()) : foodConfig;
+    const entryTypeModeToSave = entryTypeMode === 'none' && !foodConfig.enabled ? 'both' : entryTypeMode;
     const { error: err } = await savePatientConfig(patient.id, {
-      semaforoOverride, semaforoGreen: green, semaforoRed: red, hiddenFields, entryTypeMode, tags,
+      semaforoOverride, semaforoGreen: green, semaforoRed: red, hiddenFields, entryTypeMode: entryTypeModeToSave, tags,
+      foodConfig: foodConfigToSave,
     });
     setSaving(false);
     if (err) { setError(err); return; }
+    setEntryTypeMode(entryTypeModeToSave);
+    if (foodConfigToSave) setFoodConfig(foodConfigToSave);
     onSaved({
       semaforo_override: semaforoOverride,
       semaforo_green_override: semaforoOverride ? green : null,
       semaforo_red_override: semaforoOverride ? red : null,
       hidden_fields: hiddenFields,
-      entry_type_mode: entryTypeMode,
+      entry_type_mode: entryTypeModeToSave,
       tags,
+      ...(foodConfigToSave ? { food_config: foodConfigToSave } : {}),
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   const visibleFields = ENTRY_TYPE_FIELDS.filter((f) => {
+    if (entryTypeMode === 'none') return false;
     if (entryTypeMode === 'urine_only' && f.section === 'poop') return false;
     if (entryTypeMode === 'poop_only' && f.section === 'urine') return false;
     return true;
@@ -140,17 +173,34 @@ export default function PatientConfigModal({ doctor, patient, onClose, onSaved, 
             </View>
           </View>
 
+          <FoodConfigCard
+            value={foodConfig}
+            onChange={handleFoodChange}
+            catalog={foodCatalog}
+            onCreateTag={handleCreateFoodTag}
+            today={localDateKey()}
+          />
+
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Campos del formulario</Text>
+            <Text style={styles.cardTitle}>Seguimiento de deposiciones y micciones</Text>
             <Text style={styles.fieldsSubtitle}>Tipo de registro permitido</Text>
             <View style={styles.modeRow}>
-              {[{ value: 'both', label: 'Ambas' }, { value: 'poop_only', label: 'Solo deposición' }, { value: 'urine_only', label: 'Solo micción' }].map((opt) => (
+              {[
+                { value: 'both', label: 'Ambas' },
+                { value: 'poop_only', label: 'Solo deposición' },
+                { value: 'urine_only', label: 'Solo micción' },
+                ...(foodConfig.enabled ? [{ value: 'none', label: 'Solo comida' }] : []),
+              ].map((opt) => (
                 <Pressable key={opt.value} onPress={() => setEntryTypeMode(opt.value)} style={[styles.modeButton, entryTypeMode === opt.value && styles.modeButtonActive]}>
                   <Text style={[styles.modeButtonText, entryTypeMode === opt.value && styles.modeButtonTextActive]}>{opt.label}</Text>
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.hint}>Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.</Text>
+            <Text style={styles.hint}>
+              {entryTypeMode === 'none'
+                ? 'Con «Solo comida» el paciente no registra deposiciones ni micciones.'
+                : 'Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.'}
+            </Text>
             {visibleFields.map((field, i) => (
               <View key={field.id}>
                 {field.group && <Text style={styles.groupHeader}>{field.group}</Text>}

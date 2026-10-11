@@ -24,13 +24,14 @@ interface PatientDetailScreenProps {
   onBack: () => void;
   onPatientUpdated: (patch: Partial<PatientLink>) => void;
   onGlobalTagsUpdated: (tags: string[]) => void;
+  onFoodTagCatalogUpdated: (tags: string[]) => void;
 }
 
 function shortDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function PatientDetailScreen({ doctor, patient, onBack, onPatientUpdated, onGlobalTagsUpdated }: PatientDetailScreenProps) {
+export default function PatientDetailScreen({ doctor, patient, onBack, onPatientUpdated, onGlobalTagsUpdated, onFoodTagCatalogUpdated }: PatientDetailScreenProps) {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [clinicalNotes, setClinicalNotes] = useState<ClinicalNote[]>([]);
@@ -180,6 +181,7 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
           onClose={() => setConfigOpen(false)}
           onSaved={(patch) => { onPatientUpdated(patch); setConfigOpen(false); }}
           onGlobalTagsUpdated={onGlobalTagsUpdated}
+          onFoodTagCatalogUpdated={onFoodTagCatalogUpdated}
         />
       )}
       {profileOpen && (
