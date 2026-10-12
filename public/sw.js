@@ -46,7 +46,7 @@ self.addEventListener('message', (event) => {
 
 // ── Web Push ──
 self.addEventListener('push', (event) => {
-  let data = { title: 'Fluxia', body: 'No has registrado nada hoy. Tu médico necesita esta información 🩺' };
+  let data = { title: 'Fluxia', body: '¿Hay algo nuevo que registrar hoy? Puedes añadirlo en Fluxia cuando quieras.' };
   try { data = { ...data, ...event.data?.json() }; } catch {}
 
   event.waitUntil(

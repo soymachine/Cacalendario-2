@@ -159,7 +159,7 @@ Deno.serve(async () => {
   let failed = 0;
 
   const reminderTitle = 'Fluxia';
-  const reminderBody = 'No has registrado nada hoy. Tu médico necesita esta información 🩺';
+  const reminderBody = '¿Hay algo nuevo que registrar hoy? Puedes añadirlo en Fluxia cuando quieras.';
 
   // Pacientes que ya reciben el aviso general en esta ejecución: no se les
   // manda además un recordatorio de comida (evita notificaciones de más).
