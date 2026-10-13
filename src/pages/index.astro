@@ -329,7 +329,7 @@ const benefits = [
   /* ————————————————————— Pricing */
   .pricing-wrap { max-width: 1180px; margin: 0 auto; }
   .pricing-wrap h2 { text-align: center; margin-bottom: 14px; }
-  .pricing-sub { text-align: center; font-size: 16px; color: var(--text-tertiary); margin-bottom: 52px; }
+  .pricing-sub { text-align: center; font-size: 16px; color: var(--text-tertiary); margin-bottom: 28px; }
   .pricing-grid { display: flex; flex-wrap: wrap; gap: 28px; align-items: stretch; justify-content: center; }
   .price-card {
     flex: 1 1 300px; max-width: 360px; border: 1px solid var(--border-soft); border-radius: var(--radius-xl);
@@ -339,10 +339,24 @@ const benefits = [
     max-width: 380px; border: 2px solid var(--color-primary); padding: 44px 32px 36px;
     position: relative; box-shadow: var(--shadow-primary);
   }
-  .price-card--trial {
-    background: var(--color-surface-sunken); border-style: dashed;
+  /* Recorrido: cuenta gratuita → 30 días → suscripción. */
+  .pricing-steps {
+    list-style: none; padding: 0; margin: 0 auto 48px; max-width: 980px;
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
   }
-  .price-card--trial .price-name { color: var(--text-secondary); }
+  .pricing-steps li {
+    flex: 1 1 260px; display: flex; gap: 12px; align-items: flex-start;
+    background: var(--color-surface-sunken); border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg); padding: 16px 18px;
+  }
+  .pricing-step-num {
+    flex: none; width: 28px; height: 28px; border-radius: 14px; display: inline-flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    background: var(--color-primary); color: #fff;
+  }
+  .pricing-steps b { display: block; font-size: 15px; color: var(--text-primary); margin-bottom: 2px; }
+  .pricing-steps span:not(.pricing-step-num) { font-size: 13.5px; color: var(--text-tertiary); line-height: 1.45; }
+  .price-fine { font-size: 12.5px; color: var(--text-tertiary); text-align: center; margin: 10px 0 0 !important; }
   /* Plan aún no disponible: se anuncia, pero sin CTA ni jerarquía visual. */
   .price-card--soon { position: relative; opacity: .72; }
   .price-pill {
@@ -700,31 +714,21 @@ const benefits = [
 </section>
 
 <!-- ——————————————————————————— PRICING -->
+<!-- Un solo plan de pago. Toda cuenta nueva empieza con 30 días del plan
+     Profesional completo (plan 'test', sin funciones bloqueadas: ver
+     src/lib/plan.ts); después el profesional se suscribe o no. -->
 <section id="pricing" class="section-surface">
   <div class="pricing-wrap">
-    <h2 style="font-size:clamp(26px,3vw,34px)">Planes simples y transparentes</h2>
-    <p class="pricing-sub">30 días gratis en todos los planes. Sin tarjeta de crédito.</p>
+    <h2 style="font-size:clamp(26px,3vw,34px)">Un solo plan, todo incluido</h2>
+    <p class="pricing-sub">Crea tu cuenta gratuita y prueba el plan Profesional completo durante 30 días. Sin tarjeta.</p>
+    <ol class="pricing-steps">
+      <li><span class="pricing-step-num">1</span><div><b>Crea tu cuenta gratuita</b><span>En un minuto, con tu email o tu cuenta de Google.</span></div></li>
+      <li><span class="pricing-step-num">2</span><div><b>Usa Fluxia completo 30 días</b><span>Con tus pacientes reales y todas las funciones.</span></div></li>
+      <li><span class="pricing-step-num">3</span><div><b>Suscríbete si te convence</b><span>Si no, no se te cobra nada.</span></div></li>
+    </ol>
     <div class="pricing-grid">
-      <div class="price-card price-card--trial">
-        <div class="price-name">Inicio</div>
-        <div class="price-amount">0€</div>
-        <div class="price-period">Prueba de 30 días, luego pasa a un plan de pago</div>
-        <p class="price-desc">Para empezar a conocer Fluxia sin compromiso antes de elegir un plan.</p>
-        <div class="price-hr"></div>
-        <div class="price-features">
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />1 usuario</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pacientes ilimitados</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Registro de deposiciones, micciones y comidas</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pauta de registro configurable por paciente</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel clínico con código de colores y recordatorios</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Logotipo y nombre de tu centro en la app</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Acceso desde navegador y desde la App</div>
-        </div>
-        <a class="btn btn-ghost btn-block" href="/medics">Empieza gratis</a>
-      </div>
-
       <div class="price-card price-card--featured">
-        <span class="price-pill">Más popular</span>
+        <span class="price-pill">30 días gratis</span>
         <div class="price-name">Profesional</div>
         <div class="billing-toggle" role="group" aria-label="Periodo de facturación">
           <button type="button" data-billing="month" aria-pressed="true">Mensual</button>
@@ -733,20 +737,24 @@ const benefits = [
         <div class="price-amount" id="pro-amount">19,95€</div>
         <div class="price-period" id="pro-period">/mes · IVA no incluido</div>
         <p class="price-save" id="pro-save" hidden>Ahorras 39,45€ al año — sale a 16,66€/mes</p>
-        <p class="price-desc">Para el profesional que quiere sacar el máximo partido al seguimiento.</p>
+        <p class="price-desc">Todo lo que necesitas para el seguimiento de tus pacientes entre visitas.</p>
         <div class="price-hr"></div>
         <div class="price-features">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />1 usuario</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pacientes ilimitados</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Todo lo del plan Inicio</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Exportación de informes PDF</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Estadísticas avanzadas por paciente</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Registro de deposiciones, micciones y comidas</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pauta de registro configurable por paciente</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel clínico con semáforo y recordatorios</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Informes PDF y estadísticas avanzadas</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Historial completo exportable</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Logotipo y nombre de tu centro en la app</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Acceso desde navegador y app para el profesional</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />App gratuita para tus pacientes (iOS y Android)</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Soporte por email prioritario</div>
         </div>
-        <a class="btn btn-block" href="/medics">Empieza gratis</a>
+        <a class="btn btn-block" href="/medics">Crear cuenta gratuita</a>
+        <p class="price-fine">Sin tarjeta · Cancela cuando quieras</p>
       </div>
-
       <div class="price-card price-card--soon">
         <span class="price-pill price-pill--soon">Próximamente</span>
         <div class="price-name">Equipo</div>
@@ -757,7 +765,7 @@ const benefits = [
         <div class="price-features">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Hasta 3 usuarios</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Pacientes ilimitados</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Todo lo del plan Profesional</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Todo lo del plan Profesional, para todo el equipo</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Historial compartido entre usuarios</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Gestión de permisos por usuario</div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={ICONS.check} />Panel unificado del centro</div>
