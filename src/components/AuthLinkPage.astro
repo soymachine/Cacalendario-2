@@ -1,0 +1,162 @@
+---
+// Página a la que llevan los enlaces de los emails de alta y de cambio de
+// contraseña (plantillas de Supabase Auth, ver supabase/email-templates/).
+// El enlace trae ?token_hash=…&type=email|recovery y aquí se verifica con
+// verifyOtp, así que funciona en cualquier dispositivo y navegador.
+//
+//  · audience="patient" → /app/auth. Con la app de pacientes instalada,
+//    iOS/Android abren la app (Universal Links / App Links, ver
+//    public/.well-known/); esta página es la alternativa sin la app.
+//  · audience="medic"   → /auth. Profesionales: la sesión se guarda en la
+//    misma clave que MW, así que al terminar entran directos a /medics.
+import '../styles/fluxia-tokens.css';
+
+interface Props {
+  audience: 'patient' | 'medic';
+}
+const { audience } = Astro.props;
+---
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Fluxia</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        padding: 24px 16px; font-family: var(--font-sans); background: var(--gradient-page, #F4F7F3); color: var(--text-primary);
+      }
+      .card {
+        width: 100%; max-width: 420px; background: var(--color-surface, #fff); border-radius: 20px;
+        padding: 32px 28px; box-shadow: 0 8px 30px rgba(45, 53, 57, .08); text-align: center;
+      }
+      .logo { height: 40px; margin-bottom: 20px; }
+      h1 { font-size: 22px; margin: 0 0 10px; }
+      p { font-size: 15px; line-height: 1.55; color: var(--text-secondary); margin: 0 0 14px; }
+      .btn {
+        display: block; width: 100%; padding: 13px 18px; border-radius: 12px; border: none; cursor: pointer;
+        background: var(--color-primary, #3C7DB8); color: #fff; font: inherit; font-size: 15px; font-weight: 700;
+        text-decoration: none; margin-top: 8px;
+      }
+      .btn[disabled] { opacity: .6; cursor: default; }
+      input {
+        width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border, #DCE2DF);
+        font: inherit; font-size: 15px; margin-bottom: 10px;
+      }
+      .error { color: var(--color-error, #D26464); font-size: 14px; min-height: 20px; margin: 4px 0 0; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main class="card" data-audience={audience}>
+      <img class="logo" src="/fluxia-logo-full.svg" alt="Fluxia" />
+
+      <section data-view="loading">
+        <p>Comprobando el enlace…</p>
+      </section>
+
+      <section data-view="confirmed" hidden>
+        <h1>¡Cuenta confirmada! ✅</h1>
+        {audience === 'patient' ? (
+          <p>Abre la app <strong>Fluxia</strong> en tu móvil e inicia sesión con tu email y contraseña.</p>
+        ) : (
+          <>
+            <p>Ya puedes empezar a usar Fluxia con tus pacientes.</p>
+            <a class="btn" href="/medics">Ir a mi panel</a>
+          </>
+        )}
+      </section>
+
+      <section data-view="confirmed-doctor" hidden>
+        <h1>¡Cuenta confirmada! ✅</h1>
+        <p>Accede a tu panel de profesional para empezar.</p>
+        <a class="btn" href="/medics">Ir a mi panel</a>
+      </section>
+
+      <section data-view="recovery" hidden>
+        <h1>Nueva contraseña</h1>
+        <p>Escribe la contraseña nueva para tu cuenta.</p>
+        <form id="pw-form">
+          <input type="password" id="pw1" placeholder="Nueva contraseña" autocomplete="new-password" minlength="6" required />
+          <input type="password" id="pw2" placeholder="Repite la contraseña" autocomplete="new-password" minlength="6" required />
+          <button class="btn" type="submit" id="pw-submit">Guardar contraseña</button>
+          <p class="error" id="pw-error"></p>
+        </form>
+      </section>
+
+      <section data-view="password-done" hidden>
+        <h1>Contraseña cambiada ✅</h1>
+        {audience === 'patient' ? (
+          <p>Abre la app <strong>Fluxia</strong> e inicia sesión con tu nueva contraseña.</p>
+        ) : (
+          <a class="btn" href="/medics">Ir a mi panel</a>
+        )}
+      </section>
+
+      <section data-view="invalid" hidden>
+        <h1>Este enlace ya no es válido</h1>
+        <p>Puede que haya caducado o que ya se haya usado. Si estabas confirmando tu cuenta, prueba a iniciar sesión: es probable que ya esté confirmada.</p>
+        <p>Si querías cambiar tu contraseña, pide un enlace nuevo desde {audience === 'patient' ? 'la app' : 'la pantalla de acceso del panel'}.</p>
+        {audience === 'medic' && <a class="btn" href="/medics">Ir a la pantalla de acceso</a>}
+      </section>
+    </main>
+
+    <script>
+      import { createClient, type EmailOtpType } from '@supabase/supabase-js';
+      import { supabaseMedics } from '../lib/supabase';
+
+      const main = document.querySelector<HTMLElement>('main')!;
+      const audience = main.dataset.audience;
+      // Pacientes: sesión solo para completar la operación (la app es la que
+      // inicia sesión). Profesionales: la misma clave que MW.
+      const client = audience === 'medic'
+        ? supabaseMedics
+        : createClient('https://vchzhwvbvnwrrgfrxfor.supabase.co', 'sb_publishable_XED5kqp_p_xFmU7vuwMnOw_OGGLKtbk', {
+            auth: { storageKey: 'fluxia-auth-link', persistSession: false, detectSessionInUrl: false },
+          });
+
+      const show = (view: string) => {
+        main.querySelectorAll<HTMLElement>('[data-view]').forEach((el) => { el.hidden = el.dataset.view !== view; });
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const tokenHash = params.get('token_hash');
+      const type = params.get('type') as EmailOtpType | null;
+
+      async function run() {
+        if (!tokenHash || !type) { show('invalid'); return; }
+        const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type });
+        // El token ya no sirve: que no se quede en el historial del navegador.
+        history.replaceState(null, '', window.location.pathname);
+        if (error) { show('invalid'); return; }
+        if (type === 'recovery') { show('recovery'); return; }
+        const isDoctor = data.user?.user_metadata?.is_doctor === true;
+        if (audience === 'patient') await client.auth.signOut({ scope: 'local' });
+        // Un profesional que llegue al enlace de pacientes: al panel.
+        show(audience === 'patient' && isDoctor ? 'confirmed-doctor' : 'confirmed');
+      }
+
+      document.getElementById('pw-form')!.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pw1 = (document.getElementById('pw1') as HTMLInputElement).value;
+        const pw2 = (document.getElementById('pw2') as HTMLInputElement).value;
+        const err = document.getElementById('pw-error')!;
+        const submit = document.getElementById('pw-submit') as HTMLButtonElement;
+        err.textContent = '';
+        if (pw1.length < 6) { err.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+        if (pw1 !== pw2) { err.textContent = 'Las contraseñas no coinciden.'; return; }
+        submit.disabled = true;
+        const { error } = await client.auth.updateUser({ password: pw1 });
+        submit.disabled = false;
+        if (error) { err.textContent = 'No se ha podido guardar. Prueba con otra contraseña o pide un enlace nuevo.'; return; }
+        if (audience === 'patient') await client.auth.signOut({ scope: 'local' });
+        show('password-done');
+      });
+
+      run().catch(() => show('invalid'));
+    </script>
+  </body>
+</html>

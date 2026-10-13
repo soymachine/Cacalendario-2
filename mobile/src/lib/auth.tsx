@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User, Session, EmailOtpType } from '@supabase/supabase-js';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,17 +25,39 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Deep link back into the app after the OAuth browser flow (fluxia://auth-callback)
 const oauthRedirectTo = Linking.createURL('auth-callback');
 
-/** Extract auth tokens from the OAuth callback URL and create a session. */
-async function createSessionFromUrl(url: string): Promise<void> {
+// Enlaces de los emails de alta y de cambio de contraseña: abren la app
+// (Universal Links / App Links, ver public/.well-known/ en la web) con
+// ?token_hash=…&type=email|recovery. Sin la app, la misma dirección muestra
+// la página de src/pages/app/auth.astro.
+const EMAIL_LINK_URL = 'https://fluxia-health.com/app/auth/';
+
+const isAuthUrl = (url: string) =>
+  url.includes('token_hash=') || url.includes('code=') || url.includes('access_token=');
+
+/**
+ * Crea la sesión a partir de un enlace (email, OAuth o recuperación).
+ * Devuelve true si el enlace es de cambio de contraseña.
+ */
+async function createSessionFromUrl(url: string): Promise<boolean> {
   const parsed = Linking.parse(url);
   const params = parsed.queryParams ?? {};
+
+  // Enlaces de email con token_hash (plantillas de Supabase Auth)
+  const tokenHash = typeof params.token_hash === 'string' ? params.token_hash : null;
+  const otpType = typeof params.type === 'string' ? params.type : null;
+  if (tokenHash && otpType) {
+    const type = otpType as EmailOtpType;
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (error) console.error('[auth] verifyOtp error:', error.message);
+    return !error && type === 'recovery';
+  }
 
   // PKCE flow: ?code=...
   const code = typeof params.code === 'string' ? params.code : null;
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) console.error('[auth] exchangeCodeForSession error:', error.message);
-    return;
+    return false;
   }
 
   // Implicit flow fallback: #access_token=...&refresh_token=...
@@ -49,6 +71,7 @@ async function createSessionFromUrl(url: string): Promise<void> {
       if (error) console.error('[auth] setSession error:', error.message);
     }
   }
+  return false;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -89,12 +112,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Handle deep links (OAuth callback / recovery link) while the app is open
-    const linkSub = Linking.addEventListener('url', ({ url }) => {
-      if (url.includes('code=') || url.includes('access_token=')) {
-        createSessionFromUrl(url);
-      }
-    });
+    // Enlaces (email, OAuth, recuperación): con la app abierta y al abrirla
+    // desde el enlace (arranque en frío).
+    const handleUrl = (url: string | null) => {
+      if (!url || !isAuthUrl(url)) return;
+      createSessionFromUrl(url).then((recovery) => { if (recovery) setIsRecovery(true); });
+    };
+    const linkSub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    Linking.getInitialURL().then(handleUrl);
 
     return () => {
       subscription.unsubscribe();
@@ -107,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: 'https://fluxia-health.com/',
+        emailRedirectTo: EMAIL_LINK_URL,
       },
     });
     if (error) return { error: translateAuthError(error.message) };
@@ -144,9 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    // The recovery link opens the web app, where the user sets a new password.
+    // El enlace del email abre la app (o la página web de reserva), donde se
+    // escribe la contraseña nueva.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://fluxia-health.com/',
+      redirectTo: EMAIL_LINK_URL,
     });
     if (error) return { error: translateAuthError(error.message) };
     return { error: null };

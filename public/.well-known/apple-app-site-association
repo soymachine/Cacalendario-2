@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["SHME63BYJQ.com.fluxiahealth.app"],
+        "components": [
+          { "/": "/app/*", "comment": "Enlaces de los emails de alta y de cambio de contraseña (PA)" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["SHME63BYJQ.com.fluxiahealth.app"]
+  }
+}
