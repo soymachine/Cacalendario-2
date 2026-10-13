@@ -1493,6 +1493,30 @@ export default function MedicsPanel() {
     setImageModal({ type: 'success', url: versionedUrl });
   };
 
+  // Quitar el logo del centro: sin imagen, MW y las apps muestran el de Fluxia.
+  const handleRemoveImage = async () => {
+    if (!doctorInfo || !centerImageUrl) return;
+    if (!confirm('¿Quitar la imagen del centro? Se mostrará el logo de Fluxia.')) return;
+    setUploadingImage(true);
+    const { error: dbErr } = await supabase
+      .from('centers')
+      .update({ image_url: null })
+      .eq('id', doctorInfo.center_id);
+    if (dbErr) {
+      setUploadingImage(false);
+      setImageModal({ type: 'error', message: dbErr.message });
+      return;
+    }
+    // Borrar también los archivos subidos (si las políticas de Storage no lo
+    // permiten, la imagen queda huérfana pero ya no se muestra en ningún sitio).
+    const { data: files } = await supabase.storage.from('center-images').list(doctorInfo.center_id);
+    const paths = (files ?? []).filter(f => f.name.startsWith('logo.')).map(f => `${doctorInfo.center_id}/${f.name}`);
+    if (paths.length > 0) await supabase.storage.from('center-images').remove(paths);
+    setCenterImageUrl(null);
+    setDoctorInfo({ ...doctorInfo, center_image_url: null });
+    setUploadingImage(false);
+  };
+
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
   const patientInitial = (p: PatientLink) => (p.display_name || p.patient_email || '?')[0].toUpperCase();
 
@@ -3550,7 +3574,18 @@ export default function MedicsPanel() {
                     <input type="file" accept="image/*" disabled={uploadingImage} className="hidden"
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
                   </label>
-                  <p className="text-[11px] text-fx-ink-300 m-0">PNG, JPG o WEBP · Máx 2 MB</p>
+                  {centerImageUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      disabled={uploadingImage}
+                      className="w-full py-2 px-5 rounded-fx-pill text-[14px] font-semibold font-sans cursor-pointer bg-transparent border border-fx-border text-fx-text-secondary"
+                      style={{ opacity: uploadingImage ? 0.5 : 1 }}
+                    >
+                      Quitar imagen
+                    </button>
+                  )}
+                  <p className="text-[11px] text-fx-ink-300 m-0">PNG, JPG o WEBP · Máx 2 MB · Sin imagen se usa el logo de Fluxia</p>
                 </div>
               </div>
 
