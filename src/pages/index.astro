@@ -133,12 +133,7 @@ const benefits = [
 <!-- Favicon -->
 <link rel="icon" type="image/x-icon" href={asset('/favicon.ico')} />
 
-<!-- PWA -->
-<link rel="manifest" href={asset('/manifest.json')} />
 <meta name="theme-color" content="#F4F7F3" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Fluxia" />
 <link rel="apple-touch-icon" href={asset('/icons/icon-192x192.png')} />
 
 <style>
@@ -446,7 +441,7 @@ const benefits = [
     var h = window.location.hash || '';
     if (h.indexOf('access_token') !== -1 || h.indexOf('error_code') !== -1 ||
         q.indexOf('code=') !== -1 || q.indexOf('type=recovery') !== -1) {
-      window.location.replace('/user' + q + h);
+      window.location.replace('/app/auth/' + q + h);
     }
   })();
 </script>

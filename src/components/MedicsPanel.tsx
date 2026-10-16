@@ -3474,7 +3474,7 @@ export default function MedicsPanel() {
                 <div className="text-sm text-fx-text-secondary leading-loose">
                   <p className="m-0 mb-2">El paciente debe seguir estos pasos:</p>
                   <ol className="m-0 pl-5">
-                    <li>Abrir la app en <strong>fluxia-health.com/user</strong></li>
+                    <li>Descargar la app <strong>Fluxia</strong> (App Store o Google Play)</li>
                     <li>Iniciar sesión con el email al que le enviaste la invitación</li>
                     <li>Ir a <strong>Configuración</strong> y aceptar la invitación del médico</li>
                   </ol>

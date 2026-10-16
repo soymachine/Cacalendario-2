@@ -22,7 +22,7 @@ const links: [string, string][] = [
       {links.map(([href, label]) => <a href={`${base}${href}`}>{label}</a>)}
     </div>
     <div class="nav-cta">
-      <a class="btn btn-ghost" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
+      <a class="btn btn-ghost" href="/app/">Paciente</a>
       <a class="btn" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
     </div>
     <button class="nav-toggle" id="nav-toggle" aria-label="Menú" aria-expanded="false">
@@ -31,7 +31,7 @@ const links: [string, string][] = [
   </div>
   <div class="nav-mobile">
     {links.map(([href, label]) => <a href={`${base}${href}`}>{label}</a>)}
-    <a class="btn btn-ghost btn-block" href="/user" target="_blank" rel="noopener noreferrer">Paciente</a>
+    <a class="btn btn-ghost btn-block" href="/app/">Paciente</a>
     <a class="btn btn-block" href="/medics" target="_blank" rel="noopener noreferrer">Profesional</a>
   </div>
 </nav>

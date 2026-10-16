@@ -89,7 +89,7 @@ export default function InviteScreen({ doctor, patients, onInvited }: InviteScre
           <View style={styles.card}>
             <Text style={styles.instructionsTitle}>Instrucciones para el paciente</Text>
             <Text style={styles.instructionsBody}>
-              1. Abrir la app en fluxia-health.com/user{'\n'}
+              1. Descargar la app Fluxia (App Store o Google Play){'\n'}
               2. Iniciar sesión con el email al que le enviaste la invitación{'\n'}
               3. Ir a Configuración y aceptar la invitación del médico
             </Text>
