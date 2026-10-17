@@ -1,9 +1,10 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { PoopEntry } from '../lib/storage';
 import { D } from '../lib/design';
 import { CloseIcon } from './icons';
 import FoodEntryForm from './FoodEntryForm';
+import KeyboardAwareScrollView from './KeyboardAwareScrollView';
 
 interface FoodEditScreenProps {
   entry: PoopEntry;
@@ -21,10 +22,10 @@ export default function FoodEditScreen({ entry, onClose }: FoodEditScreenProps) 
             <CloseIcon size={24} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Editar comida</Text>
           <FoodEntryForm entry={entry} onSaved={onClose} onDeleted={onClose} />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </SafeAreaView>
       </SafeAreaProvider>
     </Modal>

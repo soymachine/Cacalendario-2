@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
+  View, Text, TextInput, Pressable, Image, StyleSheet, Platform, Modal,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
@@ -20,6 +20,7 @@ import FoodEntryForm from './FoodEntryForm';
 import { BOTTOM_NAV_HEIGHT } from './BottomNav';
 import LigeroIcon from '../assets/Ligero-icon.svg';
 import PesadoIcon from '../assets/Pesado-icon.svg';
+import KeyboardAwareScrollView from './KeyboardAwareScrollView';
 
 interface RegisterScreenProps {
   date?: string | null;
@@ -123,13 +124,13 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const chipText = (active: boolean) => [styles.chipLabel, { color: active ? D.primaryText : D.chipText }];
 
   const content = (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={{ backgroundColor: D.bg }}
       contentContainerStyle={[
         styles.container,
         { paddingTop: isTab ? 16 : 60, paddingBottom: 32 + (isTab ? BOTTOM_NAV_HEIGHT : 0) },
       ]}
-      keyboardShouldPersistTaps="handled"
+     
     >
       {/* Logo (only in tab mode) */}
       {isTab && (
@@ -506,7 +507,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         <Text style={styles.saveButtonText}>Registrar</Text>
       </Pressable>
       </>}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 
   if (isTab) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Platform, Modal,
+  View, Text, TextInput, Pressable, Image, StyleSheet, Platform, Modal,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
@@ -18,6 +18,7 @@ import { D } from '../lib/design';
 import { CloseIcon } from './icons';
 import LigeroIcon from '../assets/Ligero-icon.svg';
 import PesadoIcon from '../assets/Pesado-icon.svg';
+import KeyboardAwareScrollView from './KeyboardAwareScrollView';
 
 interface EditScreenProps {
   entry: PoopEntry;
@@ -138,7 +139,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
         </View>
 
         {/* Scrollable content */}
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.container}>
 
           {/* Day */}
           <View style={styles.card}>
@@ -470,7 +471,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
               style={styles.notesInput}
             />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         {/* Action buttons */}
         <View style={styles.actions}>
