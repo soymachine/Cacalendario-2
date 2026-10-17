@@ -1,4 +1,4 @@
-import Svg, { Circle, Ellipse, G, Path, Line } from 'react-native-svg';
+import Svg, { Circle, Ellipse, G, Path, Line, Rect } from 'react-native-svg';
 import { D } from '../lib/design';
 
 // Shared inline icons ported from the web app's SVGs.
@@ -117,9 +117,16 @@ export function FoodSwitchIcon({ color, size = 38 }: { color: string; size?: num
     <Svg width={size} height={size} viewBox="0 0 88 88" fill="none">
       <SwitchRing color={color} />
       <G stroke={color} strokeWidth={SWITCH_STROKE} strokeLinecap="round" strokeLinejoin="round">
-        {/* Tenedor (dibujado en vertical y girado -45°) */}
+        {/* Tenedor de 4 púas (dibujado en vertical y girado -45°): púas y
+            cuello macizos, mango con el trazo común */}
         <G transform="rotate(-45 44 44)">
-          <Path d="M35.5 17V27Q35.5 35 44 35Q52.5 35 52.5 27V17M44 17V69" />
+          <G fill={color} stroke="none">
+            {[0, 1, 2, 3].map((i) => (
+              <Rect key={i} x={32.7 + i * 6.4} y={14} width={3.4} height={14} rx={1.7} />
+            ))}
+            <Path d="M32.7 26H55.3V29C55.3 34 48.5 35.5 46.55 39V44H41.45V39C39.5 35.5 32.7 34 32.7 29Z" />
+          </G>
+          <Path d="M44 40V69" />
         </G>
         {/* Cuchara (girada 45°) */}
         <G transform="rotate(45 44 44)">
