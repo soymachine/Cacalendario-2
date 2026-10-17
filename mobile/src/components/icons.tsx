@@ -117,12 +117,12 @@ export function FoodSwitchIcon({ color, size = 38 }: { color: string; size?: num
     <Svg width={size} height={size} viewBox="0 0 88 88" fill="none">
       <SwitchRing color={color} />
       <G stroke={color} strokeWidth={SWITCH_STROKE} strokeLinecap="round" strokeLinejoin="round">
-        {/* Tenedor de 4 púas (dibujado en vertical y girado -45°): púas y
+        {/* Tenedor de 3 púas (dibujado en vertical y girado -45°): púas y
             cuello macizos, mango con el trazo común */}
         <G transform="rotate(-45 44 44)">
           <G fill={color} stroke="none">
-            {[0, 1, 2, 3].map((i) => (
-              <Rect key={i} x={32.7 + i * 6.4} y={14} width={3.4} height={14} rx={1.7} />
+            {[0, 1, 2].map((i) => (
+              <Rect key={i} x={32.7 + i * 9.3} y={14} width={4} height={14} rx={2} />
             ))}
             <Path d="M32.7 26H55.3V29C55.3 34 48.5 35.5 46.55 39V44H41.45V39C39.5 35.5 32.7 34 32.7 29Z" />
           </G>
@@ -130,7 +130,7 @@ export function FoodSwitchIcon({ color, size = 38 }: { color: string; size?: num
         </G>
         {/* Cuchara (girada 45°) */}
         <G transform="rotate(45 44 44)">
-          <Ellipse cx={44} cy={25.5} rx={6.5} ry={9} />
+          <Ellipse cx={44} cy={23} rx={8.5} ry={11.5} />
           <Path d="M44 34.5V69" />
         </G>
       </G>
