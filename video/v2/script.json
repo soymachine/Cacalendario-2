@@ -1,0 +1,22 @@
+{
+  "voice": { "engine": "kokoro", "speaker": "ef_dora", "sid": 28, "speed": 1.05 },
+  "pronunciation": { "Fluxia": "Flucsia" },
+  "lines": [
+    { "id": "L01", "seg": "S01", "text": "Cada paciente cuenta una historia." },
+    { "id": "L02", "seg": "S01", "text": "El problema es que, muchas veces, los detalles de esa historia se pierden entre visitas." },
+    { "id": "L03", "seg": "S01", "text": "¿Ha registrado sus deposiciones? ¿Cómo han evolucionado sus micciones? ¿Qué ha comido?" },
+    { "id": "L04", "seg": "S02", "text": "¿Está siguiendo las indicaciones? Detalles que se olvidan, registros incompletos, información difícil de reconstruir." },
+    { "id": "L05", "seg": "S02", "text": "Fluxia te ayuda a cambiar eso." },
+    { "id": "L06", "seg": "S03", "text": "Invitas al paciente desde la plataforma y, en unos segundos, queda conectado contigo a través de la app Fluxia." },
+    { "id": "L07", "seg": "S04", "text": "Desde la app, el paciente registra sus deposiciones, sus micciones y su alimentación." },
+    { "id": "L08", "seg": "S05", "text": "Bastan unos toques: la forma de la deposición, el tipo de micción o una foto de lo que ha comido." },
+    { "id": "L09", "seg": "S06", "text": "Y registra únicamente la información que tú necesitas, ni más ni menos: configuras qué datos recoger y adaptas el seguimiento a cada caso." },
+    { "id": "L10", "seg": "S07", "text": "¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento." },
+    { "id": "L11", "seg": "S08", "text": "Cada registro llega al instante a tu panel, con una visión completa de todos tus pacientes." },
+    { "id": "L12", "seg": "S09", "text": "Un código de colores te permite detectar de un vistazo quién evoluciona con normalidad y quién puede necesitar atención." },
+    { "id": "L13", "seg": "S10", "text": "Y cuando necesitas profundizar, tienes el historial completo de cada paciente: deposiciones, micciones y comidas, su evolución en el tiempo, estadísticas de seguimiento e informes listos para incorporar a la historia clínica." },
+    { "id": "L14", "seg": "S11", "text": "Menos tiempo recopilando datos, más tiempo para interpretar lo que realmente importa." },
+    { "id": "L15", "seg": "S12", "text": "Porque un buen seguimiento empieza con información fiable." },
+    { "id": "L16", "seg": "S12", "text": "Fluxia. Datos reales, decisiones mejores." }
+  ]
+}

@@ -1110,3 +1110,9 @@ export function renderFrame(ctx, t) {
   sceneOutro(ctx, t);
   ctx.restore();
 }
+
+// Utilidades reutilizadas por el vídeo v2 (v2/scene.js).
+export {
+  clamp, lerp, prog, eo, eio, back, win, mix, rgba, rr, fillRR, strokeRR, shadow, noShadow,
+  text, measure, layer, drawLogo, drawLogoMark, cursorArrow, ripple, iconCheck, iconPdf, path, C,
+};

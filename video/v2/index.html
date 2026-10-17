@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fluxia · vídeo v2</title>
+<style>
+  @font-face { font-family: Lexend; font-weight: 300; src: url(../node_modules/@fontsource/lexend/files/lexend-latin-300-normal.woff2) format('woff2'); }
+  @font-face { font-family: Lexend; font-weight: 400; src: url(../node_modules/@fontsource/lexend/files/lexend-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: Lexend; font-weight: 500; src: url(../node_modules/@fontsource/lexend/files/lexend-latin-500-normal.woff2) format('woff2'); }
+  @font-face { font-family: Lexend; font-weight: 600; src: url(../node_modules/@fontsource/lexend/files/lexend-latin-600-normal.woff2) format('woff2'); }
+  @font-face { font-family: Lexend; font-weight: 700; src: url(../node_modules/@fontsource/lexend/files/lexend-latin-700-normal.woff2) format('woff2'); }
+  html, body { margin: 0; background: #0E1116; color: #cfd6df; font: 14px system-ui, sans-serif; }
+  canvas { display: block; width: 100%; height: auto; max-width: calc(100vh * 16 / 9 - 60px); margin: 0 auto; }
+  .bar { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 10px; }
+  body.render canvas { width: 1920px; max-width: none; }
+  body.render .bar { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div class="bar">
+  <input id="seek" type="range" min="0" max="96.4" step="0.04" value="0" style="width:70%">
+  <span id="time">0.00 s</span>
+</div>
+<script type="module">
+  import { renderFrame, loadAssets } from './scene.js';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  if (new URLSearchParams(location.search).has('render')) document.body.classList.add('render');
+  await Promise.all([300, 400, 500, 600, 700].map((w) => document.fonts.load(`${w} 20px Lexend`)));
+  await loadAssets();
+  // API para render.mjs: dibuja el instante t y devuelve el frame en JPEG/PNG.
+  window.renderAt = async (t, type = 'image/png', q) => { await renderFrame(ctx, t); return canvas.toDataURL(type, q); };
+  window.ready = true;
+  // Vista previa: buscar un instante con la barra (sin audio).
+  const seek = document.getElementById('seek'), label = document.getElementById('time');
+  let busy = false;
+  seek.oninput = async () => { if (busy) return; busy = true; await renderFrame(ctx, +seek.value); label.textContent = (+seek.value).toFixed(2) + ' s'; busy = false; };
+  seek.value = new URLSearchParams(location.search).get('t') || 0; seek.oninput();
+</script>
+</body>
+</html>
