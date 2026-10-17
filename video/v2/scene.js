@@ -156,12 +156,12 @@ function callout(ctx, x, y, label, color, a, { size = 22, icon } = {}) {
   const e = back(clamp(a));
   layer(ctx, clamp(a), () => {
     ctx.translate(x, y); ctx.scale(e, e);
-    const w = measure(ctx, label, size, 600) + (icon ? 76 : 44), h = size * 2.3;
+    const left = icon ? 62 : 40, w = measure(ctx, label, size, 600) + left + size * 1.3, h = size * 2.3;
     shadow(ctx, 24, 8, 'rgba(40,45,30,0.18)');
     fillRR(ctx, -w / 2, -h / 2, w, h, h / 2, '#fff'); noShadow(ctx);
     if (icon) { icon(-w / 2 + 34, 0); }
     else { ctx.beginPath(); ctx.arc(-w / 2 + 24, 0, 7, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
-    text(ctx, label, -w / 2 + (icon ? 62 : 40), size * 0.36, { size, weight: 600, color: INK });
+    text(ctx, label, -w / 2 + left, size * 0.36, { size, weight: 600, color: INK });
   });
 }
 
@@ -410,12 +410,11 @@ function sceneDetalle(ctx, t) {
     if (pa > 0) layer(ctx, pa, () => {
       ctx.translate(1300, 210); ctx.scale(pe * 1.6, pe * 1.6);
       shadow(ctx, 30, 12, 'rgba(20,40,70,0.22)');
-      fillRR(ctx, 0, 0, 230, 92, 16, '#fff'); noShadow(ctx);
+      fillRR(ctx, 0, 0, 296, 92, 16, '#fff'); noShadow(ctx);
       iconPdf(ctx, 22, 18, 42, 56);
-      text(ctx, 'Informe_Daniel_', 82, 38, { size: 13, weight: 600, color: INK });
-      text(ctx, 'Moya.pdf', 82, 55, { size: 13, weight: 600, color: INK });
-      iconCheck(ctx, 90, 72, 12, GREEN, 2.5, prog(t, CUES.exportPdf + 0.5, CUES.exportPdf + 0.8));
-      text(ctx, 'Listo para la historia clínica', 102, 77, { size: 11, weight: 600, color: GREEN });
+      text(ctx, 'Informe_Lucia_Ferrer.pdf', 82, 42, { size: 14, weight: 600, color: INK });
+      iconCheck(ctx, 90, 64, 12, GREEN, 2.5, prog(t, CUES.exportPdf + 0.5, CUES.exportPdf + 0.8));
+      text(ctx, 'Listo para la historia clínica', 102, 69, { size: 12, weight: 600, color: GREEN });
     });
     // cursor
     const keys = [[70.6, 300, 450], [71.25, 420, 462], [71.6, 420, 462], [74.3, 760, 600], [76.2, 1000, 560], [76.4, 700, 700],

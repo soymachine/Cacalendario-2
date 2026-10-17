@@ -29,13 +29,13 @@ export const SHOTS = [
 export const DURATION = 96.4;
 
 export const VO = {
-  L01: 0.6, L02: 3.0, L03: 8.0, L04: 14.4, L05: 21.6, L06: 24.3, L07: 31.2, L08: 36.6,
+  L01: 0.6, L02: 3.0, L03: 8.4, L04: 14.4, L05: 21.6, L06: 24.3, L07: 31.2, L08: 36.6,
   L09: 42.4, L10: 51.3, L11: 57.9, L12: 63.7, L13: 70.9, L14: 83.3, L15: 88.9, L16: 92.6,
 };
 
 // Momentos clave (s) para animaciones y efectos de sonido.
 export const CUES = {
-  foodIcon: 12.4,
+  foodIcon: 12.2,
   trio: [33.45, 34.35, 35.15],       // deposiciones / micciones / alimentación (L07)
   tapBristol: 37.9, tabUrine: 38.7, tapUrine: 39.2, tabFood: 39.75, tapPhoto: 40.3,
   clickConfig: 43.6, drawer: 43.8, zoomDrawer: 44.6, foodToggle: 45.4, campos: 46.6, setHidden: 47.6, zoomOut: 49.6,

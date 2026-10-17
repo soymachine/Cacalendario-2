@@ -30,7 +30,8 @@ Resultado: [`fluxia-explicativo-v2.mp4`](fluxia-explicativo-v2.mp4) — 1920×10
 | Archivo | Qué hace |
 |---|---|
 | `script.json` | Guion de la locución (frases, voz y pronunciación). |
-| `voice.py` | Locución con TTS local: sherpa-onnx + Kokoro v1.0, voz española `ef_dora`. |
+| `voice.py` | Locución con TTS local (sherpa-onnx): voz Piper `es_ES-sharvard`, locutora F, acento castellano de España. |
+| `anonymize.mjs` | Sustituye nombres y correos reales de los pantallazos del panel por pacientes ficticios. |
 | `timeline.js` | Planos, mapeo de tiempo de los planos originales, inicio de cada frase y momentos clave. |
 | `scene.js` | Composición en canvas (planos originales + demos + grafismos). |
 | `mix.mjs` | Música generada por código + locución con ducking + efectos → `out/soundtrack.wav`. |
@@ -42,8 +43,9 @@ Resultado: [`fluxia-explicativo-v2.mp4`](fluxia-explicativo-v2.mp4) — 1920×10
 ```bash
 cd video && npm install                       # playwright-core + Lexend (una vez)
 pip install sherpa-onnx soundfile             # TTS (una vez)
-mkdir -p v2/models && curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2 | tar xj -C v2/models
+mkdir -p v2/models && curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-sharvard-medium.tar.bz2 | tar xj -C v2/models
 cd v2
+node anonymize.mjs <carpeta-con-pantallazos-originales>   # sólo si cambian los pantallazos del panel
 python3 voice.py                              # out/vo/*.wav  (python3 voice.py L07 → rehace sólo esa frase)
 node mix.mjs                                  # out/soundtrack.wav
 node render.mjs                               # out/fluxia-v2.mp4 (~3 min)
