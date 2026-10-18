@@ -2178,45 +2178,12 @@ export default function MedicsPanel() {
         )}
         {section === 'pacientes' && selectedPatient && patientDetail && !detailLoading && (
           <div className="medics-patient-detail">
-            <div
-              className="mb-5 gap-3"
-              style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr auto', alignItems: 'center', rowGap: 12 }}
-            >
-              <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx" style={{ justifySelf: 'start' }}>
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+              <button onClick={() => { setSelectedPatient(null); setPatientDetail(null); }} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx hover:bg-fx-ink-50 transition-colors">
                 ← Volver
               </button>
 
-              <div className="flex flex-col items-center text-center min-w-0" style={{ order: isMobile ? -1 : 0 }}>
-                <span className="inline-flex items-center justify-center gap-2.5 flex-wrap text-[20px] md:text-[24px] font-extrabold text-fx-text tracking-tight">
-                  {patientLabel(selectedPatient)}
-                  <button
-                    title="Datos del paciente"
-                    onClick={() => {
-                      setProfileDob(selectedPatient.dob || '');
-                      setProfileHeight(selectedPatient.height_cm != null ? String(selectedPatient.height_cm) : '');
-                      setProfileWeight(selectedPatient.weight_kg != null ? String(selectedPatient.weight_kg) : '');
-                      setPatientProfileOpen(true);
-                    }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--fx-ink-400)', display: 'flex' }}
-                  >
-                    <UserCircle size={22} />
-                  </button>
-                  {selectedPatient.hasPushSub === true && (
-                    <Bell size={18} title="Notificaciones activas" color="var(--color-secondary)" />
-                  )}
-                  {selectedPatient.hasPushSub === false && (
-                    <BellSlash size={18} title="Sin notificaciones" color="var(--fx-ink-300)" />
-                  )}
-                  {patientTagsDraft.map(t => (
-                    <span key={t} className="text-[11px] px-2 py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>{t}</span>
-                  ))}
-                </span>
-                {selectedPatient.patient_email && (
-                  <p className="text-sm text-fx-text-secondary mt-1 mb-0">{selectedPatient.patient_email}</p>
-                )}
-              </div>
-
-              <div className="flex gap-2 flex-wrap" style={{ justifySelf: isMobile ? 'start' : 'end' }}>
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => exportPatientPDF(selectedPatient, patientDetail, doctorInfo)} className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-white font-fx border border-fx-border" style={{ backgroundColor: th.dark }}>
                   Exportar PDF
                 </button>
@@ -2251,26 +2218,78 @@ export default function MedicsPanel() {
               </div>
             </div>
 
-            {/* Row 1: Hace X días + Notificaciones al paciente, side by side */}
+            {/* Row 1: ficha del paciente + Notificaciones al paciente, side by side */}
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 16, alignItems: 'stretch' }} className="mb-4">
-              {/* Hace X días */}
-              <div className="medics-patient-detail__semaforo bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3 flex flex-col gap-1.5 justify-center" style={{ flex: isMobile ? undefined : '0 0 max(25%, 315px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 315 }}>
-                <div className="flex items-center gap-2.5">
-                  <Circle size={18} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
-                  <span className="text-[15px] font-bold text-fx-text">
-                    {patientDetail.daysSinceLast === null
-                      ? 'Sin registros'
-                      : patientDetail.daysSinceLast === 0
-                        ? 'Último registro: hoy'
-                        : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
-                  </span>
+              {/* Ficha: nombre, datos, notificaciones, email, etiquetas y semáforo.
+                  Se distingue del resto con un borde de color a la izquierda y un fondo tintado. */}
+              <div
+                className="medics-patient-detail__card relative overflow-hidden rounded-fx-lg shadow-fx-sm border border-fx-border-soft pl-5 pr-4 py-4 flex flex-col gap-3"
+                style={{
+                  flex: isMobile ? undefined : '0 0 max(30%, 340px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 340,
+                  background: `linear-gradient(135deg, color-mix(in srgb, ${th.primary} 13%, var(--color-surface, #fff)) 0%, var(--color-surface, #fff) 75%)`,
+                }}
+              >
+                <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: th.primary }} />
+                <div className="min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h1 className="text-[22px] md:text-[26px] font-extrabold text-fx-text tracking-tight leading-tight m-0 break-words min-w-0">
+                      {patientLabel(selectedPatient)}
+                    </h1>
+                    <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+                    <button
+                      title="Datos del paciente"
+                      aria-label="Datos del paciente"
+                      onClick={() => {
+                        setProfileDob(selectedPatient.dob || '');
+                        setProfileHeight(selectedPatient.height_cm != null ? String(selectedPatient.height_cm) : '');
+                        setProfileWeight(selectedPatient.weight_kg != null ? String(selectedPatient.weight_kg) : '');
+                        setPatientProfileOpen(true);
+                      }}
+                      className="flex p-1 rounded-full border-none bg-transparent cursor-pointer text-fx-ink-400 hover:bg-white/70 hover:text-fx-text transition-colors"
+                    >
+                      <UserCircle size={22} />
+                    </button>
+                    {selectedPatient.hasPushSub === true && (
+                      <span title="Notificaciones activas" className="flex"><Bell size={18} color="var(--color-secondary)" /></span>
+                    )}
+                    {selectedPatient.hasPushSub === false && (
+                      <span title="Sin notificaciones" className="flex"><BellSlash size={18} color="var(--fx-ink-300)" /></span>
+                    )}
+                    </div>
+                  </div>
+                  {selectedPatient.patient_email && (
+                    <p className="text-sm text-fx-text-secondary mt-0.5 mb-0 break-all">{selectedPatient.patient_email}</p>
+                  )}
+                  {(patientTagsDraft.length > 0 || selectedPatient.doctor_unlinked) && (
+                    <div className="flex gap-1.5 flex-wrap mt-2">
+                      {selectedPatient.doctor_unlinked && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-[20px] font-bold bg-fx-ink-100 text-fx-ink-500 inline-flex items-center gap-1"><Archive size={12} /> Archivado</span>
+                      )}
+                      {patientTagsDraft.map(t => (
+                        <span key={t} className="text-[11px] px-2 py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '22', color: tagColor(t) }}>{t}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {patientDetail.lastEntryDate && (
-                  <span className="text-xs text-fx-text-tertiary">Último registro: {shortDate(patientDetail.lastEntryDate)}</span>
-                )}
-                {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
-                  <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
-                )}
+
+                <div className="border-t border-fx-border-soft pt-3 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Circle size={14} weight="fill" color={getSemaforo(patientDetail.daysSinceLast, effectiveGreen, effectiveRed).color} />
+                    <span className="text-[14px] font-bold text-fx-text">
+                      {patientDetail.daysSinceLast === null
+                        ? 'Sin registros'
+                        : patientDetail.daysSinceLast === 0
+                          ? 'Último registro: hoy'
+                          : `Hace ${patientDetail.daysSinceLast} día${patientDetail.daysSinceLast !== 1 ? 's' : ''}`}
+                    </span>
+                  </div>
+                  {patientDetail.lastEntryDate && (
+                    <span className="text-xs text-fx-text-tertiary">Último registro: {shortDate(patientDetail.lastEntryDate)}</span>
+                  )}
+                  {patientDetail.daysSinceLast !== null && patientDetail.daysSinceLast > 3 && (
+                    <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--fx-error-700)' }}><WarningCircle size={13} weight="fill" /> Varios días sin registrar</span>
+                  )}
+                </div>
               </div>
 
               {/* Notificaciones al paciente */}

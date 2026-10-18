@@ -1,6 +1,6 @@
 // Supabase Edge Function: send-invite-email
 // Sends a branded invitation email to a patient (no invite code): download
-// the app, sign in with the invited email, accept the invitation in the app.
+// the app and sign in with the invited email.
 // Deploy via: supabase functions deploy send-invite-email
 // Requires RESEND_API_KEY secret
 
@@ -75,15 +75,6 @@ Deno.serve(async (req) => {
           <td valign="top" style="padding:5px 0 16px;">
             <strong style="color:#1a2535;font-size:14px;">Crea tu cuenta o inicia sesión</strong>
             <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.45;">Usa este mismo email: <strong>${esc(patientEmail)}</strong>.</p>
-          </td>
-        </tr>
-        <tr>
-          <td width="44" valign="top" style="padding:0 0 16px;">
-            <div style="width:32px;height:32px;border-radius:16px;background:#4f98a2;color:#fff;font-weight:800;font-size:14px;text-align:center;line-height:32px;">3</div>
-          </td>
-          <td valign="top" style="padding:5px 0 16px;">
-            <strong style="color:#1a2535;font-size:14px;">Acepta la invitación</strong>
-            <p style="color:#666;font-size:13px;margin:2px 0 0;line-height:1.45;">Te aparecerá al entrar en la app. Acéptala y empieza a registrar.</p>
           </td>
         </tr>
       </table>
