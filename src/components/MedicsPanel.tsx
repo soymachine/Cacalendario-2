@@ -4,7 +4,7 @@ import { supabaseMedics as supabase } from '../lib/supabase';
 import { APP_VERSION } from '../lib/version';
 import Switch from 'rc-switch';
 import 'rc-switch/assets/index.css';
-import { PALETTES } from '../lib/palettes';
+import { PALETTES, FLUXIA_THEME } from '../lib/palettes';
 import type { MedicsTheme } from '../lib/palettes';
 import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
@@ -274,9 +274,9 @@ export default function MedicsPanel() {
   const [entryPage, setEntryPage] = useState(0);
   const [entryFilterFrom, setEntryFilterFrom] = useState('');
   const [entryFilterTo, setEntryFilterTo] = useState('');
-  const [configPalette, setConfigPalette] = useState('terracotta');
-  const [customColor1, setCustomColor1] = useState('#dd8273');
-  const [customColor2, setCustomColor2] = useState('#1a0e0e');
+  const [configPalette, setConfigPalette] = useState('fluxia');
+  const [customColor1, setCustomColor1] = useState('#3C7DB8');
+  const [customColor2, setCustomColor2] = useState('#274867');
   const [extractingColors, setExtractingColors] = useState(false);
   const [patientHiddenFields, setPatientHiddenFields] = useState<string[]>([]);
   const [patientEntryTypeMode, setPatientEntryTypeMode] = useState<string>('both');
@@ -312,9 +312,9 @@ export default function MedicsPanel() {
   const [foodTagCatalog, setFoodTagCatalog] = useState<string[]>([]);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
 
-  const th: MedicsTheme = configPalette === 'custom'
-    ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
-    : (PALETTES.find(p => p.id === configPalette) || PALETTES[0]).theme;
+  // Siempre el tema corporativo: el selector de paletas está deshabilitado
+  // (ver «Paleta de colores» en Configuración) y la paleta guardada ya no se aplica.
+  const th: MedicsTheme = FLUXIA_THEME;
 
   const doctorFirstName = professionalFirstName(doctorInfo?.name);
 
@@ -354,7 +354,7 @@ export default function MedicsPanel() {
     center_image_url: (d.centers as { name: string; image_url?: string } | null)?.image_url || null,
     semaforo_green: d.semaforo_green ?? 1,
     semaforo_red: d.semaforo_red ?? 3,
-    palette: d.palette || 'terracotta',
+    palette: d.palette || 'fluxia',
     plan: (d.plan as 'free' | 'beta' | 'test' | 'pro') || 'free',
     test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
@@ -4268,20 +4268,20 @@ function exportPatientPDF(patient: PatientLink, detail: PatientDetail, doctor: D
 <title>Informe - ${patientName}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a0e0e; padding: 40px; font-size: 12px; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #2D3539; padding: 40px; font-size: 12px; }
   h1 { font-size: 22px; margin-bottom: 4px; }
-  h2 { font-size: 15px; margin: 24px 0 8px; color: #dd8273; border-bottom: 2px solid #dd8273; padding-bottom: 4px; }
+  h2 { font-size: 15px; margin: 24px 0 8px; color: #3C7DB8; border-bottom: 2px solid #3C7DB8; padding-bottom: 4px; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
-  .header-left h1 { color: #1a0e0e; }
+  .header-left h1 { color: #2D3539; }
   .header-right { text-align: right; color: #888; font-size: 11px; }
   .stats { display: flex; gap: 12px; margin: 16px 0; }
-  .stat { flex: 1; background: #f9f5f4; border-radius: 8px; padding: 12px; text-align: center; }
-  .stat-value { font-size: 24px; font-weight: 900; color: #1a0e0e; }
+  .stat { flex: 1; background: #EEF4FB; border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-value { font-size: 24px; font-weight: 900; color: #274867; }
   .stat-label { font-size: 10px; color: #888; text-transform: uppercase; margin-top: 4px; }
   .alert { background: #FCF4E7; border-left: 4px solid #E09F3C; padding: 8px 12px; margin: 8px 0; font-size: 12px; border-radius: 4px; }
   .alert-red { background: #FBEDED; border-left-color: #D26464; }
   table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #f5f0ef; text-align: left; padding: 6px 8px; font-weight: 700; color: #555; font-size: 10px; text-transform: uppercase; }
+  th { background: #F4F7F3; text-align: left; padding: 6px 8px; font-weight: 700; color: #555; font-size: 10px; text-transform: uppercase; }
   td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
   .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #eee; font-size: 10px; color: #aaa; text-align: center; }
   @media print { body { padding: 20px; } }
