@@ -182,7 +182,7 @@ export default function PatientListScreen({
                 <Text style={styles.rowMeta} numberOfLines={1}>
                   {isAccepted && patient.lastEntryDate
                     ? `${patient.daysSinceLast === 0 ? 'Hoy' : `hace ${patient.daysSinceLast} día${patient.daysSinceLast !== 1 ? 's' : ''}`} · ${shortDate(patient.lastEntryDate)}`
-                    : isAccepted ? 'Sin registros' : patient.doctor_unlinked ? 'Desvinculado' : 'Invitación pendiente'}
+                    : isAccepted ? 'Sin registros' : patient.doctor_unlinked ? 'Archivado' : 'Invitación pendiente'}
                 </Text>
                 {(patient.tags || []).length > 0 && (
                   <View style={styles.tagRow}>
@@ -196,7 +196,7 @@ export default function PatientListScreen({
                 backgroundColor: isAccepted ? '#E7F5EC' : patient.doctor_unlinked ? D.chip : '#FCF4E7',
                 color: isAccepted ? D.success : patient.doctor_unlinked ? D.textMuted : '#C0832B',
               }]}>
-                {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Desvinc.' : 'Pendiente'}
+                {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Archivado' : 'Pendiente'}
               </Text>
             </Pressable>
           );

@@ -112,7 +112,8 @@ CREATE TABLE public.user_profiles (
 CREATE TABLE public.push_subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  subscription jsonb NOT NULL
+  subscription jsonb NOT NULL,
+  last_push_sent_at timestamptz
 );
 
 CREATE TABLE public.patient_clinical_notes (

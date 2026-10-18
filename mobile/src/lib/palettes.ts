@@ -8,9 +8,11 @@ export interface DoctorConfig {
   entryTypeMode: EntryTypeMode;
   /** Pauta de comidas del vínculo ya resuelta (linkFoodConfig); null sin profesional. */
   foodConfig: unknown;
+  /** El profesional ha archivado el seguimiento (doctor_unlinked): no hay que registrar nada. */
+  archived: boolean;
 }
 
-const DEFAULT_CONFIG: DoctorConfig = { hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both', foodConfig: null };
+const DEFAULT_CONFIG: DoctorConfig = { hiddenFields: [], centerImageUrl: null, entryTypeMode: 'both', foodConfig: null, archived: false };
 
 /** Fetch the doctor config (hidden fields, center image, entry types, food protocol) for the patient's linked doctor. */
 export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
@@ -20,14 +22,16 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       .select(columns)
       .eq('patient_id', userId)
       .eq('status', 'accepted')
+      // Con varios vínculos, manda el activo; archivado solo si lo están todos
+      .order('doctor_unlinked', { ascending: true })
       .limit(1)
       .single();
 
-    let res = await query('center_id, hidden_fields, entry_type_mode, food_config');
+    let res = await query('center_id, hidden_fields, entry_type_mode, food_config, doctor_unlinked');
     // Sin la migración de comidas aún aplicada: la pauta de siempre, sin comidas.
     const hasFoodColumn = !(res.error && res.error.code !== 'PGRST116');
-    if (!hasFoodColumn) res = await query('center_id, hidden_fields, entry_type_mode');
-    const link = res.data as { center_id?: string | null; hidden_fields?: string[] | null; entry_type_mode?: string | null; food_config?: unknown } | null;
+    if (!hasFoodColumn) res = await query('center_id, hidden_fields, entry_type_mode, doctor_unlinked');
+    const link = res.data as { center_id?: string | null; hidden_fields?: string[] | null; entry_type_mode?: string | null; food_config?: unknown; doctor_unlinked?: boolean | null } | null;
     if (!link) return DEFAULT_CONFIG;
 
     const base: DoctorConfig = {
@@ -36,6 +40,7 @@ export async function fetchDoctorConfig(userId: string): Promise<DoctorConfig> {
       entryTypeMode: (link.entry_type_mode as EntryTypeMode) || 'both',
       // Sin pauta guardada, las comidas vienen activadas por defecto
       foodConfig: hasFoodColumn ? linkFoodConfig(link.food_config) : null,
+      archived: link.doctor_unlinked === true,
     };
     if (!link.center_id) return base;
 

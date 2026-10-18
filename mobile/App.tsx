@@ -1,5 +1,5 @@
 import { Component, useEffect, useState, type ReactNode } from 'react';
-import { View, Text, Pressable, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView, StyleSheet, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Calendar from './src/components/Calendar';
@@ -22,7 +22,7 @@ import { fetchDoctorConfig } from './src/lib/palettes';
 import {
   setDoctorHiddenFields, clearDoctorHiddenFields, setDoctorImage, clearDoctorImage,
   setDoctorEntryTypeMode, clearDoctorEntryTypeMode, setDoctorFoodConfig, clearDoctorFoodConfig,
-  type RegisterType,
+  setDoctorFollowUpArchived, type RegisterType,
 } from './src/lib/preferences';
 import { registerPushSubscription } from './src/lib/push';
 import { hydrateLocalStore } from './src/lib/localStore';
@@ -59,19 +59,26 @@ function AppContent() {
         .finally(() => setSyncing(false))
         // Fotos de comidas que no se pudieron subir (sin conexión) la última vez
         .then(() => retryPendingFoodPhotos());
-      fetchDoctorConfig(user.id).then(config => {
+      const applyDoctorConfig = () => fetchDoctorConfig(user.id).then(config => {
         setDoctorHiddenFields(config.hiddenFields);
         if (config.centerImageUrl) setDoctorImage(config.centerImageUrl);
         else clearDoctorImage();
         setDoctorEntryTypeMode(config.entryTypeMode);
         setDoctorFoodConfig(config.foodConfig);
+        setDoctorFollowUpArchived(config.archived);
       });
+      applyDoctorConfig();
       registerPushSubscription(user.id);
+      // El profesional puede cambiar la pauta (o archivar / reactivar el
+      // seguimiento) con la app abierta: se vuelve a leer al volver a ella.
+      const sub = AppState.addEventListener('change', (state) => { if (state === 'active') applyDoctorConfig(); });
+      return () => sub.remove();
     } else {
       clearDoctorHiddenFields();
       clearDoctorImage();
       clearDoctorEntryTypeMode();
       clearDoctorFoodConfig();
+      setDoctorFollowUpArchived(false);
     }
   }, [user]);
 

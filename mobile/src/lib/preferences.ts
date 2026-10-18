@@ -150,6 +150,22 @@ export function clearDoctorFoodConfig(): void {
   localStore.removeItem(DOCTOR_FOOD_CONFIG_KEY);
 }
 
+// ── Seguimiento archivado por el profesional (patient_links.doctor_unlinked) ──
+// El profesional ya no necesita que el paciente registre nada: la app no
+// muestra el formulario de registro (RegisterScreen).
+
+const DOCTOR_ARCHIVED_KEY = 'cacalendario_doctor_archived';
+
+export function isDoctorFollowUpArchived(): boolean {
+  return localStore.getItem(DOCTOR_ARCHIVED_KEY) === '1';
+}
+
+export function setDoctorFollowUpArchived(archived: boolean): void {
+  if (archived) localStore.setItem(DOCTOR_ARCHIVED_KEY, '1');
+  else localStore.removeItem(DOCTOR_ARCHIVED_KEY);
+  emitEvent(FLUXIA_PREFS_CHANGED);
+}
+
 export type { RegisterType };
 
 /**

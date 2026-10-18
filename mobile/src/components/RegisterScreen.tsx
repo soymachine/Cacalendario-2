@@ -7,7 +7,7 @@ import Slider from '@react-native-community/slider';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
-import { getDoctorHiddenFields, getDoctorImage, getAvailableRegisterTypes, type RegisterType } from '../lib/preferences';
+import { getDoctorHiddenFields, getDoctorImage, getAvailableRegisterTypes, isDoctorFollowUpArchived, type RegisterType } from '../lib/preferences';
 import { emitEvent, onEvent, FLUXIA_UPDATED, FLUXIA_PREFS_CHANGED } from '../lib/events';
 import {
   FLOAT_OPTIONS, COLOR_OPTIONS, URINE_COLOR_OPTIONS, URINE_TYPE_OPTIONS,
@@ -35,6 +35,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   // La pauta del profesional llega tras el login con la pantalla ya montada
   const [, refreshTypes] = useReducer((n: number) => n + 1, 0);
   useEffect(() => onEvent(FLUXIA_PREFS_CHANGED, refreshTypes), []);
+
+  // Seguimiento archivado por el profesional: no hay nada que registrar
+  const archived = isDoctorFollowUpArchived();
 
   const now = new Date();
   const availableTypes = getAvailableRegisterTypes(toDateKey(now));
@@ -152,6 +155,16 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           </Pressable>
         )}
       </View>
+
+      {archived ? (
+        <View style={[styles.sectionCard, styles.archivedCard]} accessibilityRole="summary">
+          <Text style={styles.archivedTitle}>Por ahora no necesitas registrar nada</Text>
+          <Text style={styles.archivedText}>
+            Tu profesional sanitario ha pausado tu seguimiento en Fluxia. Si más adelante necesita que vuelvas a registrar, podrás hacerlo desde aquí.
+          </Text>
+          <Text style={styles.archivedText}>Tus registros anteriores siguen disponibles en el historial.</Text>
+        </View>
+      ) : <>
 
       {/* Date + time row */}
       {!isFood && <>
@@ -507,6 +520,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         <Text style={styles.saveButtonText}>Registrar</Text>
       </Pressable>
       </>}
+      </>}
     </KeyboardAwareScrollView>
   );
 
@@ -602,6 +616,23 @@ const styles = StyleSheet.create({
   },
   typeButtonActive: {
     backgroundColor: D.card,
+  },
+  archivedCard: {
+    backgroundColor: D.card,
+    marginTop: 12,
+    paddingVertical: 20,
+  },
+  archivedTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: D.text,
+    marginBottom: 8,
+  },
+  archivedText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: D.textMuted,
+    marginBottom: 6,
   },
   sectionCard: {
     borderRadius: 14,

@@ -20,6 +20,8 @@ interface FoodConfigEditorProps {
   onCreateTag: (tag: string) => void;
   accent: string;
   today: string;
+  /** Sin el interruptor de activar/desactivar: se muestra la pauta como activa (modal de invitación). */
+  hideToggle?: boolean;
 }
 
 const MODES: FieldMode[] = ['required', 'optional', 'hidden'];
@@ -27,7 +29,7 @@ const GRACE_OPTIONS: { value: number; label: string }[] = [
   { value: 30, label: '30 min' }, { value: 60, label: '1 h' }, { value: 90, label: '1 h 30 min' }, { value: 120, label: '2 h' },
 ];
 
-export default function FoodConfigEditor({ value: cfg, onChange, catalog, onCreateTag, accent, today }: FoodConfigEditorProps) {
+export default function FoodConfigEditor({ value: cfg, onChange, catalog, onCreateTag, accent, today, hideToggle }: FoodConfigEditorProps) {
   const [tagInput, setTagInput] = useState('');
   const patch = (p: Partial<FoodTrackingConfig>) => onChange({ ...cfg, ...p });
   const sectionTitle = (t: string) => (
@@ -43,6 +45,7 @@ export default function FoodConfigEditor({ value: cfg, onChange, catalog, onCrea
 
   return (
     <div className="medics-patient-config__food bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-4 py-3.5">
+      {!hideToggle && <>
       <div className="flex items-center gap-2.5">
         <Switch
           checked={cfg.enabled}
@@ -54,8 +57,9 @@ export default function FoodConfigEditor({ value: cfg, onChange, catalog, onCrea
       <p className="text-[11px] text-fx-ink-300 leading-relaxed mt-1.5 mb-0">
         Seguimiento clínico, no nutricional: sin calorías ni gramos. El paciente solo verá los campos que actives.
       </p>
+      </>}
 
-      {cfg.enabled && (
+      {(cfg.enabled || hideToggle) && (
         <div className="flex flex-col">
           {/* Campos */}
           {sectionTitle('Campos')}

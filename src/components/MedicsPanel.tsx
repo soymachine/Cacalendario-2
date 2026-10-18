@@ -18,6 +18,8 @@ import FoodStatsCard from './FoodStatsCard';
 import FoodEntryDetail from './FoodEntryDetail';
 import FoodPhoto from './FoodPhoto';
 import ClinicalTimeline from './ClinicalTimeline';
+import InvitePatientModal, { type InviteSettings, type InviteResult } from './InvitePatientModal';
+import { coreFieldsFor } from '../lib/coreFields';
 import {
   linkFoodConfig, enableFoodConfig, patientDaysSinceLast as semaforoDays, localDateKey,
   mealTypeLabel, portionLabel, addTag, removeTag, type FoodTrackingConfig,
@@ -27,7 +29,7 @@ import type { CheckoutOutcome, BillingInterval } from '../lib/billing';
 import {
   Bell, BellSlash, Circle, CheckCircle, WarningCircle,
   Trash, TrendUp, TrendDown, Minus, NotePencil, Image, Play,
-  House, User, UserPlus, Sliders, UserMinus, UserCircle,
+  UserPlus, UserCircle, Archive, ArrowCounterClockwise, CaretRight,
 } from '@phosphor-icons/react';
 
 // Initialize Sentry once at module load (no-op in dev)
@@ -144,14 +146,7 @@ interface PatientDetail {
   daysSinceLast: number | null;
 }
 
-type Section = 'inicio' | 'pacientes' | 'invitar' | 'config';
-
-const NAV_ITEMS: { id: Section; label: string; icon: React.ComponentType<{ size?: number; weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone' }> }[] = [
-  { id: 'inicio', label: 'Inicio', icon: House },
-  { id: 'pacientes', label: 'Pacientes', icon: User },
-  { id: 'invitar', label: 'Invitar pacientes', icon: UserPlus },
-  { id: 'config', label: 'Configuración', icon: Sliders },
-];
+type Section = 'pacientes' | 'config';
 
 const ONBOARDING_STEPS = [
   {
@@ -164,13 +159,13 @@ const ONBOARDING_STEPS = [
     color: 'var(--fx-green-50)',
     accent: 'var(--color-secondary)',
     title: 'Tus pacientes',
-    body: 'En la sección «Pacientes» verás todos los pacientes vinculados. El semáforo de cada uno indica cuántos días llevan sin registrar: verde al día, naranja varios días, rojo inactivo.',
+    body: 'Al entrar verás la lista de tus pacientes. El semáforo de cada uno indica cuántos días llevan sin registrar: verde al día, naranja varios días, rojo inactivo.',
   },
   {
     color: 'var(--fx-teal-50)',
     accent: 'var(--color-accent)',
     title: 'Invita a un paciente',
-    body: 'Ve a «Invitar Paciente» e introduce el email de tu paciente. Una vez que se registre en Fluxia, verá un botón para aceptar tu invitación en su apartado de configuración y quedará vinculado a tu cuenta automáticamente.',
+    body: 'Pulsa «Invitar paciente», introduce su email y elige qué quieres que registre. Cuando descargue la app Fluxia y acepte tu invitación, quedará vinculado a tu cuenta.',
   },
   {
     color: 'var(--fx-blue-50)',
@@ -182,7 +177,7 @@ const ONBOARDING_STEPS = [
     color: 'var(--fx-green-50)',
     accent: 'var(--color-secondary)',
     title: 'Personaliza tu portal',
-    body: 'Desde «Configuración» actualiza tu nombre, el nombre de tu consulta, los umbrales del semáforo y el color del panel. ¡Hazlo tuyo!',
+    body: 'Desde «Configuración», en el menú de tu cuenta (arriba a la derecha), actualiza tu nombre, el nombre de tu consulta, los umbrales del semáforo y el color del panel. ¡Hazlo tuyo!',
   },
 ];
 
@@ -231,15 +226,15 @@ export default function MedicsPanel() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debugMsg, setDebugMsg] = useState('');
-  const [section, setSection] = useState<Section>('inicio');
+  const [section, setSection] = useState<Section>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [patientDetail, setPatientDetail] = useState<PatientDetail | null>(null);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [forgotMode, setForgotMode] = useState<'off' | 'email' | 'sent'>('off');
   const [registerMode, setRegisterMode] = useState(false);
   const [registerStep, setRegisterStep] = useState<'email' | 'details' | 'password' | 'done'>('email');
@@ -253,7 +248,7 @@ export default function MedicsPanel() {
   const [pendingCenterName, setPendingCenterName] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [patientActionModal, setPatientActionModal] = useState<{ type: 'unlink' | 'remove'; patient: PatientLink } | null>(null);
+  const [patientActionModal, setPatientActionModal] = useState<{ type: 'unlink' | 'reactivate' | 'remove'; patient: PatientLink } | null>(null);
   const [patientProfileOpen, setPatientProfileOpen] = useState(false);
   const [profileDob, setProfileDob] = useState('');
   const [profileHeight, setProfileHeight] = useState('');
@@ -316,8 +311,6 @@ export default function MedicsPanel() {
   const [foodDetail, setFoodDetail] = useState<PatientEntry | null>(null);
   const [foodTagCatalog, setFoodTagCatalog] = useState<string[]>([]);
   const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
-  const [practiceStats, setPracticeStats] = useState<{ thisWeekEntries: number; lastWeekEntries: number; thisWeekBristol: number | null; lastWeekBristol: number | null } | null>(null);
-  const [bristolAlerts, setBristolAlerts] = useState<{ patientId: string; curr: number; prev: number }[]>([]);
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -833,41 +826,6 @@ export default function MedicsPanel() {
     loadPatients();
   }, [loggedIn, doctorInfo]);
 
-  useEffect(() => {
-    const accepted = patients.filter(p => p.status === 'accepted' && p.patient_id);
-    if (accepted.length === 0) { setPracticeStats(null); setBristolAlerts([]); return; }
-    const patientIds = accepted.map(p => p.patient_id as string);
-    const d98 = new Date(); d98.setDate(d98.getDate() - 98);
-    const d14 = new Date(); d14.setDate(d14.getDate() - 14);
-    const d7  = new Date(); d7.setDate(d7.getDate() - 7);
-    const s98 = d98.toISOString().split('T')[0];
-    const s14 = d14.toISOString().split('T')[0];
-    const s7  = d7.toISOString().split('T')[0];
-    let cancelled = false;
-    supabase.from('entries').select('date, bristol, entry_type, user_id').in('user_id', patientIds).gte('date', s98).then(({ data }) => {
-      if (cancelled || !data) return;
-      // Practice stats (last 2 weeks)
-      const thisWeek = data.filter((e: any) => e.date >= s7);
-      const lastWeek = data.filter((e: any) => e.date >= s14 && e.date < s7);
-      const avgB = (es: any[]) => { const bv = es.filter(e => e.entry_type === 'poop' && e.bristol != null).map(e => e.bristol as number); return bv.length ? bv.reduce((s: number, v: number) => s + v, 0) / bv.length : null; };
-      setPracticeStats({ thisWeekEntries: thisWeek.length, lastWeekEntries: lastWeek.length, thisWeekBristol: avgB(thisWeek), lastWeekBristol: avgB(lastWeek) });
-      // Per-patient Bristol worsening alerts
-      const alerts: { patientId: string; curr: number; prev: number }[] = [];
-      for (const pid of patientIds) {
-        const pe = data.filter((e: any) => e.user_id === pid && e.entry_type === 'poop' && e.bristol != null);
-        const cw = pe.filter((e: any) => e.date >= s7).map((e: any) => e.bristol as number);
-        const lw = pe.filter((e: any) => e.date >= s14 && e.date < s7).map((e: any) => e.bristol as number);
-        if (cw.length >= 2 && lw.length >= 2) {
-          const ca = cw.reduce((s, v) => s + v, 0) / cw.length;
-          const pa = lw.reduce((s, v) => s + v, 0) / lw.length;
-          if (Math.abs(ca - 4) > Math.abs(pa - 4) + 0.5) alerts.push({ patientId: pid, curr: ca, prev: pa });
-        }
-      }
-      setBristolAlerts(alerts);
-    });
-    return () => { cancelled = true; };
-  }, [patients]);
-
   // ── Onboarding: show on first login, persist via localStorage ──
   useEffect(() => {
     if (!loggedIn || !doctorInfo) return;
@@ -935,65 +893,44 @@ export default function MedicsPanel() {
     }
   };
 
-  // ── Invite patient ──
-  const [emailSent, setEmailSent] = useState(false);
-  const [emailError, setEmailError] = useState('');
+  // ── Invite patient (modal de invitación, con la pauta ya elegida) ──
+  // Beta: límite de pacientes activos (aceptados + pendientes, sin archivados). El trial y Pro son ilimitados.
+  const activePatientsCount = patients.filter(p => !p.doctor_unlinked).length;
+  const atPatientLimit = doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT;
 
-  const handleInvite = async () => {
-    setError('');
-    setEmailSent(false);
-    setEmailError('');
-    setInviteSuccess(false);
-    if (!inviteEmail.trim()) { setError('Introduce el email del paciente'); return; }
-    // Beta: límite de pacientes (aceptados + pendientes). El trial y Pro son ilimitados.
-    const activePatientsCount = patients.filter(p => !p.doctor_unlinked).length;
-    if (doctorInfo?.plan === 'beta' && activePatientsCount >= BETA_PLAN_PATIENT_LIMIT) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    setLoading(true);
+  const handleInvite = async ({ email: patientEmail, entryTypeMode, hiddenFields, foodConfig }: InviteSettings): Promise<InviteResult> => {
+    if (atPatientLimit) { setShowUpgradeModal(true); return { error: 'Has alcanzado el límite del plan Beta.' }; }
     try {
-      const { data, error: rpcError } = await supabase.rpc('doctor_invite_patient', {
-        p_patient_email: inviteEmail.trim(),
-      });
-      if (rpcError) {
-        setError(translateAuthError(rpcError.message));
-        setLoading(false);
-        return;
-      }
-      if (data?.error) {
-        setError(data.error);
-        setLoading(false);
-        return;
+      const { data, error: rpcError } = await supabase.rpc('doctor_invite_patient', { p_patient_email: patientEmail });
+      if (rpcError) return { error: translateAuthError(rpcError.message) };
+      if (data?.error) return { error: data.error };
+
+      // La pauta se guarda en el vínculo pendiente: se aplica al aceptar.
+      if (data?.link_id) {
+        const { error: cfgError } = await supabase
+          .from('patient_links')
+          .update({ entry_type_mode: entryTypeMode, hidden_fields: hiddenFields, food_config: foodConfig })
+          .eq('id', data.link_id);
+        if (cfgError) console.error('[medics] invite config error:', cfgError);
       }
 
-      // Send notification email
+      let emailSent = false;
+      let emailError = '';
       try {
         const { data: fnData, error: fnError } = await supabase.functions.invoke('send-invite-email', {
-          body: {
-            patientEmail: inviteEmail.trim(),
-            doctorName: doctorInfo?.name || '',
-            centerName: doctorInfo?.center_name || '',
-          },
+          body: { patientEmail, doctorName: doctorInfo?.name || '', centerName: doctorInfo?.center_name || '' },
         });
-        if (fnError) {
-          setEmailError(`No se pudo enviar el email: ${fnError.message || JSON.stringify(fnError)}`);
-        } else if (fnData?.error) {
-          setEmailError(`No se pudo enviar el email: ${fnData.error}`);
-        } else {
-          setEmailSent(true);
-        }
+        if (fnError) emailError = `No se pudo enviar el email: ${fnError.message || JSON.stringify(fnError)}`;
+        else if (fnData?.error) emailError = `No se pudo enviar el email: ${fnData.error}`;
+        else emailSent = true;
       } catch (e: any) {
-        setEmailError(`No se pudo enviar el email: ${e?.message || 'Error desconocido'}`);
+        emailError = `No se pudo enviar el email: ${e?.message || 'Error desconocido'}`;
       }
 
-      setInviteSuccess(true);
-      setInviteEmail('');
       loadPatients();
-    } catch (err) {
-      setError('Error al crear la invitación');
-    } finally {
-      setLoading(false);
+      return { emailSent, emailError: emailError || undefined };
+    } catch {
+      return { error: 'Error al crear la invitación' };
     }
   };
 
@@ -1023,6 +960,23 @@ export default function MedicsPanel() {
     if (error) { setError(error.message); return; }
     setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: true, unlinked_at: now } : p));
     if (selectedPatient?.id === patient.id) setSelectedPatient(prev => prev ? { ...prev, doctor_unlinked: true, unlinked_at: now } : prev);
+  };
+
+  // ── Reactivate an archived patient (vuelve a compartir registros y a recibir avisos) ──
+  const handleReactivatePatient = async (patient: PatientLink) => {
+    if (atPatientLimit) { setShowUpgradeModal(true); return; }
+    const { error } = await supabase
+      .from('patient_links')
+      .update({ doctor_unlinked: false, unlinked_at: null })
+      .eq('id', patient.id)
+      .eq('doctor_id', doctorInfo!.id);
+    if (error) { setError(error.message); return; }
+    const reactivated = { ...patient, doctor_unlinked: false, unlinked_at: null };
+    setPatients(prev => prev.map(p => p.id === patient.id ? { ...p, doctor_unlinked: false, unlinked_at: null } : p));
+    // El detalle filtraba los registros hasta la fecha de archivo: se recarga entero
+    if (selectedPatient?.id === patient.id) loadPatientDetail(reactivated);
+    // El último registro del semáforo también estaba limitado a esa fecha
+    loadPatients();
   };
 
   // ── Remove patient (deletes link — disappears from list) ──
@@ -1520,8 +1474,11 @@ export default function MedicsPanel() {
   const patientLabel = (p: PatientLink) => p.display_name || p.patient_email || 'Paciente';
   const patientInitial = (p: PatientLink) => (p.display_name || p.patient_email || '?')[0].toUpperCase();
 
-  const acceptedPatients = patients.filter(p => p.status === 'accepted');
+  // Activos = vinculados y no archivados por el profesional
+  const acceptedPatients = patients.filter(p => p.status === 'accepted' && !p.doctor_unlinked);
   const pendingPatients = patients.filter(p => p.status === 'pending');
+  const archivedPatients = patients.filter(p => p.doctor_unlinked);
+  const goToPatients = () => { setSection('pacientes'); setSelectedPatient(null); setPatientDetail(null); };
 
   // ── Semáforo helper (pure logic lives in src/lib/semaforo.ts) ──
   const doctorGreen = doctorInfo?.semaforo_green ?? 1;
@@ -1778,36 +1735,17 @@ export default function MedicsPanel() {
       {/* ── TOP BAR ── */}
       <header className="medics-topbar sticky top-0 z-30 flex items-center gap-2 md:gap-3 h-16 px-3 md:px-4 shadow-fx-sm" style={{ background: 'linear-gradient(105deg, #3E78B5 0%, #539D9F 36%, #78AD89 62%, #D8DA56 100%)' }}>
         {/* Logo / center */}
-        <div className="medics-topbar__logo flex items-center justify-center flex-shrink-0 bg-white rounded-fx-pill h-12 px-3.5">
+        <button
+          onClick={goToPatients}
+          aria-label="Ir a la lista de pacientes"
+          className="medics-topbar__logo flex items-center justify-center flex-shrink-0 bg-white rounded-fx-pill h-12 px-3.5 border-none cursor-pointer"
+        >
           {centerImageUrl ? (
             <img src={centerImageUrl} alt="Centro" crossOrigin="anonymous" className="h-10 w-auto object-contain" />
           ) : (
             <img src="/fluxia-logo.png" alt="Fluxia" className="h-10 w-auto object-contain" />
           )}
-        </div>
-
-        {/* Nav (desktop, centered) */}
-        {!isMobile && (
-          <nav className="medics-topbar__nav flex-1 flex items-center justify-center gap-1">
-            {NAV_ITEMS.map(item => {
-              const active = section === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
-                  className="medics-topbar__nav-item flex items-center gap-2 px-4 h-12 rounded-fx-pill text-sm transition-colors"
-                  style={active ? { backgroundColor: 'rgba(255,255,255,0.28)', color: '#fff', fontWeight: 600 } : { color: 'rgba(255,255,255,0.85)', fontWeight: 400 }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)'; }}
-                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                >
-                  <Icon size={18} weight={active ? 'fill' : 'regular'} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        )}
+        </button>
 
         {/* Account access */}
         <div className="medics-topbar__account relative flex items-center ml-auto flex-shrink-0">
@@ -1895,140 +1833,53 @@ export default function MedicsPanel() {
       </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main className="medics-content flex-1 w-full mx-auto px-4 md:px-8 py-6 md:py-8 box-border" style={{ maxWidth: 'var(--medics-max-width)', paddingBottom: isMobile ? 88 : undefined }}>
+      <main className="medics-content flex-1 w-full mx-auto px-4 md:px-8 py-6 md:py-8 box-border" style={{ maxWidth: 'var(--medics-max-width)' }}>
         {loading && !detailLoading && <div className="text-center py-10 text-fx-text-secondary">Cargando...</div>}
-
-        {/* ── INICIO / DASHBOARD ── */}
-        {section === 'inicio' && (() => {
-          const accepted = patients.filter(p => p.status === 'accepted');
-          const pending = patients.filter(p => p.status === 'pending');
-          const semCounts = accepted.reduce((acc, p) => { const k = keyFor(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {} as Record<string, number>);
-          const noDataWeek = accepted.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
-          const attentionList = [...accepted].sort((a, b) => {
-            const order: Record<string, number> = { red: 0, gray: 1, orange: 2, green: 3 };
-            const ka = keyFor(a), kb = keyFor(b);
-            if (ka !== kb) return order[ka] - order[kb];
-            const da = a.daysSinceLast ?? 9999, db = b.daysSinceLast ?? 9999;
-            return ka === 'green' ? da - db : db - da;
-          }).slice(0, 7);
-          const tile = (value: string | number, label: string, bg: string, color: string, filter?: typeof semaforoFilter) => (
-            <div key={label} onClick={filter !== undefined ? () => { setSemaforoFilter(filter); setSection('pacientes'); } : undefined}
-              className={`medics-stat-tile flex-1 basis-[130px] rounded-fx-sm p-3.5 flex flex-col gap-1 ${filter !== undefined ? 'cursor-pointer' : 'cursor-default'}`}
-              style={{ backgroundColor: bg }}>
-              <div className="text-[28px] font-black leading-none" style={{ color }}>{value}</div>
-              <div className="text-[11px]" style={{ color, opacity: 0.75 }}>{label}{filter !== undefined ? ' \u2197' : ''}</div>
-            </div>
-          );
-          return (
-            <div className="medics-inicio">
-              <div className="medics-inicio__hero mb-5">
-                <h1 className="text-[22px] md:text-[28px] font-extrabold text-fx-text m-0 tracking-tight">{doctorFirstName ? `Hola, ${doctorFirstName}` : 'Hola'}</h1>
-                <p className="text-sm text-fx-text-secondary mt-1 mb-0">{patientsLoading ? '\u00A0' : `${accepted.length} pacientes activos \u00B7 ${pending.length} invitaciones pendientes`}</p>
-              </div>
-              {patientsLoading ? (
-                <div className="medics-inicio__loading flex justify-center items-center p-20">
-                  <div className="w-10 h-10 rounded-full border-[3px] border-fx-ink-150" style={{ borderTopColor: th.dark, animation: '_mspin 0.75s linear infinite' }} />
-                </div>
-              ) : (<>
-              {/* Stat tiles */}
-              <div className="medics-stats flex gap-3 flex-wrap mb-4">
-                {tile(accepted.length, 'Pacientes activos', 'var(--fx-blue-50)', 'var(--color-primary)')}
-                {tile(semCounts.green || 0, 'Al d\u00eda', 'var(--color-success-soft)', 'var(--color-success)', 'green')}
-                {tile(semCounts.orange || 0, 'Atenci\u00f3n', 'var(--color-warning-soft)', 'var(--color-warning)', 'orange')}
-                {tile(semCounts.red || 0, 'Inactivos', 'var(--color-error-soft)', 'var(--color-error)', 'red')}
-                {tile(noDataWeek, 'Sin reg. 7d', 'var(--fx-teal-50)', 'var(--color-accent)', noDataWeek > 0 ? 'no7d' : undefined)}
-                {pending.length > 0 && tile(pending.length, 'Invit. pendientes', 'var(--fx-teal-50)', 'var(--color-accent)')}
-              </div>
-              {/* Practice stats */}
-              {practiceStats !== null && accepted.length > 0 && (
-                <div className="medics-practice-stats bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft px-5 py-3.5 mb-4 flex gap-8 flex-wrap">
-                  <div>
-                    <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">REGISTROS ESTA SEMANA</div>
-                    <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekEntries}</div>
-                    {practiceStats.lastWeekEntries > 0 && (
-                      <div className="text-[11px] mt-[3px] flex items-center gap-1" style={{ color: practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? 'var(--color-success)' : 'var(--color-error)' }}>
-                        {practiceStats.thisWeekEntries >= practiceStats.lastWeekEntries ? <TrendUp size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />} vs {practiceStats.lastWeekEntries} sem. anterior
-                      </div>
-                    )}
-                  </div>
-                  {practiceStats.thisWeekBristol !== null && (
-                    <div>
-                      <div className="text-[10px] font-bold text-fx-text-tertiary tracking-wide mb-1">BRISTOL MEDIO (7 DÍAS)</div>
-                      <div className="flex items-baseline gap-1">
-                        <div className="text-[28px] font-black text-fx-text leading-none">{practiceStats.thisWeekBristol.toFixed(1)}</div>
-                        <div className="text-xs text-fx-text-tertiary">/ 7</div>
-                      </div>
-                      {practiceStats.lastWeekBristol !== null && (() => {
-                        const curr = practiceStats.thisWeekBristol!;
-                        const prev = practiceStats.lastWeekBristol!;
-                        const improving = Math.abs(curr - 4) < Math.abs(prev - 4);
-                        return (
-                          <div className="text-[11px] mt-[3px] flex items-center gap-1" style={{ color: improving ? 'var(--color-success)' : 'var(--color-error)' }}>
-                            {improving ? <TrendUp size={12} weight="bold" /> : <TrendDown size={12} weight="bold" />} {improving ? 'mejorando' : 'empeorando'} vs sem. anterior
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Attention list */}
-              {attentionList.length > 0 && (
-                <div className="medics-attention-list bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
-                  <div className="px-4 py-2.5 border-b border-fx-border-soft text-[13px] font-bold text-fx-text flex justify-between items-center">
-                    <span>Requieren atención</span>
-                    <button onClick={() => { setSemaforoFilter('all'); setSection('pacientes'); }}
-                      className="text-[11px] text-fx-text-tertiary bg-transparent border-none cursor-pointer p-0">Ver todos →</button>
-                  </div>
-                  {attentionList.map((p, i) => {
-                    const { green: pG, red: pR } = thresholdsFor(p);
-                    const sem = getSemaforo(p.daysSinceLast, pG, pR);
-                    return (
-                      <div key={p.id} onClick={() => { loadPatientDetail(p); setSection('pacientes'); }}
-                        className={`medics-attention-list__item flex items-center gap-3 px-4 py-[11px] cursor-pointer ${i < attentionList.length - 1 ? 'border-b border-fx-border-soft' : ''}`}>
-                        <Circle size={14} weight="fill" color={sem.color} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap">{patientLabel(p)}</div>
-                          <div className="text-[11px] text-fx-text-tertiary">
-                            {p.daysSinceLast === null ? 'Sin registros' : p.daysSinceLast === 0 ? 'Hoy' : p.daysSinceLast === 1 ? 'Ayer' : `hace ${p.daysSinceLast} días`}
-                            {p.lastEntryDate && p.daysSinceLast !== null && ` · ${shortDate(p.lastEntryDate)}`}
-                          </div>
-                        </div>
-                        {(p.tags || []).map(t => (
-                          <span key={t} className="text-[10px] px-[7px] py-0.5 rounded-[20px] font-bold" style={{ backgroundColor: tagColor(t) + '20', color: tagColor(t) }}>{t}</span>
-                        ))}
-                        <span className="text-xs text-fx-text-tertiary">›</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {accepted.length === 0 && (
-                <div className="medics-empty-state bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft p-8 text-center">
-                  <div className="text-[15px] font-bold text-fx-text mb-2">Aún no tienes pacientes</div>
-                  <div className="text-[13px] text-fx-text-tertiary mb-5">Invita a tu primer paciente para empezar el seguimiento.</div>
-                  <button onClick={() => setSection('invitar')} className="w-full px-6 py-2.5 rounded-fx-pill text-white font-semibold text-[15px] border-none cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>
-                    + Invitar paciente
-                  </button>
-                </div>
-              )}
-              </>)}
-            </div>
-          );
-        })()}
 
         {/* ── PACIENTES ── */}
         {section === 'pacientes' && !selectedPatient && (
           <div className="medics-pacientes">
             <SectionHeader
-              title="Mis Pacientes"
-              subtitle={`${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
-              actions={<button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx">Actualizar</button>}
+              title={showArchived ? 'Pacientes archivados' : (doctorFirstName ? `Hola, ${doctorFirstName}` : 'Mis pacientes')}
+              subtitle={showArchived
+                ? `${archivedPatients.length} paciente${archivedPatients.length === 1 ? '' : 's'} archivado${archivedPatients.length === 1 ? '' : 's'} · no registran ni reciben avisos`
+                : `${acceptedPatients.length} pacientes vinculados · ${pendingPatients.length} pendientes`}
+              actions={<>
+                {(archivedPatients.length > 0 || showArchived) && (
+                  <button
+                    onClick={() => setShowArchived(v => !v)}
+                    className="medics-section-header__archived px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx hover:bg-fx-ink-50 transition-colors"
+                  >
+                    {showArchived ? <>← Volver a activos</> : <><Archive size={15} /> Ver archivados ({archivedPatients.length})</>}
+                  </button>
+                )}
+                <button onClick={loadPatients} className="medics-section-header__refresh px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx hover:bg-fx-ink-50 transition-colors">Actualizar</button>
+                {!showArchived && (
+                  <button
+                    onClick={() => setInviteOpen(true)}
+                    className="medics-section-header__invite px-5 py-2.5 rounded-fx-pill border-none text-white text-[14px] font-bold cursor-pointer flex items-center gap-2 font-fx shadow-fx-sm hover:shadow-fx-md hover:-translate-y-px transition-all"
+                    style={{ backgroundColor: th.dark }}
+                  >
+                    <UserPlus size={18} weight="bold" /> Invitar paciente
+                  </button>
+                )}
+              </>}
             />
-            <div className="medics-pacientes__card bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
+            {doctorInfo?.plan === 'beta' && atPatientLimit && !showArchived && (
+              <div className="medics-pacientes__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3 px-5 mb-4 flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-[13px] font-bold text-fx-warning-700">{`Plan Beta · ${activePatientsCount}/${BETA_PLAN_PATIENT_LIMIT} pacientes`}</div>
+                  <div className="text-xs text-fx-warning-600">Has alcanzado el límite beta. Archiva pacientes o pasa a Pro para invitar a más.</div>
+                </div>
+                <button onClick={() => setShowUpgradeModal(true)} className="py-2 px-4 rounded-fx-pill border-none text-white text-[13px] font-semibold cursor-pointer" style={{ backgroundColor: th.dark }}>
+                  Pasar a Pro
+                </button>
+              </div>
+            )}
+            <div className="medics-pacientes__card bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft overflow-hidden">
               {/* Semáforo quick-filter pills */}
-              {(() => {
-                const acc = patients.filter(p => p.status === 'accepted');
+              {!showArchived && (() => {
+                const acc = acceptedPatients;
                 const sc = acc.reduce((a, p) => { const k = keyFor(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
                 const no7d = acc.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
                 const g = doctorGreen, r = doctorRed;
@@ -2086,7 +1937,7 @@ export default function MedicsPanel() {
                 );
               })()}
               {/* Tag filter bar */}
-              {globalTags.length > 0 && (
+              {globalTags.length > 0 && !showArchived && (
                 <div className="medics-pacientes__tag-filters flex gap-1.5 px-4 py-2 flex-wrap border-b border-fx-border-soft bg-fx-surface-2">
                   <span className="text-[10px] font-bold text-fx-text-tertiary self-center mr-0.5">FILTRAR:</span>
                   <button onClick={() => setTagFilter(null)} className="text-[11px] px-2.5 py-0.5 rounded-[20px] border-none cursor-pointer font-semibold" style={{
@@ -2127,22 +1978,30 @@ export default function MedicsPanel() {
                 <span className="flex-[2]">Paciente</span>
                 {!isMobile && <span className="flex-1">Último registro / Código</span>}
                 {!isMobile && <span className="w-11 text-center flex items-center justify-center"><Bell size={14} /></span>}
-                <span style={{ width: isMobile ? 90 : 140 }}>Estado</span>
+                <span style={{ width: isMobile ? 100 : 160 }}>Estado</span>
+                <span className="w-5" />
               </div>
               {patientsLoading ? (
                 <div className="p-10 text-center text-fx-text-tertiary text-sm">
                   Cargando pacientes…
                 </div>
               ) : patients.length === 0 ? (
-                <div className="p-10 text-center text-fx-text-tertiary text-sm">
-                  No hay pacientes. Invita a tu primer paciente desde la sección "Invitar Paciente".
+                <div className="medics-empty-state p-10 text-center">
+                  <div className="text-[15px] font-bold text-fx-text mb-1.5">Aún no tienes pacientes</div>
+                  <div className="text-[13px] text-fx-text-tertiary mb-5">Invita a tu primer paciente para empezar el seguimiento.</div>
+                  <button onClick={() => setInviteOpen(true)} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-fx-pill text-white font-semibold text-[15px] border-none cursor-pointer font-fx" style={{ backgroundColor: th.dark }}>
+                    <UserPlus size={18} weight="bold" /> Invitar paciente
+                  </button>
                 </div>
               ) : (() => {
                 const q = searchQuery.trim().toLowerCase();
                 const displayed = [...patients]
                   .filter(p => {
+                    // Archivados: fuera de la lista general, solo en "Ver archivados"
+                    if (showArchived !== !!p.doctor_unlinked) return false;
                     if (q && !patientLabel(p).toLowerCase().includes(q) && !(p.patient_email || '').toLowerCase().includes(q)) return false;
                     if (tagFilter && !(p.tags || []).includes(tagFilter)) return false;
+                    if (showArchived) return true;
                     if (semaforoFilter === 'no7d') return p.status === 'accepted' && (p.daysSinceLast === null || p.daysSinceLast >= 7);
                     if (semaforoFilter !== 'all') return p.status === 'accepted' && keyFor(p) === semaforoFilter;
                     return true;
@@ -2156,10 +2015,10 @@ export default function MedicsPanel() {
                   });
                 if (displayed.length === 0) {
                   const filterLabels: Record<string, string> = { green: 'Al día', orange: 'Atención', red: 'Inactivos', gray: 'Sin datos', no7d: 'Sin reg. 7d' };
-                  const what = q ? `"${q}"` : semaforoFilter !== 'all' ? `"${filterLabels[semaforoFilter] || semaforoFilter}"` : null;
+                  const what = q ? `"${q}"` : !showArchived && semaforoFilter !== 'all' ? `"${filterLabels[semaforoFilter] || semaforoFilter}"` : null;
                   return (
                     <div className="p-10 text-center text-fx-text-tertiary text-sm">
-                      Sin resultados{what ? ` para ${what}` : ''}
+                      {showArchived && !what ? 'No tienes pacientes archivados.' : `Sin resultados${what ? ` para ${what}` : ''}`}
                     </div>
                   );
                 }
@@ -2167,10 +2026,17 @@ export default function MedicsPanel() {
                   const isAccepted = patient.status === 'accepted' && !patient.doctor_unlinked;
                   const { green: pGreen, red: pRed } = thresholdsFor(patient);
                   const semaforo = getSemaforo(patient.daysSinceLast, pGreen, pRed);
+                  const clickable = isAccepted || !!patient.doctor_unlinked;
                   return (
-                    <div key={patient.id} onClick={() => (isAccepted || patient.doctor_unlinked) && loadPatientDetail(patient)}
-                      className={`medics-pacientes__row flex items-center ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${(isAccepted || patient.doctor_unlinked) ? 'cursor-pointer' : 'cursor-default'} ${patient.doctor_unlinked ? 'opacity-60' : ''}`}
+                    <div key={patient.id} onClick={() => clickable && loadPatientDetail(patient)}
+                      role={clickable ? 'button' : undefined}
+                      tabIndex={clickable ? 0 : undefined}
+                      onKeyDown={(e) => { if (clickable && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); loadPatientDetail(patient); } }}
+                      className={`medics-pacientes__row group relative flex items-center transition-colors duration-150 ${i < displayed.length - 1 ? 'border-b border-fx-border-soft' : ''} ${clickable ? 'cursor-pointer hover:bg-fx-ink-50 focus-visible:bg-fx-ink-50 outline-none' : 'cursor-default'}`}
                       style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
+                      {clickable && (
+                        <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity" style={{ backgroundColor: th.primary }} />
+                      )}
                       {/* Semáforo */}
                       <div className="w-10">
                         {isAccepted ? (
@@ -2181,11 +2047,11 @@ export default function MedicsPanel() {
                       </div>
                       {/* Patient name */}
                       <div className="flex-[2] flex items-center gap-2 min-w-0">
-                        <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ backgroundColor: isAccepted ? th.primary : th.dark }}>
+                        <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 transition-transform duration-150 group-hover:scale-110" style={{ backgroundColor: patient.doctor_unlinked ? 'var(--fx-ink-300)' : isAccepted ? th.primary : th.dark }}>
                           {patientInitial(patient)}
                         </div>
                         <div className="min-w-0">
-                          <div className={`font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap ${isMobile ? 'text-[13px]' : 'text-sm'}`}>
+                          <div className={`font-semibold text-fx-text overflow-hidden text-ellipsis whitespace-nowrap ${isMobile ? 'text-[13px]' : 'text-sm'} ${clickable ? 'group-hover:underline underline-offset-2' : ''}`}>
                             {patientLabel(patient)}
                           </div>
                           {!isMobile && patient.display_name && patient.patient_email && (
@@ -2211,6 +2077,10 @@ export default function MedicsPanel() {
                           </div>
                         ) : isAccepted ? (
                           <span className="text-xs text-fx-text-tertiary">Sin registros</span>
+                        ) : patient.doctor_unlinked ? (
+                          <span className="text-xs text-fx-text-tertiary">
+                            {patient.unlinked_at ? `Archivado el ${shortDate(patient.unlinked_at.slice(0, 10))}` : 'Archivado'}
+                          </span>
                         ) : (
                           <span className="text-xs text-fx-text-tertiary italic">
                             Invitación pendiente
@@ -2229,18 +2099,19 @@ export default function MedicsPanel() {
                           backgroundColor: isAccepted ? 'var(--color-secondary-soft)' : patient.doctor_unlinked ? 'var(--fx-ink-100)' : 'var(--color-warning-soft)',
                           color: isAccepted ? 'var(--color-secondary)' : patient.doctor_unlinked ? 'var(--fx-ink-400)' : 'var(--color-warning)',
                         }}>
-                          {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Desvinculado' : 'Pendiente'}
+                          {isAccepted ? 'Vinculado' : patient.doctor_unlinked ? 'Archivado' : 'Pendiente'}
                         </span>
                         {isAccepted && (
                           <>
                             <button
                               onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'unlink', patient }); }}
-                              title="Desvincular paciente"
+                              title="Archivar paciente"
+                              aria-label="Archivar paciente"
                               className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
                               onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-warning)')}
                               onMouseLeave={(e) => (e.currentTarget.style.color = '')}
                             >
-                              <UserMinus size={15} />
+                              <Archive size={15} />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'remove', patient }); }}
@@ -2252,6 +2123,18 @@ export default function MedicsPanel() {
                               <Trash size={15} />
                             </button>
                           </>
+                        )}
+                        {patient.doctor_unlinked && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPatientActionModal({ type: 'reactivate', patient }); }}
+                            title="Reactivar paciente"
+                            aria-label="Reactivar paciente"
+                            className="bg-transparent border-none cursor-pointer text-fx-ink-300 p-1 rounded flex items-center"
+                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-secondary)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '')}
+                          >
+                            <ArrowCounterClockwise size={15} />
+                          </button>
                         )}
                         {patient.doctor_unlinked && (
                           <button
@@ -2276,6 +2159,9 @@ export default function MedicsPanel() {
                           </button>
                         )}
                       </div>
+                      <span aria-hidden className="w-5 flex justify-end text-fx-ink-300">
+                        {clickable && <CaretRight size={14} weight="bold" className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150" />}
+                      </span>
                     </div>
                   );
                 });
@@ -2343,7 +2229,16 @@ export default function MedicsPanel() {
                     className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
                     style={{ backgroundColor: 'var(--fx-warning-50)', color: 'var(--color-warning)', borderColor: 'var(--color-warning)' }}
                   >
-                    <UserMinus size={15} /> Desvincular
+                    <Archive size={15} /> Archivar
+                  </button>
+                )}
+                {selectedPatient.doctor_unlinked && (
+                  <button
+                    onClick={() => setPatientActionModal({ type: 'reactivate', patient: selectedPatient })}
+                    className="medics-section-header__action px-4 py-2 rounded-fx-pill text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 font-fx border"
+                    style={{ backgroundColor: 'var(--color-secondary-soft)', color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }}
+                  >
+                    <ArrowCounterClockwise size={15} /> Reactivar
                   </button>
                 )}
                 <button
@@ -3297,23 +3192,7 @@ export default function MedicsPanel() {
                         <p className="text-xs text-fx-ink-400 mb-2.5 leading-relaxed">
                           Campos visibles para este paciente al registrar. La fecha/hora y las notas siempre aparecen.
                         </p>
-                        {[
-                          { id: 'bristol', label: 'Bristol', group: 'Deposición', section: 'poop' },
-                          { id: 'color', label: 'Color', group: null, section: 'poop' },
-                          { id: 'floats', label: 'Flotación', group: null, section: 'poop' },
-                          { id: 'quantity', label: 'Cantidad', group: null, section: 'poop' },
-                          { id: 'duration', label: 'Duración', group: null, section: 'poop' },
-                          { id: 'symptoms', label: 'Síntomas', group: null, section: 'poop' },
-                          { id: 'urine_type', label: 'Tipo de micción', group: 'Micción', section: 'urine' },
-                          { id: 'urine_quantity', label: 'Cantidad (ml)', group: null, section: 'urine' },
-                          { id: 'urine_color', label: 'Color', group: null, section: 'urine' },
-                          { id: 'urine_characteristics', label: 'Características', group: null, section: 'urine' },
-                        ].filter(field => {
-                          if (patientEntryTypeMode === 'none') return false;
-                          if (patientEntryTypeMode === 'urine_only' && field.section === 'poop') return false;
-                          if (patientEntryTypeMode === 'poop_only' && field.section === 'urine') return false;
-                          return true;
-                        }).map((field, i, arr) => {
+                        {coreFieldsFor(patientEntryTypeMode).map((field, i, arr) => {
                           const showGroupHeader = field.group !== null;
                           const isVisible = !patientHiddenFields.includes(field.id);
                           return (
@@ -3360,139 +3239,13 @@ export default function MedicsPanel() {
           </div>
         )}
 
-        {/* ── INVITAR PACIENTE ── */}
-        {section === 'invitar' && (
-          <div className="medics-invitar">
-            <SectionHeader
-              title="Invitar Paciente"
-              subtitle="Envía una invitación por email a tu paciente"
-            />
-
-            {/* Plan banner */}
-            {doctorInfo?.plan === 'beta' && (
-              <div className="medics-invitar__plan-banner bg-fx-warning-50 border border-fx-warning-300 rounded-fx-md py-3.5 px-5 mb-4 flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <div className="text-[13px] font-bold text-fx-warning-700">
-                      {`Plan Beta · ${patients.filter(p => !p.doctor_unlinked).length}/${BETA_PLAN_PATIENT_LIMIT} pacientes`}
-                    </div>
-                    <div className="text-xs text-fx-warning-600">
-                      {patients.length >= BETA_PLAN_PATIENT_LIMIT ? 'Has alcanzado el límite beta.' : 'Acceso beta · hasta 100 pacientes.'}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="py-2 px-4 rounded-fx-pill border-none text-white text-[13px] font-semibold cursor-pointer"
-                  style={{ backgroundColor: th.dark }}
-                >
-                  Pasar a Pro
-                </button>
-              </div>
-            )}
-
-            <div className="medics-invitar__form bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft">
-              <div className="p-6 flex flex-col gap-4">
-                {(() => {
-                  const atLimit = doctorInfo?.plan === 'beta' && patients.filter(p => !p.doctor_unlinked).length >= BETA_PLAN_PATIENT_LIMIT;
-                  return (
-                    <div>
-                      <label className="block text-[13px] font-semibold mb-1.5 text-fx-text-secondary">Email del paciente</label>
-                      <div className="flex gap-3 items-end">
-                        <div className="flex-1">
-                          <input
-                            type="email"
-                            value={inviteEmail}
-                            onChange={(e) => !atLimit && setInviteEmail(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
-                            placeholder={atLimit ? 'Límite de pacientes alcanzado' : 'paciente@email.com'}
-                            disabled={atLimit}
-                            className="w-full py-3 px-3.5 rounded-fx-md border border-fx-border text-[15px] outline-none box-border bg-fx-surface text-fx-text font-sans"
-                            style={{ opacity: atLimit ? 0.45 : 1, cursor: atLimit ? 'not-allowed' : 'text' }}
-                          />
-                        </div>
-                        <button
-                          onClick={handleInvite}
-                          disabled={loading || !inviteEmail.trim() || atLimit}
-                          className="py-2 px-4 rounded-fx-pill border-none text-[13px] font-semibold h-11 flex items-center gap-1.5 font-sans text-white"
-                          style={{
-                            backgroundColor: th.dark,
-                            opacity: loading || !inviteEmail.trim() || atLimit ? 0.45 : 1,
-                            cursor: atLimit ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          Enviar invitación
-                        </button>
-                      </div>
-                      {atLimit && (
-                        <p className="text-xs text-fx-warning-600 mt-2 flex items-center gap-1.5">
-                          <WarningCircle size={14} weight="fill" /> Límite del plan Beta alcanzado.{' '}
-                          <button onClick={() => setShowUpgradeModal(true)} className="bg-transparent border-none font-bold text-xs cursor-pointer underline p-0" style={{ color: th.dark }}>
-                            Pasa a Pro
-                          </button>{' '}
-                          para añadir más pacientes.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {error && <p className="text-fx-error-600 text-[13px] m-0">{error}</p>}
-
-                {inviteSuccess && (
-                  <div className="bg-fx-success-50 rounded-[10px] py-3 px-4 flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={16} weight="fill" color="var(--color-success)" />
-                      <span className="text-[13px] font-bold text-fx-success-500">Invitación enviada</span>
-                    </div>
-                    {emailSent && (
-                      <p className="text-xs text-fx-text-secondary m-0">El paciente recibirá un email con las instrucciones.</p>
-                    )}
-                    {emailError && (
-                      <p className="text-xs text-fx-warning-600 m-0 flex items-center gap-1.5"><WarningCircle size={14} weight="fill" />{emailError}</p>
-                    )}
-                    <p className="text-xs text-fx-ink-400 m-0">
-                      El paciente verá la invitación en su cuenta al iniciar sesión.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="medics-invitar__instructions bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft mt-4">
-              <div className="p-6">
-                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-                  <div className="text-base font-bold text-fx-text">Instrucciones para el paciente</div>
-                  <button
-                    onClick={() => setShowDemoModal(true)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer text-fx-text font-fx"
-                  >
-                    <Play size={14} weight="fill" color="var(--color-primary)" /> Ver demo en vídeo
-                  </button>
-                </div>
-                <div className="text-sm text-fx-text-secondary leading-loose">
-                  <p className="m-0 mb-2">El paciente debe seguir estos pasos:</p>
-                  <ol className="m-0 pl-5">
-                    <li>Descargar la app <strong>Fluxia</strong> (App Store o Google Play)</li>
-                    <li>Iniciar sesión con el email al que le enviaste la invitación</li>
-                    <li>Ir a <strong>Configuración</strong> y aceptar la invitación del médico</li>
-                  </ol>
-                  <p className="mt-3 mb-0 text-fx-ink-400 text-[13px]">
-                    Una vez aceptada, podrás ver los registros del paciente desde tu panel.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── CONFIGURACIÓN ── */}
         {section === 'config' && (
           <div className="medics-config">
             <SectionHeader
               title="Configuración"
               subtitle="Ajusta tu perfil y los parámetros del semáforo"
+              actions={<button onClick={goToPatients} className="medics-section-header__action px-4 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer flex items-center gap-1.5 text-fx-text font-fx hover:bg-fx-ink-50 transition-colors">← Volver a pacientes</button>}
             />
 
             {/* ── Config grid layout ── */}
@@ -3938,27 +3691,6 @@ export default function MedicsPanel() {
         )}
       </main>
 
-      {/* ── BOTTOM NAV (mobile) ── */}
-      {isMobile && (
-        <nav className="medics-bottomnav fixed bottom-0 left-0 right-0 flex z-20 bg-white/90 backdrop-blur-md border-t border-fx-border-soft">
-          {NAV_ITEMS.map(item => {
-            const active = section === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => { setSection(item.id); setSelectedPatient(null); setPatientDetail(null); }}
-                className="medics-bottomnav__item flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 border-t-2"
-                style={{ borderTopColor: active ? th.primary : 'transparent', color: active ? th.primary : 'var(--text-tertiary)' }}
-              >
-                <Icon size={18} weight={active ? 'fill' : 'regular'} />
-                <span className="text-[11px] font-semibold">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      )}
-
       {/* ── IMAGE UPLOAD MODAL ── */}
       {imageModal && (
         <div
@@ -4064,7 +3796,7 @@ export default function MedicsPanel() {
       {showDemoModal && (
         <div
           onClick={() => setShowDemoModal(false)}
-          className="medics-demo-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[1000] p-3"
+          className="medics-demo-modal fixed inset-0 bg-black/55 flex items-center justify-center z-[2100] p-3"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -4167,11 +3899,40 @@ export default function MedicsPanel() {
       })()}
     </div>
 
+    {/* ── INVITE PATIENT MODAL ── */}
+    {inviteOpen && (
+      <InvitePatientModal
+        onClose={() => setInviteOpen(false)}
+        onInvite={handleInvite}
+        atLimit={atPatientLimit}
+        onUpgrade={() => { setInviteOpen(false); setShowUpgradeModal(true); }}
+        onShowDemo={() => setShowDemoModal(true)}
+        foodTagCatalog={foodTagCatalog}
+        onCreateFoodTag={(t) => { if (!foodTagCatalog.some(x => x.toLowerCase() === t.toLowerCase())) saveFoodTagCatalog(addTag(foodTagCatalog, t)); }}
+        accent={th.primary}
+        dark={th.dark}
+        today={todayKey()}
+      />
+    )}
+
     {/* ── PATIENT ACTION CONFIRMATION MODAL ── */}
     {patientActionModal && (() => {
       const { type, patient } = patientActionModal;
       const name = patientLabel(patient);
-      const isUnlink = type === 'unlink';
+      const copy = {
+        unlink: {
+          icon: <Archive size={38} color="var(--color-warning)" />, title: 'Archivar paciente', cta: 'Archivar', color: 'var(--color-warning)',
+          body: 'Dejará de aparecer en tu lista y la app le dirá que no necesitas que registre nada. Tampoco recibirá avisos. Su historial se conserva y podrás reactivarlo cuando quieras desde «Ver archivados».',
+        },
+        reactivate: {
+          icon: <ArrowCounterClockwise size={38} color="var(--color-secondary)" />, title: 'Reactivar paciente', cta: 'Reactivar', color: 'var(--color-secondary)',
+          body: 'Volverá a tu lista de pacientes. Podrá registrar de nuevo desde la app, con la misma pauta que tenía, y volverá a recibir los avisos.',
+        },
+        remove: {
+          icon: <Trash size={38} color="var(--color-error)" />, title: 'Borrar paciente', cta: 'Borrar', color: 'var(--color-error)',
+          body: 'El paciente desaparecerá de tu lista por completo. Si en el futuro quiere volver al tratamiento, tendrás que invitarle de nuevo.',
+        },
+      }[type];
       return (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-6"
@@ -4181,18 +3942,12 @@ export default function MedicsPanel() {
             className="bg-white rounded-2xl p-8 max-w-[420px] w-full shadow-2xl text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="text-[38px]">{isUnlink ? '🔗' : '🗑️'}</span>
-            <h2 className="text-[20px] font-extrabold text-fx-text m-0 mt-2 mb-2">
-              {isUnlink ? 'Desvincular paciente' : 'Borrar paciente'}
-            </h2>
+            <span className="inline-flex">{copy.icon}</span>
+            <h2 className="text-[20px] font-extrabold text-fx-text m-0 mt-2 mb-2">{copy.title}</h2>
             <p className="text-sm text-fx-text-secondary m-0 mb-1 leading-relaxed">
               <strong>{name}</strong>
             </p>
-            <p className="text-sm text-fx-text-secondary m-0 mb-6 leading-relaxed">
-              {isUnlink
-                ? 'El paciente dejará de compartir sus registros futuros contigo, pero seguirá apareciendo en tu lista como caso clínico histórico. Puedes consultarlo en cualquier momento.'
-                : 'El paciente desaparecerá de tu lista por completo. Si en el futuro quiere volver al tratamiento, tendrás que invitarle de nuevo.'}
-            </p>
+            <p className="text-sm text-fx-text-secondary m-0 mb-6 leading-relaxed">{copy.body}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setPatientActionModal(null)}
@@ -4203,13 +3958,14 @@ export default function MedicsPanel() {
               <button
                 onClick={async () => {
                   setPatientActionModal(null);
-                  if (isUnlink) await handleUnlinkPatient(patient);
+                  if (type === 'unlink') await handleUnlinkPatient(patient);
+                  else if (type === 'reactivate') await handleReactivatePatient(patient);
                   else await handleRemovePatient(patient);
                 }}
                 className="flex-1 py-3 rounded-full border-none text-white text-[14px] font-bold cursor-pointer"
-                style={{ backgroundColor: isUnlink ? 'var(--color-warning)' : 'var(--color-error)' }}
+                style={{ backgroundColor: copy.color }}
               >
-                {isUnlink ? 'Desvincular' : 'Borrar'}
+                {copy.cta}
               </button>
             </div>
           </div>
