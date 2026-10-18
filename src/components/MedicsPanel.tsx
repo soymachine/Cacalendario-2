@@ -310,7 +310,7 @@ export default function MedicsPanel() {
   const [historyView, setHistoryView] = useState<'list' | 'timeline'>('list');
   const [foodDetail, setFoodDetail] = useState<PatientEntry | null>(null);
   const [foodTagCatalog, setFoodTagCatalog] = useState<string[]>([]);
-  const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red' | 'gray' | 'no7d'>('all');
+  const [semaforoFilter, setSemaforoFilter] = useState<'all' | 'green' | 'orange' | 'red'>('all');
 
   const th: MedicsTheme = configPalette === 'custom'
     ? { primary: customColor1, dark: customColor2, navActive: customColor2, textMuted: '#9a8880', border: '#2d1a1a', menuLabel: '#5c4040', logoutColor: '#7a6060', versionColor: '#3d2a2a' }
@@ -1881,15 +1881,12 @@ export default function MedicsPanel() {
               {!showArchived && (() => {
                 const acc = acceptedPatients;
                 const sc = acc.reduce((a, p) => { const k = keyFor(p); a[k] = (a[k] || 0) + 1; return a; }, {} as Record<string, number>);
-                const no7d = acc.filter(p => p.daysSinceLast === null || p.daysSinceLast >= 7).length;
                 const g = doctorGreen, r = doctorRed;
                 const pills: { key: typeof semaforoFilter; label: string; desc: string; count: number; color: string; soft: string }[] = [
-                  { key: 'all',    label: 'Todos',        desc: 'Todos los pacientes vinculados',                                          count: acc.length,     color: 'var(--color-secondary)', soft: 'var(--color-secondary-soft)' },
-                  { key: 'green',  label: 'Al día',       desc: `Último registro hace ≤ ${g} día${g === 1 ? '' : 's'}`,                   count: sc.green || 0,  color: 'var(--color-success)',   soft: 'var(--color-success-soft)' },
-                  { key: 'orange', label: 'Atención',     desc: `Último registro hace ${g + 1}–${r} días`,                                count: sc.orange || 0, color: 'var(--color-warning)',   soft: 'var(--color-warning-soft)' },
-                  { key: 'red',    label: 'Inactivos',    desc: `Sin registrar hace más de ${r} días`,                                    count: sc.red || 0,    color: 'var(--color-error)',     soft: 'var(--color-error-soft)' },
-                  { key: 'gray',   label: 'Sin datos',    desc: 'Nunca han registrado ninguna entrada',                                   count: sc.gray || 0,   color: 'var(--fx-ink-400)',      soft: 'var(--fx-ink-100)' },
-                  { key: 'no7d',   label: 'Sin reg. 7d', desc: 'Sin ningún registro en los últimos 7 días (incluye sin datos)',           count: no7d,           color: 'var(--color-accent)',    soft: 'var(--color-accent-soft)' },
+                  { key: 'all',    label: 'Todos',        desc: 'Todos los pacientes vinculados',                                          count: acc.length,     color: 'var(--color-primary)',   soft: 'var(--fx-blue-50)' },
+                  { key: 'green',  label: 'Al día',       desc: `Último registro hace ≤ ${g} día${g === 1 ? '' : 's'}`,                   count: sc.green || 0,  color: 'var(--fx-success-600)',  soft: 'var(--color-success-soft)' },
+                  { key: 'orange', label: 'Atención',     desc: `Último registro hace ${g + 1}–${r} días`,                                count: sc.orange || 0, color: 'var(--fx-warning-600)',  soft: 'var(--color-warning-soft)' },
+                  { key: 'red',    label: 'Inactivos',    desc: `Sin registrar hace más de ${r} días`,                                    count: sc.red || 0,    color: 'var(--fx-error-600)',    soft: 'var(--color-error-soft)' },
                 ];
                 const activePill = pills.find(p => p.key === semaforoFilter);
                 const tooltipContent: React.CSSProperties = {
@@ -1907,13 +1904,17 @@ export default function MedicsPanel() {
                             <RadixTooltip.Root key={key}>
                               <RadixTooltip.Trigger asChild>
                                 <button onClick={() => setSemaforoFilter(key)}
-                                  className="medics-pacientes__pill flex items-center gap-1 text-[11px] px-2.5 py-[3px] rounded-[20px] cursor-pointer"
+                                  aria-pressed={active}
+                                  className="medics-pacientes__pill flex items-center gap-1.5 text-[12px] px-3 py-1 rounded-[20px] cursor-pointer transition-all duration-150 hover:brightness-95"
                                   style={{
-                                    border: active ? `1.5px solid ${color}` : '1.5px solid transparent',
-                                    backgroundColor: active ? soft : 'var(--fx-ink-50)',
-                                    color: active ? color : 'var(--text-secondary)', fontWeight: active ? 700 : 500,
+                                    // Siempre con su color; activo, relleno sólido
+                                    border: `1.5px solid ${color}`,
+                                    backgroundColor: active ? color : soft,
+                                    color: active ? '#fff' : color,
+                                    fontWeight: active ? 700 : 600,
+                                    boxShadow: active ? '0 2px 6px rgba(0,0,0,0.12)' : undefined,
                                   }}>
-                                  {label} <span style={{ opacity: 0.7 }}>{count}</span>
+                                  {label} <span style={{ opacity: active ? 0.9 : 0.75 }}>{count}</span>
                                 </button>
                               </RadixTooltip.Trigger>
                               <RadixTooltip.Portal>
@@ -2002,7 +2003,6 @@ export default function MedicsPanel() {
                     if (q && !patientLabel(p).toLowerCase().includes(q) && !(p.patient_email || '').toLowerCase().includes(q)) return false;
                     if (tagFilter && !(p.tags || []).includes(tagFilter)) return false;
                     if (showArchived) return true;
-                    if (semaforoFilter === 'no7d') return p.status === 'accepted' && (p.daysSinceLast === null || p.daysSinceLast >= 7);
                     if (semaforoFilter !== 'all') return p.status === 'accepted' && keyFor(p) === semaforoFilter;
                     return true;
                   })
@@ -2014,7 +2014,7 @@ export default function MedicsPanel() {
                     return patientLabel(a).localeCompare(patientLabel(b));
                   });
                 if (displayed.length === 0) {
-                  const filterLabels: Record<string, string> = { green: 'Al día', orange: 'Atención', red: 'Inactivos', gray: 'Sin datos', no7d: 'Sin reg. 7d' };
+                  const filterLabels: Record<string, string> = { green: 'Al día', orange: 'Atención', red: 'Inactivos' };
                   const what = q ? `"${q}"` : !showArchived && semaforoFilter !== 'all' ? `"${filterLabels[semaforoFilter] || semaforoFilter}"` : null;
                   return (
                     <div className="p-10 text-center text-fx-text-tertiary text-sm">

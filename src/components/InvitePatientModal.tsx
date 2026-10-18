@@ -265,9 +265,8 @@ export default function InvitePatientModal({
                 <ol className="m-0 pl-5 list-decimal">
                   <li>Descargar la app <strong>Fluxia</strong> (App Store o Google Play).</li>
                   <li>Crear su cuenta o iniciar sesión con el email al que le has invitado.</li>
-                  <li>Aceptar tu invitación, que le aparecerá al entrar en la app.</li>
                 </ol>
-                <p className="mt-2 mb-0 text-fx-ink-400">La pauta que has elegido se aplicará en cuanto acepte.</p>
+                <p className="mt-2 mb-0 text-fx-ink-400">La pauta que has elegido se aplicará en cuanto entre en la app.</p>
               </div>
               <button onClick={onShowDemo} className="self-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-fx-pill border border-fx-border bg-fx-surface text-[13px] font-semibold cursor-pointer text-fx-text">
                 <Play size={14} weight="fill" color="var(--color-primary)" /> Ver demo en vídeo

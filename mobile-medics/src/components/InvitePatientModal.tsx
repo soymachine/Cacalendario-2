@@ -211,10 +211,9 @@ export default function InvitePatientModal({ doctor, patients, onClose, onInvite
                   <Text style={styles.stepsTitle}>Qué tiene que hacer el paciente</Text>
                   <Text style={styles.bodyText}>
                     1. Descargar la app Fluxia (App Store o Google Play).{'\n'}
-                    2. Crear su cuenta o iniciar sesión con el email al que le has invitado.{'\n'}
-                    3. Aceptar tu invitación, que le aparecerá al entrar en la app.
+                    2. Crear su cuenta o iniciar sesión con el email al que le has invitado.
                   </Text>
-                  <Text style={styles.muted}>La pauta que has elegido se aplicará en cuanto acepte.</Text>
+                  <Text style={styles.muted}>La pauta que has elegido se aplicará en cuanto entre en la app.</Text>
                 </>
               )}
             </ScrollView>
