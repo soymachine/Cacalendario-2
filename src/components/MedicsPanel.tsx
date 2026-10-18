@@ -2226,10 +2226,11 @@ export default function MedicsPanel() {
                 className="medics-patient-detail__card relative overflow-hidden rounded-fx-lg shadow-fx-sm border border-fx-border-soft pl-5 pr-4 py-4 flex flex-col gap-3"
                 style={{
                   flex: isMobile ? undefined : '0 0 max(30%, 340px)', width: isMobile ? '100%' : undefined, minWidth: isMobile ? undefined : 340,
-                  background: `linear-gradient(135deg, color-mix(in srgb, ${th.primary} 13%, var(--color-surface, #fff)) 0%, var(--color-surface, #fff) 75%)`,
+                  // Azul corporativo (no el color del panel), igual que en MA
+                  background: 'linear-gradient(135deg, var(--fx-blue-50) 0%, var(--color-surface, #fff) 75%)',
                 }}
               >
-                <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: th.primary }} />
+                <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: 'var(--color-primary)' }} />
                 <div className="min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <h1 className="text-[22px] md:text-[26px] font-extrabold text-fx-text tracking-tight leading-tight m-0 break-words min-w-0">
