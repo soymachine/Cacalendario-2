@@ -35,29 +35,29 @@ Bastan unos toques: la forma de la deposición, el tipo de micción o una foto d
 Y registra únicamente la información que tú necesitas, ni más ni menos: configuras qué datos recoger y adaptas el seguimiento a cada caso.
 
 10
-00:00:51,700 --> 00:00:57,360
+00:00:54,200 --> 00:00:59,860
 ¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento.
 
 11
-00:00:57,700 --> 00:01:03,300
+00:01:00,200 --> 00:01:05,800
 Cada registro llega al instante a tu panel, con una visión completa de todos tus pacientes.
 
 12
-00:01:03,500 --> 00:01:10,490
+00:01:06,000 --> 00:01:12,990
 Un código de colores te permite detectar de un vistazo quién evoluciona con normalidad y quién puede necesitar atención.
 
 13
-00:01:10,700 --> 00:01:24,560
+00:01:13,200 --> 00:01:27,060
 Y cuando necesitas profundizar, tienes el historial completo de cada paciente: deposiciones, micciones y comidas, su evolución en el tiempo, estadísticas de seguimiento e informes listos para incorporar a la historia clínica.
 
 14
-00:01:24,750 --> 00:01:29,930
+00:01:27,250 --> 00:01:32,430
 Menos tiempo recopilando datos, más tiempo para interpretar lo que realmente importa.
 
 15
-00:01:29,950 --> 00:01:33,440
+00:01:32,450 --> 00:01:35,940
 Porque un buen seguimiento empieza con información fiable.
 
 16
-00:01:33,500 --> 00:01:37,000
+00:01:36,000 --> 00:01:39,500
 Fluxia. Datos reales, decisiones mejores.

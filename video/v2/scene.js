@@ -4,10 +4,10 @@
 // la app del paciente (PA) y del panel del profesional (MW).
 // renderFrame(ctx, t) es asíncrona sólo porque carga los frames del vídeo
 // original; el resultado depende únicamente de t.
-import { WIDTH as W, HEIGHT as H, SRC_FPS, XFADE, SHOTS, CUES, shotAt, srcTime } from './timeline.js';
+import { WIDTH as W, HEIGHT as H, SRC_FPS, XFADE, SHOTS, CUES, INSERT, shotAt, srcTime } from './timeline.js';
 import {
   clamp, lerp, prog, eo, eio, back, win, mix, rgba, rr, fillRR, strokeRR, shadow, noShadow,
-  text, measure, layer, cursorArrow, ripple, iconCheck, iconPdf, path,
+  text, measure, layer, cursorArrow, ripple, iconCheck, iconPdf, path, drawLogoMark,
 } from '../scene.js';
 
 const BG = '#ECEDDD';          // fondo del vídeo original
@@ -440,28 +440,56 @@ function endChips(ctx, t) {
   });
 }
 
-const CANVAS = { app: sceneApp, config: sceneConfig, panel: scenePanel, semaforo: sceneSemaforo, detalle: sceneDetalle };
+// --- Cierre: el isotipo se dibuja siguiendo su forma desde arriba y las
+// letras de "Fluxia" aparecen de una en una (sólo opacidad) ---------------
+const END_BG = '#EEEFDF';
+function sceneCierre(ctx, t) {
+  ctx.fillStyle = END_BG; ctx.fillRect(0, 0, W, H);
+  // misma composición que el cierre del vídeo original
+  const mh = 168, mx = 646, my = 412;
+  const mw = drawLogoMark(ctx, mx, my, mh, eio(prog(t, CUES.logoDraw, CUES.logoDraw + 1.5)));
+  const word = 'Fluxia', fs = 132, wx = mx + mw + 38, wy = 551;
+  ctx.font = `600 ${fs}px Lexend`;
+  let x = wx;
+  [...word].forEach((ch, i) => {
+    const a = prog(t, CUES.letters + i * 0.13, CUES.letters + i * 0.13 + 0.45);
+    layer(ctx, a, () => text(ctx, ch, x, wy, { size: fs, weight: 600, color: '#383838' }));
+    ctx.font = `600 ${fs}px Lexend`;
+    x += ctx.measureText(ch).width;
+  });
+  layer(ctx, eo(prog(t, CUES.tagline, CUES.tagline + 0.8)), () =>
+    text(ctx, 'Datos reales. Decisiones mejores.', W / 2, 650, { size: 44, weight: 300, color: '#3D3F3A', align: 'center' }));
+  endChips(ctx, t);
+}
+
+const CANVAS = { app: sceneApp, config: sceneConfig, panel: scenePanel, semaforo: sceneSemaforo, detalle: sceneDetalle, cierre: sceneCierre };
 
 async function drawShot(ctx, shot, t) {
   if (shot.kind === 'orig') {
     await drawOrig(ctx, shot, clamp(t, shot.start, shot.end));
     if (shot.id === 'consulta') foodIconOverlay(ctx, t);
-    if (shot.id === 'cierre') endChips(ctx, t);
   } else {
     CANVAS[shot.id](ctx, clamp(t, shot.start - XFADE, shot.end + XFADE));
   }
 }
 
-export async function renderFrame(ctx, t) {
+// Inserto (pantalla de calendario del vídeo original), en tiempo de salida.
+const INSERT_SHOT = { kind: 'orig', map: [[INSERT.at, INSERT.src[0]], [INSERT.at + INSERT.dur, INSERT.src[1]]] };
+
+export async function renderFrame(ctx, tOut) {
+  const { at, dur } = INSERT;
+  if (tOut >= at && tOut < at + dur) { await drawOrig(ctx, INSERT_SHOT, tOut); return; }
+  const t = tOut < at ? tOut : tOut - dur;   // tiempo base del montaje
   ctx.save();
   const i = SHOTS.indexOf(shotAt(t));
   const shot = SHOTS[i];
   await drawShot(ctx, shot, t);
-  // fundido con el plano siguiente
+  // fundido con el plano siguiente (o con el inserto, si va justo después)
   const next = SHOTS[i + 1];
   if (next && t > shot.end - XFADE) {
     ctx.save(); ctx.globalAlpha = eio(prog(t, shot.end - XFADE, shot.end));
-    await drawShot(ctx, next, t);
+    if (shot.end === at) await drawOrig(ctx, INSERT_SHOT, at);
+    else await drawShot(ctx, next, t);
     ctx.restore();
   }
   ctx.restore();

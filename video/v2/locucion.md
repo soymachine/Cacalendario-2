@@ -1,6 +1,6 @@
 # Locución — Fluxia, vídeo explicativo v2
 
-Voz: ElevenLabs «Marina» (castellano). Duración total del vídeo: 97.4 s.
+Voz: ElevenLabs «Marina» (castellano). Duración total del vídeo: 99.9 s.
 
 | # | Entra | Dura | Hueco máx. | Plano | Texto |
 |---|---|---|---|---|---|
@@ -12,13 +12,13 @@ Voz: ElevenLabs «Marina» (castellano). Duración total del vídeo: 97.4 s.
 | 6 | 0:23.9 | 6.6 s | 6.9 s | dudas | Invitas al paciente desde la plataforma y, en unos segundos, queda conectado contigo a través de la app Fluxia. |
 | 7 | 0:30.9 | 5.1 s | 5.3 s | invitacion | Desde la app, el paciente registra sus deposiciones, sus micciones y su alimentación. |
 | 8 | 0:36.1 | 6.2 s | 6.4 s | app | Bastan unos toques: la forma de la deposición, el tipo de micción o una foto de lo que ha comido. |
-| 9 | 0:42.5 | 9.1 s | 9.2 s | config | Y registra únicamente la información que tú necesitas, ni más ni menos: configuras qué datos recoger y adaptas el seguimiento a cada caso. |
-| 10 | 0:51.7 | 5.7 s | 6.0 s | recordatorio | ¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento. |
-| 11 | 0:57.7 | 5.6 s | 5.8 s | panel | Cada registro llega al instante a tu panel, con una visión completa de todos tus pacientes. |
-| 12 | 1:03.5 | 7.0 s | 7.2 s | semaforo | Un código de colores te permite detectar de un vistazo quién evoluciona con normalidad y quién puede necesitar atención. |
-| 13 | 1:10.7 | 13.9 s | 14.0 s | detalle | Y cuando necesitas profundizar, tienes el historial completo de cada paciente: deposiciones, micciones y comidas, su evolución en el tiempo, estadísticas de seguimiento e informes listos para incorporar a la historia clínica. |
-| 14 | 1:24.8 | 5.2 s | 5.2 s | tranquila | Menos tiempo recopilando datos, más tiempo para interpretar lo que realmente importa. |
-| 15 | 1:30.0 | 3.5 s | 3.5 s | cierre | Porque un buen seguimiento empieza con información fiable. |
-| 16 | 1:33.5 | 3.5 s | 3.9 s | cierre | Fluxia. Datos reales, decisiones mejores. |
+| 9 | 0:42.5 | 9.1 s | 11.7 s | config | Y registra únicamente la información que tú necesitas, ni más ni menos: configuras qué datos recoger y adaptas el seguimiento a cada caso. |
+| 10 | 0:54.2 | 5.7 s | 6.0 s | recordatorio | ¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento. |
+| 11 | 1:00.2 | 5.6 s | 5.8 s | panel | Cada registro llega al instante a tu panel, con una visión completa de todos tus pacientes. |
+| 12 | 1:06.0 | 7.0 s | 7.2 s | semaforo | Un código de colores te permite detectar de un vistazo quién evoluciona con normalidad y quién puede necesitar atención. |
+| 13 | 1:13.2 | 13.9 s | 14.0 s | detalle | Y cuando necesitas profundizar, tienes el historial completo de cada paciente: deposiciones, micciones y comidas, su evolución en el tiempo, estadísticas de seguimiento e informes listos para incorporar a la historia clínica. |
+| 14 | 1:27.3 | 5.2 s | 5.2 s | tranquila | Menos tiempo recopilando datos, más tiempo para interpretar lo que realmente importa. |
+| 15 | 1:32.5 | 3.5 s | 3.5 s | cierre | Porque un buen seguimiento empieza con información fiable. |
+| 16 | 1:36.0 | 3.5 s | 3.9 s | cierre | Fluxia. Datos reales, decisiones mejores. |
 
 **Hueco máx.**: tiempo hasta la frase siguiente. Si una locución nueva dura más, ajusta `VO` en `timeline.js`.

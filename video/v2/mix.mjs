@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DURATION, VO, CUES, SHOTS } from './timeline.js';
+import { DURATION, VO, CUES, SHOTS, toOut, toBase } from './timeline.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SR = 44100, N = Math.ceil(DURATION * SR), TAU = Math.PI * 2;
@@ -47,9 +47,10 @@ const CHORDS = [
   { root: 41, notes: [53, 57, 60, 64] }, // Fmaj7
   { root: 36, notes: [52, 55, 60, 62] }, // Cadd9
 ];
-const END_CHORD = 93.5;                       // acorde final con "Fluxia. Datos reales…"
+const END_CHORD = toOut(93.5);                       // acorde final con "Fluxia. Datos reales…"
 // Intensidad por tramos del montaje (0 = sólo pad … 3 = completo).
 function energy(t) {
+  t = toBase(t);                 // umbrales en tiempo base del montaje
   if (t < 14) return 0;          // el problema
   if (t < 24) return 1;          // dudas
   if (t < 51) return 2;          // solución: app y configuración
@@ -130,6 +131,7 @@ for (let b = 0; b * BEAT < END_CHORD; b++) {
 
 // ------------------------------------------------------- efectos sonoros
 function tick(t0, amp = 1) {
+  t0 = toOut(t0);
   const i0 = Math.floor(t0 * SR); let ph = 0;
   for (let j = 0; j < 0.08 * SR; j++) {
     const t = j / SR; ph += TAU * (2100 - 800 * t / 0.08) / SR;
@@ -137,6 +139,7 @@ function tick(t0, amp = 1) {
   }
 }
 function bell(t0, m, amp = 1, pan = 0) {
+  t0 = toOut(t0);
   const f = mtof(m), i0 = Math.floor(t0 * SR); let ph = 0, pm = 0;
   for (let j = 0; j < 1.4 * SR; j++) {
     const t = j / SR; pm += TAU * f * 3.5 / SR; ph += TAU * f / SR;
@@ -144,6 +147,7 @@ function bell(t0, m, amp = 1, pan = 0) {
   }
 }
 function whoosh(t0, dur, amp = 1, f0 = 300, f1 = 4000) {
+  t0 = toOut(t0);
   const i0 = Math.floor(t0 * SR), len = Math.floor(dur * SR); let a = 0, b = 0;
   for (let j = 0; j < len; j++) {
     const u = j / len, fc = f0 * Math.pow(f1 / f0, u);
@@ -159,6 +163,7 @@ for (const c of [CUES.tapBristol, CUES.tabUrine, CUES.tapUrine, CUES.tabFood, CU
 CUES.packets.forEach((c, i) => bell(c + 1.0, [81, 84, 88][i], 0.8, 0.3));
 [79, 84].forEach((m, i) => bell(CUES.exportPdf + 0.25 + i * 0.1, m, 0.6));
 [77, 81, 84, 89].forEach((m, i) => bell(CUES.endChips + i * 0.12, m, 0.5, -0.4 + i * 0.25));
+whoosh(CUES.logoDraw, 1.6, 0.45, 250, 2500);
 
 // ------------------------------------------------------------ mezcla
 function reverb(input, spread) {
@@ -183,7 +188,7 @@ for (const [id, start] of Object.entries(VO)) {
   if (!existsSync(wav)) throw new Error(`Falta ${wav}: ejecuta antes split-voice.mjs`);
   const raw = execFileSync('ffmpeg', ['-loglevel', 'error', '-i', wav, '-f', 'f32le', '-ac', '1', '-ar', String(SR), '-'], { maxBuffer: 1 << 28 });
   const s = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4);
-  const i0 = Math.floor(start * SR);
+  const i0 = Math.floor(toOut(start) * SR);
   for (let j = 0; j < s.length && i0 + j < N; j++) { voice[i0 + j] += s[j]; speaking[i0 + j] = 1; }
 }
 // envolvente de ducking: ataque 120 ms, relajación 600 ms

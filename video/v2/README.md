@@ -1,4 +1,4 @@
-# Fluxia — vídeo explicativo v2 (≈97 s, 16:9)
+# Fluxia — vídeo explicativo v2 (≈100 s, 16:9)
 
 Une el vídeo de marketing original (animación con una sanitaria y una paciente,
 `public/video/Marketing_Fluxia_Video.mp4`) con demos animadas construidas sobre
@@ -19,11 +19,16 @@ Resultado: [`fluxia-explicativo-v2.mp4`](fluxia-explicativo-v2.mp4) — 1920×10
 | 24–33 s | Invitación y paciente con el móvil | original |
 | 33–42 s | App: deposiciones, micciones y alimentación | canvas + pantallazos PA |
 | 42–51 s | Panel: configuración del seguimiento | canvas + pantallazos MW |
-| 51–58 s | Recordatorios automáticos | original |
-| 58–63 s | Cada registro llega al panel | canvas |
-| 63–71 s | Semáforo en la lista de pacientes | canvas |
-| 71–85 s | Historial, estadísticas, comidas y PDF | canvas |
-| 85–97 s | Sanitaria tranquila y cierre (+ chips de los tres registros) | original |
+| 51–53,5 s | Pantalla de calendario de la app (inserto alargado) | original |
+| 53,5–60 s | Recordatorios automáticos | original |
+| 60–66 s | Cada registro llega al panel | canvas |
+| 66–73 s | Semáforo en la lista de pacientes | canvas |
+| 73–87 s | Historial, estadísticas, comidas y PDF | canvas |
+| 87–92 s | La sanitaria tranquila | original |
+| 92–100 s | Cierre: el isotipo se dibuja desde arriba, letras de «Fluxia» una a una, lema y los tres registros | canvas |
+
+Los tiempos de `timeline.js` (SHOTS, VO, CUES) son «base», sin el inserto de
+2,5 s en t = 51 s; `toOut()` los convierte a tiempo del vídeo final.
 
 ## Archivos
 

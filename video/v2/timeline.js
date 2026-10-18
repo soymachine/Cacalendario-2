@@ -1,4 +1,4 @@
-// Montaje del vídeo v2 (≈97 s, 16:9, 30 fps).
+// Montaje del vídeo v2 (≈100 s, 16:9, 30 fps).
 //
 // Planos "orig": escenas de personajes del vídeo de marketing original
 // (public/video/Marketing_Fluxia_Video.mp4). `map` traduce tiempo de salida →
@@ -24,9 +24,17 @@ export const SHOTS = [
   { id: 'semaforo',    kind: 'canvas', start: 63.4, end: 70.6 },
   { id: 'detalle',     kind: 'canvas', start: 70.6, end: 84.6 },
   { id: 'tranquila',   kind: 'orig',   start: 84.6, end: 89.6, map: [[84.6, 66.9], [89.6, 73.0]] },
-  { id: 'cierre',      kind: 'orig',   start: 89.6, end: 97.4, map: [[89.6, 73.0], [97.3, 80.6]] },
+  { id: 'cierre',      kind: 'canvas', start: 89.6, end: 97.4 },
 ];
-export const DURATION = 97.4;
+export const BASE_DURATION = 97.4;
+
+// Pantalla de calendario de la app del vídeo original (src 38,05–39,6 s),
+// alargada a 2,5 s e insertada en t = 51 s. Todo lo anterior (SHOTS, VO,
+// CUES) está en tiempo "base", sin el inserto; toOut/toBase convierten.
+export const INSERT = { at: 51.0, dur: 2.5, src: [38.05, 39.6] };
+export const DURATION = BASE_DURATION + INSERT.dur;
+export const toOut = (t) => (t >= INSERT.at ? t + INSERT.dur : t);
+export const toBase = (t) => (t < INSERT.at ? t : t < INSERT.at + INSERT.dur ? INSERT.at : t - INSERT.dur);
 
 export const VO = {
   L01: 0.45, L02: 2.9, L03: 8.5, L04: 13.7, L05: 21.6, L06: 23.95, L07: 30.85, L08: 36.15,
@@ -42,7 +50,7 @@ export const CUES = {
   tapRegister: 58.0, packets: [58.3, 58.7, 59.1], zoomPanel: 60.4,
   semDots: 64.0, chips: [67.5, 68.8, 69.5],
   clickRow: 71.4, histChips: [75.6, 76.6, 77.4], scrollDown: 78.2, stats: 79.8, scrollUp: 81.0, exportPdf: 81.7,
-  endChips: 93.6,
+  logoDraw: 90.1, letters: 91.6, tagline: 92.5, endChips: 93.6,
 };
 
 export function shotAt(t) {
