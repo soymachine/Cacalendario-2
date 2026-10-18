@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Platform } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
@@ -27,6 +27,12 @@ interface FoodEntryFormProps {
   entry?: PoopEntry;
   /** Día preseleccionado (alta desde el calendario). */
   initialDate?: string | null;
+  /**
+   * Fecha y hora controladas desde fuera (pantalla de Registro, que las
+   * muestra arriba igual que en deposiciones y micción). Sin ella, el
+   * formulario muestra su propio selector de día y hora (edición).
+   */
+  when?: { date: string; hours: number; minutes: number };
   onSaved: (entry: PoopEntry, isNew: boolean) => void;
   onDeleted?: () => void;
 }
@@ -67,7 +73,7 @@ function initialState(entry: PoopEntry | undefined, initialDate: string | null |
   };
 }
 
-export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }: FoodEntryFormProps) {
+export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDeleted }: FoodEntryFormProps) {
   const cfg = getDoctorFoodConfig();
   const isEdit = !!entry;
   const show = (f: FoodField) => isFieldVisible(cfg, f);
@@ -89,7 +95,14 @@ export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }
     ? { localUri: entry.photo_local_uri ?? null, path: entry.food_photo_path ?? null } : null;
   const hasPhoto = !!s.newPhotoUri || !!existingPhoto;
 
-  const timeText = formatTime(s.hours, s.minutes);
+  const date = when?.date ?? s.date;
+  const timeText = when ? formatTime(when.hours, when.minutes) : formatTime(s.hours, s.minutes);
+
+  // Con la hora controlada desde fuera, la sugerencia de tipo de comida la sigue
+  // igual que con el selector propio (mientras no se haya elegido a mano).
+  useEffect(() => {
+    if (when && !s.mealTouched && show('meal_type')) set({ mealType: suggestMealType(when.hours, when.minutes) });
+  }, [when?.hours, when?.minutes]);
 
   const onPickerChange = (event: DateTimePickerEvent, selected?: Date) => {
     if (Platform.OS === 'android') setPicker('none');
@@ -149,7 +162,7 @@ export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }
     const errs: string[] = [];
     if (v.missing.length > 0) errs.push(`${FOOD_TEXT.missingFields}: ${v.missing.map((f) => FOOD_FIELD_LABEL[f]).join(', ')}.`);
     else if (v.empty) errs.push(FOOD_TEXT.emptyRecord);
-    if (isFutureOccurrence(s.date, timeText)) errs.push('La fecha y la hora no pueden ser posteriores a ahora.');
+    if (isFutureOccurrence(date, timeText)) errs.push('La fecha y la hora no pueden ser posteriores a ahora.');
     setErrors(errs);
     if (errs.length > 0) return;
 
@@ -169,9 +182,9 @@ export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }
 
     const saved: PoopEntry = {
       id,
-      date: s.date,
+      date,
       time: timeText,
-      timestamp: entryTimestamp(s.date, timeText),
+      timestamp: entryTimestamp(date, timeText),
       entry_type: 'food',
       notes: cols.notes,
       food_meal_type: cols.food_meal_type,
@@ -283,7 +296,7 @@ export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }
       )}
 
       {/* Fecha y hora (siempre se registran; editables para registros a posteriori) */}
-      <View style={styles.sectionCard}>
+      {!when && <View style={styles.sectionCard}>
         <Text style={styles.sectionLabel}>¿Cuándo?</Text>
         <Text style={styles.whenText}>{formatDateForDisplay(s.date)} · {timeText}</Text>
         <View style={styles.rowGap10}>
@@ -314,7 +327,7 @@ export default function FoodEntryForm({ entry, initialDate, onSaved, onDeleted }
             )}
           </View>
         )}
-      </View>
+      </View>}
 
       {/* Tipo de comida */}
       {show('meal_type') && (
@@ -461,11 +474,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 10,
-    backgroundColor: D.card,
   },
   sectionLabel: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: D.secondary,
     marginBottom: 12,
   },
@@ -532,7 +544,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: D.chip,
+    backgroundColor: D.navBg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -551,7 +563,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   optionActive: { backgroundColor: D.primary },
-  optionInactive: { backgroundColor: D.chip },
+  optionInactive: { backgroundColor: D.navBg },
   bigOptionText: { fontSize: 17, fontWeight: '700' },
   portionOption: {
     flex: 1,
@@ -570,14 +582,12 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 16, fontWeight: '700' },
   textInput: {
     width: '100%',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: D.border,
+    borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 12,
     fontSize: 17,
     color: D.text,
-    backgroundColor: D.bg,
+    backgroundColor: D.card,
     minHeight: 84,
     textAlignVertical: 'top',
   },

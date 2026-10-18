@@ -167,7 +167,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
       ) : <>
 
       {/* Date + time row */}
-      {!isFood && <>
       <View style={styles.dateRow}>
         <Text style={styles.dateText}>
           {dayText} {timeText}
@@ -193,7 +192,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           )}
         </View>
       )}
-      </>}
 
       {/* Entry type toggle — only shown when more than one type is allowed */}
       {availableTypes.length > 1 && (
@@ -220,11 +218,18 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         </View>
       )}
 
-      {/* ── FOOD FORM (fecha/hora, campos y guardado propios) ── */}
+      {/* ── FOOD FORM (campos y guardado propios; fecha/hora, las de arriba) ── */}
       {isFood && (
         <FoodEntryForm
           initialDate={date}
-          onSaved={(e) => onSuccess(e.date, e.time, 'food', e.id)}
+          when={{ date: targetDate, hours, minutes }}
+          onSaved={(e) => {
+            // El formulario se vacía para el siguiente registro: la hora vuelve a "ahora"
+            const n = new Date();
+            setHours(n.getHours());
+            setMinutes(n.getMinutes());
+            onSuccess(e.date, e.time, 'food', e.id);
+          }}
         />
       )}
 
