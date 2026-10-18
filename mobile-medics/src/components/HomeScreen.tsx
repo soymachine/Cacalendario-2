@@ -15,14 +15,16 @@ interface HomeScreenProps {
   practiceStats: PracticeStats | null;
   onNavigate: (tab: Tab, semaforoFilter?: string) => void;
   onSelectPatient: (patient: PatientLink) => void;
+  onInvite: () => void;
 }
 
 function shortDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate, onSelectPatient }: HomeScreenProps) {
-  const accepted = patients.filter((p) => p.status === 'accepted');
+export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate, onSelectPatient, onInvite }: HomeScreenProps) {
+  // Activos: los archivados por el profesional no cuentan
+  const accepted = patients.filter((p) => p.status === 'accepted' && !p.doctor_unlinked);
   const pending = patients.filter((p) => p.status === 'pending');
 
   const keyFor = (p: PatientLink): SemaforoKey => {
@@ -147,7 +149,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>Aún no tienes pacientes</Text>
                 <Text style={styles.emptyBody}>Invita a tu primer paciente para empezar el seguimiento.</Text>
-                <Pressable onPress={() => onNavigate('invitar')} style={styles.emptyButton}>
+                <Pressable onPress={onInvite} style={styles.emptyButton}>
                   <Text style={styles.emptyButtonText}>+ Invitar paciente</Text>
                 </Pressable>
               </View>

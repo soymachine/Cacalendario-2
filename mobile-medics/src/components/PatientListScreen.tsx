@@ -17,6 +17,7 @@ interface PatientListScreenProps {
   initialSemaforoFilter?: string;
   onRefresh: () => void;
   onSelectPatient: (patient: PatientLink) => void;
+  onInvite: () => void;
 }
 
 function shortDate(dateStr: string): string {
@@ -24,8 +25,9 @@ function shortDate(dateStr: string): string {
 }
 
 export default function PatientListScreen({
-  doctor, patients, patientsLoading, initialSemaforoFilter, onRefresh, onSelectPatient,
+  doctor, patients, patientsLoading, initialSemaforoFilter, onRefresh, onSelectPatient, onInvite,
 }: PatientListScreenProps) {
+  const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('estado');
@@ -38,8 +40,10 @@ export default function PatientListScreen({
     return getSemaforo(p.daysSinceLast ?? null, green, red).key;
   };
 
-  const accepted = patients.filter((p) => p.status === 'accepted');
+  // Activos = vinculados y no archivados; los archivados solo en "Ver archivados"
+  const accepted = patients.filter((p) => p.status === 'accepted' && !p.doctor_unlinked);
   const pending = patients.filter((p) => p.status === 'pending');
+  const archived = patients.filter((p) => p.doctor_unlinked);
   const semCounts = accepted.reduce((acc, p) => { const k = keyFor(p); acc[k] = (acc[k] || 0) + 1; return acc; }, {} as Record<string, number>);
   const no7d = accepted.filter((p) => p.daysSinceLast == null || p.daysSinceLast >= 7).length;
 
@@ -57,8 +61,10 @@ export default function PatientListScreen({
   const q = searchQuery.trim().toLowerCase();
   const displayed = [...patients]
     .filter((p) => {
+      if (showArchived !== !!p.doctor_unlinked) return false;
       if (q && !patientLabel(p).toLowerCase().includes(q) && !(p.patient_email || '').toLowerCase().includes(q)) return false;
       if (tagFilter && !(p.tags || []).includes(tagFilter)) return false;
+      if (showArchived) return true;
       if (semaforoFilter === 'no7d') return p.status === 'accepted' && (p.daysSinceLast == null || p.daysSinceLast >= 7);
       if (semaforoFilter !== 'all') return p.status === 'accepted' && keyFor(p) === semaforoFilter;
       return true;
@@ -75,11 +81,25 @@ export default function PatientListScreen({
     <SafeAreaView style={styles.wrapper} edges={['top']}>
       <View style={[styles.body, centered(CONTENT_MAX_WIDTH)]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mis pacientes</Text>
-        <Text style={styles.subtitle}>{accepted.length} vinculados · {pending.length} pendientes</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>{showArchived ? 'Archivados' : 'Mis pacientes'}</Text>
+          <Text style={styles.subtitle}>
+            {showArchived ? 'No registran ni reciben avisos' : `${accepted.length} vinculados · ${pending.length} pendientes`}
+          </Text>
+        </View>
+        {!showArchived && (
+          <Pressable onPress={onInvite} style={styles.inviteButton} accessibilityRole="button">
+            <Text style={styles.inviteButtonText}>+ Invitar paciente</Text>
+          </Pressable>
+        )}
       </View>
+      {(archived.length > 0 || showArchived) && (
+        <Pressable onPress={() => setShowArchived((v) => !v)} style={styles.archivedToggle} accessibilityRole="button">
+          <Text style={styles.archivedToggleText}>{showArchived ? '← Volver a activos' : `Ver archivados (${archived.length})`}</Text>
+        </Pressable>
+      )}
 
-      <FlatList
+      {!showArchived && <FlatList
         data={pills}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -102,9 +122,9 @@ export default function PatientListScreen({
             </Pressable>
           );
         }}
-      />
+      />}
 
-      {globalTags.length > 0 && (
+      {globalTags.length > 0 && !showArchived && (
         <FlatList
           data={['__all__', ...globalTags]}
           horizontal
@@ -156,7 +176,7 @@ export default function PatientListScreen({
         contentContainerStyle={styles.list}
         ListEmptyComponent={!patientsLoading ? (
           <Text style={styles.emptyText}>
-            {patients.length === 0 ? 'No hay pacientes. Invita a tu primer paciente.' : 'Sin resultados.'}
+            {patients.length === 0 ? 'No hay pacientes. Invita a tu primer paciente.' : showArchived && !q ? 'No tienes pacientes archivados.' : 'Sin resultados.'}
           </Text>
         ) : null}
         renderItem={({ item: patient }) => {
@@ -169,12 +189,12 @@ export default function PatientListScreen({
             <Pressable
               disabled={!isAccepted && !patient.doctor_unlinked}
               onPress={() => onSelectPatient(patient)}
-              style={[styles.row, (!isAccepted && !patient.doctor_unlinked) && styles.rowDisabled]}
+              style={({ pressed }) => [styles.row, (!isAccepted && !patient.doctor_unlinked) && styles.rowDisabled, pressed && styles.rowPressed]}
             >
               <View style={styles.rowLeft}>
                 {isAccepted ? <View style={[styles.dot, { backgroundColor: semaforo.color }]} /> : <Text style={styles.dash}>—</Text>}
               </View>
-              <View style={[styles.avatar, { backgroundColor: isAccepted ? D.primary : D.text }]}>
+              <View style={[styles.avatar, { backgroundColor: patient.doctor_unlinked ? D.chipDark : isAccepted ? D.primary : D.text }]}>
                 <Text style={styles.avatarText}>{patientInitial(patient)}</Text>
               </View>
               <View style={styles.rowInfo}>
@@ -182,7 +202,9 @@ export default function PatientListScreen({
                 <Text style={styles.rowMeta} numberOfLines={1}>
                   {isAccepted && patient.lastEntryDate
                     ? `${patient.daysSinceLast === 0 ? 'Hoy' : `hace ${patient.daysSinceLast} día${patient.daysSinceLast !== 1 ? 's' : ''}`} · ${shortDate(patient.lastEntryDate)}`
-                    : isAccepted ? 'Sin registros' : patient.doctor_unlinked ? 'Archivado' : 'Invitación pendiente'}
+                    : isAccepted ? 'Sin registros'
+                    : patient.doctor_unlinked ? (patient.unlinked_at ? `Archivado el ${shortDate(patient.unlinked_at)}` : 'Archivado')
+                    : 'Invitación pendiente'}
                 </Text>
                 {(patient.tags || []).length > 0 && (
                   <View style={styles.tagRow}>
@@ -210,7 +232,12 @@ export default function PatientListScreen({
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: D.bg },
   body: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  headerText: { flex: 1, minWidth: 0 },
+  inviteButton: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 99, backgroundColor: D.text },
+  inviteButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  archivedToggle: { alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 99, backgroundColor: D.chip },
+  archivedToggleText: { fontSize: 12, fontWeight: '700', color: D.textMuted },
   title: { fontSize: 22, fontWeight: '900', color: D.text },
   subtitle: { fontSize: 12, color: D.textMuted, marginTop: 2 },
   pillsList: { flexGrow: 0 },
@@ -231,6 +258,7 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', color: D.textMuted, fontSize: 13, paddingTop: 40 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: D.card, borderRadius: 14, padding: 12, marginBottom: 8 },
   rowDisabled: { opacity: 0.7 },
+  rowPressed: { backgroundColor: D.chip, transform: [{ scale: 0.99 }] },
   rowLeft: { width: 14, alignItems: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   dash: { fontSize: 12, color: D.textMuted },

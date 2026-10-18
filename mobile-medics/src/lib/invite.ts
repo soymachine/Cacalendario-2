@@ -2,6 +2,7 @@
 import { supabase } from './supabase';
 import type { DoctorInfo } from './doctor';
 import type { PatientLink } from './patients';
+import type { FoodTrackingConfig } from './food';
 
 export const BETA_PLAN_PATIENT_LIMIT = 100;
 
@@ -16,11 +17,20 @@ export type InviteResult =
   | { success: true; emailSent: boolean; emailError: string | null }
   | { success: false; error: string; limitReached?: boolean };
 
+/** Pauta elegida en el modal de invitación: se guarda en el vínculo pendiente y se aplica al aceptar. */
+export interface InviteSettings {
+  email: string;
+  entryTypeMode: string;
+  hiddenFields: string[];
+  foodConfig: FoodTrackingConfig;
+}
+
 export async function invitePatient(
-  email: string,
+  { email, entryTypeMode, hiddenFields, foodConfig }: InviteSettings,
   doctor: DoctorInfo,
   currentPatients: PatientLink[],
 ): Promise<InviteResult> {
+  // Archivados fuera: no cuentan para el límite
   const activePatientsCount = currentPatients.filter((p) => !p.doctor_unlinked).length;
   const limit = planLimitFor(doctor.plan);
   if (limit !== null && activePatientsCount >= limit) {
@@ -32,6 +42,14 @@ export async function invitePatient(
   });
   if (rpcError) return { success: false, error: rpcError.message };
   if (data?.error) return { success: false, error: data.error };
+
+  if (data?.link_id) {
+    const { error: cfgError } = await supabase
+      .from('patient_links')
+      .update({ entry_type_mode: entryTypeMode, hidden_fields: hiddenFields, food_config: foodConfig })
+      .eq('id', data.link_id);
+    if (cfgError) console.error('[invite] config error:', cfgError);
+  }
 
   let emailSent = false;
   let emailError: string | null = null;

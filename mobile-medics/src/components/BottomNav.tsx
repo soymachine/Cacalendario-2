@@ -1,17 +1,16 @@
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HouseIcon, UserIcon, UserPlusIcon, SlidersIcon } from './icons';
+import { HouseIcon, UserIcon, SlidersIcon } from './icons';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
-export type Tab = 'inicio' | 'pacientes' | 'invitar' | 'config';
+export type Tab = 'inicio' | 'pacientes' | 'config';
 
-// Mismos iconos y degradado que la topbar de src/components/MedicsPanel.tsx
-// (web) — mantener sincronizado a mano.
+// Mismo degradado que la topbar de src/components/MedicsPanel.tsx (web).
+// Invitar ya no es una pestaña: es un botón en la lista de pacientes (InvitePatientModal).
 const TABS: { id: Tab; label: string; Icon: typeof HouseIcon }[] = [
   { id: 'inicio', label: 'Inicio', Icon: HouseIcon },
   { id: 'pacientes', label: 'Pacientes', Icon: UserIcon },
-  { id: 'invitar', label: 'Invitar', Icon: UserPlusIcon },
   { id: 'config', label: 'Ajustes', Icon: SlidersIcon },
 ];
 

@@ -22,6 +22,8 @@ interface FoodConfigCardProps {
   /** Crea una etiqueta en el catálogo (se guarda al momento). */
   onCreateTag: (tag: string) => void;
   today: string;
+  /** Sin el interruptor de activar/desactivar: se muestra la pauta como activa (modal de invitación). */
+  hideToggle?: boolean;
 }
 
 const MODES: FieldMode[] = ['required', 'optional', 'hidden'];
@@ -75,7 +77,7 @@ function PickerField({ mode, value, placeholder, minimumDate, onChange }: {
   );
 }
 
-export default function FoodConfigCard({ value: cfg, onChange, catalog, onCreateTag, today }: FoodConfigCardProps) {
+export default function FoodConfigCard({ value: cfg, onChange, catalog, onCreateTag, today, hideToggle }: FoodConfigCardProps) {
   const [tagInput, setTagInput] = useState('');
   const patch = (p: Partial<FoodTrackingConfig>) => onChange({ ...cfg, ...p });
 
@@ -93,6 +95,7 @@ export default function FoodConfigCard({ value: cfg, onChange, catalog, onCreate
 
   return (
     <View style={styles.card}>
+      {!hideToggle && <>
       <View style={styles.switchRow}>
         <Switch
           value={cfg.enabled}
@@ -103,8 +106,9 @@ export default function FoodConfigCard({ value: cfg, onChange, catalog, onCreate
         <Text style={styles.cardTitleInline}>Seguimiento de comidas</Text>
       </View>
       <Text style={styles.hint}>Seguimiento clínico, no nutricional: sin calorías ni gramos. El paciente solo verá los campos que actives.</Text>
+      </>}
 
-      {cfg.enabled && (
+      {(cfg.enabled || hideToggle) && (
         <>
           {/* Campos */}
           <Text style={styles.section}>Campos</Text>

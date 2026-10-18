@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
@@ -7,7 +7,7 @@ import { getSemaforo, resolveSemaforoThresholds } from '../lib/semaforo';
 import { patientLabel } from '../lib/patients';
 import {
   loadPatientDetail, loadClinicalNotes, addClinicalNote, saveEntryNote,
-  savePushSettings, sendTestPush, type PatientDetail, type ClinicalNote,
+  savePushSettings, sendTestPush, setPatientArchived, type PatientDetail, type ClinicalNote,
 } from '../lib/patientDetail';
 import PatientCalendar from './PatientCalendar';
 import PatientStatsCard from './PatientStatsCard';
@@ -25,13 +25,15 @@ interface PatientDetailScreenProps {
   onPatientUpdated: (patch: Partial<PatientLink>) => void;
   onGlobalTagsUpdated: (tags: string[]) => void;
   onFoodTagCatalogUpdated: (tags: string[]) => void;
+  /** Tras archivar o reactivar: recargar la lista (el semáforo dependía de la fecha de archivo). */
+  onArchiveChanged: () => void;
 }
 
 function shortDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function PatientDetailScreen({ doctor, patient, onBack, onPatientUpdated, onGlobalTagsUpdated, onFoodTagCatalogUpdated }: PatientDetailScreenProps) {
+export default function PatientDetailScreen({ doctor, patient, onBack, onPatientUpdated, onGlobalTagsUpdated, onFoodTagCatalogUpdated, onArchiveChanged }: PatientDetailScreenProps) {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [clinicalNotes, setClinicalNotes] = useState<ClinicalNote[]>([]);
@@ -85,6 +87,30 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
     }
   };
 
+  // Archivar / reactivar (mismos textos que MW)
+  const handleToggleArchived = () => {
+    const archiving = !patient.doctor_unlinked;
+    Alert.alert(
+      archiving ? 'Archivar paciente' : 'Reactivar paciente',
+      archiving
+        ? 'Dejará de aparecer en tu lista y la app le dirá que no necesitas que registre nada. Tampoco recibirá avisos. Su historial se conserva y podrás reactivarlo cuando quieras desde «Ver archivados».'
+        : 'Volverá a tu lista de pacientes. Podrá registrar de nuevo desde la app, con la misma pauta que tenía, y volverá a recibir los avisos.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: archiving ? 'Archivar' : 'Reactivar',
+          style: archiving ? 'destructive' : 'default',
+          onPress: async () => {
+            const { unlinkedAt, error } = await setPatientArchived(patient.id, doctor.id, archiving);
+            if (error) { Alert.alert('No se ha podido guardar', error); return; }
+            onPatientUpdated({ doctor_unlinked: archiving, unlinked_at: unlinkedAt });
+            onArchiveChanged();
+          },
+        },
+      ],
+    );
+  };
+
   const handleSaveNote = async (entryId: string, note: string) => {
     await saveEntryNote(doctor.id, entryId, note);
     setDetail((prev) => prev ? { ...prev, entries: prev.entries.map((e) => e.entry_id === entryId ? { ...e, doctor_note: note.trim() } : e) } : prev);
@@ -110,6 +136,13 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
       ) : (
         <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
           <Text style={styles.patientName}>{patientLabel(patient)}</Text>
+          {patient.doctor_unlinked && (
+            <View style={styles.archivedBanner}>
+              <Text style={styles.archivedBannerText}>
+                Archivado{patient.unlinked_at ? ` el ${shortDate(patient.unlinked_at)}` : ''} · no registra ni recibe avisos
+              </Text>
+            </View>
+          )}
           {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
 
           <View style={styles.semaforoCard}>
@@ -171,6 +204,18 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
           <PatientStatsCard detail={detail} />
           <PatientEntriesList entries={detail.entries} totalEntries={detail.totalEntries} onSaveNote={handleSaveNote} />
           <PatientBitacora notes={clinicalNotes} onAddNote={handleAddNote} />
+
+          {(patient.status === 'accepted' || patient.doctor_unlinked) && (
+            <Pressable
+              onPress={handleToggleArchived}
+              style={[styles.archiveButton, patient.doctor_unlinked ? styles.reactivateButton : null]}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.archiveButtonText, patient.doctor_unlinked && styles.reactivateButtonText]}>
+                {patient.doctor_unlinked ? 'Reactivar paciente' : 'Archivar paciente'}
+              </Text>
+            </Pressable>
+          )}
         </ScrollView>
       )}
 
@@ -230,4 +275,10 @@ const styles = StyleSheet.create({
   testButtonText: { fontSize: 12, fontWeight: '700', color: D.primary },
   pushSuccess: { fontSize: 12, fontWeight: '700', color: D.success, marginTop: 8 },
   pushError: { fontSize: 12, fontWeight: '700', color: D.danger, marginTop: 8 },
+  archivedBanner: { alignSelf: 'flex-start', backgroundColor: D.chip, borderRadius: 10, paddingVertical: 5, paddingHorizontal: 10, marginTop: 6 },
+  archivedBannerText: { fontSize: 11, fontWeight: '700', color: D.textMuted },
+  archiveButton: { marginTop: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: D.warningText, backgroundColor: D.warningSoft, alignItems: 'center' },
+  archiveButtonText: { fontSize: 14, fontWeight: '800', color: D.warningText },
+  reactivateButton: { borderColor: D.success, backgroundColor: '#E7F5EC' },
+  reactivateButtonText: { color: D.success },
 });

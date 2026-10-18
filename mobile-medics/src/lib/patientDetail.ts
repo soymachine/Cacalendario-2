@@ -166,6 +166,19 @@ export async function savePatientConfig(linkId: string, input: PatientConfigInpu
   return { error: error?.message ?? null };
 }
 
+/**
+ * Archivar (o reactivar) a un paciente (patient_links.doctor_unlinked). Archivado:
+ * sale de la lista general, la app le dice que no registre y no recibe avisos.
+ * Portado de MedicsPanel.tsx (handleUnlinkPatient / handleReactivatePatient).
+ */
+export async function setPatientArchived(linkId: string, doctorId: string, archived: boolean): Promise<{ unlinkedAt: string | null; error: string | null }> {
+  const unlinkedAt = archived ? new Date().toISOString() : null;
+  const { error } = await supabase.from('patient_links')
+    .update({ doctor_unlinked: archived, unlinked_at: unlinkedAt })
+    .eq('id', linkId).eq('doctor_id', doctorId);
+  return { unlinkedAt, error: error?.message ?? null };
+}
+
 export async function savePatientTags(linkId: string, tags: string[]): Promise<{ error: string | null }> {
   const { error } = await supabase.from('patient_links').update({ tags }).eq('id', linkId);
   return { error: error?.message ?? null };

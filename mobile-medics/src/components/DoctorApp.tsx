@@ -7,7 +7,7 @@ import BottomNav, { type Tab } from './BottomNav';
 import HomeScreen from './HomeScreen';
 import PatientListScreen from './PatientListScreen';
 import PatientDetailScreen from './PatientDetailScreen';
-import InviteScreen from './InviteScreen';
+import InvitePatientModal from './InvitePatientModal';
 import ConfigScreen from './ConfigScreen';
 import TrialExpiredScreen from './TrialExpiredScreen';
 import { isAccessBlocked } from '../lib/plan';
@@ -24,13 +24,14 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   const [practiceStats, setPracticeStats] = useState<PracticeStats | null>(null);
   const [semaforoFilter, setSemaforoFilter] = useState<string | undefined>(undefined);
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const refreshPatients = useCallback(async () => {
     setPatientsLoading(true);
     try {
       const list = await loadPatients(doctor.id);
       setPatients(list);
-      const acceptedIds = list.filter((p) => p.status === 'accepted' && p.patient_id).map((p) => p.patient_id as string);
+      const acceptedIds = list.filter((p) => p.status === 'accepted' && !p.doctor_unlinked && p.patient_id).map((p) => p.patient_id as string);
       const { practiceStats: stats } = await loadPracticeStatsAndAlerts(acceptedIds);
       setPracticeStats(stats);
     } finally {
@@ -87,6 +88,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
             practiceStats={practiceStats}
             onNavigate={handleNavigate}
             onSelectPatient={handleSelectPatientFromHome}
+            onInvite={() => setInviteOpen(true)}
           />
         )}
 
@@ -97,6 +99,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
               patient={selectedPatient}
               onBack={() => setSelectedPatient(null)}
               onPatientUpdated={handlePatientUpdated}
+              onArchiveChanged={refreshPatients}
               onGlobalTagsUpdated={handleGlobalTagsUpdated}
               onFoodTagCatalogUpdated={handleFoodTagCatalogUpdated}
             />
@@ -108,12 +111,9 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
               initialSemaforoFilter={semaforoFilter}
               onRefresh={refreshPatients}
               onSelectPatient={setSelectedPatient}
+              onInvite={() => setInviteOpen(true)}
             />
           )
-        )}
-
-        {activeTab === 'invitar' && (
-          <InviteScreen doctor={doctor} patients={patients} onInvited={refreshPatients} />
         )}
 
         {activeTab === 'config' && (
@@ -126,6 +126,16 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
       </View>
 
       <BottomNav active={activeTab} onChange={(tab) => { setSelectedPatient(null); setActiveTab(tab); }} />
+
+      {inviteOpen && (
+        <InvitePatientModal
+          doctor={doctor}
+          patients={patients}
+          onClose={() => setInviteOpen(false)}
+          onInvited={refreshPatients}
+          onFoodTagCatalogUpdated={handleFoodTagCatalogUpdated}
+        />
+      )}
     </View>
   );
 }
