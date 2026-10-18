@@ -15,7 +15,8 @@ import PatientEntriesList from './PatientEntriesList';
 import PatientBitacora from './PatientBitacora';
 import PatientConfigModal from './PatientConfigModal';
 import PatientProfileModal from './PatientProfileModal';
-import { UserCircleIcon, SlidersIcon, BellIcon } from './icons';
+import { UserCircleIcon, SlidersIcon, BellIcon, BellSlashIcon } from './icons';
+import { tagColor } from '../lib/tags';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
 interface PatientDetailScreenProps {
@@ -125,39 +126,58 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
     <SafeAreaView style={styles.wrapper} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={onBack} style={styles.backButton}><Text style={styles.backText}>← Volver</Text></Pressable>
-        <View style={styles.headerIcons}>
-          <Pressable onPress={() => setProfileOpen(true)} style={styles.iconButton}><UserCircleIcon size={22} color="#95A0A5" /></Pressable>
-          <Pressable onPress={() => setConfigOpen(true)} style={styles.iconButton}><SlidersIcon size={20} color="#95A0A5" /></Pressable>
-        </View>
+        <Pressable onPress={() => setConfigOpen(true)} style={styles.configButton} accessibilityRole="button">
+          <SlidersIcon size={16} color={D.text} />
+          <Text style={styles.configButtonText}>Configuración</Text>
+        </Pressable>
       </View>
 
       {loading || !detail ? (
         <View style={styles.loading}><ActivityIndicator color={D.primary} /></View>
       ) : (
         <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
-          <Text style={styles.patientName}>{patientLabel(patient)}</Text>
-          {patient.doctor_unlinked && (
-            <View style={styles.archivedBanner}>
-              <Text style={styles.archivedBannerText}>
-                Archivado{patient.unlinked_at ? ` el ${shortDate(patient.unlinked_at)}` : ''} · no registra ni recibe avisos
-              </Text>
+          {/* Ficha: nombre, datos, notificaciones, email, etiquetas y semáforo.
+              Se distingue del resto con una franja de color y un fondo tintado (igual que MW). */}
+          <View style={styles.patientCard}>
+            <View style={styles.patientCardAccent} />
+            <View style={styles.patientNameRow}>
+              <Text style={styles.patientName}>{patientLabel(patient)}</Text>
+              <View style={styles.patientIcons}>
+                <Pressable onPress={() => setProfileOpen(true)} hitSlop={8} accessibilityLabel="Datos del paciente" style={styles.iconButton}>
+                  <UserCircleIcon size={22} color="#95A0A5" />
+                </Pressable>
+                {patient.hasPushSub === true && <View accessibilityLabel="Notificaciones activas"><BellIcon size={18} color={D.secondary} /></View>}
+                {patient.hasPushSub === false && <View accessibilityLabel="Sin notificaciones"><BellSlashIcon size={18} color="#B5BEC2" /></View>}
+              </View>
             </View>
-          )}
-          {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
-
-          <View style={styles.semaforoCard}>
-            <View style={styles.semaforoRow}>
-              <View style={[styles.dot, { backgroundColor: semaforo?.color }]} />
-              <Text style={styles.semaforoText}>
-                {detail.daysSinceLast === null ? 'Sin registros'
-                  : detail.daysSinceLast === 0 ? 'Último registro: hoy'
-                  : `Hace ${detail.daysSinceLast} día${detail.daysSinceLast !== 1 ? 's' : ''}`}
-              </Text>
-            </View>
-            {detail.lastEntryDate && <Text style={styles.semaforoMeta}>Último registro: {shortDate(detail.lastEntryDate)}</Text>}
-            {detail.daysSinceLast !== null && detail.daysSinceLast > 3 && (
-              <Text style={styles.semaforoWarning}>⚠️ Varios días sin registrar</Text>
+            {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
+            {(patient.doctor_unlinked || (patient.tags || []).length > 0) && (
+              <View style={styles.tagRow}>
+                {patient.doctor_unlinked && (
+                  <Text style={[styles.tag, styles.archivedTag]}>
+                    Archivado{patient.unlinked_at ? ` el ${shortDate(patient.unlinked_at)}` : ''}
+                  </Text>
+                )}
+                {(patient.tags || []).map((t) => (
+                  <Text key={t} style={[styles.tag, { backgroundColor: tagColor(t) + '22', color: tagColor(t) }]}>{t}</Text>
+                ))}
+              </View>
             )}
+
+            <View style={styles.semaforoBlock}>
+              <View style={styles.semaforoRow}>
+                <View style={[styles.dot, { backgroundColor: semaforo?.color }]} />
+                <Text style={styles.semaforoText}>
+                  {detail.daysSinceLast === null ? 'Sin registros'
+                    : detail.daysSinceLast === 0 ? 'Último registro: hoy'
+                    : `Hace ${detail.daysSinceLast} día${detail.daysSinceLast !== 1 ? 's' : ''}`}
+                </Text>
+              </View>
+              {detail.lastEntryDate && <Text style={styles.semaforoMeta}>Último registro: {shortDate(detail.lastEntryDate)}</Text>}
+              {detail.daysSinceLast !== null && detail.daysSinceLast > 3 && (
+                <Text style={styles.semaforoWarning}>⚠️ Varios días sin registrar</Text>
+              )}
+            </View>
           </View>
 
           <View style={styles.pushCard}>
@@ -245,13 +265,21 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   backButton: { paddingVertical: 6, paddingHorizontal: 4 },
   backText: { fontSize: 14, fontWeight: '700', color: D.text },
-  headerIcons: { flexDirection: 'row', gap: 4 },
-  iconButton: { padding: 8 },
+  configButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 99, backgroundColor: D.card, borderWidth: 1, borderColor: D.border },
+  configButtonText: { fontSize: 13, fontWeight: '700', color: D.text },
+  iconButton: { padding: 2 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { paddingHorizontal: 16, paddingBottom: 32 },
-  patientName: { fontSize: 20, fontWeight: '900', color: D.text },
-  patientEmail: { fontSize: 12, color: D.textMuted, marginTop: 2, marginBottom: 12 },
-  semaforoCard: { backgroundColor: D.card, borderRadius: 16, padding: 14, marginTop: 12, marginBottom: 12 },
+  patientCard: { backgroundColor: '#EEF4FA', borderRadius: 16, paddingVertical: 16, paddingLeft: 20, paddingRight: 16, marginTop: 4, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#DCE7F2' },
+  patientCardAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: D.primary },
+  patientNameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  patientName: { flex: 1, fontSize: 24, lineHeight: 29, fontWeight: '900', color: D.text },
+  patientIcons: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 4 },
+  patientEmail: { fontSize: 13, color: D.textMuted, marginTop: 2 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  tag: { fontSize: 11, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, overflow: 'hidden' },
+  archivedTag: { backgroundColor: D.chip, color: D.textMuted },
+  semaforoBlock: { borderTopWidth: 1, borderTopColor: '#D3DFEA', marginTop: 12, paddingTop: 12 },
   semaforoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 12, height: 12, borderRadius: 6 },
   semaforoText: { fontSize: 14, fontWeight: '700', color: D.text },
@@ -275,8 +303,6 @@ const styles = StyleSheet.create({
   testButtonText: { fontSize: 12, fontWeight: '700', color: D.primary },
   pushSuccess: { fontSize: 12, fontWeight: '700', color: D.success, marginTop: 8 },
   pushError: { fontSize: 12, fontWeight: '700', color: D.danger, marginTop: 8 },
-  archivedBanner: { alignSelf: 'flex-start', backgroundColor: D.chip, borderRadius: 10, paddingVertical: 5, paddingHorizontal: 10, marginTop: 6 },
-  archivedBannerText: { fontSize: 11, fontWeight: '700', color: D.textMuted },
   archiveButton: { marginTop: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: D.warningText, backgroundColor: D.warningSoft, alignItems: 'center' },
   archiveButtonText: { fontSize: 14, fontWeight: '800', color: D.warningText },
   reactivateButton: { borderColor: D.success, backgroundColor: '#E7F5EC' },
