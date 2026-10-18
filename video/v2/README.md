@@ -1,4 +1,4 @@
-# Fluxia — vídeo explicativo v2 (≈96 s, 16:9)
+# Fluxia — vídeo explicativo v2 (≈97 s, 16:9)
 
 Une el vídeo de marketing original (animación con una sanitaria y una paciente,
 `public/video/Marketing_Fluxia_Video.mp4`) con demos animadas construidas sobre
@@ -22,15 +22,17 @@ Resultado: [`fluxia-explicativo-v2.mp4`](fluxia-explicativo-v2.mp4) — 1920×10
 | 51–58 s | Recordatorios automáticos | original |
 | 58–63 s | Cada registro llega al panel | canvas |
 | 63–71 s | Semáforo en la lista de pacientes | canvas |
-| 71–83 s | Historial, estadísticas, comidas y PDF | canvas |
-| 83–96 s | Sanitaria tranquila y cierre (+ chips de los tres registros) | original |
+| 71–85 s | Historial, estadísticas, comidas y PDF | canvas |
+| 85–97 s | Sanitaria tranquila y cierre (+ chips de los tres registros) | original |
 
 ## Archivos
 
 | Archivo | Qué hace |
 |---|---|
 | `script.json` | Guion de la locución (frases, voz y pronunciación). |
-| `voice.py` | Locución con TTS local (sherpa-onnx): voz Piper `es_ES-sharvard`, locutora F, acento castellano de España. |
+| `voz/` | Locución definitiva (ElevenLabs, voz «Marina») y `cortes.json` con el inicio/fin de cada frase. |
+| `split-voice.mjs` | Corta la locución de `voz/` en una pista por frase → `out/vo/`. |
+| `voice.py` | (Alternativa) | Locución con TTS local (sherpa-onnx): voz Piper `es_ES-sharvard`, locutora F, acento castellano de España. |
 | `anonymize.mjs` | Sustituye nombres y correos reales de los pantallazos del panel por pacientes ficticios. |
 | `timeline.js` | Planos, mapeo de tiempo de los planos originales, inicio de cada frase y momentos clave. |
 | `scene.js` | Composición en canvas (planos originales + demos + grafismos). |
@@ -46,7 +48,7 @@ pip install sherpa-onnx soundfile             # TTS (una vez)
 mkdir -p v2/models && curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-sharvard-medium.tar.bz2 | tar xj -C v2/models
 cd v2
 node anonymize.mjs <carpeta-con-pantallazos-originales>   # sólo si cambian los pantallazos del panel
-python3 voice.py                              # out/vo/*.wav  (python3 voice.py L07 → rehace sólo esa frase)
+node split-voice.mjs                          # out/vo/*.wav desde voz/ (o python3 voice.py para la voz sintética local)
 node mix.mjs                                  # out/soundtrack.wav
 node render.mjs                               # out/fluxia-v2.mp4 (~3 min)
 node render.mjs --stills 36,47.6,75.5         # PNGs sueltos para revisar

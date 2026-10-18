@@ -1,5 +1,5 @@
 // Banda sonora del vídeo v2: música generada por código (sin samples) +
-// locución (out/vo/*.wav, ver voice.py) colocada según VO de timeline.js, con
+// locución (out/vo/*.wav, de split-voice.mjs o voice.py) colocada según VO de timeline.js, con
 // la música atenuada automáticamente mientras habla la narradora.
 //
 //   node mix.mjs  → out/soundtrack.wav (44,1 kHz, estéreo, 16 bits)
@@ -47,14 +47,14 @@ const CHORDS = [
   { root: 41, notes: [53, 57, 60, 64] }, // Fmaj7
   { root: 36, notes: [52, 55, 60, 62] }, // Cadd9
 ];
-const END_CHORD = 92.6;                       // acorde final con "Fluxia. Datos reales…"
+const END_CHORD = 93.5;                       // acorde final con "Fluxia. Datos reales…"
 // Intensidad por tramos del montaje (0 = sólo pad … 3 = completo).
 function energy(t) {
   if (t < 14) return 0;          // el problema
   if (t < 24) return 1;          // dudas
   if (t < 51) return 2;          // solución: app y configuración
   if (t < 57.6) return 1;        // recordatorios
-  if (t < 83) return 3;          // panel
+  if (t < 84.6) return 3;        // panel
   return t < END_CHORD ? 2 : 0;  // cierre
 }
 const nBars = Math.ceil(END_CHORD / BAR);
@@ -175,12 +175,12 @@ function reverb(input, spread) {
 }
 const wetL = reverb(send.L, 0), wetR = reverb(send.R, 23);
 
-// Locución: WAV de voice.py remuestreados a 44,1 kHz con FFmpeg.
+// Locución: WAV de out/vo (split-voice.mjs o voice.py) remuestreados a 44,1 kHz con FFmpeg.
 const voice = new Float32Array(N);
 const speaking = new Float32Array(N);
 for (const [id, start] of Object.entries(VO)) {
   const wav = join(HERE, 'out', 'vo', `${id}.wav`);
-  if (!existsSync(wav)) throw new Error(`Falta ${wav}: ejecuta antes voice.py`);
+  if (!existsSync(wav)) throw new Error(`Falta ${wav}: ejecuta antes split-voice.mjs`);
   const raw = execFileSync('ffmpeg', ['-loglevel', 'error', '-i', wav, '-f', 'f32le', '-ac', '1', '-ar', String(SR), '-'], { maxBuffer: 1 << 28 });
   const s = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4);
   const i0 = Math.floor(start * SR);

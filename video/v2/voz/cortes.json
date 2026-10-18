@@ -1,0 +1,10 @@
+{
+  "fuente": "locucion-elevenlabs-marina.mp3",
+  "nota": "Inicio y fin (s) de cada frase dentro de la locución de ElevenLabs (voz Marina), medidos con detección de silencios y transcripción.",
+  "cortes": {
+    "L01": [0.00, 2.21], "L02": [2.51, 8.02], "L03": [8.25, 13.34], "L04": [13.47, 21.24],
+    "L05": [21.45, 23.58], "L06": [23.76, 30.36], "L07": [30.52, 35.63], "L08": [35.82, 42.01],
+    "L09": [42.15, 51.21], "L10": [51.38, 57.04], "L11": [57.18, 62.78], "L12": [62.93, 69.92],
+    "L13": [70.08, 83.94], "L14": [84.09, 89.27], "L15": [89.43, 92.92], "L16": [93.10, 96.60]
+  }
+}

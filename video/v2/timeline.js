@@ -1,4 +1,4 @@
-// Montaje del vídeo v2 (≈96 s, 16:9, 30 fps).
+// Montaje del vídeo v2 (≈97 s, 16:9, 30 fps).
 //
 // Planos "orig": escenas de personajes del vídeo de marketing original
 // (public/video/Marketing_Fluxia_Video.mp4). `map` traduce tiempo de salida →
@@ -22,27 +22,27 @@ export const SHOTS = [
   { id: 'recordatorio',kind: 'orig',   start: 51.0, end: 57.6, map: [[51.0, 39.6], [57.6, 47.0]] },
   { id: 'panel',       kind: 'canvas', start: 57.6, end: 63.4 },
   { id: 'semaforo',    kind: 'canvas', start: 63.4, end: 70.6 },
-  { id: 'detalle',     kind: 'canvas', start: 70.6, end: 83.0 },
-  { id: 'tranquila',   kind: 'orig',   start: 83.0, end: 88.6, map: [[83.0, 66.9], [88.6, 73.0]] },
-  { id: 'cierre',      kind: 'orig',   start: 88.6, end: 96.4, map: [[88.6, 73.0], [96.3, 80.6]] },
+  { id: 'detalle',     kind: 'canvas', start: 70.6, end: 84.6 },
+  { id: 'tranquila',   kind: 'orig',   start: 84.6, end: 89.6, map: [[84.6, 66.9], [89.6, 73.0]] },
+  { id: 'cierre',      kind: 'orig',   start: 89.6, end: 97.4, map: [[89.6, 73.0], [97.3, 80.6]] },
 ];
-export const DURATION = 96.4;
+export const DURATION = 97.4;
 
 export const VO = {
-  L01: 0.6, L02: 3.0, L03: 8.4, L04: 14.4, L05: 21.6, L06: 24.3, L07: 31.2, L08: 36.6,
-  L09: 42.4, L10: 51.3, L11: 57.9, L12: 63.7, L13: 70.9, L14: 83.3, L15: 88.9, L16: 92.6,
+  L01: 0.45, L02: 2.9, L03: 8.5, L04: 13.7, L05: 21.6, L06: 23.95, L07: 30.85, L08: 36.15,
+  L09: 42.5, L10: 51.7, L11: 57.7, L12: 63.5, L13: 70.7, L14: 84.75, L15: 89.95, L16: 93.5,
 };
 
 // Momentos clave (s) para animaciones y efectos de sonido.
 export const CUES = {
-  foodIcon: 12.2,
-  trio: [33.45, 34.35, 35.15],       // deposiciones / micciones / alimentación (L07)
-  tapBristol: 37.9, tabUrine: 38.7, tapUrine: 39.2, tabFood: 39.75, tapPhoto: 40.3,
-  clickConfig: 43.6, drawer: 43.8, zoomDrawer: 44.6, foodToggle: 45.4, campos: 46.6, setHidden: 47.6, zoomOut: 49.6,
-  tapRegister: 58.0, packets: [58.3, 58.7, 59.1], zoomPanel: 60.2,
-  semDots: 64.3, chips: [67.6, 68.7, 69.3],
-  clickRow: 71.4, histChips: [74.8, 75.5, 76.1], scrollDown: 76.5, stats: 77.8, scrollUp: 78.9, exportPdf: 79.6,
-  endChips: 92.6,
+  foodIcon: 12.5,
+  trio: [33.25, 34.25, 35.05],       // deposiciones / micciones / alimentación (L07)
+  tapBristol: 38.1, tabUrine: 39.2, tapUrine: 39.75, tabFood: 40.3, tapPhoto: 40.85,
+  clickConfig: 43.6, drawer: 43.8, zoomDrawer: 44.6, foodToggle: 45.4, campos: 47.5, setHidden: 48.6, zoomOut: 50.0,
+  tapRegister: 58.0, packets: [58.3, 58.7, 59.1], zoomPanel: 60.4,
+  semDots: 64.0, chips: [67.5, 68.8, 69.5],
+  clickRow: 71.4, histChips: [75.6, 76.6, 77.4], scrollDown: 78.2, stats: 79.8, scrollUp: 81.0, exportPdf: 81.7,
+  endChips: 93.6,
 };
 
 export function shotAt(t) {

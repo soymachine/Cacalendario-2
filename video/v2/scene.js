@@ -194,7 +194,7 @@ function sceneApp(ctx, t) {
   const [s0] = [33.2];
   // columna de tipos de registro
   const section = t < CUES.tabUrine ? 0 : t < CUES.tabFood ? 1 : 2;
-  const inL08 = t >= 36.4;
+  const inL08 = t >= 36.15;
   const cur = CUES.trio.filter((c) => t >= c - 0.15).length - 1;
   layer(ctx, eo(prog(t, s0 + 0.2, s0 + 0.8)), () => text(ctx, 'Con la app, el paciente registra', 200, 300, { size: 30, weight: 300, color: INK2 }));
   KINDS.forEach((k, i) => {
@@ -223,7 +223,7 @@ function sceneApp(ctx, t) {
     const tabs = [[230, 905], [590, 905], [944, 905]];
     tabs.forEach(([x, y], i) => {
       const a = win(t, CUES.trio[i] - 0.1, (CUES.trio[i + 1] ?? 36.2) + 0.1, 0.2, 0.25);
-      if (a > 0 && t < 36.4) layer(ctx, a, () => {
+      if (a > 0 && t < 36.15) layer(ctx, a, () => {
         ctx.strokeStyle = '#F2C94C'; ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(A(x), A(y), A(78) + 4 * pulse(t, CUES.trio[i] + 0.15, 0.5), 0, Math.PI * 2); ctx.stroke();
       });
@@ -251,9 +251,9 @@ function sceneApp(ctx, t) {
       text(ctx, 'Foto añadida · Merienda', 88, y + 29, { size: 15, weight: 600, color: INK });
     });
     // dedo
-    const keys = [[36.6, 300, 2300], [37.7, 301, 1587], [38.45, 301, 1587], [38.65, 590, 905], [38.85, 590, 905], [39.1, 330, 1215],
-      [39.45, 330, 1215], [39.7, 944, 905], [39.9, 944, 905], [40.2, 333, 1500], [40.6, 333, 1500], [41.2, 700, 2300]];
-    const ta = win(t, 36.9, 41.3, 0.3, 0.3);
+    const keys = [[36.8, 300, 2300], [37.9, 301, 1587], [38.65, 301, 1587], [39.05, 590, 905], [39.3, 590, 905], [39.6, 330, 1215],
+      [39.95, 330, 1215], [40.2, 944, 905], [40.4, 944, 905], [40.75, 333, 1500], [41.15, 333, 1500], [41.7, 700, 2300]];
+    const ta = win(t, 37.1, 41.8, 0.3, 0.3);
     if (ta > 0) {
       const [x, y] = path(t, keys);
       const pr = Math.max(pulse(t, CUES.tapBristol), pulse(t, CUES.tabUrine), pulse(t, CUES.tapUrine), pulse(t, CUES.tabFood), pulse(t, CUES.tapPhoto));
@@ -296,9 +296,9 @@ function sceneConfig(ctx, t) {
       });
     }
     // cursor
-    const keys = [[42.6, 1100, 700], [43.45, 1594, 152], [43.9, 1594, 152], [44.6, 1700, 600], [45.2, 1600, 505], [46.4, 1640, 700],
-      [47.35, 1932, 824], [48.6, 1932, 824], [49.5, 1800, 980]];
-    const ca = win(t, 42.6, 49.8, 0.3, 0.3);
+    const keys = [[42.6, 1100, 700], [43.45, 1594, 152], [43.9, 1594, 152], [44.6, 1700, 600], [45.2, 1600, 505], [46.9, 1640, 700],
+      [48.35, 1932, 824], [49.4, 1932, 824], [50.3, 1800, 980]];
+    const ca = win(t, 42.6, 50.5, 0.3, 0.3);
     if (ca > 0) {
       const [x, y] = path(t, keys);
       const pr = Math.max(pulse(t, CUES.clickConfig), pulse(t, CUES.setHidden));
@@ -406,7 +406,7 @@ function sceneDetalle(ctx, t) {
     highlight(ctx, 40, STATS_OFF + 742 - scroll, 478, 295, GREEN, win(t, CUES.stats + 0.1, CUES.scrollUp, 0.3, 0.3), 16);
     // PDF
     const pe = back(prog(t, CUES.exportPdf + 0.15, CUES.exportPdf + 0.6));
-    const pa = win(t, CUES.exportPdf + 0.15, 83.4, 0.2, 0.4);
+    const pa = win(t, CUES.exportPdf + 0.15, 85.0, 0.2, 0.4);
     if (pa > 0) layer(ctx, pa, () => {
       ctx.translate(1300, 210); ctx.scale(pe * 1.6, pe * 1.6);
       shadow(ctx, 30, 12, 'rgba(20,40,70,0.22)');
@@ -417,11 +417,11 @@ function sceneDetalle(ctx, t) {
       text(ctx, 'Listo para la historia clínica', 102, 69, { size: 12, weight: 600, color: GREEN });
     });
     // cursor
-    const keys = [[70.6, 300, 450], [71.25, 420, 462], [71.6, 420, 462], [74.3, 760, 600], [76.2, 1000, 560], [76.4, 700, 700],
-      [78.5, 520, 900], [79.4, 1437, 152], [80.4, 1437, 152], [82.8, 1300, 600]];
+    const keys = [[70.6, 300, 450], [71.25, 420, 462], [71.6, 420, 462], [75.0, 760, 600], [77.6, 1000, 560], [77.9, 700, 700],
+      [80.6, 520, 900], [81.5, 1437, 152], [82.6, 1437, 152], [84.4, 1300, 600]];
     const [x, y] = path(t, keys);
     const pr = Math.max(pulse(t, CUES.clickRow), pulse(t, CUES.exportPdf));
-    layer(ctx, win(t, 70.6, 82.6, 0.01, 0.4), () => {
+    layer(ctx, win(t, 70.6, 84.2, 0.01, 0.4), () => {
       ripple(ctx, x, y, t, CUES.clickRow, BLUE, 8, 40); ripple(ctx, x, y, t, CUES.exportPdf, BLUE, 8, 40);
       cursorArrow(ctx, x, y, 1.9, pr);
     });
@@ -429,13 +429,13 @@ function sceneDetalle(ctx, t) {
   const kinds = KINDS.map((k) => k.label.replace('Alimentación', 'Comidas'));
   kinds.forEach((s, i) => callout(ctx, 560 + i * 400, 1012, s, BLUE, prog(t, CUES.histChips[i], CUES.histChips[i] + 0.4) * (1 - prog(t, CUES.scrollDown + 0.2, CUES.scrollDown + 0.6)),
     { size: 26, icon: (x, y) => picto(ctx, KINDS[i].kind, x, y, 40, APP_BLUE) }));
-  callout(ctx, 960, 1012, 'Evolución, estadísticas e informes en PDF', BLUE, prog(t, CUES.stats - 0.3, CUES.stats + 0.1) * (1 - prog(t, 82.5, 83.0)), { size: 26 });
+  callout(ctx, 960, 1012, 'Evolución, estadísticas e informes en PDF', BLUE, prog(t, CUES.stats - 0.3, CUES.stats + 0.1) * (1 - prog(t, 84.0, 84.5)), { size: 26 });
 }
 
 // --- Cierre: los tres tipos de registro bajo el lema -------------------------
 function endChips(ctx, t) {
   KINDS.forEach((k, i) => {
-    const a = eo(prog(t, CUES.endChips + i * 0.15, CUES.endChips + i * 0.15 + 0.5)) * (1 - prog(t, 95.9, 96.4));
+    const a = eo(prog(t, CUES.endChips + i * 0.15, CUES.endChips + i * 0.15 + 0.5)) * (1 - prog(t, 96.9, 97.4));
     callout(ctx, 960 + (i - 1) * 330, 760, k.label, BLUE, a, { size: 26, icon: (x, y) => picto(ctx, k.kind, x, y, 42, APP_BLUE) });
   });
 }
