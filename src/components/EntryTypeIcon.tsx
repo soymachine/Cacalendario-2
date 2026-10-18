@@ -48,12 +48,14 @@ interface EntryTypeIconProps {
   /** Tipo de registro; tiene prioridad sobre isUrine. */
   kind?: EntryKind;
   size?: number;
+  /** Fuerza un color (p. ej. blanco sobre un botón activo); por defecto, el del tipo. */
+  color?: string;
 }
 
-export default function EntryTypeIcon({ isUrine = false, kind, size = 18 }: EntryTypeIconProps) {
+export default function EntryTypeIcon({ isUrine = false, kind, size = 18, color: colorOverride }: EntryTypeIconProps) {
   const k: EntryKind = kind ?? (isUrine ? 'urine' : 'poop');
   const label = ENTRY_KIND_LABEL[k];
-  const color = ENTRY_KIND_COLOR[k];
+  const color = colorOverride ?? ENTRY_KIND_COLOR[k];
   return (
     <svg
       width={size}

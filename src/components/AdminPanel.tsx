@@ -11,10 +11,10 @@ interface FeedbackItem {
 }
 
 const FEEDBACK_TYPE_META: Record<string, { emoji: string; label: string; color: string }> = {
-  bug: { emoji: '🐛', label: 'Error', color: '#e74c3c' },
-  suggestion: { emoji: '💡', label: 'Sugerencia', color: '#f39c12' },
-  question: { emoji: '❓', label: 'Pregunta', color: '#3498db' },
-  other: { emoji: '💬', label: 'Otro', color: '#95a5a6' },
+  bug: { emoji: '🐛', label: 'Error', color: '#D26464' },
+  suggestion: { emoji: '💡', label: 'Sugerencia', color: '#E09F3C' },
+  question: { emoji: '❓', label: 'Pregunta', color: '#3C7DB8' },
+  other: { emoji: '💬', label: 'Otro', color: '#95A0A5' },
 };
 
 interface UserInfo {
@@ -283,7 +283,7 @@ export default function AdminPanel() {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
           <label style={s.label}>Contraseña</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} style={s.input} />
-          {error && <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+          {error && <p style={{ color: '#BB4E4E', fontSize: 13, marginBottom: 16 }}>{error}</p>}
           <button onClick={handleLogin} disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? 0.5 : 1 }}>
             {loading ? '...' : 'Entrar'}
           </button>
@@ -381,20 +381,20 @@ export default function AdminPanel() {
         {/* Logo */}
         <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 6 }}>
           <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain' }} />
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#dd8273', letterSpacing: 0.5 }}>Panel admin</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#3C7DB8', letterSpacing: 0.5 }}>Panel admin</div>
         </div>
 
         {/* Nav */}
         <nav style={s.sidebarNav}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
+          <div style={{ fontSize: 9, fontWeight: 900, color: '#90B7DD', marginBottom: 4, letterSpacing: 1 }}>MENÚ PRINCIPAL</div>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => setSection(item.id)}
               style={{
                 ...s.navItem,
-                backgroundColor: section === item.id ? '#3d1e1a' : 'transparent',
-                color: section === item.id ? '#dd8273' : '#9a7a76',
+                backgroundColor: section === item.id ? '#2A547D' : 'transparent',
+                color: section === item.id ? '#3C7DB8' : '#BAD3EC',
               }}
             >
               <span style={{ fontSize: 16 }}>{item.icon}</span>
@@ -404,11 +404,11 @@ export default function AdminPanel() {
         </nav>
 
         {/* Settings section */}
-        <div style={{ padding: '16px 12px 8px', borderTop: '1px solid #2d1a18' }}>
-          <div style={{ fontSize: 9, fontWeight: 900, color: '#5c3e3a', marginBottom: 4, letterSpacing: 1 }}>CONFIGURACIÓN</div>
+        <div style={{ padding: '16px 12px 8px', borderTop: '1px solid #2A547D' }}>
+          <div style={{ fontSize: 9, fontWeight: 900, color: '#90B7DD', marginBottom: 4, letterSpacing: 1 }}>CONFIGURACIÓN</div>
           <button
             onClick={() => { supabase.auth.signOut(); setLoggedIn(false); }}
-            style={{ ...s.navItem, color: '#7a5a56' }}
+            style={{ ...s.navItem, color: '#90B7DD' }}
           >
             <span style={{ fontSize: 16 }}>🚪</span>
             <span style={{ fontSize: 14 }}>Cerrar sesión</span>
@@ -419,13 +419,13 @@ export default function AdminPanel() {
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #2d1a18', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
+        <div style={{ borderTop: '1px solid #2A547D', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#3C7DB8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
             {(adminEmail || 'A')[0].toUpperCase()}
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Admin User</div>
-            <div style={{ fontSize: 11, color: '#9a7a76' }}>{adminEmail}</div>
+            <div style={{ fontSize: 11, color: '#BAD3EC' }}>{adminEmail}</div>
           </div>
         </div>
       </aside>
@@ -462,7 +462,7 @@ export default function AdminPanel() {
                   const meta = FEEDBACK_TYPE_META[item.type || 'other'] || FEEDBACK_TYPE_META.other;
                   return (
                     <div key={item.id} style={{ padding: '14px 20px', borderBottom: i < 4 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                         {item.user_email[0]?.toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -499,7 +499,7 @@ export default function AdminPanel() {
                 return (
                   <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < 4 ? '1px solid #00000010' : 'none' }}>
                     <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
                         {(user.email || '?')[0].toUpperCase()}
                       </div>
                       <div>
@@ -510,7 +510,7 @@ export default function AdminPanel() {
                     <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{shortDate(user.created_at)}</span>
                     <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{user.last_sign_in_at ? relativeTime(user.last_sign_in_at) : '—'}</span>
                     <span style={{ flex: 1, textAlign: 'right' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#dd827330' : '#eee', color: isRecent ? '#c0392b' : '#999' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#3C7DB830' : '#eee', color: isRecent ? '#BB4E4E' : '#999' }}>
                         {isRecent ? '● Activo' : '○ Inactivo'}
                       </span>
                     </span>
@@ -551,7 +551,7 @@ export default function AdminPanel() {
                 return (
                   <div key={user.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < arr.length - 1 ? '1px solid #00000010' : 'none' }}>
                     <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 2 === 0 ? '#1a0e0e' : '#dd8273', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 2 === 0 ? '#274867' : '#3C7DB8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                         {(user.email || '?')[0].toUpperCase()}
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{user.email ? user.email.split('@')[0] : user.id.slice(0, 8)}</span>
@@ -560,7 +560,7 @@ export default function AdminPanel() {
                     <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(user.created_at)}</span>
                     <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{user.last_sign_in_at ? relativeTime(user.last_sign_in_at) : '—'}</span>
                     <span style={{ flex: 1, textAlign: 'right' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#dd827330' : '#eee', color: isRecent ? '#c0392b' : '#999' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, backgroundColor: isRecent ? '#3C7DB830' : '#eee', color: isRecent ? '#BB4E4E' : '#999' }}>
                         {isRecent ? '● Activo' : '○ Inactivo'}
                       </span>
                     </span>
@@ -608,7 +608,7 @@ export default function AdminPanel() {
                   return (
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < doctors.length - 1 ? '1px solid #00000010' : 'none' }}>
                       <div style={{ flex: 2.5, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                           {(doc.name || '?')[0].toUpperCase()}
                         </div>
                         <div>
@@ -627,14 +627,14 @@ export default function AdminPanel() {
                       <span style={{ flex: 2, fontSize: 13, color: '#555' }}>{doc.center_name}</span>
                       <span style={{ flex: 1.5, fontSize: 13, color: '#555' }}>{doc.specialty || '—'}</span>
                       <span style={{ flex: 1, fontSize: 13, color: '#555' }}>{shortDate(doc.created_at)}</span>
-                      <span style={{ flex: 0.8, textAlign: 'center' as const, fontSize: 13, fontWeight: 600, color: doc.patientCount > 0 ? '#1a0e0e' : '#bbb' }}>
+                      <span style={{ flex: 0.8, textAlign: 'center' as const, fontSize: 13, fontWeight: 600, color: doc.patientCount > 0 ? '#274867' : '#bbb' }}>
                         {doc.patientCount}
                       </span>
                       <span style={{ flex: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                          backgroundColor: doc.plan === 'pro' ? '#1a0e0e' : doc.plan === 'beta' ? '#6366f1' : doc.plan === 'test' ? '#16a34a' : '#fff8e1',
-                          color: doc.plan === 'pro' ? '#dd8273' : (doc.plan === 'beta' || doc.plan === 'test') ? '#fff' : '#7a5810',
+                          backgroundColor: doc.plan === 'pro' ? '#274867' : doc.plan === 'beta' ? '#6366f1' : doc.plan === 'test' ? '#16a34a' : '#fff8e1',
+                          color: doc.plan === 'pro' ? '#fff' : (doc.plan === 'beta' || doc.plan === 'test') ? '#fff' : '#7a5810',
                           border: doc.plan === 'pro' || doc.plan === 'beta' || doc.plan === 'test' ? 'none' : '1px solid #ffe082',
                           whiteSpace: 'nowrap' as const,
                         }}>
@@ -665,8 +665,8 @@ export default function AdminPanel() {
                           disabled={deletingId === doc.id}
                           title="Eliminar médico"
                           style={{
-                            padding: '3px 8px', borderRadius: 6, border: '1px solid #ffcccc', fontSize: 11,
-                            cursor: 'pointer', backgroundColor: '#fff5f5', color: '#c0392b',
+                            padding: '3px 8px', borderRadius: 6, border: '1px solid #F3C9C9', fontSize: 11,
+                            cursor: 'pointer', backgroundColor: '#FBEDED', color: '#BB4E4E',
                             opacity: deletingId === doc.id ? 0.4 : 1,
                           }}
                         >
@@ -704,7 +704,7 @@ export default function AdminPanel() {
                     const heights = [80, 60, 100, 45, 70, 30, 55];
                     return (
                       <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                        <div style={{ width: '100%', maxWidth: 40, height: heights[i], backgroundColor: '#dd8273', borderRadius: 6, opacity: 0.7 + (i * 0.04) }} />
+                        <div style={{ width: '100%', maxWidth: 40, height: heights[i], backgroundColor: '#3C7DB8', borderRadius: 6, opacity: 0.7 + (i * 0.04) }} />
                         <span style={{ fontSize: 11, color: '#999' }}>{day}</span>
                       </div>
                     );
@@ -716,8 +716,8 @@ export default function AdminPanel() {
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 16 }}>Top 5 Usuarios</div>
                 {users.slice(0, 5).map((user, i) => (
                   <div key={user.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 4 ? '1px solid #f5f5f5' : 'none' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#dd8273', width: 20 }}>{i + 1}</span>
-                    <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#3C7DB8', width: 20 }}>{i + 1}</span>
+                    <div style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 11 }}>
                       {(user.email || '?')[0].toUpperCase()}
                     </div>
                     <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#333' }}>{user.email ? user.email.split('@')[0] : '?'}</span>
@@ -733,7 +733,7 @@ export default function AdminPanel() {
                   const vals = [5, 3, 2, 1, 1, 2, 8, 25, 40, 55, 45, 35, 30, 28, 22, 18, 20, 25, 35, 30, 22, 15, 10, 7];
                   return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                      <div style={{ width: '100%', height: vals[i] * 1.3, backgroundColor: '#dd8273', borderRadius: 3, opacity: 0.5 + (vals[i] / 100) }} />
+                      <div style={{ width: '100%', height: vals[i] * 1.3, backgroundColor: '#3C7DB8', borderRadius: 3, opacity: 0.5 + (vals[i] / 100) }} />
                       {i % 3 === 0 && <span style={{ fontSize: 9, color: '#bbb' }}>{i}h</span>}
                     </div>
                   );
@@ -764,7 +764,7 @@ export default function AdminPanel() {
               {/* Note: Individual entries would require a new RPC function to fetch. Showing users' recent activity for now. */}
               {users.slice(0, 10).map((user, i) => (
                 <div key={user.id} style={{ padding: '14px 20px', borderBottom: i < 9 ? '1px solid #00000010' : 'none', display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 3 === 0 ? '#dd8273' : '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: i % 3 === 0 ? '#3C7DB8' : '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                     {(user.email || '?')[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -811,7 +811,7 @@ export default function AdminPanel() {
                       onClick={() => setFeedbackFilter(key)}
                       style={{
                         ...s.filterTab,
-                        backgroundColor: feedbackFilter === key ? meta.color : key === 'bug' ? '#dd827333' : '#00000015',
+                        backgroundColor: feedbackFilter === key ? meta.color : key === 'bug' ? '#3C7DB833' : '#00000015',
                         color: feedbackFilter === key ? '#fff' : '#666',
                       }}
                     >
@@ -831,7 +831,7 @@ export default function AdminPanel() {
                     return (
                       <div key={item.id} style={{ padding: '16px 20px', borderBottom: i < filtered.length - 1 ? '1px solid #00000010' : 'none' }}>
                         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#1a0e0e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#274867', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                             {item.user_email[0]?.toUpperCase()}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -848,7 +848,7 @@ export default function AdminPanel() {
                           </div>
                           <button
                             onClick={() => handleDeleteFeedback(item.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#c0392b', padding: '4px 8px', flexShrink: 0 }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#BB4E4E', padding: '4px 8px', flexShrink: 0 }}
                             title="Eliminar"
                           >
                             🗑️
@@ -870,8 +870,8 @@ export default function AdminPanel() {
 
             {backupMsg && (
               <div style={{ padding: '12px 16px', borderRadius: 10, marginBottom: 16,
-                backgroundColor: backupMsg.type === 'ok' ? '#2ecc7118' : '#e74c3c18',
-                color: backupMsg.type === 'ok' ? '#27ae60' : '#c0392b', fontSize: 13, fontWeight: 600 }}>
+                backgroundColor: backupMsg.type === 'ok' ? '#3F9E6E18' : '#D2646418',
+                color: backupMsg.type === 'ok' ? '#3F9E6E' : '#BB4E4E', fontSize: 13, fontWeight: 600 }}>
                 {backupMsg.text}
               </div>
             )}
@@ -884,7 +884,7 @@ export default function AdminPanel() {
                   Descarga un fichero JSON con todos los registros, centros, médicos y vínculos de pacientes.
                 </p>
                 <button onClick={handleCreateBackup} disabled={backupLoading}
-                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', backgroundColor: '#1a0e0e',
+                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', backgroundColor: '#274867',
                     color: '#fff', fontWeight: 700, fontSize: 14, cursor: backupLoading ? 'default' : 'pointer', opacity: backupLoading ? 0.6 : 1 }}>
                   {backupLoading ? 'Generando...' : '⬇️ Descargar backup'}
                 </button>
@@ -923,7 +923,7 @@ export default function AdminPanel() {
                       onChange={e => e.target.files?.[0] && handleRestoreFile(e.target.files[0])} />
                   </label>
                 ) : (
-                  <div style={{ backgroundColor: '#fff8e1', borderRadius: 10, border: '1px solid #f39c1240', padding: '16px 20px' }}>
+                  <div style={{ backgroundColor: '#fff8e1', borderRadius: 10, border: '1px solid #E09F3C40', padding: '16px 20px' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8 }}>📋 {restorePreview.filename}</div>
                     <div style={{ fontSize: 12, color: '#666', marginBottom: 12, lineHeight: 1.7 }}>
                       📅 Creado: {new Date(restorePreview.data.createdAt).toLocaleString('es')}<br/>
@@ -934,7 +934,7 @@ export default function AdminPanel() {
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <button onClick={handleConfirmRestore} disabled={restoreLoading}
-                        style={{ padding: '9px 20px', borderRadius: 9, border: 'none', backgroundColor: '#dd8273',
+                        style={{ padding: '9px 20px', borderRadius: 9, border: 'none', backgroundColor: '#3C7DB8',
                           color: '#fff', fontWeight: 700, fontSize: 13, cursor: restoreLoading ? 'default' : 'pointer', opacity: restoreLoading ? 0.6 : 1 }}>
                         {restoreLoading ? 'Restaurando...' : '✅ Confirmar restauración'}
                       </button>
@@ -972,7 +972,7 @@ export default function AdminPanel() {
             <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
                 <span style={{ fontSize: 40 }}>{planEmoji[newPlan]}</span>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', margin: '12px 0 6px' }}>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#274867', margin: '12px 0 6px' }}>
                   Cambiar a plan {planLabel[newPlan]}
                 </h3>
                 <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.5 }}>
@@ -980,7 +980,7 @@ export default function AdminPanel() {
                   <strong>{planLabel[newPlan]}</strong>?
                 </p>
                 {newPlan === 'free' && (
-                  <p style={{ fontSize: 13, color: '#c0392b', marginTop: 10, backgroundColor: '#fdecea', borderRadius: 8, padding: '8px 12px' }}>
+                  <p style={{ fontSize: 13, color: '#BB4E4E', marginTop: 10, backgroundColor: '#FBEDED', borderRadius: 8, padding: '8px 12px' }}>
                     El médico se quedará sin plan activo: verá el panel bloqueado con el modal de pago hasta que active Pro. No cancela nada en Stripe.
                   </p>
                 )}
@@ -1008,7 +1008,7 @@ export default function AdminPanel() {
                     await handleChangeDoctorPlan(doctor.id, newPlan);
                   }}
                   disabled={changingPlanId === doctor.id}
-                  style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#1a0e0e', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#274867', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                 >
                   {planEmoji[newPlan]} Activar {planLabel[newPlan]}
                 </button>
@@ -1024,11 +1024,11 @@ export default function AdminPanel() {
           <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <span style={{ fontSize: 40 }}>🗑️</span>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a0e0e', margin: '12px 0 6px' }}>Eliminar médico</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#274867', margin: '12px 0 6px' }}>Eliminar médico</h3>
               <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.5 }}>
                 ¿Eliminar a <strong>{deleteConfirm.name}</strong> ({deleteConfirm.email})?
               </p>
-              <p style={{ fontSize: 13, color: '#c0392b', marginTop: 10, backgroundColor: '#fdecea', borderRadius: 8, padding: '8px 12px' }}>
+              <p style={{ fontSize: 13, color: '#BB4E4E', marginTop: 10, backgroundColor: '#FBEDED', borderRadius: 8, padding: '8px 12px' }}>
                 Se borrarán su cuenta, centro y vínculos con pacientes. Esta acción no se puede deshacer.
               </p>
             </div>
@@ -1042,7 +1042,7 @@ export default function AdminPanel() {
               <button
                 onClick={() => handleDeleteDoctor(deleteConfirm)}
                 disabled={deletingId === deleteConfirm.id}
-                style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#c0392b', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                style={{ flex: 1, padding: 12, borderRadius: 24, border: 'none', backgroundColor: '#BB4E4E', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 {deletingId === deleteConfirm.id ? '…' : '🗑 Eliminar'}
               </button>
@@ -1094,7 +1094,7 @@ function StatCard({ emoji, label, value, sub, dark }: {
 const s: Record<string, React.CSSProperties> = {
   loginContainer: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#dd8273', fontFamily: 'Inter, system-ui, sans-serif',
+    background: 'linear-gradient(105deg, #3E78B5 0%, #539D9F 36%, #78AD89 62%, #D8DA56 100%)', fontFamily: 'Inter, system-ui, sans-serif',
   },
   loginCard: {
     width: '100%', maxWidth: 380, padding: 32, backgroundColor: 'white',
@@ -1108,20 +1108,20 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: 16, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
   },
   btnPrimary: {
-    width: '100%', padding: 14, borderRadius: 24, backgroundColor: '#1a0e0e',
+    width: '100%', padding: 14, borderRadius: 24, backgroundColor: '#274867',
     color: 'white', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer',
   },
   shell: {
     display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif',
   },
   sidebar: {
-    width: 260, backgroundColor: '#1a0e0e', display: 'flex', flexDirection: 'column' as const,
+    width: 260, backgroundColor: '#1F3A53', display: 'flex', flexDirection: 'column' as const,
     position: 'fixed' as const, top: 0, left: 0, bottom: 0, zIndex: 10,
     overflowY: 'auto' as const,
   },
   sidebarLogo: {
     display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', minHeight: 100,
-    borderBottom: '1px solid #2d1a18',
+    borderBottom: '1px solid #2A547D',
   },
   sidebarNav: {
     padding: '12px 12px 8px', display: 'flex', flexDirection: 'column' as const, gap: 2,
@@ -1132,7 +1132,7 @@ const s: Record<string, React.CSSProperties> = {
     textAlign: 'left' as const, width: '100%',
   },
   main: {
-    flex: 1, marginLeft: 260, backgroundColor: '#dd8273', padding: 32,
+    flex: 1, marginLeft: 260, backgroundColor: '#EEF4FB', padding: 32,
     minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, gap: 24,
   },
   statsRow: {
@@ -1147,7 +1147,7 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex', alignItems: 'center', gap: 6,
   },
   linkBtn: {
-    background: 'none', border: 'none', color: '#dd8273', fontSize: 13,
+    background: 'none', border: 'none', color: '#3C7DB8', fontSize: 13,
     fontWeight: 600, cursor: 'pointer',
   },
   filterTab: {

@@ -2732,7 +2732,7 @@ export default function MedicsPanel() {
                                     color: active ? '#fff' : 'var(--text-secondary)',
                                   }}
                                 >
-                                  {o.key !== 'all' && <EntryTypeIcon kind={o.key} size={12} />}
+                                  {o.key !== 'all' && <EntryTypeIcon kind={o.key} size={12} color={active ? '#fff' : undefined} />}
                                   {o.label}
                                   <span className="font-semibold opacity-70">{o.count}</span>
                                 </button>
