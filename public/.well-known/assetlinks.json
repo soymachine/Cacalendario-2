@@ -1,10 +1,13 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.fluxiahealth.app",
       "sha256_cert_fingerprints": [
+        "CD:4B:C9:CA:82:07:57:E2:8A:49:EB:12:C0:29:04:88:CF:50:B6:70:61:DD:5C:F1:F5:11:65:FC:3B:DD:D5:B4",
         "DF:19:3E:EF:4D:21:25:D2:C2:68:27:DF:76:0C:DD:03:F8:92:B4:92:12:FF:91:2B:FF:F2:12:B2:7D:A9:C9:0B"
       ]
     }
