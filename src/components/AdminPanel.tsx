@@ -382,7 +382,11 @@ export default function AdminPanel() {
       <aside style={s.sidebar}>
         {/* Logo */}
         <div style={{ ...s.sidebarLogo, flexDirection: 'column' as const, alignItems: 'flex-start', justifyContent: 'center', gap: 6 }}>
-          <img src="/fluxia-logo.png" alt="Fluxia" style={{ width: '100%', maxHeight: 80, objectFit: 'contain' }} />
+          {/* Símbolo + nombre en blanco: el texto del logo completo es gris oscuro y no se ve sobre la barra */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/Logo-Icon.png" alt="" style={{ height: 40, width: 'auto', display: 'block' }} />
+            <span style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>Fluxia</span>
+          </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#3C7DB8', letterSpacing: 0.5 }}>Panel admin</div>
         </div>
 
