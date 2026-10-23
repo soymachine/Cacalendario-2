@@ -6,6 +6,10 @@
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { selectFoodReminders } from '../_shared/foodReminderJob.ts';
+import {
+  deviceHint, expoSendOutcome, isExpoSubscription, parseExpoReceipts, subscriptionChannel, webPushOutcome,
+  type PushOutcome,
+} from '../_shared/pushResult.ts';
 
 // ── Base64url helpers ─────────────────────────────────────────────────────────
 
@@ -129,6 +133,17 @@ Deno.serve(async () => {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Entrega real de lo enviado en ejecuciones anteriores (receipts de Expo) y
+  // limpieza del registro. Un fallo aquí no debe impedir los envíos.
+  let receiptsChecked = 0;
+  try {
+    receiptsChecked = await checkExpoReceipts(supabase);
+    await supabase.from('push_log').delete().lt('created_at', new Date(Date.now() - LOG_RETENTION_DAYS * 86400000).toISOString());
+  } catch (err: unknown) {
+    console.error('push_log maintenance error:', err instanceof Error ? err.message : String(err));
+  }
+
   const { data: candidates, error } = await supabase.rpc('get_patients_needing_push');
 
   if (error) {
@@ -166,7 +181,7 @@ Deno.serve(async () => {
   const remindedNow = new Set<string>();
 
   for (const patient of patients ?? []) {
-    const ok = await deliver(supabase, patient.patient_id, patient.subscription, reminderTitle, reminderBody, vapidPublicKey, vapidPrivateKey);
+    const ok = await deliver(supabase, patient.patient_id, patient.subscription, 'inactivity', reminderTitle, reminderBody, vapidPublicKey, vapidPrivateKey);
     if (ok) {
       await supabase.from('push_subscriptions').update({ last_push_sent_at: new Date().toISOString() }).eq('user_id', patient.patient_id);
       remindedNow.add(patient.patient_id);
@@ -185,7 +200,7 @@ Deno.serve(async () => {
     console.error('Food reminders error:', err instanceof Error ? err.message : String(err));
   }
 
-  return new Response(JSON.stringify({ success: true, sent, failed, food_sent: foodSent, food_failed: foodFailed }), { status: 200 });
+  return new Response(JSON.stringify({ success: true, sent, failed, food_sent: foodSent, food_failed: foodFailed, receipts_checked: receiptsChecked }), { status: 200 });
 });
 
 // ── Envío (Expo para la app nativa, Web Push para la web) ─────────────────────
@@ -197,48 +212,102 @@ async function deliver(
   supabase: ServiceClient,
   patientId: string,
   subscription: any,
+  source: string,
   title: string,
   body: string,
   vapidPublicKey: string,
   vapidPrivateKey: string,
 ): Promise<boolean> {
+  let outcome: PushOutcome;
   try {
     // Native app subscriptions ({ type: 'expo', token }) go through Expo's push API
-    if (subscription?.type === 'expo' && typeof subscription.token === 'string') {
-      const res = await fetch('https://exp.host/--/api/v2/push/send', {
+    if (isExpoSubscription(subscription)) {
+      const res = await fetch(EXPO_SEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: subscription.token, title, body, sound: 'default' }),
       });
-      const out = await res.json().catch(() => null);
-      const status = out?.data?.status;
-      if (status !== 'ok') {
-        if (out?.data?.details?.error === 'DeviceNotRegistered') {
-          await supabase.from('push_subscriptions').delete().eq('user_id', patientId);
-        } else {
-          console.error(`Expo push failed for ${patientId}:`, out?.data?.message ?? res.status);
-        }
-        return false;
-      }
-      return true;
+      outcome = expoSendOutcome(res.status, await res.json().catch(() => null));
+    } else {
+      const res = await sendWebPush(subscription, JSON.stringify({ title, body }), vapidPublicKey, vapidPrivateKey);
+      outcome = webPushOutcome(res.status, res.ok ? '' : await res.text().catch(() => ''));
     }
-
-    const res = await sendWebPush(subscription, JSON.stringify({ title, body }), vapidPublicKey, vapidPrivateKey);
-
-    if (res.status === 410 || res.status === 404) {
-      await supabase.from('push_subscriptions').delete().eq('user_id', patientId);
-      return false;
-    }
-
-    if (!res.ok) {
-      console.error(`Push failed for ${patientId}: ${res.status}`);
-      return false;
-    }
-    return true;
   } catch (err: unknown) {
-    console.error(`Push exception for ${patientId}:`, err instanceof Error ? err.message : String(err));
-    return false;
+    outcome = { status: 'failed', error: err instanceof Error ? err.message : String(err), ticketId: null };
   }
+
+  if (outcome.status === 'expired') {
+    await supabase.from('push_subscriptions').delete().eq('user_id', patientId);
+  } else if (outcome.status === 'failed') {
+    console.error(`Push failed for ${patientId}: ${outcome.error}`);
+  }
+  await logPush(supabase, patientId, subscription, source, outcome);
+  return outcome.status === 'sent';
+}
+
+// ── Registro de envíos (push_log) ─────────────────────────────────────────────
+
+const EXPO_SEND_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
+const LOG_RETENTION_DAYS = 90;
+
+async function logPush(supabase: ServiceClient, userId: string, subscription: unknown, source: string, outcome: PushOutcome) {
+  const { error } = await supabase.from('push_log').insert({
+    user_id: userId,
+    source,
+    channel: subscriptionChannel(subscription),
+    device_hint: deviceHint(subscription),
+    status: outcome.status,
+    error: outcome.error,
+    ticket_id: outcome.ticketId,
+  });
+  if (error) console.error('push_log insert error:', error.message);
+}
+
+/**
+ * Expo publica el receipt (entregado o no a Apple/Google) unos minutos después
+ * del envío y lo guarda 24 h: se consultan los tickets de la última ejecución
+ * en adelante que aún no tienen receipt.
+ */
+async function checkExpoReceipts(supabase: ServiceClient): Promise<number> {
+  const now = Date.now();
+  const { data: pending, error } = await supabase
+    .from('push_log')
+    .select('id, ticket_id')
+    .eq('status', 'sent')
+    .not('ticket_id', 'is', null)
+    .is('receipt_checked_at', null)
+    .gte('created_at', new Date(now - 24 * 3600 * 1000).toISOString())
+    .lte('created_at', new Date(now - 15 * 60 * 1000).toISOString())
+    .limit(1000);
+  if (error) throw new Error(`push_log: ${error.message}`);
+  if (!pending || pending.length === 0) return 0;
+
+  const checkedAt = new Date().toISOString();
+  let checked = 0;
+  // Expo admite hasta 1000 ids por petición
+  const res = await fetch(EXPO_RECEIPTS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: pending.map((p) => p.ticket_id) }),
+  });
+  const receipts = parseExpoReceipts(await res.json().catch(() => null));
+
+  const okIds = receipts.filter((r) => r.status === 'ok').map((r) => r.ticketId);
+  // Por tandas: los ids van en la URL de la petición
+  for (let i = 0; i < okIds.length; i += 100) {
+    const batch = okIds.slice(i, i + 100);
+    const { error: upErr } = await supabase.from('push_log')
+      .update({ receipt_status: 'ok', receipt_checked_at: checkedAt }).in('ticket_id', batch);
+    if (!upErr) checked += batch.length;
+  }
+  for (const r of receipts.filter((r) => r.status === 'error')) {
+    console.error(`Expo receipt error (ticket ${r.ticketId}): ${r.error}`);
+    const { error: upErr } = await supabase.from('push_log')
+      .update({ receipt_status: 'error', receipt_error: r.error, receipt_checked_at: checkedAt }).eq('ticket_id', r.ticketId);
+    if (!upErr) checked++;
+  }
+  return checked;
 }
 
 // ── Recordatorios de comida ───────────────────────────────────────────────────
@@ -301,7 +370,7 @@ async function sendFoodReminders(
       .insert({ patient_id: item.patient_id, local_date: item.local_date, slot: item.reminder.slot });
     if (claimErr) continue;
 
-    const ok = await deliver(supabase, item.patient_id, subscriptions.get(item.patient_id), item.reminder.title, item.reminder.body, vapidPublicKey, vapidPrivateKey);
+    const ok = await deliver(supabase, item.patient_id, subscriptions.get(item.patient_id), `food:${item.reminder.slot}`, item.reminder.title, item.reminder.body, vapidPublicKey, vapidPrivateKey);
     if (ok) sent++; else failed++;
   }
   return { sent, failed };

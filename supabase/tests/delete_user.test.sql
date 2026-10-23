@@ -32,6 +32,7 @@ INSERT INTO public.entries (user_id, entry_id, date, time, timestamp, entry_type
           '00000000-0000-0000-0000-0000000000c1/f1.jpg');
 INSERT INTO public.push_subscriptions (user_id, subscription) VALUES ('00000000-0000-0000-0000-0000000000c1', '{"type":"expo"}');
 INSERT INTO public.food_reminder_log (patient_id, local_date, slot) VALUES ('00000000-0000-0000-0000-0000000000c1', '2026-10-05', 'lunch');
+INSERT INTO public.push_log (user_id, source, channel, status) VALUES ('00000000-0000-0000-0000-0000000000c1', 'inactivity', 'expo', 'sent');
 
 -- Sin limpiar antes, el usuario de auth no se puede borrar (patient_links sin cascada)
 DO $$
@@ -48,6 +49,7 @@ END $$;
 SET ROLE service_role;
 DELETE FROM public.entries WHERE user_id = '00000000-0000-0000-0000-0000000000c1';
 DELETE FROM public.push_subscriptions WHERE user_id = '00000000-0000-0000-0000-0000000000c1';
+DELETE FROM public.push_log WHERE user_id = '00000000-0000-0000-0000-0000000000c1';
 DELETE FROM public.food_reminder_log WHERE patient_id = '00000000-0000-0000-0000-0000000000c1';
 DELETE FROM public.patient_links WHERE patient_id = '00000000-0000-0000-0000-0000000000c1';
 DELETE FROM public.user_profiles WHERE id = '00000000-0000-0000-0000-0000000000c1';
@@ -61,6 +63,7 @@ SELECT pg_temp.assert_eq(
   + (SELECT count(*) FROM public.patient_links WHERE patient_id = '00000000-0000-0000-0000-0000000000c1')
   + (SELECT count(*) FROM public.patient_clinical_notes WHERE link_id = '22222222-0000-0000-0000-0000000000c1')
   + (SELECT count(*) FROM public.push_subscriptions WHERE user_id = '00000000-0000-0000-0000-0000000000c1')
+  + (SELECT count(*) FROM public.push_log WHERE user_id = '00000000-0000-0000-0000-0000000000c1')
   + (SELECT count(*) FROM public.food_reminder_log WHERE patient_id = '00000000-0000-0000-0000-0000000000c1')
   + (SELECT count(*) FROM public.user_profiles WHERE id = '00000000-0000-0000-0000-0000000000c1'), 0,
   'no queda ningún dato del paciente (registros, comidas, vínculo, bitácora, push, avisos, perfil)');

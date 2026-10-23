@@ -10,7 +10,7 @@ import { clearPreferences } from '../lib/preferences';
 import { deleteAllOwnFoodPhotos, clearLocalFoodPhotos } from '../lib/foodPhotos';
 import { supabase } from '../lib/supabase';
 import {
-  registerPushSubscription, unregisterPushSubscription, getPushPermission, getLastPushError, type PushPermission,
+  enablePushNotifications, disablePushNotifications, getPushPermission, getLastPushError, type PushPermission,
 } from '../lib/push';
 import { emitEvent, onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { APP_VERSION } from '../lib/version';
@@ -119,10 +119,10 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
     setPushLoading(true);
     setPushError(null);
     if (pushSubscribed) {
-      await unregisterPushSubscription(user.id);
+      await disablePushNotifications(user.id);
       setPushSubscribed(false);
     } else {
-      const ok = await registerPushSubscription(user.id);
+      const ok = await enablePushNotifications(user.id);
       setPushPermission(await getPushPermission());
       if (ok) {
         const { data } = await supabase.from('push_subscriptions').select('id').eq('user_id', user.id).maybeSingle();

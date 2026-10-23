@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
+import { unregisterPushSubscription } from './push';
 import type { User, Session, EmailOtpType } from '@supabase/supabase-js';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -165,6 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Mientras aún hay sesión (RLS): el móvil deja de recibir los avisos de esta cuenta
+    if (user) await unregisterPushSubscription(user.id);
     await supabase.auth.signOut();
   };
 
