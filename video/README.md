@@ -31,3 +31,25 @@ npm run preview                 # http://127.0.0.1:4321/video/ (ejecuta antes `n
 
 Requiere `ffmpeg` en el PATH. Usa el Chromium de `/opt/pw-browsers` si existe;
 si no, define `CHROMIUM_PATH` o instala el navegador de Playwright.
+
+## Vídeo de marketing (50 s, 16:9)
+
+Vídeo infográfico centrado en las ventajas: el reto (la información entre
+visitas depende de la memoria), qué hace Fluxia (registro en la app → panel
+en tiempo real), qué gana el paciente (facilidad, recordatorios, gratis →
+más adherencia), qué gana el profesional (más información, más precisa,
+semáforo, consultas preparadas) y la cadena que lleva a mejores decisiones.
+
+Resultado: [`fluxia-marketing-50s.mp4`](fluxia-marketing-50s.mp4) — 1920×1080, 60 fps, H.264 + AAC.
+
+Vive en `marketing/` con la misma estructura (`timeline.js`, `scene.js`,
+`music.mjs`, `index.html`). Reutiliza las utilidades, el isotipo y el fondo
+de `scene.js`, los iconos Lucide de la landing y las capturas reales de la
+app del paciente de `../animacion/`.
+
+```bash
+npm run render:marketing                  # → out/fluxia-marketing-50s.mp4 (~10 min)
+node render.mjs marketing --stills 13,36  # PNGs sueltos en out/stills/
+npm run music:marketing                   # sólo el audio
+npm run preview                           # http://127.0.0.1:4321/video/marketing/
+```
