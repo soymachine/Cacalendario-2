@@ -4,7 +4,11 @@
 //   2. { subscription, title?, body? } — cron job sends directly (service role)
 // Uses native Deno SubtleCrypto — no npm dependencies beyond supabase-js.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import {
+  deviceHint, expoSendOutcome, isExpoSubscription, subscriptionChannel, webPushOutcome,
+  type ExpoSubscription, type PushOutcome,
+} from '../_shared/pushResult.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,28 +91,45 @@ interface PushSubscription {
 // The mobile app stores { type: 'expo', token } in push_subscriptions instead
 // of a Web Push subscription; those are delivered through Expo's push API.
 
-interface ExpoSubscription {
-  type: 'expo';
-  token: string;
-}
-
-function isExpoSubscription(sub: unknown): sub is ExpoSubscription {
-  return !!sub && typeof sub === 'object' && (sub as ExpoSubscription).type === 'expo'
-    && typeof (sub as ExpoSubscription).token === 'string';
-}
-
-async function sendExpoPush(token: string, title: string, body: string): Promise<Response> {
+async function sendExpoPush(token: string, title: string, body: string): Promise<PushOutcome> {
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: token, title, body, sound: 'default' }),
   });
-  const out = await res.json().catch(() => null);
-  const status = out?.data?.status;
-  if (status === 'ok') return json({ success: true });
-  const errType = out?.data?.details?.error;
-  if (errType === 'DeviceNotRegistered') return json({ success: false, error: 'Subscription expirada', expired: true });
-  return json({ success: false, error: `Expo push error: ${out?.data?.message ?? res.status}` });
+  return expoSendOutcome(res.status, await res.json().catch(() => null));
+}
+
+// ── Registro de envíos (push_log) ─────────────────────────────────────────────
+
+// deno-lint-ignore no-explicit-any
+type ServiceClient = SupabaseClient<any, 'public', any>;
+
+interface LogContext {
+  client: ServiceClient;
+  userId: string | null;
+  senderId: string | null;
+  source: string;
+}
+
+async function logPush(ctx: LogContext, subscription: unknown, outcome: PushOutcome) {
+  const { error } = await ctx.client.from('push_log').insert({
+    user_id: ctx.userId,
+    sender_id: ctx.senderId,
+    source: ctx.source,
+    channel: subscriptionChannel(subscription),
+    device_hint: deviceHint(subscription),
+    status: outcome.status,
+    error: outcome.error,
+    ticket_id: outcome.ticketId,
+  });
+  if (error) console.error('push_log insert error:', error.message);
+}
+
+function outcomeResponse(outcome: PushOutcome): Response {
+  if (outcome.status === 'sent') return json({ success: true });
+  if (outcome.status === 'expired') return json({ success: false, error: 'Subscription expirada', expired: true });
+  return json({ success: false, error: outcome.error ?? 'Error desconocido' });
 }
 
 async function encryptPayload(subscription: PushSubscription, plaintext: string): Promise<Uint8Array> {
@@ -179,13 +200,14 @@ Deno.serve(async (req) => {
     const msg = payload.body ?? 'Recuerda registrar tu actividad de hoy 🩺';
 
     let subscription: PushSubscription | ExpoSubscription | null = payload.subscription ?? null;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const logCtx: LogContext = { client: serviceClient, userId: null, senderId: null, source: 'direct' };
 
     // Mode 1: doctor sends to patient_id
     if (!subscription && payload.patient_id) {
       const authHeader = req.headers.get('Authorization');
       if (!authHeader) return json({ success: false, error: 'Authorization header missing' });
-
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 
       const { data: { user }, error: userErr } = await createClient(
         supabaseUrl,
@@ -194,8 +216,6 @@ Deno.serve(async (req) => {
       ).auth.getUser();
 
       if (userErr || !user) return json({ success: false, error: `Auth error: ${userErr?.message ?? 'no user'}` });
-
-      const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
       const { data: link, error: linkErr } = await serviceClient
         .from('patient_links')
@@ -218,33 +238,34 @@ Deno.serve(async (req) => {
       if (!sub?.subscription) return json({ success: false, error: 'Paciente sin notificaciones activadas' });
 
       subscription = sub.subscription;
+      Object.assign(logCtx, { userId: payload.patient_id, senderId: user.id, source: 'doctor_test' });
     }
 
     if (!subscription) return json({ success: false, error: 'Se requiere subscription o patient_id' });
 
     // Native app subscription → deliver via Expo push API instead of Web Push
+    let outcome: PushOutcome;
     if (isExpoSubscription(subscription)) {
-      return await sendExpoPush(subscription.token, title, msg);
+      outcome = await sendExpoPush(subscription.token, title, msg);
+    } else {
+      const body = await encryptPayload(subscription, JSON.stringify({ title, body: msg }));
+      const authHeader = await buildVapidHeader(subscription.endpoint, vapidPublicKey, vapidPrivateKey);
+
+      const res = await fetch(subscription.endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/octet-stream',
+          'Content-Encoding': 'aes128gcm',
+          TTL: '86400',
+        },
+        body,
+      });
+      outcome = webPushOutcome(res.status, res.ok ? '' : await res.text());
     }
 
-    const body = await encryptPayload(subscription, JSON.stringify({ title, body: msg }));
-    const authHeader = await buildVapidHeader(subscription.endpoint, vapidPublicKey, vapidPrivateKey);
-
-    const res = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: authHeader,
-        'Content-Type': 'application/octet-stream',
-        'Content-Encoding': 'aes128gcm',
-        TTL: '86400',
-      },
-      body,
-    });
-
-    if (res.status === 410 || res.status === 404) return json({ success: false, error: 'Subscription expirada', expired: true });
-    if (!res.ok) return json({ success: false, error: `Push service error ${res.status}: ${await res.text()}` });
-
-    return json({ success: true });
+    await logPush(logCtx, subscription, outcome);
+    return outcomeResponse(outcome);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return json({ success: false, error: msg });

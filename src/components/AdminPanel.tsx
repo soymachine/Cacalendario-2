@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabaseAdmin as supabase } from '../lib/supabase';
 import { testPlanDaysLeft } from '../lib/plan';
+import { mealTypeLabel } from '../lib/food';
 
 interface FeedbackItem {
   id: string;
@@ -58,7 +59,7 @@ interface DashboardStats {
 
 const ADMIN_EMAILS = ['soymachine@gmail.com', 'ericbarbercot@icloud.com'];
 
-type Section = 'dashboard' | 'usuarios' | 'doctores' | 'estadisticas' | 'registros' | 'reportes' | 'backups';
+type Section = 'dashboard' | 'usuarios' | 'doctores' | 'estadisticas' | 'registros' | 'notificaciones' | 'reportes' | 'backups';
 
 const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
@@ -66,6 +67,7 @@ const NAV_ITEMS: { id: Section; icon: string; label: string }[] = [
   { id: 'doctores', icon: '🩺', label: 'Médicos' },
   { id: 'estadisticas', icon: '📈', label: 'Estadísticas' },
   { id: 'registros', icon: '📋', label: 'Registros' },
+  { id: 'notificaciones', icon: '🔔', label: 'Notificaciones' },
   { id: 'reportes', icon: '🚩', label: 'Reportes' },
   { id: 'backups', icon: '💾', label: 'Backups' },
 ];
@@ -960,6 +962,9 @@ export default function AdminPanel() {
             </div>
           </>
         )}
+
+        {/* ── NOTIFICACIONES ── */}
+        {section === 'notificaciones' && <PushSection />}
       </main>
 
       {/* ── Plan change confirmation modal ── */}
@@ -1051,6 +1056,170 @@ export default function AdminPanel() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Notificaciones push (push_log, rellenado por las Edge Functions) ──
+interface PushLogRow {
+  id: string;
+  created_at: string;
+  user_id: string | null;
+  email: string | null;
+  source: string;
+  sender_email: string | null;
+  channel: 'expo' | 'webpush';
+  device_hint: string | null;
+  status: 'sent' | 'failed' | 'expired';
+  error: string | null;
+  receipt_status: 'ok' | 'error' | null;
+  receipt_error: string | null;
+}
+
+interface PushOverview {
+  summary: {
+    sent_24h: number; failed_24h: number; undelivered_24h: number;
+    sent_period: number; failed_period: number; delivered_period: number;
+    undelivered_period: number; pending_receipt_period: number;
+  };
+  subscriptions: number;
+  log: PushLogRow[];
+  shared_devices: { device_hint: string; accounts: { user_id: string; email: string | null; updated_at: string | null }[] }[];
+}
+
+function pushSourceLabel(source: string): string {
+  if (source === 'inactivity') return 'Recordatorio de inactividad';
+  if (source === 'doctor_test') return 'Prueba del profesional';
+  if (source.startsWith('food:')) {
+    const slot = source.slice(5);
+    return `Comida · ${slot === 'daily_target' ? 'objetivo diario' : mealTypeLabel(slot) ?? slot}`;
+  }
+  return 'Envío directo';
+}
+
+/** Resultado de un envío: rechazado al enviar, o (Expo) entregado o no según el receipt. */
+function pushOutcome(row: PushLogRow): { label: string; color: string; detail: string | null; problem: boolean } {
+  if (row.status === 'failed') return { label: '❌ Error al enviar', color: '#BB4E4E', detail: row.error, problem: true };
+  if (row.status === 'expired') return { label: '⌛ Token caducado', color: '#B7791F', detail: 'Se ha borrado la suscripción', problem: true };
+  if (row.receipt_status === 'error') return { label: '⚠️ No entregada', color: '#BB4E4E', detail: row.receipt_error, problem: true };
+  if (row.receipt_status === 'ok') return { label: '✅ Entregada', color: '#2F855A', detail: null, problem: false };
+  if (row.channel === 'webpush') return { label: '✅ Aceptada', color: '#2F855A', detail: null, problem: false };
+  return { label: '🕐 Enviada', color: '#3C7DB8', detail: 'Pendiente de confirmar entrega', problem: false };
+}
+
+function PushSection() {
+  const [days, setDays] = useState(7);
+  const [data, setData] = useState<PushOverview | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'problems'>('all');
+  const [query, setQuery] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError('');
+    const { data: res, error } = await supabase.rpc('admin_get_push_overview', { p_days: days, p_limit: 1000 });
+    if (error) setLoadError(error.message);
+    else setData(res as PushOverview);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [days]);
+
+  const q = query.trim().toLowerCase();
+  const rows = (data?.log ?? []).filter((r) =>
+    (filter === 'all' || pushOutcome(r).problem)
+    && (!q || (r.email ?? '').toLowerCase().includes(q) || (r.device_hint ?? '').toLowerCase().includes(q)));
+  const sm = data?.summary;
+  const when = (d: string) => new Date(d).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <>
+      <SectionHeader
+        title="Notificaciones"
+        subtitle="Avisos push enviados a pacientes (cron horario y pruebas desde MW/MA)"
+        actions={<button onClick={load} style={s.headerBtn}>🔄 Actualizar</button>}
+      />
+      {loadError && <div style={{ ...s.card, padding: 16, color: '#BB4E4E', fontSize: 14 }}>No se ha podido cargar: {loadError}</div>}
+      {sm && (
+        <div style={s.statsRow}>
+          <StatCard emoji="📤" label="ENVIADAS 24 H" value={String(sm.sent_24h)} sub={`${sm.sent_period} en ${days} días`} />
+          <StatCard emoji="✅" label={`ENTREGADAS ${days} D`} value={String(sm.delivered_period)} sub={sm.pending_receipt_period > 0 ? `${sm.pending_receipt_period} pendientes de confirmar` : undefined} />
+          <StatCard emoji="❌" label="CON PROBLEMAS 24 H" value={String(sm.failed_24h + sm.undelivered_24h)} sub={`${sm.failed_period + sm.undelivered_period} en ${days} días`} dark />
+          <StatCard emoji="📱" label="DISPOSITIVOS SUSCRITOS" value={String(data?.subscriptions ?? 0)} />
+        </div>
+      )}
+
+      {data && data.shared_devices.length > 0 && (
+        <div style={s.card}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>⚠️ Dispositivos con varias cuentas ({data.shared_devices.length})</div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+              El móvil recibe los avisos de todas estas cuentas. Se corrige solo cuando la cuenta actual abre la versión nueva de la app.
+            </div>
+          </div>
+          {data.shared_devices.map((d, i) => (
+            <div key={d.device_hint + i} style={{ padding: '12px 20px', borderBottom: i < data.shared_devices.length - 1 ? '1px solid #00000010' : 'none', fontSize: 13 }}>
+              <span style={{ fontFamily: 'monospace', color: '#888', marginRight: 12 }}>…{d.device_hint}</span>
+              {d.accounts.map((a, j) => (
+                <span key={a.user_id} style={{ color: j === 0 ? '#111' : '#666', fontWeight: j === 0 ? 600 : 400 }}>
+                  {j > 0 && ' · '}{a.email ?? a.user_id.slice(0, 8)}{j === 0 && ' (más reciente)'}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={s.card}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const, padding: '16px 20px', borderBottom: '1px solid #00000015' }}>
+          {([['all', 'Todas'], ['problems', 'Solo problemas']] as const).map(([id, label]) => (
+            <button key={id} onClick={() => setFilter(id)}
+              style={{ ...s.filterTab, backgroundColor: filter === id ? '#274867' : '#00000010', color: filter === id ? '#fff' : '#666' }}>
+              {label}
+            </button>
+          ))}
+          <select value={days} onChange={(e) => setDays(Number(e.target.value))}
+            style={{ ...s.filterTab, backgroundColor: '#00000010', color: '#444' }}>
+            <option value={1}>Último día</option>
+            <option value={7}>Últimos 7 días</option>
+            <option value={30}>Últimos 30 días</option>
+            <option value={90}>Últimos 90 días</option>
+          </select>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por email o dispositivo"
+            style={{ ...s.input, marginBottom: 0, width: 260, padding: '8px 12px' }} />
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#888' }}>{loading ? 'Cargando…' : `${rows.length} envíos`}</span>
+        </div>
+        <div style={{ display: 'flex', padding: '10px 20px', backgroundColor: '#00000008', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase' as const }}>
+          <span style={{ flex: 1 }}>Fecha</span>
+          <span style={{ flex: 2 }}>Paciente</span>
+          <span style={{ flex: 2 }}>Tipo</span>
+          <span style={{ flex: 1 }}>Dispositivo</span>
+          <span style={{ flex: 2 }}>Resultado</span>
+        </div>
+        {rows.length === 0 ? (
+          <div style={{ padding: 20, color: '#aaa', fontSize: 14 }}>{data ? 'No hay envíos en este periodo' : ''}</div>
+        ) : rows.map((r, i) => {
+          const o = pushOutcome(r);
+          return (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 20px', fontSize: 13, borderBottom: i < rows.length - 1 ? '1px solid #00000010' : 'none' }}>
+              <span style={{ flex: 1, color: '#555' }}>{when(r.created_at)}</span>
+              <span style={{ flex: 2, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.email ?? (r.user_id ? r.user_id.slice(0, 8) : '—')}</span>
+              <span style={{ flex: 2, color: '#555' }}>
+                {pushSourceLabel(r.source)}
+                {r.sender_email && <span style={{ display: 'block', fontSize: 11, color: '#999' }}>por {r.sender_email}</span>}
+              </span>
+              <span style={{ flex: 1, color: '#888', fontFamily: 'monospace', fontSize: 11 }}>
+                {r.channel === 'expo' ? 'App' : 'Web'} {r.device_hint ? `…${r.device_hint}` : ''}
+              </span>
+              <span style={{ flex: 2 }}>
+                <span style={{ fontWeight: 600, color: o.color }}>{o.label}</span>
+                {o.detail && <span style={{ display: 'block', fontSize: 11, color: '#999', wordBreak: 'break-word' as const }}>{o.detail}</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

@@ -11,7 +11,7 @@ const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
 // Tablas con datos del paciente y la columna que lo identifica. entries,
-// push_subscriptions, user_profiles y food_reminder_log también caen en
+// push_subscriptions, push_log, user_profiles y food_reminder_log también caen en
 // cascada al borrar el usuario de auth, pero se borran explícitamente para
 // no depender de ello. patient_links NO tiene cascada (FK NO ACTION): hay que
 // borrarlo antes que el usuario; arrastra la bitácora del profesional sobre
@@ -19,6 +19,7 @@ const json = (body: unknown, status: number) =>
 const PATIENT_TABLES = [
   { table: 'entries', column: 'user_id' },
   { table: 'push_subscriptions', column: 'user_id' },
+  { table: 'push_log', column: 'user_id' },
   { table: 'food_reminder_log', column: 'patient_id' },
   { table: 'patient_links', column: 'patient_id' },
   { table: 'user_profiles', column: 'id' },
