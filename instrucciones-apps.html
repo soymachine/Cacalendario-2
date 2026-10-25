@@ -88,7 +88,7 @@
 eas login
 eas whoami          <span class="c"># comprueba con qué cuenta estás</span></code></pre></li>
     <li><b>Credenciales</b>: deja que EAS gestione certificados de iOS y keystore de Android. La primera vez que hagas un build te preguntará; acepta <i>"Let EAS handle it"</i>. Para revisarlas: <code>eas credentials</code>.</li>
-    <li><b>Clave de Google Play para <code>eas submit</code></b> (opcional, para subir a Play desde la terminal): en Google Cloud crea una <i>service account</i>, descarga su clave JSON y dale acceso en Play Console → <i>Usuarios y permisos</i> (permiso de publicar en tracks de prueba). Guárdala <b>fuera del repo</b> (p. ej. <code>~/keys/fluxia-play.json</code>); nunca la subas a git.</li>
+    <li><b>Clave de Google Play para <code>eas submit</code></b> (opcional, para subir a Play desde la terminal): en Google Cloud <b>activa la API "Google Play Android Developer API"</b> en el proyecto de Google Cloud, crea una <i>service account</i>, descarga su clave JSON y dale acceso en Play Console → <i>Usuarios y permisos</i> (permiso de publicar en tracks de prueba). Guárdala <b>fuera del repo</b> (p. ej. <code>~/keys/fluxia-play.json</code>); nunca la subas a git.</li>
   </ol>
 
   <h2 id="checklist">3. Antes de cada build</h2>
@@ -176,6 +176,8 @@ eas build:version:set     <span class="c"># si alguna vez se desincroniza con la
     <tr><td>La app se cierra nada más abrirse (en el log: <code>dyld … Symbol not found … ExpoModulesCore</code>)</td><td>Módulos <code>expo-*</code> de revisiones distintas del SDK. Alinéalos (paso 3 de <a href="#checklist">sección 3</a>) y vuelve a hacer el build.</td></tr>
     <tr><td>Play Console rechaza el <code>.aab</code> por "código de versión ya usado"</td><td>El número de build de EAS va por detrás del de la tienda. Súbelo con <code>eas build:version:set</code> por encima del último de Play.</td></tr>
     <tr><td><code>eas submit -p android</code> falla en la primera subida</td><td>Google no deja usar la API hasta que hay al menos una subida manual. Sube el primer <code>.aab</code> a mano (<a href="#play">sección 6</a>).</td></tr>
+    <tr><td><code>eas submit -p android</code> falla con <code>HTTP 403: Google Play Android Developer API has not been used in project … or it is disabled</code></td><td>La API no está activada en el proyecto de Google Cloud de la service account. Abre el enlace del error (o Google Cloud → APIs y servicios → Biblioteca → "Google Play Android Developer API"), pulsa <b>Habilitar</b>, espera unos minutos y repite <code>eas submit -p android --latest</code>. No hace falta volver a hacer el build.</td></tr>
+    <tr><td><code>eas submit -p android</code> falla con <code>403 The caller does not have permission</code></td><td>La service account no tiene acceso a la app en Play Console. Play Console → Usuarios y permisos → invita el email de la service account con permiso para publicar en tracks de prueba (para esta app o todas). Puede tardar hasta 24 h en aplicarse.</td></tr>
     <tr><td>Un iPhone no puede instalar el build <code>preview</code></td><td>No estaba registrado cuando se hizo el build. <code>eas device:create</code> y repite el build.</td></tr>
     <tr><td>No llegan notificaciones push en PA</td><td>Prueba con un build <code>preview</code> o <code>production</code> (en Expo Go no funcionan). En Android hace falta <code>google-services.json</code> (ya está en <code>mobile/</code>) y las credenciales FCM en <code>eas credentials</code>. Revisa la pestaña <b>Notificaciones</b> de <code>/admin</code>.</td></tr>
   </table>
