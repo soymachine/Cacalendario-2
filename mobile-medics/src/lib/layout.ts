@@ -6,7 +6,6 @@
 // se alcanza y la interfaz es la de siempre.
 import { useWindowDimensions } from 'react-native';
 import type { ModalProps } from 'react-native';
-import { CONTENT_MAX_WIDTH } from './design';
 
 // A partir de este ancho de ventana, la pestaña Pacientes muestra lista y
 // ficha a la vez (iPad en horizontal e iPad Pro 12,9" en vertical).
@@ -25,8 +24,6 @@ export function useLayout() {
   return {
     isSplit,
     detailTwoColumns: detailWidth >= DETAIL_TWO_COLUMN_MIN_WIDTH,
-    // Columna del inicio a su ancho máximo (iPad): los indicadores caben en una fila.
-    homeWide: width >= CONTENT_MAX_WIDTH,
   };
 }
 

@@ -14,7 +14,6 @@ interface PatientListScreenProps {
   doctor: DoctorInfo;
   patients: PatientLink[];
   patientsLoading: boolean;
-  initialSemaforoFilter?: string;
   /** Paciente abierto en el panel derecho (iPad en horizontal), para resaltarlo. */
   selectedId?: string;
   onRefresh: () => void;
@@ -27,13 +26,13 @@ function shortDate(dateStr: string): string {
 }
 
 export default function PatientListScreen({
-  doctor, patients, patientsLoading, initialSemaforoFilter, selectedId, onRefresh, onSelectPatient, onInvite,
+  doctor, patients, patientsLoading, selectedId, onRefresh, onSelectPatient, onInvite,
 }: PatientListScreenProps) {
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('estado');
-  const [semaforoFilter, setSemaforoFilter] = useState<SemaforoFilter>((initialSemaforoFilter as SemaforoFilter) || 'all');
+  const [semaforoFilter, setSemaforoFilter] = useState<SemaforoFilter>('all');
 
   const keyFor = (p: PatientLink) => {
     const { green, red } = resolveSemaforoThresholds(doctor.semaforo_green, doctor.semaforo_red, {
@@ -50,7 +49,7 @@ export default function PatientListScreen({
   const no7d = accepted.filter((p) => p.daysSinceLast == null || p.daysSinceLast >= 7).length;
 
   const pills: { key: SemaforoFilter; label: string; count: number; color: string; soft: string }[] = [
-    { key: 'all', label: 'Todos', count: accepted.length, color: D.secondary, soft: '#E7F5EC' },
+    { key: 'all', label: 'Todos', count: accepted.length, color: D.primary, soft: '#EEF4FB' }, // azul de la marca, como en MW
     { key: 'green', label: 'Al día', count: semCounts.green || 0, color: D.success, soft: '#E7F5EC' },
     { key: 'orange', label: 'Atención', count: semCounts.orange || 0, color: '#C0832B', soft: '#FCF4E7' },
     { key: 'red', label: 'Inactivos', count: semCounts.red || 0, color: D.danger, soft: D.dangerBg },

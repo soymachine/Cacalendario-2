@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { DoctorInfo } from '../lib/doctor';
-import { loadPatients, loadPracticeStatsAndAlerts, type PatientLink, type PracticeStats } from '../lib/patients';
+import { loadPatients, type PatientLink } from '../lib/patients';
 import { D } from '../lib/design';
 import BottomNav, { type Tab } from './BottomNav';
-import HomeScreen from './HomeScreen';
 import PatientListScreen from './PatientListScreen';
 import PatientDetailScreen from './PatientDetailScreen';
 import InvitePatientModal from './InvitePatientModal';
@@ -19,11 +18,9 @@ interface DoctorAppProps {
 
 export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   const [doctor, setDoctor] = useState<DoctorInfo>(initialDoctor);
-  const [activeTab, setActiveTab] = useState<Tab>('inicio');
+  const [activeTab, setActiveTab] = useState<Tab>('pacientes');
   const [patients, setPatients] = useState<PatientLink[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(true);
-  const [practiceStats, setPracticeStats] = useState<PracticeStats | null>(null);
-  const [semaforoFilter, setSemaforoFilter] = useState<string | undefined>(undefined);
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const { isSplit } = useLayout();
@@ -37,11 +34,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   const refreshPatients = useCallback(async () => {
     setPatientsLoading(true);
     try {
-      const list = await loadPatients(doctor.id);
-      setPatients(list);
-      const acceptedIds = list.filter((p) => p.status === 'accepted' && !p.doctor_unlinked && p.patient_id).map((p) => p.patient_id as string);
-      const { practiceStats: stats } = await loadPracticeStatsAndAlerts(acceptedIds);
-      setPracticeStats(stats);
+      setPatients(await loadPatients(doctor.id));
     } finally {
       setPatientsLoading(false);
     }
@@ -50,17 +43,6 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   useEffect(() => {
     refreshPatients();
   }, [refreshPatients]);
-
-  const handleNavigate = (tab: Tab, filter?: string) => {
-    setSemaforoFilter(filter);
-    setSelectedPatient(null);
-    setActiveTab(tab);
-  };
-
-  const handleSelectPatientFromHome = (patient: PatientLink) => {
-    setSelectedPatient(patient);
-    setActiveTab('pacientes');
-  };
 
   const handlePatientUpdated = (patch: Partial<PatientLink>) => {
     if (!openPatient) return;
@@ -90,7 +72,6 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
       doctor={doctor}
       patients={patients}
       patientsLoading={patientsLoading}
-      initialSemaforoFilter={semaforoFilter}
       selectedId={isSplit ? openPatient?.id : undefined}
       onRefresh={refreshPatients}
       onSelectPatient={setSelectedPatient}
@@ -115,18 +96,6 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   return (
     <View style={styles.fill}>
       <View style={styles.content}>
-        {activeTab === 'inicio' && (
-          <HomeScreen
-            doctor={doctor}
-            patients={patients}
-            patientsLoading={patientsLoading}
-            practiceStats={practiceStats}
-            onNavigate={handleNavigate}
-            onSelectPatient={handleSelectPatientFromHome}
-            onInvite={() => setInviteOpen(true)}
-          />
-        )}
-
         {activeTab === 'pacientes' && (
           // En iPad en horizontal (isSplit) lista y ficha se ven a la vez, como
           // en MW. Si no, la lista se oculta (sin desmontarla) mientras hay una

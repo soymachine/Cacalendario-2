@@ -1,7 +1,7 @@
 // Guía de uso: los mismos pasos que el onboarding de MW (ONBOARDING_STEPS en
 // src/components/MedicsPanel.tsx). Si cambian allí, replicarlos aquí a mano.
-// Solo cambia lo que en la app está en otro sitio: la lista está en
-// «Pacientes» y la configuración en «Ajustes» (en la web, en el menú de cuenta).
+// Solo cambia lo que en la app está en otro sitio: la configuración está en
+// «Ajustes» (en la web, en el menú de cuenta).
 import { useState } from 'react';
 import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
@@ -18,7 +18,7 @@ const STEPS = [
     color: '#EDF7F1', // --fx-green-50
     accent: D.secondary,
     title: 'Tus pacientes',
-    body: 'En «Pacientes» verás la lista de tus pacientes. El semáforo de cada uno indica cuántos días llevan sin registrar: verde al día, naranja varios días, rojo inactivo.',
+    body: 'Al entrar verás la lista de tus pacientes. El semáforo de cada uno indica cuántos días llevan sin registrar: verde al día, naranja varios días, rojo inactivo.',
   },
   {
     color: D.accentSoft,
