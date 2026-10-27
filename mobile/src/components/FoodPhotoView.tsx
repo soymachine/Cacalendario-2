@@ -1,22 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Image, View, StyleSheet, type StyleProp, type ImageStyle } from 'react-native';
+import { Image, View, Pressable, StyleSheet, type StyleProp, type ImageStyle } from 'react-native';
 import { getFoodPhotoUrl, hasLocalPhoto } from '../lib/foodPhotos';
 import { D } from '../lib/design';
 import { FoodSwitchIcon } from './icons';
+import PhotoViewer from './PhotoViewer';
 
 interface FoodPhotoViewProps {
   localUri?: string | null;
   path?: string | null;
   style: StyleProp<ImageStyle>;
   accessibilityLabel?: string;
+  /** Al tocarla se abre a pantalla completa con zoom (PhotoViewer). */
+  zoomable?: boolean;
 }
 
 /**
  * Foto de una comida: la copia local si existe; si no, una signed URL
  * temporal del bucket privado. Sin foto (o sin conexión) muestra el icono.
  */
-export default function FoodPhotoView({ localUri, path, style, accessibilityLabel }: FoodPhotoViewProps) {
+export default function FoodPhotoView({ localUri, path, style, accessibilityLabel, zoomable }: FoodPhotoViewProps) {
   const [uri, setUri] = useState<string | null>(hasLocalPhoto(localUri) ? localUri! : null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +37,16 @@ export default function FoodPhotoView({ localUri, path, style, accessibilityLabe
       </View>
     );
   }
-  return <Image source={{ uri }} style={style} resizeMode="cover" accessibilityLabel={accessibilityLabel} />;
+  const image = <Image source={{ uri }} style={style} resizeMode="cover" accessibilityLabel={accessibilityLabel} />;
+  if (!zoomable) return image;
+  return (
+    <>
+      <Pressable onPress={() => setViewerOpen(true)} accessibilityRole="imagebutton" accessibilityHint="Abre la foto a pantalla completa">
+        {image}
+      </Pressable>
+      {viewerOpen && <PhotoViewer uri={uri} onClose={() => setViewerOpen(false)} accessibilityLabel={accessibilityLabel} />}
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

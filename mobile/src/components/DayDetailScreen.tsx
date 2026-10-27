@@ -77,7 +77,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                       {!!entry.notes && <Text style={styles.entryNotes} numberOfLines={1}>{entry.notes}</Text>}
                     </View>
                     {hasPhoto && (
-                      <FoodPhotoView localUri={entry.photo_local_uri} path={entry.food_photo_path} style={styles.foodThumb} accessibilityLabel="Foto de la comida" />
+                      <FoodPhotoView localUri={entry.photo_local_uri} path={entry.food_photo_path} style={styles.foodThumb} accessibilityLabel="Foto de la comida" zoomable />
                     )}
                     <View style={styles.chevron}>
                       <ChevronSmallIcon />

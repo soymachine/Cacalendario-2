@@ -269,9 +269,11 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
                 path={s.newPhotoUri ? null : existingPhoto?.path}
                 style={styles.photoPreview}
                 accessibilityLabel="Foto de la comida"
+                zoomable
               />
+              <Text style={styles.photoZoomHint}>Toca la foto para ampliarla</Text>
               <View style={styles.rowGap10}>
-                <Pressable onPress={() => takePhoto('camera')} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
+                <Pressable onPress={() => takePhoto('library')} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
                   <Text style={styles.secondaryText}>Cambiar foto</Text>
                 </Pressable>
                 <Pressable onPress={removePhoto} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
@@ -539,7 +541,8 @@ const styles = StyleSheet.create({
   },
   photoButtonPrimary: { backgroundColor: D.primary },
   photoButtonText: { fontSize: 16, fontWeight: '800', color: D.primary, textAlign: 'center' },
-  photoPreview: { width: '100%', height: 220, borderRadius: 12, marginBottom: 10 },
+  photoPreview: { width: '100%', height: 220, borderRadius: 12, marginBottom: 6 },
+  photoZoomHint: { fontSize: 12, color: D.textMuted, textAlign: 'center', marginBottom: 10 },
   whenText: { fontSize: 18, fontWeight: '700', color: D.text, marginBottom: 12 },
   secondaryButton: {
     minHeight: 52,
