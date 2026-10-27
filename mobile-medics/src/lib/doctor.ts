@@ -17,6 +17,12 @@ export interface DoctorInfo {
   global_tags: string[];
   /** Catálogo de etiquetas de comida (módulo de comidas). */
   food_tag_catalog: string[];
+  // Estado de la suscripción en Stripe (lo escribe stripe-webhook), para el
+  // resumen de «Tu suscripción» en Ajustes (planSummary en plan.ts).
+  stripe_status: string | null;
+  stripe_interval: string | null;
+  stripe_current_period_end: string | null;
+  stripe_cancel_at_period_end: boolean | null;
 }
 
 interface RawDoctorRow {
@@ -32,6 +38,10 @@ interface RawDoctorRow {
   test_plan_started_at: string | null;
   global_tags: string[] | null;
   food_tag_catalog?: string[] | null;
+  stripe_status?: string | null;
+  stripe_interval?: string | null;
+  stripe_current_period_end?: string | null;
+  stripe_cancel_at_period_end?: boolean | null;
 }
 
 function buildDoctorInfo(d: RawDoctorRow): DoctorInfo {
@@ -49,6 +59,10 @@ function buildDoctorInfo(d: RawDoctorRow): DoctorInfo {
     test_plan_started_at: d.test_plan_started_at || null,
     global_tags: d.global_tags || [],
     food_tag_catalog: d.food_tag_catalog || [],
+    stripe_status: d.stripe_status ?? null,
+    stripe_interval: d.stripe_interval ?? null,
+    stripe_current_period_end: d.stripe_current_period_end ?? null,
+    stripe_cancel_at_period_end: d.stripe_cancel_at_period_end ?? null,
   };
 }
 

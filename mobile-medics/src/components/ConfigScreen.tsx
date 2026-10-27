@@ -7,7 +7,16 @@ import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
 import { saveDoctorConfig, saveGlobalTags, deleteGlobalTag, pickAndUploadCenterLogo } from '../lib/config';
 import { tagColor } from '../lib/tags';
+import { planSummary, type PlanTone } from '../lib/plan';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
+import GuideModal from './GuideModal';
+
+// Mismos tonos que el resumen del plan en MW (PLAN_TONE en MedicsPanel.tsx).
+const PLAN_TONE: Record<PlanTone, { bg: string; border: string; text: string }> = {
+  positive: { bg: '#E7F5EC', border: D.border, text: D.success },
+  warning: { bg: D.warningSoft, border: '#EBC88E', text: D.warningText },
+  neutral: { bg: D.bg, border: D.border, text: D.textMuted },
+};
 
 interface ConfigScreenProps {
   doctor: DoctorInfo;
@@ -30,6 +39,9 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [guideOpen, setGuideOpen] = useState(false);
+  const plan = planSummary(doctor);
+  const planTone = PLAN_TONE[plan.tone];
 
   const handleSave = async () => {
     setSaving(true);
@@ -176,6 +188,24 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
           </View>
         </View>
 
+        {/* Tu suscripción — solo informativa. Reglas de App Store (3.1.1): nada de
+            botones, enlaces ni precios para pagar fuera de la app (ver
+            TrialExpiredScreen). El cambio de plan y la facturación viven en MW. */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Tu suscripción</Text>
+          <View style={[styles.planBox, { backgroundColor: planTone.bg, borderColor: planTone.border }]}>
+            <Text style={styles.planTitle}>{plan.title}</Text>
+            <Text style={[styles.planDetail, { color: planTone.text }]}>{plan.detail}</Text>
+          </View>
+          <Text style={styles.hint}>
+            Para cambiar de plan o gestionar la facturación, entra en tu cuenta desde el navegador de tu ordenador.
+          </Text>
+        </View>
+
+        <Pressable onPress={() => setGuideOpen(true)} style={styles.guideButton} accessibilityRole="button">
+          <Text style={styles.guideButtonText}>Guía de uso</Text>
+        </Pressable>
+
         <Pressable onPress={signOut} style={styles.signOutButton}>
           <Text style={styles.signOutText}>Cerrar sesión</Text>
         </Pressable>
@@ -208,6 +238,7 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
           </Pressable>
         )}
       </ScrollView>
+      {guideOpen && <GuideModal onClose={() => setGuideOpen(false)} />}
     </SafeAreaView>
   );
 }
@@ -242,6 +273,11 @@ const styles = StyleSheet.create({
   tagInput: { flex: 1 },
   addTagButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: D.primary, alignItems: 'center', justifyContent: 'center' },
   addTagButtonText: { color: D.primaryText, fontSize: 20, fontWeight: '700' },
+  planBox: { borderWidth: 1, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 10 },
+  planTitle: { fontSize: 15, fontWeight: '800', color: D.text },
+  planDetail: { fontSize: 13, marginTop: 3, lineHeight: 18 },
+  guideButton: { paddingVertical: 12, borderRadius: 50, borderWidth: 2, borderColor: D.primary, backgroundColor: D.card, alignItems: 'center', marginBottom: 12 },
+  guideButtonText: { color: D.primary, fontSize: 15, fontWeight: '700' },
   signOutButton: { paddingVertical: 12, borderRadius: 50, backgroundColor: D.dangerBg, alignItems: 'center' },
   signOutText: { color: D.danger, fontSize: 15, fontWeight: '700' },
   deleteCard: { borderWidth: 2, borderColor: D.danger, backgroundColor: D.dangerBg, marginTop: 12 },
