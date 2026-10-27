@@ -9,17 +9,6 @@ interface PhosphorIconProps {
   weight?: 'regular' | 'fill';
 }
 
-export function HouseIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
-  const d = weight === 'fill'
-    ? 'M224,120v96a8,8,0,0,1-8,8H160a8,8,0,0,1-8-8V164a4,4,0,0,0-4-4H108a4,4,0,0,0-4,4v52a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V120a16,16,0,0,1,4.69-11.31l80-80a16,16,0,0,1,22.62,0l80,80A16,16,0,0,1,224,120Z'
-    : 'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z';
-  return (
-    <Svg width={size} height={size} viewBox="0 0 256 256">
-      <Path d={d} fill={color} />
-    </Svg>
-  );
-}
-
 export function UserIcon({ size = 24, color = '#000', weight = 'regular' }: PhosphorIconProps) {
   const d = weight === 'fill'
     ? 'M230.93,220a8,8,0,0,1-6.93,4H32a8,8,0,0,1-6.92-12c15.23-26.33,38.7-45.21,66.09-54.16a72,72,0,1,1,73.66,0c27.39,8.95,50.86,27.83,66.09,54.16A8,8,0,0,1,230.93,220Z'

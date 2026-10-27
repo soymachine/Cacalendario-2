@@ -156,7 +156,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
         )}
       </View>
 
-      <BottomNav active={activeTab} onChange={(tab) => { setSelectedPatient(null); setActiveTab(tab); }} />
+      <BottomNav active={activeTab} logoUrl={doctor.center_image_url} onChange={(tab) => { setSelectedPatient(null); setActiveTab(tab); }} />
 
       {inviteOpen && (
         <InvitePatientModal
