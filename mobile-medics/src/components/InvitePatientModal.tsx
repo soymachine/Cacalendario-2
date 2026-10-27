@@ -11,6 +11,7 @@ import { linkFoodConfig, enableFoodConfig, addTag, localDateKey, type FoodTracki
 import { ENTRY_TYPE_FIELDS } from '../lib/entryLabels';
 import FoodConfigCard from './FoodConfigCard';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
+import { MODAL_ORIENTATIONS } from '../lib/layout';
 
 // Invitar a un paciente en dos pasos, con su pauta ya configurada.
 // Portado de src/components/InvitePatientModal.tsx (MW) — mantener sincronizado a mano.
@@ -97,7 +98,7 @@ export default function InvitePatientModal({ doctor, patients, onClose, onInvite
   const option = (active: boolean) => [styles.option, active && styles.optionActive];
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible transparent animationType="fade" onRequestClose={onClose} supportedOrientations={MODAL_ORIENTATIONS}>
       <SafeAreaProvider>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Cerrar" />

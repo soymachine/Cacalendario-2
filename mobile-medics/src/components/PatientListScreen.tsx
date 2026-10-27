@@ -15,6 +15,8 @@ interface PatientListScreenProps {
   patients: PatientLink[];
   patientsLoading: boolean;
   initialSemaforoFilter?: string;
+  /** Paciente abierto en el panel derecho (iPad en horizontal), para resaltarlo. */
+  selectedId?: string;
   onRefresh: () => void;
   onSelectPatient: (patient: PatientLink) => void;
   onInvite: () => void;
@@ -25,7 +27,7 @@ function shortDate(dateStr: string): string {
 }
 
 export default function PatientListScreen({
-  doctor, patients, patientsLoading, initialSemaforoFilter, onRefresh, onSelectPatient, onInvite,
+  doctor, patients, patientsLoading, initialSemaforoFilter, selectedId, onRefresh, onSelectPatient, onInvite,
 }: PatientListScreenProps) {
   const [showArchived, setShowArchived] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,6 +181,7 @@ export default function PatientListScreen({
             {patients.length === 0 ? 'No hay pacientes. Invita a tu primer paciente.' : showArchived && !q ? 'No tienes pacientes archivados.' : 'Sin resultados.'}
           </Text>
         ) : null}
+        extraData={selectedId}
         renderItem={({ item: patient }) => {
           const isAccepted = patient.status === 'accepted' && !patient.doctor_unlinked;
           const { green, red } = resolveSemaforoThresholds(doctor.semaforo_green, doctor.semaforo_red, {
@@ -189,7 +192,7 @@ export default function PatientListScreen({
             <Pressable
               disabled={!isAccepted && !patient.doctor_unlinked}
               onPress={() => onSelectPatient(patient)}
-              style={({ pressed }) => [styles.row, (!isAccepted && !patient.doctor_unlinked) && styles.rowDisabled, pressed && styles.rowPressed]}
+              style={({ pressed }) => [styles.row, (!isAccepted && !patient.doctor_unlinked) && styles.rowDisabled, patient.id === selectedId && styles.rowSelected, pressed && styles.rowPressed]}
             >
               <View style={styles.rowLeft}>
                 {isAccepted ? <View style={[styles.dot, { backgroundColor: semaforo.color }]} /> : <Text style={styles.dash}>—</Text>}
@@ -258,6 +261,7 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', color: D.textMuted, fontSize: 13, paddingTop: 40 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: D.card, borderRadius: 14, padding: 12, marginBottom: 8 },
   rowDisabled: { opacity: 0.7 },
+  rowSelected: { backgroundColor: '#EEF4FA', borderWidth: 1.5, borderColor: D.primary, padding: 10.5 },
   rowPressed: { backgroundColor: D.chip, transform: [{ scale: 0.99 }] },
   rowLeft: { width: 14, alignItems: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },

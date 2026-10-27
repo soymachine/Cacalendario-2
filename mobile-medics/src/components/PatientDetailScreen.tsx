@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, Alert, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
@@ -18,10 +18,13 @@ import PatientProfileModal from './PatientProfileModal';
 import { UserCircleIcon, SlidersIcon, BellIcon, BellSlashIcon } from './icons';
 import { tagColor } from '../lib/tags';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
+import { LIST_PANE_WIDTH, DETAIL_TWO_COLUMN_MIN_WIDTH, DETAIL_SIDEBAR_WIDTH, DETAIL_MAX_WIDTH } from '../lib/layout';
 
 interface PatientDetailScreenProps {
   doctor: DoctorInfo;
   patient: PatientLink;
+  /** Se muestra junto a la lista (iPad en horizontal): sin botón «Volver». */
+  inSplit?: boolean;
   onBack: () => void;
   onPatientUpdated: (patch: Partial<PatientLink>) => void;
   onGlobalTagsUpdated: (tags: string[]) => void;
@@ -34,7 +37,7 @@ function shortDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function PatientDetailScreen({ doctor, patient, onBack, onPatientUpdated, onGlobalTagsUpdated, onFoodTagCatalogUpdated, onArchiveChanged }: PatientDetailScreenProps) {
+export default function PatientDetailScreen({ doctor, patient, inSplit = false, onBack, onPatientUpdated, onGlobalTagsUpdated, onFoodTagCatalogUpdated, onArchiveChanged }: PatientDetailScreenProps) {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [clinicalNotes, setClinicalNotes] = useState<ClinicalNote[]>([]);
@@ -44,6 +47,11 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
   const [pushTestError, setPushTestError] = useState('');
   const [configOpen, setConfigOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  // Con espacio suficiente (iPad), la ficha se reparte en dos columnas como en MW:
+  // resumen, calendario y estadísticas a la izquierda; registros y bitácora a la derecha.
+  const { width } = useWindowDimensions();
+  const twoColumns = (inSplit ? width - LIST_PANE_WIDTH : width) >= DETAIL_TWO_COLUMN_MIN_WIDTH;
+  const maxWidth = twoColumns ? DETAIL_MAX_WIDTH : CONTENT_MAX_WIDTH;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,8 +132,8 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={onBack} style={styles.backButton}><Text style={styles.backText}>← Volver</Text></Pressable>
+      <View style={[styles.header, centered(maxWidth)]}>
+        {inSplit ? <View /> : <Pressable onPress={onBack} style={styles.backButton}><Text style={styles.backText}>← Volver</Text></Pressable>}
         <Pressable onPress={() => setConfigOpen(true)} style={styles.configButton} accessibilityRole="button">
           <SlidersIcon size={16} color={D.text} />
           <Text style={styles.configButtonText}>Configuración</Text>
@@ -135,107 +143,111 @@ export default function PatientDetailScreen({ doctor, patient, onBack, onPatient
       {loading || !detail ? (
         <View style={styles.loading}><ActivityIndicator color={D.primary} /></View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.container, centered(CONTENT_MAX_WIDTH)]}>
-          {/* Ficha: nombre, datos, notificaciones, email, etiquetas y semáforo.
-              Se distingue del resto con una franja de color y un fondo tintado (igual que MW). */}
-          <View style={styles.patientCard}>
-            <View style={styles.patientCardAccent} />
-            <View style={styles.patientNameRow}>
-              <Text style={styles.patientName}>{patientLabel(patient)}</Text>
-              <View style={styles.patientIcons}>
-                <Pressable onPress={() => setProfileOpen(true)} hitSlop={8} accessibilityLabel="Datos del paciente" style={styles.iconButton}>
-                  <UserCircleIcon size={22} color="#95A0A5" />
-                </Pressable>
-                {patient.hasPushSub === true && <View accessibilityLabel="Notificaciones activas"><BellIcon size={18} color={D.secondary} /></View>}
-                {patient.hasPushSub === false && <View accessibilityLabel="Sin notificaciones"><BellSlashIcon size={18} color="#B5BEC2" /></View>}
-              </View>
-            </View>
-            {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
-            {(patient.doctor_unlinked || (patient.tags || []).length > 0) && (
-              <View style={styles.tagRow}>
-                {patient.doctor_unlinked && (
-                  <Text style={[styles.tag, styles.archivedTag]}>
-                    Archivado{patient.unlinked_at ? ` el ${shortDate(patient.unlinked_at)}` : ''}
-                  </Text>
-                )}
-                {(patient.tags || []).map((t) => (
-                  <Text key={t} style={[styles.tag, { backgroundColor: tagColor(t) + '22', color: tagColor(t) }]}>{t}</Text>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.semaforoBlock}>
-              <View style={styles.semaforoRow}>
-                <View style={[styles.dot, { backgroundColor: semaforo?.color }]} />
-                <Text style={styles.semaforoText}>
-                  {detail.daysSinceLast === null ? 'Sin registros'
-                    : detail.daysSinceLast === 0 ? 'Último registro: hoy'
-                    : `Hace ${detail.daysSinceLast} día${detail.daysSinceLast !== 1 ? 's' : ''}`}
-                </Text>
-              </View>
-              {detail.lastEntryDate && <Text style={styles.semaforoMeta}>Último registro: {shortDate(detail.lastEntryDate)}</Text>}
-              {detail.daysSinceLast !== null && detail.daysSinceLast > 3 && (
-                <Text style={styles.semaforoWarning}>⚠️ Varios días sin registrar</Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.pushCard}>
-            <View style={styles.pushHeader}>
-              <View style={styles.pushTitleRow}>
-                <BellIcon size={14} color={D.text} />
-                <Text style={styles.pushTitle}>Notificaciones al paciente</Text>
-              </View>
-              <View style={styles.pushToggle}>
-                <Switch value={!pushDisabled} onValueChange={handleTogglePush} trackColor={{ true: D.primary, false: D.chipDark }} thumbColor="#fff" />
-                <Text style={styles.pushToggleLabel}>{pushDisabled ? 'Desactivadas' : 'Activadas'}</Text>
-              </View>
-            </View>
-            {pushDisabled && <Text style={styles.pushHint}>No se enviarán recordatorios automáticos, aunque el paciente los tenga activados.</Text>}
-            <View style={[styles.pushDaysRow, pushDisabled && styles.pushRowDisabled]}>
-              <Text style={styles.pushDaysLabel}>Días sin registro para notificar</Text>
-              <TextInput
-                value={String(pushMinDays)}
-                onChangeText={(v) => setPushMinDays(Math.max(1, parseInt(v || '1', 10)))}
-                onBlur={handlePushMinDaysBlur}
-                editable={!pushDisabled}
-                keyboardType="number-pad"
-                style={styles.pushDaysInput}
-              />
-            </View>
-            <View style={styles.pushTestRow}>
-              <Pressable
-                onPress={handleTestPush}
-                disabled={pushTestStatus === 'sending' || !patient.hasPushSub}
-                style={[styles.testButton, !patient.hasPushSub && styles.testButtonDisabled]}
-              >
-                <View style={styles.testButtonRow}>
-                  {pushTestStatus !== 'sending' && <BellIcon size={13} color={D.primary} />}
-                  <Text style={styles.testButtonText}>{pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}</Text>
+        <ScrollView contentContainerStyle={[styles.container, centered(maxWidth), twoColumns && styles.columns]}>
+          <View style={twoColumns ? styles.sideColumn : undefined}>
+            {/* Ficha: nombre, datos, notificaciones, email, etiquetas y semáforo.
+                Se distingue del resto con una franja de color y un fondo tintado (igual que MW). */}
+            <View style={styles.patientCard}>
+              <View style={styles.patientCardAccent} />
+              <View style={styles.patientNameRow}>
+                <Text style={styles.patientName}>{patientLabel(patient)}</Text>
+                <View style={styles.patientIcons}>
+                  <Pressable onPress={() => setProfileOpen(true)} hitSlop={8} accessibilityLabel="Datos del paciente" style={styles.iconButton}>
+                    <UserCircleIcon size={22} color="#95A0A5" />
+                  </Pressable>
+                  {patient.hasPushSub === true && <View accessibilityLabel="Notificaciones activas"><BellIcon size={18} color={D.secondary} /></View>}
+                  {patient.hasPushSub === false && <View accessibilityLabel="Sin notificaciones"><BellSlashIcon size={18} color="#B5BEC2" /></View>}
                 </View>
-              </Pressable>
-              {!patient.hasPushSub && <Text style={styles.pushHint}>El paciente no tiene notificaciones activadas.</Text>}
-              {pushTestStatus === 'ok' && <Text style={styles.pushSuccess}>✅ Notificación enviada</Text>}
-              {pushTestStatus === 'error' && <Text style={styles.pushError}>{pushTestError}</Text>}
+              </View>
+              {!!patient.patient_email && <Text style={styles.patientEmail}>{patient.patient_email}</Text>}
+              {(patient.doctor_unlinked || (patient.tags || []).length > 0) && (
+                <View style={styles.tagRow}>
+                  {patient.doctor_unlinked && (
+                    <Text style={[styles.tag, styles.archivedTag]}>
+                      Archivado{patient.unlinked_at ? ` el ${shortDate(patient.unlinked_at)}` : ''}
+                    </Text>
+                  )}
+                  {(patient.tags || []).map((t) => (
+                    <Text key={t} style={[styles.tag, { backgroundColor: tagColor(t) + '22', color: tagColor(t) }]}>{t}</Text>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.semaforoBlock}>
+                <View style={styles.semaforoRow}>
+                  <View style={[styles.dot, { backgroundColor: semaforo?.color }]} />
+                  <Text style={styles.semaforoText}>
+                    {detail.daysSinceLast === null ? 'Sin registros'
+                      : detail.daysSinceLast === 0 ? 'Último registro: hoy'
+                      : `Hace ${detail.daysSinceLast} día${detail.daysSinceLast !== 1 ? 's' : ''}`}
+                  </Text>
+                </View>
+                {detail.lastEntryDate && <Text style={styles.semaforoMeta}>Último registro: {shortDate(detail.lastEntryDate)}</Text>}
+                {detail.daysSinceLast !== null && detail.daysSinceLast > 3 && (
+                  <Text style={styles.semaforoWarning}>⚠️ Varios días sin registrar</Text>
+                )}
+              </View>
             </View>
+
+            <View style={styles.pushCard}>
+              <View style={styles.pushHeader}>
+                <View style={styles.pushTitleRow}>
+                  <BellIcon size={14} color={D.text} />
+                  <Text style={styles.pushTitle}>Notificaciones al paciente</Text>
+                </View>
+                <View style={styles.pushToggle}>
+                  <Switch value={!pushDisabled} onValueChange={handleTogglePush} trackColor={{ true: D.primary, false: D.chipDark }} thumbColor="#fff" />
+                  <Text style={styles.pushToggleLabel}>{pushDisabled ? 'Desactivadas' : 'Activadas'}</Text>
+                </View>
+              </View>
+              {pushDisabled && <Text style={styles.pushHint}>No se enviarán recordatorios automáticos, aunque el paciente los tenga activados.</Text>}
+              <View style={[styles.pushDaysRow, pushDisabled && styles.pushRowDisabled]}>
+                <Text style={styles.pushDaysLabel}>Días sin registro para notificar</Text>
+                <TextInput
+                  value={String(pushMinDays)}
+                  onChangeText={(v) => setPushMinDays(Math.max(1, parseInt(v || '1', 10)))}
+                  onBlur={handlePushMinDaysBlur}
+                  editable={!pushDisabled}
+                  keyboardType="number-pad"
+                  style={styles.pushDaysInput}
+                />
+              </View>
+              <View style={styles.pushTestRow}>
+                <Pressable
+                  onPress={handleTestPush}
+                  disabled={pushTestStatus === 'sending' || !patient.hasPushSub}
+                  style={[styles.testButton, !patient.hasPushSub && styles.testButtonDisabled]}
+                >
+                  <View style={styles.testButtonRow}>
+                    {pushTestStatus !== 'sending' && <BellIcon size={13} color={D.primary} />}
+                    <Text style={styles.testButtonText}>{pushTestStatus === 'sending' ? 'Enviando...' : 'Enviar notificación de prueba'}</Text>
+                  </View>
+                </Pressable>
+                {!patient.hasPushSub && <Text style={styles.pushHint}>El paciente no tiene notificaciones activadas.</Text>}
+                {pushTestStatus === 'ok' && <Text style={styles.pushSuccess}>✅ Notificación enviada</Text>}
+                {pushTestStatus === 'error' && <Text style={styles.pushError}>{pushTestError}</Text>}
+              </View>
+            </View>
+
+            <PatientCalendar entries={detail.entries} />
+            <PatientStatsCard detail={detail} />
           </View>
+          <View style={twoColumns ? styles.mainColumn : undefined}>
+            <PatientEntriesList entries={detail.entries} totalEntries={detail.totalEntries} onSaveNote={handleSaveNote} />
+            <PatientBitacora notes={clinicalNotes} onAddNote={handleAddNote} />
 
-          <PatientCalendar entries={detail.entries} />
-          <PatientStatsCard detail={detail} />
-          <PatientEntriesList entries={detail.entries} totalEntries={detail.totalEntries} onSaveNote={handleSaveNote} />
-          <PatientBitacora notes={clinicalNotes} onAddNote={handleAddNote} />
-
-          {(patient.status === 'accepted' || patient.doctor_unlinked) && (
-            <Pressable
-              onPress={handleToggleArchived}
-              style={[styles.archiveButton, patient.doctor_unlinked ? styles.reactivateButton : null]}
-              accessibilityRole="button"
-            >
-              <Text style={[styles.archiveButtonText, patient.doctor_unlinked && styles.reactivateButtonText]}>
-                {patient.doctor_unlinked ? 'Reactivar paciente' : 'Archivar paciente'}
-              </Text>
-            </Pressable>
-          )}
+            {(patient.status === 'accepted' || patient.doctor_unlinked) && (
+              <Pressable
+                onPress={handleToggleArchived}
+                style={[styles.archiveButton, patient.doctor_unlinked ? styles.reactivateButton : null]}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.archiveButtonText, patient.doctor_unlinked && styles.reactivateButtonText]}>
+                  {patient.doctor_unlinked ? 'Reactivar paciente' : 'Archivar paciente'}
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </ScrollView>
       )}
 
@@ -270,6 +282,9 @@ const styles = StyleSheet.create({
   iconButton: { padding: 2 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { paddingHorizontal: 16, paddingBottom: 32 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+  sideColumn: { width: DETAIL_SIDEBAR_WIDTH },
+  mainColumn: { flex: 1, minWidth: 0, marginTop: 4 },
   patientCard: { backgroundColor: '#EEF4FA', borderRadius: 16, paddingVertical: 16, paddingLeft: 20, paddingRight: 16, marginTop: 4, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#DCE7F2' },
   patientCardAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: D.primary },
   patientNameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },

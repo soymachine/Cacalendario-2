@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { professionalFirstName } from '../lib/doctorName';
 import type { DoctorInfo } from '../lib/doctor';
@@ -23,6 +23,8 @@ function shortDate(dateStr: string): string {
 }
 
 export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate, onSelectPatient, onInvite }: HomeScreenProps) {
+  // En iPad (columna de CONTENT_MAX_WIDTH) los indicadores caben en una sola fila.
+  const wide = useWindowDimensions().width >= CONTENT_MAX_WIDTH;
   // Activos: los archivados por el profesional no cuentan
   const accepted = patients.filter((p) => p.status === 'accepted' && !p.doctor_unlinked);
   const pending = patients.filter((p) => p.status === 'pending');
@@ -77,7 +79,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
                   key={t.label}
                   disabled={!t.filter}
                   onPress={() => t.filter && onNavigate('pacientes', t.filter)}
-                  style={[styles.tile, { backgroundColor: t.bg }]}
+                  style={[styles.tile, wide && styles.tileWide, { backgroundColor: t.bg }]}
                 >
                   <Text style={[styles.tileValue, { color: t.color }]}>{t.value}</Text>
                   <Text style={[styles.tileLabel, { color: t.color }]}>{t.label}{t.filter ? ' ↗' : ''}</Text>
@@ -170,6 +172,7 @@ const styles = StyleSheet.create({
   loading: { marginTop: 60 },
   tileRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   tile: { flexBasis: '30%', flexGrow: 1, borderRadius: 14, padding: 14, gap: 4 },
+  tileWide: { flexBasis: 0 },
   tileValue: { fontSize: 26, fontWeight: '900' },
   tileLabel: { fontSize: 11, opacity: 0.8 },
   statsCard: { backgroundColor: D.card, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 18, flexDirection: 'row', gap: 28, marginBottom: 16 },
