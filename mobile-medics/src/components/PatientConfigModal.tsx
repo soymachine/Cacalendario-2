@@ -11,6 +11,7 @@ import FoodConfigCard from './FoodConfigCard';
 import { tagColor } from '../lib/tags';
 import { ENTRY_TYPE_FIELDS } from '../lib/entryLabels';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
+import { MODAL_ORIENTATIONS } from '../lib/layout';
 
 interface PatientConfigModalProps {
   doctor: DoctorInfo;
@@ -118,7 +119,7 @@ export default function PatientConfigModal({ doctor, patient, onClose, onSaved, 
   });
 
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose}>
+    <Modal visible animationType="slide" onRequestClose={onClose} supportedOrientations={MODAL_ORIENTATIONS}>
       <SafeAreaProvider>
       <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
         <View style={styles.header}>

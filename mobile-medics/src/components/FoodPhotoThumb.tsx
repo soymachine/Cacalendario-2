@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { MODAL_ORIENTATIONS } from '../lib/layout';
 
 // Foto de una comida en MA. Bucket privado `food-photos`: signed URL de vida
 // corta pedida con la sesión del profesional (la RLS de Storage solo la da
@@ -34,7 +35,7 @@ export default function FoodPhotoThumb({ path, size = 48 }: { path: string; size
       <Pressable onPress={() => setOpen(true)} accessibilityRole="imagebutton" accessibilityLabel="Ver foto de la comida">
         <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 8 }} resizeMode="cover" />
       </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)} supportedOrientations={MODAL_ORIENTATIONS}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)} accessibilityLabel="Cerrar foto">
           <Image source={{ uri: url }} style={styles.full} resizeMode="contain" />
         </Pressable>

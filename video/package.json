@@ -2,11 +2,13 @@
   "name": "fluxia-video",
   "private": true,
   "type": "module",
-  "description": "Vídeo explicativo de Fluxia (30 s, 16:9) dibujado en canvas, con música generada por código y render a MP4 con Playwright + FFmpeg.",
+  "description": "Vídeos de Fluxia (explicativo de 30 s y de marketing de 50 s, 16:9) dibujados en canvas, con música generada por código y render a MP4 con Playwright + FFmpeg.",
   "scripts": {
     "music": "node music.mjs",
     "preview": "node server.mjs",
-    "render": "node render.mjs"
+    "render": "node render.mjs",
+    "render:marketing": "node render.mjs marketing",
+    "music:marketing": "node marketing/music.mjs"
   },
   "devDependencies": {
     "@fontsource/lexend": "5.2.5",

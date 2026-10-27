@@ -6,6 +6,7 @@ import type { PatientLink } from '../lib/patients';
 import { saveProfile } from '../lib/patientDetail';
 import { UserCircleIcon } from './icons';
 import { D } from '../lib/design';
+import { MODAL_ORIENTATIONS } from '../lib/layout';
 
 interface PatientProfileModalProps {
   patient: PatientLink;
@@ -33,7 +34,7 @@ export default function PatientProfileModal({ patient, onClose, onSaved }: Patie
   };
 
   return (
-    <Modal visible animationType="fade" transparent onRequestClose={onClose}>
+    <Modal visible animationType="fade" transparent onRequestClose={onClose} supportedOrientations={MODAL_ORIENTATIONS}>
       <SafeAreaProvider>
       <View style={styles.backdrop}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>

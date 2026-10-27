@@ -45,10 +45,10 @@ export default function PatientCalendar({ entries }: PatientCalendarProps) {
         </Text>
         <Pressable onPress={goNext} style={styles.navButton}><Text style={styles.navText}>→</Text></Pressable>
       </View>
-      <View style={styles.weekRow}>
+      <View style={[styles.weekRow, styles.limit]}>
         {WEEKDAYS.map((d) => <Text key={d} style={styles.weekday}>{d}</Text>)}
       </View>
-      <View style={styles.grid}>
+      <View style={[styles.grid, styles.limit]}>
         {cells.map((cell) => {
           if (!cell.dateStr) return <View key={cell.key} style={styles.cell} />;
           const count = entriesByDate.get(cell.dateStr) || 0;
@@ -88,6 +88,8 @@ const styles = StyleSheet.create({
   navButton: { paddingHorizontal: 10, paddingVertical: 4 },
   navText: { fontSize: 16, color: D.textMuted },
   monthLabel: { fontSize: 13, fontWeight: '800', color: D.text, textTransform: 'capitalize' },
+  // En iPad la tarjeta puede medir 700 px: sin límite, cada día sería un cuadrado de 100 px.
+  limit: { width: '100%', maxWidth: 420, alignSelf: 'center' },
   weekRow: { flexDirection: 'row', marginBottom: 4 },
   weekday: { width: CELL_SIZE, textAlign: 'center', fontSize: 11, fontWeight: '700', color: D.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },

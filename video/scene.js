@@ -1110,3 +1110,9 @@ export function renderFrame(ctx, t) {
   sceneOutro(ctx, t);
   ctx.restore();
 }
+
+// Utilidades compartidas con otros vídeos (p. ej. marketing/scene.js).
+export {
+  clamp, lerp, prog, eo, eio, back, spring, win, C, SEM, mix, rgba, rr, fillRR, strokeRR, shadow, noShadow,
+  font, text, measure, layer, bristolImg, LOGO, drawLogoMark, drawLogo, drawBackground, iconCheck, ripple,
+};
