@@ -27,6 +27,12 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   const [selectedPatient, setSelectedPatient] = useState<PatientLink | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const { isSplit } = useLayout();
+  // La ficha se pinta con la versión de `patients` (la lista puede recargarse
+  // con la ficha abierta al lado en iPad); `selectedPatient` solo sirve de
+  // respaldo mientras el paciente no esté en la lista.
+  const openPatient = selectedPatient
+    ? patients.find((p) => p.id === selectedPatient.id) ?? selectedPatient
+    : null;
 
   const refreshPatients = useCallback(async () => {
     setPatientsLoading(true);
@@ -57,8 +63,8 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
   };
 
   const handlePatientUpdated = (patch: Partial<PatientLink>) => {
-    if (!selectedPatient) return;
-    const updated = { ...selectedPatient, ...patch };
+    if (!openPatient) return;
+    const updated = { ...openPatient, ...patch };
     setSelectedPatient(updated);
     setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
@@ -85,7 +91,7 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
       patients={patients}
       patientsLoading={patientsLoading}
       initialSemaforoFilter={semaforoFilter}
-      selectedId={isSplit ? selectedPatient?.id : undefined}
+      selectedId={isSplit ? openPatient?.id : undefined}
       onRefresh={refreshPatients}
       onSelectPatient={setSelectedPatient}
       onInvite={() => setInviteOpen(true)}
@@ -123,15 +129,14 @@ export default function DoctorApp({ doctor: initialDoctor }: DoctorAppProps) {
 
         {activeTab === 'pacientes' && (
           // En iPad en horizontal (isSplit) lista y ficha se ven a la vez, como
-          // en MW; si no, una u otra. El árbol es el mismo en ambos casos para
-          // que al girar el iPad la lista conserve búsqueda y filtros.
+          // en MW. Si no, la lista se oculta (sin desmontarla) mientras hay una
+          // ficha abierta: así conserva búsqueda, filtros y scroll al volver o
+          // al girar el iPad.
           <View style={styles.split}>
-            {(isSplit || !selectedPatient) && (
-              <View style={isSplit ? styles.listPane : styles.fill}>{patientList}</View>
-            )}
-            {(isSplit || selectedPatient) && (
+            <View style={isSplit ? styles.listPane : openPatient ? styles.hidden : styles.fill}>{patientList}</View>
+            {(isSplit || openPatient) && (
               <View style={styles.detailPane}>
-                {selectedPatient ? patientDetail(selectedPatient) : (
+                {openPatient ? patientDetail(openPatient) : (
                   <View style={styles.emptyDetail}>
                     <Text style={styles.emptyDetailTitle}>Selecciona un paciente</Text>
                     <Text style={styles.emptyDetailBody}>Su ficha, registros y bitácora aparecerán aquí.</Text>
@@ -172,6 +177,7 @@ const styles = StyleSheet.create({
   split: { flex: 1, flexDirection: 'row' },
   listPane: { width: LIST_PANE_WIDTH, borderRightWidth: 1, borderRightColor: D.border },
   detailPane: { flex: 1 },
+  hidden: { display: 'none' },
   emptyDetail: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyDetailTitle: { fontSize: 17, fontWeight: '800', color: D.text, marginBottom: 6 },
   emptyDetailBody: { fontSize: 13, color: D.textMuted, textAlign: 'center' },

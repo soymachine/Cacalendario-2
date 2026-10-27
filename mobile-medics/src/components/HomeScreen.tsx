@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { professionalFirstName } from '../lib/doctorName';
 import type { DoctorInfo } from '../lib/doctor';
@@ -6,6 +6,7 @@ import { getSemaforo, resolveSemaforoThresholds, type SemaforoKey } from '../lib
 import { tagColor } from '../lib/tags';
 import { patientLabel, type PatientLink, type PracticeStats } from '../lib/patients';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
+import { useLayout } from '../lib/layout';
 import type { Tab } from './BottomNav';
 
 interface HomeScreenProps {
@@ -23,8 +24,7 @@ function shortDate(dateStr: string): string {
 }
 
 export default function HomeScreen({ doctor, patients, patientsLoading, practiceStats, onNavigate, onSelectPatient, onInvite }: HomeScreenProps) {
-  // En iPad (columna de CONTENT_MAX_WIDTH) los indicadores caben en una sola fila.
-  const wide = useWindowDimensions().width >= CONTENT_MAX_WIDTH;
+  const { homeWide } = useLayout();
   // Activos: los archivados por el profesional no cuentan
   const accepted = patients.filter((p) => p.status === 'accepted' && !p.doctor_unlinked);
   const pending = patients.filter((p) => p.status === 'pending');
@@ -59,6 +59,8 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
     { value: noDataWeek, label: 'Sin reg. 7d', bg: D.accentSoft, color: D.accent, filter: noDataWeek > 0 ? 'no7d' : undefined },
   ];
   if (pending.length > 0) tiles.push({ value: pending.length, label: 'Invit. pendientes', bg: D.accentSoft, color: D.accent });
+  // En iPad caben 5 indicadores en una fila; con 6 se quedan en dos filas de 3.
+  const tilesOneRow = homeWide && tiles.length <= 5;
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
@@ -79,7 +81,7 @@ export default function HomeScreen({ doctor, patients, patientsLoading, practice
                   key={t.label}
                   disabled={!t.filter}
                   onPress={() => t.filter && onNavigate('pacientes', t.filter)}
-                  style={[styles.tile, wide && styles.tileWide, { backgroundColor: t.bg }]}
+                  style={[styles.tile, tilesOneRow && styles.tileWide, { backgroundColor: t.bg }]}
                 >
                   <Text style={[styles.tileValue, { color: t.color }]}>{t.value}</Text>
                   <Text style={[styles.tileLabel, { color: t.color }]}>{t.label}{t.filter ? ' ↗' : ''}</Text>

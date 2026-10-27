@@ -17,8 +17,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, 'out');
 // Cada vídeo vive en su carpeta (timeline.js, scene.js, music.mjs, index.html).
 const VIDEOS = {
-  explicativo: { dir: '.', file: 'fluxia-explicativo-30s' },
-  marketing: { dir: 'marketing', file: 'fluxia-marketing-50s' },
+  // `wav` es el audio que carga la vista previa (index.html) de cada vídeo.
+  explicativo: { dir: '.', file: 'fluxia-explicativo-30s', wav: 'music.wav' },
+  marketing: { dir: 'marketing', file: 'fluxia-marketing-50s', wav: 'fluxia-marketing-50s.wav' },
 };
 const name = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--stills') || 'explicativo';
 const video = VIDEOS[name];
@@ -37,7 +38,7 @@ function findChromium() {
 
 // La música se sintetiza antes de abrir Chromium: la síntesis bloquea Node
 // durante decenas de segundos y el navegador se cerraría mientras tanto.
-const wav = join(OUT, `${video.file}.wav`);
+const wav = join(OUT, video.wav);
 if (!stills) {
   console.log('♪ Generando música…');
   const { renderMusic } = await import(`./${video.dir}/music.mjs`); // la síntesis corre al importar

@@ -19,8 +19,9 @@ iPad la app gira a horizontal y admite Split View / Slide Over (Expo declara
 las cuatro orientaciones en `UISupportedInterfaceOrientations~ipad`; App Store
 lo exige para la multitarea). En iPhone sigue siendo solo vertical. Reglas:
 
-- Anchos con `useWindowDimensions` / `useLayout()` (`src/lib/layout.ts`), nunca
-  con `Dimensions.get` a nivel de módulo: la ventana cambia de tamaño en caliente.
+- Los umbrales de ancho viven en `useLayout()` (`src/lib/layout.ts`), que usa
+  `useWindowDimensions`; nunca `Dimensions.get` a nivel de módulo: la ventana
+  cambia de tamaño en caliente.
 - Todo `<Modal>` lleva `supportedOrientations={MODAL_ORIENTATIONS}`; sin ello
   React Native lo limita a vertical y en un iPad en horizontal giraría la pantalla.
 - Pacientes en iPad horizontal: lista y ficha a la vez (`DoctorApp`); la ficha

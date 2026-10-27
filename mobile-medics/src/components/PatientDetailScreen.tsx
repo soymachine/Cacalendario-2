@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, Alert, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Switch, TextInput, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
@@ -18,7 +18,7 @@ import PatientProfileModal from './PatientProfileModal';
 import { UserCircleIcon, SlidersIcon, BellIcon, BellSlashIcon } from './icons';
 import { tagColor } from '../lib/tags';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
-import { LIST_PANE_WIDTH, DETAIL_TWO_COLUMN_MIN_WIDTH, DETAIL_SIDEBAR_WIDTH, DETAIL_MAX_WIDTH } from '../lib/layout';
+import { useLayout, DETAIL_SIDEBAR_WIDTH } from '../lib/layout';
 
 interface PatientDetailScreenProps {
   doctor: DoctorInfo;
@@ -49,9 +49,14 @@ export default function PatientDetailScreen({ doctor, patient, inSplit = false, 
   const [profileOpen, setProfileOpen] = useState(false);
   // Con espacio suficiente (iPad), la ficha se reparte en dos columnas como en MW:
   // resumen, calendario y estadísticas a la izquierda; registros y bitácora a la derecha.
-  const { width } = useWindowDimensions();
-  const twoColumns = (inSplit ? width - LIST_PANE_WIDTH : width) >= DETAIL_TWO_COLUMN_MIN_WIDTH;
-  const maxWidth = twoColumns ? DETAIL_MAX_WIDTH : CONTENT_MAX_WIDTH;
+  const twoColumns = useLayout().detailTwoColumns;
+  const widthStyle = twoColumns ? null : centered(CONTENT_MAX_WIDTH);
+
+  // Recargar solo si cambia algo que usa la carga: con la ficha al lado de la
+  // lista (iPad), cada recarga de la lista o cada ajuste guardado (avisos,
+  // datos del paciente) crea un objeto `patient` nuevo, y recargar por eso
+  // vaciaría la ficha tras un indicador de carga y perdería el scroll.
+  const loadKey = JSON.stringify([patient.id, patient.patient_id, patient.doctor_unlinked, patient.unlinked_at, patient.entry_type_mode, patient.food_config]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,7 +67,7 @@ export default function PatientDetailScreen({ doctor, patient, inSplit = false, 
     setDetail(d);
     setClinicalNotes(notes);
     setLoading(false);
-  }, [patient, doctor.id]);
+  }, [loadKey, doctor.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -132,7 +137,7 @@ export default function PatientDetailScreen({ doctor, patient, inSplit = false, 
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top']}>
-      <View style={[styles.header, centered(maxWidth)]}>
+      <View style={[styles.header, widthStyle]}>
         {inSplit ? <View /> : <Pressable onPress={onBack} style={styles.backButton}><Text style={styles.backText}>← Volver</Text></Pressable>}
         <Pressable onPress={() => setConfigOpen(true)} style={styles.configButton} accessibilityRole="button">
           <SlidersIcon size={16} color={D.text} />
@@ -143,7 +148,7 @@ export default function PatientDetailScreen({ doctor, patient, inSplit = false, 
       {loading || !detail ? (
         <View style={styles.loading}><ActivityIndicator color={D.primary} /></View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.container, centered(maxWidth), twoColumns && styles.columns]}>
+        <ScrollView contentContainerStyle={[styles.container, widthStyle, twoColumns && styles.columns]}>
           <View style={twoColumns ? styles.sideColumn : undefined}>
             {/* Ficha: nombre, datos, notificaciones, email, etiquetas y semáforo.
                 Se distingue del resto con una franja de color y un fondo tintado (igual que MW). */}
