@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Textos de las tiendas</title>
+<style>
+  :root {
+    --bg: #EEF4FB; --surface: #fff; --text: #1a2633; --muted: #5b6b7c; --border: #d6e2ee;
+    --brand: #274867; --accent: #3C7DB8; --ok: #2f855a; --bad: #c53030;
+    --warn-bg: #fff6e0; --warn-border: #e5b84a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1a25; --surface: #172636; --text: #e6eef6; --muted: #9db0c3; --border: #26394d;
+      --brand: #90B7DD; --accent: #7fb3e3; --ok: #68d391; --bad: #fc8181;
+      --warn-bg: #3a2f14; --warn-border: #a8842f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 Inter, system-ui, -apple-system, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 4px; color: var(--brand); }
+  h2 { font-size: 23px; margin: 48px 0 4px; color: var(--brand); }
+  h3 { font-size: 17px; margin: 28px 0 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .lead, .muted { color: var(--muted); }
+  .muted { font-size: 13px; }
+  nav { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin: 20px 0; }
+  nav a { color: var(--accent); text-decoration: none; margin-right: 18px; white-space: nowrap; }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 16px; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+  @media (prefers-color-scheme: dark) { .tabs button[aria-selected="true"] { color: #0f1a25; } }
+  .app { display: none; } .app.on { display: block; }
+  .field { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .field-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .field-head b { font-size: 14px; }
+  .req { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
+  .opt { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+  .count { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ok); }
+  .count.over { color: var(--bad); font-weight: 700; }
+  .copy { border: 1px solid var(--border); background: transparent; color: var(--accent); border-radius: 8px; padding: 2px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+  .value { white-space: pre-wrap; font-size: 14px; margin: 0; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--brand); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { th { color: #0f1a25; } }
+  tr:last-child td { border-bottom: none; }
+  .note { border-left: 4px solid var(--warn-border); background: var(--warn-bg); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Textos para App Store y Google Play</h1>
+  <p class="lead">Fichas de <b>Fluxia</b> (PA, pacientes) y <b>Fluxia Pro</b> (MA, profesionales). Cada campo indica si es obligatorio, su límite de caracteres y tiene botón de copiar. El contador se pone en rojo si un texto se pasa.</p>
+
+  <div class="note"><b>Antes de enviar a revisión, revisa los avisos del final</b> (<a href="#avisos">apartado 5</a>): hay dos puntos de las normas de Apple que pueden hacer que rechacen las apps.</div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-app="pa">Fluxia (PA)</button>
+    <button role="tab" aria-selected="false" data-app="ma">Fluxia Pro (MA)</button>
+  </div>
+
+  <!-- ═══════════════════════════ PA ═══════════════════════════ -->
+  <section class="app on" id="pa">
+    <nav><a href="#pa-apple">App Store</a><a href="#pa-play">Google Play</a><a href="#pa-forms">Formularios</a><a href="#comunes">Datos comunes</a><a href="#avisos">Avisos</a></nav>
+
+    <h2 id="pa-apple">1. App Store — Fluxia</h2>
+    <p class="muted">App Store Connect → tu app → Información de la app / Versión 0.90.0</p>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Nombre</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia: diario digestivo</p></div>
+    <p class="muted">"Fluxia" a secas puede estar ocupado en la App Store; con el complemento es más fácil de registrar y ayuda en las búsquedas. El nombre que se ve bajo el icono en el móvil sigue siendo "Fluxia".</p>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Subtítulo</b><span class="opt">Recomendado</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Conectado con tu profesional</p></div>
+
+    <div class="field" data-max="170"><div class="field-head"><b>Texto promocional</b><span class="opt">Opcional</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Registra tus deposiciones, micciones y comidas en segundos. Tu profesional sanitario ve tu evolución al momento, sin que tengas que enviarle nada.</p></div>
+
+    <div class="field" data-max="4000"><div class="field-head"><b>Descripción</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia es el diario digestivo que comparte tu evolución con tu profesional sanitario. Registras en el móvil lo que te ha pedido seguir y él lo ve en su panel al momento, sin que tengas que enviarle nada ni recordarlo todo el día de la consulta.
+
+REGISTRA EN SEGUNDOS
+• Deposiciones con la escala de Bristol: forma, flotación, color y síntomas.
+• Micciones: tipo, cantidad, color y molestias.
+• Comidas, con foto si quieres, cuando tu profesional te pida seguir lo que comes.
+• Puedes añadir notas y registrar a cualquier hora, también lo que olvidaste apuntar.
+
+TU HISTORIAL, DE UN VISTAZO
+• Calendario con todos tus registros, día a día.
+• Estadísticas sencillas: total de registros, última semana, horas más habituales y tiempo desde el último registro.
+
+CONECTADO CON TU PROFESIONAL
+• Si tu médico, enfermera o nutricionista usa Fluxia Pro, te enviará una invitación. Al aceptarla, tus registros le llegan en tiempo real.
+• Tu profesional decide qué necesita que registres, así que solo verás lo que te sirve.
+• Recordatorios opcionales para no perder el hilo si pasan días sin registrar.
+
+GRATIS Y PRIVADO
+• Fluxia es gratis para los pacientes, sin anuncios.
+• Tus datos se guardan cifrados en servidores europeos, conforme al RGPD.
+• Solo los ve el profesional con el que te vinculas.
+• Puedes exportar tus datos o eliminar tu cuenta desde la propia app.
+
+Fluxia es una herramienta de registro y seguimiento: no hace diagnósticos ni sustituye la consulta médica. Ante cualquier duda sobre tu salud, consulta a tu profesional sanitario.</p></div>
+
+    <div class="field" data-max="100"><div class="field-head"><b>Palabras clave</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">bristol,heces,deposiciones,intestino,micción,orina,síntomas,digestión,médico,salud,registro,comidas</p></div>
+    <p class="muted">Separadas por comas y sin espacios. No repitas palabras que ya estén en el nombre o el subtítulo (Apple ya las usa).</p>
+
+    <table>
+      <tr><th>Campo</th><th>Valor</th><th></th></tr>
+      <tr><td>Categoría principal</td><td>Medicina</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Categoría secundaria</td><td>Salud y forma física</td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>URL de soporte</td><td><code>https://fluxia-health.com/support</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>URL de marketing</td><td><code>https://fluxia-health.com/app/</code></td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>URL de la política de privacidad</td><td><code>https://fluxia-health.com/privacy</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Copyright</td><td>2026 Think Things Studio Barcelona S.L.</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Novedades de la versión</td><td>No se pide en la primera versión</td><td></td></tr>
+    </table>
+
+    <h2 id="pa-play">2. Google Play — Fluxia</h2>
+    <p class="muted">Play Console → tu app → Crecimiento → Presencia en Play Store → Ficha de Play Store principal</p>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Nombre de la aplicación</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia: diario digestivo</p></div>
+
+    <div class="field" data-max="80"><div class="field-head"><b>Descripción breve</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Registra deposiciones, micciones y comidas. Tu profesional lo ve al momento.</p></div>
+
+    <div class="field" data-max="4000"><div class="field-head"><b>Descripción completa</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia es el diario digestivo que comparte tu evolución con tu profesional sanitario. Registras en el móvil lo que te ha pedido seguir y él lo ve en su panel al momento, sin que tengas que enviarle nada ni recordarlo todo el día de la consulta.
+
+★ Registra en segundos
+• Deposiciones con la escala de Bristol: forma, flotación, color y síntomas.
+• Micciones: tipo, cantidad, color y molestias.
+• Comidas, con foto si quieres, cuando tu profesional te pida seguir lo que comes.
+• Puedes añadir notas y registrar a cualquier hora, también lo que olvidaste apuntar.
+
+★ Tu historial, de un vistazo
+• Calendario con todos tus registros, día a día.
+• Estadísticas sencillas: total de registros, última semana, horas más habituales y tiempo desde el último registro.
+
+★ Conectado con tu profesional
+• Si tu médico, enfermera o nutricionista usa Fluxia Pro, te enviará una invitación. Al aceptarla, tus registros le llegan en tiempo real.
+• Tu profesional decide qué necesita que registres, así que solo verás lo que te sirve.
+• Recordatorios opcionales para no perder el hilo si pasan días sin registrar.
+
+★ Gratis y privado
+• Fluxia es gratis para los pacientes, sin anuncios.
+• Tus datos se guardan cifrados en servidores europeos, conforme al RGPD.
+• Solo los ve el profesional con el que te vinculas.
+• Puedes exportar tus datos o eliminar tu cuenta desde la propia app.
+
+Fluxia es una herramienta de registro y seguimiento: no hace diagnósticos ni sustituye la consulta médica. Ante cualquier duda sobre tu salud, consulta a tu profesional sanitario.</p></div>
+
+    <table>
+      <tr><th>Campo</th><th>Valor</th><th></th></tr>
+      <tr><td>Categoría</td><td>Aplicación · Medicina</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Etiquetas</td><td>Salud, Seguimiento médico (elige las que ofrezca Play)</td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>Correo electrónico</td><td><code>hola@fluxia-health.com</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Sitio web</td><td><code>https://fluxia-health.com/app/</code></td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>Política de privacidad</td><td><code>https://fluxia-health.com/privacy</code> (en Contenido de la aplicación)</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Icono, gráfico de funciones y capturas</td><td><code>store-assets/salida/pa/</code></td><td><span class="req">Obligatorio</span></td></tr>
+    </table>
+
+    <h2 id="pa-forms">3. Formularios de privacidad y contenido — Fluxia</h2>
+
+    <h3>App Store → Privacidad de la app</h3>
+    <p>¿Recopilas datos? <b>Sí</b>. ¿Se usan para rastrear al usuario (tracking)? <b>No</b> en todos. Todos están <b>vinculados a la identidad</b> del usuario y su finalidad es <b>Funcionalidad de la app</b>.</p>
+    <table>
+      <tr><th>Tipo de dato (Apple)</th><th>Qué es en Fluxia</th></tr>
+      <tr><td>Información de contacto → Correo electrónico</td><td>Email de la cuenta</td></tr>
+      <tr><td>Información de contacto → Nombre</td><td>Nombre que el paciente pone en Cuenta (opcional)</td></tr>
+      <tr><td>Salud y forma física → Salud</td><td>Registros de deposiciones, micciones y comidas</td></tr>
+      <tr><td>Contenido del usuario → Fotos o vídeos</td><td>Fotos de comidas</td></tr>
+      <tr><td>Contenido del usuario → Otro contenido del usuario</td><td>Notas de los registros y mensajes de sugerencias</td></tr>
+      <tr><td>Identificadores → ID de usuario</td><td>Identificador de la cuenta</td></tr>
+    </table>
+
+    <h3>Google Play → Seguridad de los datos</h3>
+    <table>
+      <tr><th>Pregunta</th><th>Respuesta</th></tr>
+      <tr><td>¿Recoge o comparte datos de usuario?</td><td>Sí, recoge. <b>No comparte</b> con terceros (Supabase es encargado del tratamiento, no cuenta como compartir).</td></tr>
+      <tr><td>¿Datos cifrados en tránsito?</td><td>Sí</td></tr>
+      <tr><td>¿El usuario puede pedir que se eliminen?</td><td>Sí, desde la app (Cuenta → Eliminar mi cuenta). URL de eliminación: <code>https://fluxia-health.com/support</code></td></tr>
+      <tr><td>Información personal</td><td>Nombre, Dirección de correo electrónico, ID de usuario</td></tr>
+      <tr><td>Salud y forma física</td><td>Información de salud</td></tr>
+      <tr><td>Fotos y vídeos</td><td>Fotos</td></tr>
+      <tr><td>Mensajes / otro contenido</td><td>Otro contenido generado por el usuario (notas)</td></tr>
+      <tr><td>Finalidad de todos</td><td>Funcionalidad de la aplicación · Gestión de la cuenta. Recogida obligatoria salvo nombre y fotos (opcionales).</td></tr>
+    </table>
+
+    <h3>Resto de formularios</h3>
+    <table>
+      <tr><th>Formulario</th><th>Respuesta</th></tr>
+      <tr><td>Apple · Clasificación por edades</td><td>No a todo (violencia, contenido sexual, juego, etc.). En <i>Información médica o de tratamiento</i>: Infrecuente/leve. Sin contenido generado por usuarios visible para otros, sin navegador web abierto.</td></tr>
+      <tr><td>Play · Clasificación de contenido (IARC)</td><td>Categoría: <i>Referencia, noticias o educación</i> u <i>Otra</i>. No a violencia, sexo, lenguaje, drogas, juego. ¿Los usuarios interactúan entre sí? No. ¿Comparte la ubicación? No. ¿Compras digitales? No.</td></tr>
+      <tr><td>Play · Público objetivo</td><td>18 años o más (evita los requisitos de apps para niños)</td></tr>
+      <tr><td>Play · Anuncios</td><td>No contiene anuncios</td></tr>
+      <tr><td>Play · Acceso a la aplicación</td><td>Algunas funciones requieren iniciar sesión → añade un usuario de prueba (ver <a href="#comunes">Datos comunes</a>)</td></tr>
+      <tr><td>Play · Declaración de aplicaciones de salud</td><td>Marca las funciones de seguimiento de síntomas / gestión de enfermedades y de comunicación con profesionales sanitarios. No es un dispositivo médico ni hace diagnósticos.</td></tr>
+      <tr><td>Play · Aplicaciones gubernamentales / financieras / COVID</td><td>No</td></tr>
+    </table>
+  </section>
+
+  <!-- ═══════════════════════════ MA ═══════════════════════════ -->
+  <section class="app" id="ma">
+    <nav><a href="#ma-apple">App Store</a><a href="#ma-play">Google Play</a><a href="#ma-forms">Formularios</a><a href="#comunes">Datos comunes</a><a href="#avisos">Avisos</a></nav>
+
+    <h2 id="ma-apple">1. App Store — Fluxia Pro</h2>
+    <p class="muted">App Store Connect → tu app → Información de la app / Versión 0.90.0</p>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Nombre</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia Pro: seguimiento médico</p></div>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Subtítulo</b><span class="opt">Recomendado</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Tus pacientes, a simple vista</p></div>
+
+    <div class="field" data-max="170"><div class="field-head"><b>Texto promocional</b><span class="opt">Opcional</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Sigue la evolución de tus pacientes entre consultas. Sus registros llegan en tiempo real y el semáforo te indica quién necesita atención.</p></div>
+
+    <div class="field" data-max="4000"><div class="field-head"><b>Descripción</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia Pro es la app para profesionales sanitarios que hacen seguimiento digestivo y urológico de sus pacientes. Tus pacientes registran en la app gratuita Fluxia y tú ves su evolución en tiempo real, sin esperar a la próxima consulta.
+
+TODOS TUS PACIENTES, A SIMPLE VISTA
+• Un semáforo verde, ámbar y rojo según los días que lleva cada paciente sin registrar.
+• Umbrales configurables, en general y para cada paciente.
+• Busca y filtra por estado o por etiquetas.
+
+LA EVOLUCIÓN DE CADA PACIENTE
+• Calendario y lista de registros: deposiciones con escala de Bristol, micciones y comidas con foto.
+• Estadísticas del periodo y bitácora clínica con tus notas.
+
+UN SEGUIMIENTO A MEDIDA
+• Decide qué registra cada paciente: deposiciones, micciones, comidas o una combinación.
+• Oculta los campos que no necesitas y define la pauta de comidas y sus recordatorios.
+• Recordatorios automáticos al paciente cuando deja de registrar.
+
+INVITA EN UN MOMENTO
+• Envía la invitación por email. Tu paciente descarga Fluxia gratis y queda vinculado contigo.
+• Tu imagen o la de tu centro aparece en la app del paciente.
+
+SEGURO Y CONFORME AL RGPD
+• Datos cifrados en servidores europeos.
+• Contrato de encargo del tratamiento para cada centro.
+• Cada profesional solo accede a los pacientes que ha invitado.
+
+Fluxia Pro también está disponible en el navegador, en fluxia-health.com. Para usar Fluxia Pro necesitas una cuenta de profesional.
+
+Fluxia es una herramienta de registro y seguimiento: no realiza diagnósticos. La valoración clínica y las decisiones corresponden siempre al profesional.</p></div>
+
+    <div class="field" data-max="100"><div class="field-head"><b>Palabras clave</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">pacientes,clínica,consulta,digestivo,urología,bristol,semáforo,enfermería,adherencia,gastro,panel</p></div>
+
+    <table>
+      <tr><th>Campo</th><th>Valor</th><th></th></tr>
+      <tr><td>Categoría principal</td><td>Medicina</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Categoría secundaria</td><td>Productividad</td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>URL de soporte</td><td><code>https://fluxia-health.com/support</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>URL de marketing</td><td><code>https://fluxia-health.com</code></td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>URL de la política de privacidad</td><td><code>https://fluxia-health.com/privacy</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Copyright</td><td>2026 Think Things Studio Barcelona S.L.</td><td><span class="req">Obligatorio</span></td></tr>
+    </table>
+    <p class="muted">La descripción no menciona precios ni dónde contratar: Apple no permite remitir a pagos fuera de la App Store (norma 3.1.1). Por eso solo dice que hace falta una cuenta de profesional.</p>
+
+    <h2 id="ma-play">2. Google Play — Fluxia Pro</h2>
+
+    <div class="field" data-max="30"><div class="field-head"><b>Nombre de la aplicación</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia Pro: seguimiento médico</p></div>
+
+    <div class="field" data-max="80"><div class="field-head"><b>Descripción breve</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Sigue a tus pacientes entre consultas: registros en tiempo real y semáforo.</p></div>
+
+    <div class="field" data-max="4000"><div class="field-head"><b>Descripción completa</b><span class="req">Obligatorio</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia Pro es la app para profesionales sanitarios que hacen seguimiento digestivo y urológico de sus pacientes. Tus pacientes registran en la app gratuita Fluxia y tú ves su evolución en tiempo real, sin esperar a la próxima consulta.
+
+★ Todos tus pacientes, a simple vista
+• Un semáforo verde, ámbar y rojo según los días que lleva cada paciente sin registrar.
+• Umbrales configurables, en general y para cada paciente.
+• Busca y filtra por estado o por etiquetas.
+
+★ La evolución de cada paciente
+• Calendario y lista de registros: deposiciones con escala de Bristol, micciones y comidas con foto.
+• Estadísticas del periodo y bitácora clínica con tus notas.
+
+★ Un seguimiento a medida
+• Decide qué registra cada paciente: deposiciones, micciones, comidas o una combinación.
+• Oculta los campos que no necesitas y define la pauta de comidas y sus recordatorios.
+• Recordatorios automáticos al paciente cuando deja de registrar.
+
+★ Invita en un momento
+• Envía la invitación por email. Tu paciente descarga Fluxia gratis y queda vinculado contigo.
+• Tu imagen o la de tu centro aparece en la app del paciente.
+
+★ Seguro y conforme al RGPD
+• Datos cifrados en servidores europeos.
+• Contrato de encargo del tratamiento para cada centro.
+• Cada profesional solo accede a los pacientes que ha invitado.
+
+Fluxia Pro también está disponible en el navegador, en fluxia-health.com. Para usar Fluxia Pro necesitas una cuenta de profesional.
+
+Fluxia es una herramienta de registro y seguimiento: no realiza diagnósticos. La valoración clínica y las decisiones corresponden siempre al profesional.</p></div>
+
+    <table>
+      <tr><th>Campo</th><th>Valor</th><th></th></tr>
+      <tr><td>Categoría</td><td>Aplicación · Medicina</td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Correo electrónico</td><td><code>hola@fluxia-health.com</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Sitio web</td><td><code>https://fluxia-health.com</code></td><td><span class="opt">Opcional</span></td></tr>
+      <tr><td>Política de privacidad</td><td><code>https://fluxia-health.com/privacy</code></td><td><span class="req">Obligatorio</span></td></tr>
+      <tr><td>Icono, gráfico de funciones y capturas</td><td><code>store-assets/salida/ma/</code> (cuando estén las capturas)</td><td><span class="req">Obligatorio</span></td></tr>
+    </table>
+
+    <h2 id="ma-forms">3. Formularios de privacidad y contenido — Fluxia Pro</h2>
+
+    <h3>App Store → Privacidad de la app</h3>
+    <p>Recopila datos: <b>Sí</b>. Tracking: <b>No</b>. Todos <b>vinculados a la identidad</b>, finalidad <b>Funcionalidad de la app</b>.</p>
+    <table>
+      <tr><th>Tipo de dato (Apple)</th><th>Qué es en Fluxia Pro</th></tr>
+      <tr><td>Información de contacto → Nombre, Correo electrónico</td><td>Datos de la cuenta del profesional</td></tr>
+      <tr><td>Salud y forma física → Salud</td><td>Datos clínicos de los pacientes y notas de la bitácora</td></tr>
+      <tr><td>Contenido del usuario → Fotos o vídeos</td><td>Imagen del centro que se sube desde la galería</td></tr>
+      <tr><td>Contenido del usuario → Otro contenido del usuario</td><td>Centro, especialidad, etiquetas y notas</td></tr>
+      <tr><td>Identificadores → ID de usuario</td><td>Identificador de la cuenta</td></tr>
+    </table>
+
+    <h3>Google Play → Seguridad de los datos</h3>
+    <table>
+      <tr><th>Pregunta</th><th>Respuesta</th></tr>
+      <tr><td>¿Recoge o comparte datos?</td><td>Recoge. No comparte con terceros.</td></tr>
+      <tr><td>¿Cifrados en tránsito?</td><td>Sí</td></tr>
+      <tr><td>¿Se pueden eliminar?</td><td>Sí, desde la app (Configuración → Eliminar mi cuenta). URL: <code>https://fluxia-health.com/support</code></td></tr>
+      <tr><td>Tipos</td><td>Información personal (nombre, email, ID de usuario), Información de salud, Fotos, Otro contenido generado por el usuario</td></tr>
+      <tr><td>Finalidad</td><td>Funcionalidad de la aplicación · Gestión de la cuenta</td></tr>
+    </table>
+
+    <h3>Resto de formularios</h3>
+    <table>
+      <tr><th>Formulario</th><th>Respuesta</th></tr>
+      <tr><td>Apple · Clasificación por edades</td><td>Igual que Fluxia (Información médica: Infrecuente/leve; el resto, No)</td></tr>
+      <tr><td>Play · Clasificación de contenido</td><td>Igual que Fluxia</td></tr>
+      <tr><td>Play · Público objetivo</td><td>18 años o más</td></tr>
+      <tr><td>Play · Anuncios</td><td>No contiene anuncios</td></tr>
+      <tr><td>Play · Acceso a la aplicación</td><td>Requiere iniciar sesión → usuario profesional de prueba (ver <a href="#comunes">Datos comunes</a>)</td></tr>
+      <tr><td>Play · Declaración de aplicaciones de salud</td><td>Marca las funciones de gestión clínica / seguimiento remoto de pacientes por profesionales. No es un dispositivo médico.</td></tr>
+    </table>
+  </section>
+
+  <!-- ═══════════════════════════ Común ═══════════════════════════ -->
+  <h2 id="comunes">4. Datos comunes y cuentas de prueba</h2>
+  <table>
+    <tr><th>Campo</th><th>Valor</th></tr>
+    <tr><td>Desarrollador / titular</td><td>Think Things Studio Barcelona S.L. · NIF ESB66920810</td></tr>
+    <tr><td>Contacto para la revisión de Apple</td><td>Nombre, teléfono y <code>hola@fluxia-health.com</code> <span class="req">Obligatorio</span></td></tr>
+    <tr><td>Idioma principal</td><td>Español (España)</td></tr>
+    <tr><td>Precio</td><td>Gratis (las dos apps). Sin compras dentro de la app.</td></tr>
+    <tr><td>Disponibilidad</td><td>España, o los países donde quieras ofrecerla</td></tr>
+  </table>
+
+  <h3>Cuentas de demostración <span class="req">Obligatorio</span></h3>
+  <p>Las dos apps piden iniciar sesión, así que Apple (<i>Información para la revisión de la app → Se requiere iniciar sesión</i>) y Google (<i>Acceso a la aplicación</i>) necesitan un usuario y contraseña que funcionen. Prepara:</p>
+  <ul>
+    <li><b>Paciente de prueba</b> (para Fluxia), con unos días de registros de ejemplo y vinculado al profesional de prueba.</li>
+    <li><b>Profesional de prueba</b> (para Fluxia Pro), con un plan que <b>no caduque</b> durante la revisión (si la prueba gratuita ha caducado, el revisor verá la pantalla de prueba agotada y rechazará la app) y con el paciente anterior vinculado, para que se vea el panel con datos.</li>
+  </ul>
+  <div class="field"><div class="field-head"><b>Notas para el revisor (Apple) / instrucciones (Google)</b><span class="opt">Recomendado</span><span class="count"></span><button class="copy">Copiar</button></div><p class="value">Fluxia (pacientes) y Fluxia Pro (profesionales sanitarios) funcionan juntas: el profesional invita al paciente desde Fluxia Pro y ve en tiempo real lo que el paciente registra en Fluxia.
+
+Cuenta de paciente: [email] / [contraseña]
+Cuenta de profesional: [email] / [contraseña]
+Las dos cuentas están vinculadas y la de paciente tiene registros de ejemplo.
+
+La cuenta se puede eliminar desde la app: Cuenta → Eliminar mi cuenta (Fluxia) y Configuración → Eliminar mi cuenta (Fluxia Pro). Fluxia no realiza diagnósticos: es una herramienta de registro y seguimiento.</p></div>
+
+  <h2 id="avisos">5. Avisos antes de enviar a revisión</h2>
+  <div class="note"><b>Inicio de sesión con Google sin "Iniciar sesión con Apple" (norma 4.8 de Apple).</b> Las dos apps ofrecen "Continuar con Google". Apple exige que, si una app usa un inicio de sesión de terceros, ofrezca también una opción equivalente que proteja la privacidad, normalmente <b>Iniciar sesión con Apple</b>. Tener además email y contraseña propios no siempre basta. Es un motivo de rechazo frecuente: o se añade "Iniciar sesión con Apple" en iOS, o se oculta el botón de Google en la versión de iOS.</div>
+  <div class="note"><b>Cuenta de profesional en Fluxia Pro (norma 3.1).</b> La app ya no muestra precios ni enlaces de pago, bien. Apple puede preguntar cómo se consigue una cuenta: la respuesta es que es un servicio para profesionales que se contrata fuera de la app (como otras herramientas profesionales), y que en la app no se vende nada. Que la cuenta de prueba tenga un plan activo evita que el revisor vea la pantalla de prueba agotada.</div>
+  <div class="note"><b>Comprueba las URLs</b> antes de pegarlas: <code>/support</code>, <code>/privacy</code> y <code>/app/</code> deben abrir sin iniciar sesión, y la política de privacidad debe mencionar las apps y los datos de salud.</div>
+</main>
+<script>
+  document.querySelectorAll('.field').forEach((f) => {
+    const value = f.querySelector('.value');
+    const count = f.querySelector('.count');
+    const max = Number(f.dataset.max || 0);
+    const n = [...value.textContent].length;
+    count.textContent = max ? `${n} / ${max}` : `${n} caracteres`;
+    if (max && n > max) count.classList.add('over');
+    f.querySelector('.copy').addEventListener('click', async (e) => {
+      try { await navigator.clipboard.writeText(value.textContent); e.target.textContent = 'Copiado ✓'; }
+      catch { e.target.textContent = 'Selecciona y copia'; }
+      setTimeout(() => (e.target.textContent = 'Copiar'), 1500);
+    });
+  });
+  const tabs = document.querySelectorAll('.tabs button');
+  tabs.forEach((t) => t.addEventListener('click', () => {
+    tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+    document.querySelectorAll('.app').forEach((a) => a.classList.toggle('on', a.id === t.dataset.app));
+  }));
+</script>
+</body>
+</html>
