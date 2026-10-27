@@ -1,0 +1,27 @@
+{
+  "pa": {
+    "name": "Fluxia",
+    "tagline": "Tu diario digestivo, conectado con tu profesional",
+    "icon": "../../mobile/assets/icon.png",
+    "iconBackground": "#ffffff",
+    "slides": [
+      { "file": "01.png", "title": "Registra en segundos", "subtitle": "Con la escala de Bristol, y tu profesional lo ve al momento" },
+      { "file": "02.png", "title": "También tus micciones", "subtitle": "Tipo, cantidad, color y síntomas en una sola pantalla" },
+      { "file": "03.png", "title": "Y tus comidas, con foto", "subtitle": "Cuando tu profesional te pida seguir lo que comes" },
+      { "file": "04.png", "title": "Tu historial, de un vistazo", "subtitle": "Calendario y estadísticas de todos tus registros" }
+    ]
+  },
+  "ma": {
+    "name": "Fluxia Pro",
+    "tagline": "Todos tus pacientes. Lo importante, a simple vista.",
+    "icon": "../../mobile-medics/assets/icon.png",
+    "iconBackground": null,
+    "slides": [
+      { "file": "01.png", "title": "Todos tus pacientes, a simple vista", "subtitle": "El semáforo te avisa de quién necesita atención" },
+      { "file": "02.png", "title": "La evolución de cada paciente", "subtitle": "Sus registros llegan en tiempo real, entre consulta y consulta" },
+      { "file": "03.png", "title": "Un seguimiento a medida", "subtitle": "Configura qué registra cada paciente y sus umbrales de alerta" },
+      { "file": "04.png", "title": "Invita en un momento", "subtitle": "Tu paciente descarga Fluxia gratis y queda vinculado contigo" },
+      { "file": "05.png", "title": "Recordatorios automáticos", "subtitle": "Fluxia avisa al paciente cuando deja de registrar" }
+    ]
+  }
+}

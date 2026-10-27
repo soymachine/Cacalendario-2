@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Builds de las apps</title>
+<style>
+  :root {
+    --bg: #EEF4FB; --surface: #fff; --text: #1a2633; --muted: #5b6b7c; --border: #d6e2ee;
+    --brand: #274867; --accent: #3C7DB8; --code-bg: #1F3A53; --code-text: #e8f1fa;
+    --warn-bg: #fff6e0; --warn-border: #e5b84a; --ok-bg: #e9f6ee; --ok-border: #5aa978;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1a25; --surface: #172636; --text: #e6eef6; --muted: #9db0c3; --border: #26394d;
+      --brand: #90B7DD; --accent: #7fb3e3; --code-bg: #0b141d; --code-text: #e8f1fa;
+      --warn-bg: #3a2f14; --warn-border: #a8842f; --ok-bg: #17321f; --ok-border: #3f8a5a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 Inter, system-ui, -apple-system, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 4px; color: var(--brand); }
+  h2 { font-size: 21px; margin: 40px 0 12px; color: var(--brand); padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p, li { margin: 6px 0; }
+  .lead { color: var(--muted); margin-top: 0; }
+  nav { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin: 20px 0; }
+  nav ol { margin: 0; padding-left: 20px; }
+  nav a { color: var(--accent); text-decoration: none; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 12px; overflow: hidden; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--brand); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { th { color: #0f1a25; } }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  pre { background: var(--code-bg); color: var(--code-text); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 10px 0; }
+  pre code { background: none; border: none; padding: 0; color: inherit; }
+  .c { color: #8fb3d4; }
+  .note, .ok { border-left: 4px solid var(--warn-border); background: var(--warn-bg); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .ok { border-color: var(--ok-border); background: var(--ok-bg); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: #fff; vertical-align: middle; }
+  ol.steps > li { margin: 10px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Builds de las apps de Fluxia</h1>
+  <p class="lead">Cómo generar builds de prueba interna, TestFlight (iOS) y Google Play para <b>PA</b> (Fluxia, pacientes) y <b>MA</b> (Fluxia Pro, profesionales). Todo se hace con EAS (Expo Application Services) desde tu Mac.</p>
+
+  <nav>
+    <ol>
+      <li><a href="#apps">Las dos apps</a></li>
+      <li><a href="#setup">Preparación (una sola vez)</a></li>
+      <li><a href="#checklist">Antes de cada build</a></li>
+      <li><a href="#interno">Prueba interna (APK y iOS ad hoc)</a></li>
+      <li><a href="#testflight">TestFlight</a></li>
+      <li><a href="#play">Google Play</a></li>
+      <li><a href="#versiones">Versiones y números de build</a></li>
+      <li><a href="#problemas">Problemas frecuentes</a></li>
+      <li><a href="#resumen">Resumen de comandos</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="apps">1. Las dos apps</h2>
+  <table>
+    <tr><th></th><th>PA — Paciente</th><th>MA — Profesional</th></tr>
+    <tr><td>Carpeta</td><td><code>mobile/</code></td><td><code>mobile-medics/</code></td></tr>
+    <tr><td>Nombre</td><td>Fluxia</td><td>Fluxia Pro</td></tr>
+    <tr><td>Bundle iOS / paquete Android</td><td><code>com.fluxiahealth.app</code></td><td><code>com.fluxiahealth.medics</code></td></tr>
+    <tr><td>Proyecto EAS (slug)</td><td><code>fluxia</code></td><td><code>fluxia-medics</code></td></tr>
+    <tr><td>Notificaciones push</td><td>Sí (usa <code>google-services.json</code> en Android)</td><td>No</td></tr>
+  </table>
+  <p>Las dos tienen los mismos perfiles en <code>eas.json</code>, así que <b>los comandos son idénticos</b>: solo cambia la carpeta desde la que los lanzas.</p>
+  <table>
+    <tr><th>Perfil</th><th>Para qué</th><th>Resultado</th></tr>
+    <tr><td><code>preview</code></td><td>Prueba interna rápida, sin pasar por las tiendas</td><td>Android: APK instalable · iOS: build ad hoc para iPhones registrados</td></tr>
+    <tr><td><code>production</code></td><td>TestFlight y Google Play</td><td>Android: <code>.aab</code> · iOS: <code>.ipa</code> para App Store Connect. Sube solo el número de build.</td></tr>
+    <tr><td><code>development</code></td><td>Desarrollo con dev client (no para testers)</td><td>Ver <code>mobile/README.md</code></td></tr>
+  </table>
+
+  <h2 id="setup">2. Preparación (una sola vez)</h2>
+  <ol class="steps">
+    <li><b>Cuentas</b>: cuenta de Expo con acceso a los dos proyectos, <b>Apple Developer Program</b> (para cualquier build de iOS en dispositivo) y <b>Google Play Console</b> con las apps <code>com.fluxiahealth.app</code> y <code>com.fluxiahealth.medics</code> creadas.</li>
+    <li><b>EAS CLI</b> instalado y con sesión iniciada:
+<pre><code>npm install -g eas-cli
+eas login
+eas whoami          <span class="c"># comprueba con qué cuenta estás</span></code></pre></li>
+    <li><b>Credenciales</b>: deja que EAS gestione certificados de iOS y keystore de Android. La primera vez que hagas un build te preguntará; acepta <i>"Let EAS handle it"</i>. Para revisarlas: <code>eas credentials</code>.</li>
+    <li><b>Clave de Google Play para <code>eas submit</code></b> (opcional, para subir a Play desde la terminal): en Google Cloud <b>activa la API "Google Play Android Developer API"</b> en el proyecto de Google Cloud, crea una <i>service account</i>, descarga su clave JSON y dale acceso en Play Console → <i>Usuarios y permisos</i> (permiso de publicar en tracks de prueba). Guárdala <b>fuera del repo</b> (p. ej. <code>~/keys/fluxia-play.json</code>); nunca la subas a git.</li>
+  </ol>
+
+  <h2 id="checklist">3. Antes de cada build</h2>
+  <ol class="steps">
+    <li>Trae lo último de <code>main</code>:
+<pre><code>git checkout main &amp;&amp; git pull</code></pre></li>
+    <li>Instala dependencias y comprueba que compila (desde <code>mobile/</code> o <code>mobile-medics/</code>):
+<pre><code>cd mobile               <span class="c"># o: cd mobile-medics</span>
+npm ci
+npx tsc --noEmit
+npx expo export --platform ios</code></pre></li>
+    <li><b>Módulos nativos alineados</b>: todos los <code>expo-*</code> deben ir en la misma revisión del SDK. Si alguien ha añadido uno nuevo, sube primero <code>expo</code> a la última revisión y alinea el resto, o la app se cerrará al abrirse:
+<pre><code>npm install expo@~57.0.x
+EXPO_OFFLINE=1 npx expo install --fix</code></pre></li>
+    <li><b>Backend primero</b>: si la versión necesita migraciones de Supabase o Edge Functions nuevas, aplícalas y despliégalas <i>antes</i> de distribuir la app.</li>
+    <li><b>Versión</b>: si vas a publicar una versión nueva en las tiendas, sube <code>"version"</code> en <code>app.json</code> (ver <a href="#versiones">sección 7</a>) y haz commit.</li>
+  </ol>
+
+  <h2 id="interno">4. Prueba interna (sin pasar por las tiendas)</h2>
+
+  <h3><span class="tag">Android</span> APK instalable</h3>
+<pre><code>eas build --platform android --profile preview</code></pre>
+  <p>Al terminar, EAS muestra un enlace y un QR. Ábrelo en el móvil Android, descarga el APK e instálalo (Android pedirá permitir "instalar apps de orígenes desconocidos" para el navegador). Puedes compartir ese mismo enlace con los testers.</p>
+
+  <h3><span class="tag">iOS</span> Build ad hoc para iPhones concretos</h3>
+  <ol class="steps">
+    <li>Registra cada iPhone que vaya a instalarla (solo la primera vez por dispositivo):
+<pre><code>eas device:create</code></pre>
+      Genera un enlace o QR: se abre en el iPhone y se instala un perfil. Para ver los registrados: <code>eas device:list</code>.</li>
+    <li>Lanza el build:
+<pre><code>eas build --platform ios --profile preview</code></pre></li>
+    <li>Abre el enlace del build en el iPhone e instala.</li>
+  </ol>
+  <div class="note">El build solo se puede instalar en los iPhones registrados <b>antes</b> de lanzarlo. Si añades un dispositivo después, tienes que volver a hacer el build. Para más de 2-3 personas suele ser más cómodo usar <a href="#testflight">TestFlight</a> con testers internos.</div>
+
+  <h2 id="testflight">5. TestFlight (iOS)</h2>
+  <ol class="steps">
+    <li>Build de producción (EAS sube solo el número de build):
+<pre><code>eas build --platform ios --profile production</code></pre></li>
+    <li>Envíalo a App Store Connect:
+<pre><code>eas submit --platform ios --latest</code></pre>
+      La primera vez pedirá iniciar sesión con tu Apple ID y elegir la app de App Store Connect. Puedes hacer los dos pasos de una vez con:
+<pre><code>eas build --platform ios --profile production --auto-submit</code></pre></li>
+    <li>En <b>App Store Connect → tu app → TestFlight</b>, espera a que el build pase de "Procesando" a disponible (normalmente 10-30 min). La pregunta de cifrado ya está respondida en <code>app.json</code> (<code>ITSAppUsesNonExemptEncryption: false</code>), así que no debería pedir nada.</li>
+    <li><b>Testers internos</b> (miembros de tu equipo de App Store Connect, hasta 100): añádelos al grupo interno y reciben el build al momento, sin revisión.<br>
+      <b>Testers externos</b> (cualquier email, hasta 10.000): crea un grupo externo y añade el build; el primer build de cada versión pasa una revisión beta de Apple (normalmente menos de 1 día).</li>
+    <li>Los testers instalan la app <b>TestFlight</b> desde la App Store y aceptan la invitación.</li>
+  </ol>
+  <div class="ok">Para publicar en la App Store: en App Store Connect crea la versión (mismo número que <code>"version"</code> de <code>app.json</code>), selecciona el build ya probado en TestFlight y envíalo a revisión.</div>
+
+  <h2 id="play">6. Google Play</h2>
+  <ol class="steps">
+    <li>Build de producción (genera un <code>.aab</code>):
+<pre><code>eas build --platform android --profile production</code></pre></li>
+    <li><b>La primera vez que se sube cada app</b>, Google exige hacerlo a mano: descarga el <code>.aab</code> desde el enlace del build y súbelo en <b>Play Console → tu app → Pruebas → Prueba interna → Crear versión</b>.</li>
+    <li><b>Las siguientes veces</b> puedes subirlo desde la terminal con la clave de la service account:
+<pre><code>eas submit --platform android --latest</code></pre>
+      Para no tener que indicar la clave y el track cada vez, puedes añadir esto a <code>eas.json</code> (en <code>submit.production</code>), con la ruta a tu clave fuera del repo:
+<pre><code>"submit": {
+  "production": {
+    "android": {
+      "serviceAccountKeyPath": "../../keys/fluxia-play.json",
+      "track": "internal"
+    }
+  }
+}</code></pre></li>
+    <li>En Play Console, en <b>Prueba interna → Testers</b>, añade la lista de emails y comparte el enlace de participación. Los testers instalan desde Google Play; la prueba interna está disponible en minutos y no pasa revisión.</li>
+    <li>Para ir a producción: <b>Promocionar versión</b> de prueba interna a prueba cerrada o directamente a <b>Producción</b>, y enviar a revisión.</li>
+  </ol>
+  <div class="note">Si es una cuenta de desarrollador personal creada después de noviembre de 2023, Google exige una <b>prueba cerrada con al menos 12 testers durante 14 días</b> antes de poder publicar en producción. La prueba interna no cuenta para este requisito.</div>
+
+  <h2 id="versiones">7. Versiones y números de build</h2>
+  <table>
+    <tr><th>Qué</th><th>Dónde</th><th>Quién lo cambia</th></tr>
+    <tr><td>Versión visible (p. ej. <code>0.90.0</code>)</td><td><code>"version"</code> en <code>app.json</code></td><td>Tú, a mano, cuando publicas una versión nueva en las tiendas</td></tr>
+    <tr><td>Número de build (iOS <code>buildNumber</code>, Android <code>versionCode</code>)</td><td>En los servidores de EAS (<code>appVersionSource: "remote"</code>)</td><td>EAS, automáticamente en cada build <code>production</code> (<code>autoIncrement</code>)</td></tr>
+  </table>
+  <p>Varios builds de la misma versión (p. ej. 0.90.0 build 7, 8, 9) son normales mientras pruebas en TestFlight o en la prueba interna. Ver o corregir el número de build:</p>
+<pre><code>eas build:version:get
+eas build:version:set     <span class="c"># si alguna vez se desincroniza con la tienda</span></code></pre>
+
+  <h2 id="problemas">8. Problemas frecuentes</h2>
+  <table>
+    <tr><th>Síntoma</th><th>Causa y solución</th></tr>
+    <tr><td>La app se cierra nada más abrirse (en el log: <code>dyld … Symbol not found … ExpoModulesCore</code>)</td><td>Módulos <code>expo-*</code> de revisiones distintas del SDK. Alinéalos (paso 3 de <a href="#checklist">sección 3</a>) y vuelve a hacer el build.</td></tr>
+    <tr><td>Play Console rechaza el <code>.aab</code> por "código de versión ya usado"</td><td>El número de build de EAS va por detrás del de la tienda. Súbelo con <code>eas build:version:set</code> por encima del último de Play.</td></tr>
+    <tr><td><code>eas submit -p android</code> falla en la primera subida</td><td>Google no deja usar la API hasta que hay al menos una subida manual. Sube el primer <code>.aab</code> a mano (<a href="#play">sección 6</a>).</td></tr>
+    <tr><td><code>eas submit -p android</code> falla con <code>HTTP 403: Google Play Android Developer API has not been used in project … or it is disabled</code></td><td>La API no está activada en el proyecto de Google Cloud de la service account. Abre el enlace del error (o Google Cloud → APIs y servicios → Biblioteca → "Google Play Android Developer API"), pulsa <b>Habilitar</b>, espera unos minutos y repite <code>eas submit -p android --latest</code>. No hace falta volver a hacer el build.</td></tr>
+    <tr><td><code>eas submit -p android</code> falla con <code>403 The caller does not have permission</code></td><td>La service account no tiene acceso a la app en Play Console. Play Console → Usuarios y permisos → invita el email de la service account con permiso para publicar en tracks de prueba (para esta app o todas). Puede tardar hasta 24 h en aplicarse.</td></tr>
+    <tr><td>Un iPhone no puede instalar el build <code>preview</code></td><td>No estaba registrado cuando se hizo el build. <code>eas device:create</code> y repite el build.</td></tr>
+    <tr><td>No llegan notificaciones push en PA</td><td>Prueba con un build <code>preview</code> o <code>production</code> (en Expo Go no funcionan). En Android hace falta <code>google-services.json</code> (ya está en <code>mobile/</code>) y las credenciales FCM en <code>eas credentials</code>. Revisa la pestaña <b>Notificaciones</b> de <code>/admin</code>.</td></tr>
+  </table>
+
+  <h2 id="resumen">9. Resumen de comandos</h2>
+  <p class="muted">Desde <code>mobile/</code> (PA) o <code>mobile-medics/</code> (MA).</p>
+  <table>
+    <tr><th>Objetivo</th><th>Comando</th></tr>
+    <tr><td>APK de prueba (Android)</td><td><code>eas build -p android --profile preview</code></td></tr>
+    <tr><td>Registrar un iPhone</td><td><code>eas device:create</code></td></tr>
+    <tr><td>Build ad hoc (iOS)</td><td><code>eas build -p ios --profile preview</code></td></tr>
+    <tr><td>TestFlight</td><td><code>eas build -p ios --profile production --auto-submit</code></td></tr>
+    <tr><td>Build para Google Play (<code>.aab</code>)</td><td><code>eas build -p android --profile production</code></td></tr>
+    <tr><td>Subir el último <code>.aab</code> a Play</td><td><code>eas submit -p android --latest</code></td></tr>
+    <tr><td>Las dos plataformas a la vez</td><td><code>eas build -p all --profile production</code></td></tr>
+    <tr><td>Estado de los builds</td><td><code>eas build:list</code> o <a href="https://expo.dev">expo.dev</a></td></tr>
+  </table>
+</main>
+</body>
+</html>
