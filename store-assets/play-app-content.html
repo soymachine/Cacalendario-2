@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formularios de Google Play</title>
+<style>
+  :root {
+    --bg: #EEF4FB; --surface: #fff; --text: #1a2633; --muted: #5b6b7c; --border: #d6e2ee;
+    --brand: #274867; --accent: #3C7DB8; --done: #2f855a; --done-bg: #e9f6ee;
+    --warn-bg: #fff6e0; --warn-border: #e5b84a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1a25; --surface: #172636; --text: #e6eef6; --muted: #9db0c3; --border: #26394d;
+      --brand: #90B7DD; --accent: #7fb3e3; --done: #68d391; --done-bg: #17321f;
+      --warn-bg: #3a2f14; --warn-border: #a8842f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 Inter, system-ui, -apple-system, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 4px; color: var(--brand); }
+  .lead, .muted { color: var(--muted); }
+  .muted { font-size: 13px; }
+  .progress { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; display: flex; align-items: center; gap: 12px; }
+  .bar { flex: 1; height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 0; background: var(--done); transition: width .2s; }
+  .progress b { font-size: 13px; min-width: 70px; text-align: right; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin: 14px 0; overflow: hidden; }
+  .step.done { border-color: var(--done); }
+  .step > header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .step.done > header { background: var(--done-bg); }
+  .step input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--done); flex: none; cursor: pointer; }
+  .step h2 { font-size: 17px; margin: 0; flex: 1; }
+  .step h2 small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+  .step .body { padding: 4px 16px 16px; border-top: 1px solid var(--border); }
+  .step.done .body { display: none; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  ol, ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  .ui { font-weight: 600; }
+  .ma { display: inline-block; font-size: 11px; font-weight: 700; padding: 0 7px; border-radius: 999px; background: var(--accent); color: #fff; margin-left: 4px; vertical-align: 1px; }
+  .note { border-left: 4px solid var(--warn-border); background: var(--warn-bg); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 4px; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 16px; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+  @media (prefers-color-scheme: dark) { .tabs button[aria-selected="true"] { color: #0f1a25; } }
+  .only-pa, .only-ma { display: none; }
+  body.app-pa .only-pa, body.app-ma .only-ma { display: revert; }
+</style>
+</head>
+<body class="app-pa">
+<main>
+  <h1>Formularios de Google Play</h1>
+  <p class="lead">Lo que pide Play Console en <span class="ui">Configurar tu aplicación</span> antes de dejarte publicar: los formularios de <i>App content</i>, la categoría y la ficha. Marca cada paso al terminarlo; se recuerda en este navegador. Las respuestas sirven para las dos apps, con las diferencias marcadas.</p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-app="pa">Fluxia · com.fluxiahealth.app</button>
+    <button role="tab" aria-selected="false" data-app="ma">Fluxia Pro · com.fluxiahealth.medics</button>
+  </div>
+  <p class="muted">Los nombres de los botones van en inglés, como aparecen en Play Console. Si la consola está en español, el orden y las opciones son los mismos.</p>
+
+  <div class="progress"><div class="bar"><span id="bar"></span></div><b id="count"></b></div>
+
+  <div class="note"><b>Antes de empezar, ten preparado:</b> una cuenta de prueba con email y contraseña (no con Google) que funcione en la app: <span class="only-pa">un paciente con registros de ejemplo vinculado a un profesional</span><span class="only-ma">un profesional con plan activo que no caduque durante la revisión y con algún paciente vinculado</span>. La necesitas en el paso 2.</div>
+
+  <section class="step" data-id="privacy">
+    <header><input type="checkbox"><h2>1. Set privacy policy<small>Política de privacidad</small></h2></header>
+    <div class="body">
+      <ul><li><span class="ui">Privacy policy URL</span>: <code>https://fluxia-health.com/privacy</code></li></ul>
+    </div>
+  </section>
+
+  <section class="step" data-id="access">
+    <header><input type="checkbox"><h2>2. Sign in details<small>App access · acceso a la aplicación</small></h2></header>
+    <div class="body">
+      <ol>
+        <li>Marca <span class="ui">All or some functionality in my app is restricted</span>.</li>
+        <li>Pulsa <span class="ui">Add instructions</span> y rellena:
+          <table>
+            <tr><td><span class="ui">Name</span></td><td><span class="only-pa">Cuenta de paciente de prueba</span><span class="only-ma">Cuenta de profesional de prueba</span></td></tr>
+            <tr><td><span class="ui">Username / Password</span></td><td>Los de la cuenta de prueba</td></tr>
+            <tr><td><span class="ui">Any other information</span></td><td><span class="only-pa">Iniciar sesión con email y contraseña. La cuenta tiene registros de ejemplo y está vinculada a un profesional.</span><span class="only-ma">Iniciar sesión con email y contraseña. La cuenta tiene un plan activo y pacientes vinculados con registros de ejemplo.</span></td></tr>
+          </table>
+        </li>
+        <li>Indica que no hace falta nada más para entrar (sin códigos ni ubicación) y guarda.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="step" data-id="ads">
+    <header><input type="checkbox"><h2>3. Ads<small>Anuncios</small></h2></header>
+    <div class="body"><ul><li><span class="ui">No, my app does not contain ads</span></li></ul></div>
+  </section>
+
+  <section class="step" data-id="rating">
+    <header><input type="checkbox"><h2>4. Content rating<small>Clasificación de contenido (cuestionario IARC)</small></h2></header>
+    <div class="body">
+      <ol>
+        <li><span class="ui">Start questionnaire</span> → <span class="ui">Email</span>: <code>hola@fluxia-health.com</code></li>
+        <li><span class="ui">Category</span>: <span class="ui">All Other App Types</span></li>
+        <li>Responde:
+          <table>
+            <tr><th>Pregunta</th><th>Respuesta</th></tr>
+            <tr><td>Violence, Sexuality, Language, Controlled substances, Crude humor</td><td>No</td></tr>
+            <tr><td>Gambling / simulated gambling</td><td>No</td></tr>
+            <tr><td>Users can interact or exchange content</td><td><b>Yes</b> — <span class="only-pa">el paciente comparte registros y fotos con su profesional</span><span class="only-ma">el profesional ve los registros de sus pacientes y escribe notas</span>. Solo añade la etiqueta "Los usuarios interactúan"; no sube la edad.</td></tr>
+            <tr><td>Shares user's current physical location</td><td>No</td></tr>
+            <tr><td>Allows purchase of digital goods</td><td>No</td></tr>
+            <tr><td>Unrestricted internet / web browser</td><td>No</td></tr>
+          </table>
+        </li>
+        <li><span class="ui">Save</span> → <span class="ui">Submit</span>. Debería salir PEGI 3 / Para todos.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="step" data-id="audience">
+    <header><input type="checkbox"><h2>5. Target audience<small>Público objetivo</small></h2></header>
+    <div class="body">
+      <ul>
+        <li><span class="ui">Target age</span>: marca solo <span class="ui">18 and over</span>.</li>
+        <li><span class="ui">Could your app unintentionally appeal to children?</span>: No.</li>
+      </ul>
+      <p class="muted">Con 18+ la app no entra en la política de familias, que tiene muchos más requisitos.</p>
+    </div>
+  </section>
+
+  <section class="step" data-id="datasafety">
+    <header><input type="checkbox"><h2>6. Data safety<small>Seguridad de los datos</small></h2></header>
+    <div class="body">
+      <p><b>Data collection and security</b></p>
+      <table>
+        <tr><td>Does your app collect or share any of the required user data types?</td><td>Yes</td></tr>
+        <tr><td>Is all of the user data collected by your app encrypted in transit?</td><td>Yes</td></tr>
+        <tr><td>Which of the following methods of account creation does your app support?</td><td>Username and password · OAuth (Google)</td></tr>
+        <tr><td>Delete account URL</td><td><code>https://fluxia-health.com/eliminar-cuenta</code></td></tr>
+        <tr><td>Do you provide a way for users to request that some or all of their data is deleted, without requiring them to delete their account?</td><td>No</td></tr>
+      </table>
+      <p><b>Data types.</b> Marca solo estos. Para todos: <span class="ui">Collected</span> sí · <span class="ui">Shared</span> no · <span class="ui">Processed ephemerally</span> no.</p>
+      <table>
+        <tr><th>Categoría → tipo</th><th>Obligatorio / opcional</th><th>Finalidad</th></tr>
+        <tr><td>Personal info → <b>Name</b></td><td><span class="only-pa">Opcional</span><span class="only-ma">Obligatorio</span></td><td>App functionality</td></tr>
+        <tr><td>Personal info → <b>Email address</b></td><td>Obligatorio</td><td>App functionality · Account management</td></tr>
+        <tr><td>Personal info → <b>User IDs</b></td><td>Obligatorio</td><td>App functionality · Account management</td></tr>
+        <tr><td>Health and fitness → <b>Health info</b></td><td>Obligatorio</td><td>App functionality</td></tr>
+        <tr><td>Photos and videos → <b>Photos</b></td><td>Opcional</td><td>App functionality <span class="only-pa">(fotos de comidas)</span><span class="only-ma">(imagen del centro)</span></td></tr>
+        <tr><td>App activity → <b>Other user-generated content</b></td><td>Opcional</td><td>App functionality <span class="only-pa">(notas y sugerencias)</span><span class="only-ma">(notas clínicas, etiquetas)</span></td></tr>
+        <tr class="only-pa"><td>Device or other IDs</td><td>Opcional</td><td>App functionality (token de notificaciones)</td></tr>
+      </table>
+      <p class="muted">Supabase no cuenta como "compartir": es un proveedor que trata los datos por cuenta vuestra. Al terminar, revisa la vista previa y pulsa <span class="ui">Submit</span>.</p>
+    </div>
+  </section>
+
+  <section class="step" data-id="gov">
+    <header><input type="checkbox"><h2>7. Government apps<small>Aplicaciones gubernamentales</small></h2></header>
+    <div class="body"><ul><li>No</li></ul></div>
+  </section>
+
+  <section class="step" data-id="fin">
+    <header><input type="checkbox"><h2>8. Financial features<small>Funciones financieras</small></h2></header>
+    <div class="body"><ul><li><span class="ui">My app doesn't provide any financial features</span></li></ul></div>
+  </section>
+
+  <section class="step" data-id="health">
+    <header><input type="checkbox"><h2>9. Health<small>Declaración de aplicaciones de salud</small></h2></header>
+    <div class="body">
+      <ul>
+        <li class="only-pa"><b>Medical</b>: <span class="ui">Diseases and conditions management</span> (seguimiento de síntomas).</li>
+        <li class="only-pa"><b>Health &amp; Fitness</b>: <span class="ui">Nutrition and weight management</span> (registro de comidas).</li>
+        <li class="only-ma"><b>Medical</b>: <span class="ui">Healthcare services and management</span> (gestión de pacientes) y <span class="ui">Diseases and conditions management</span>.</li>
+        <li>¿Es un dispositivo médico regulado o hace diagnósticos? No.</li>
+        <li>¿Usa Health Connect? No.</li>
+      </ul>
+      <p class="muted">Los nombres de las opciones pueden variar un poco; elige las más parecidas.</p>
+    </div>
+  </section>
+
+  <section class="step" data-id="category">
+    <header><input type="checkbox"><h2>10. Select an app category and provide contact details<small>Categoría y datos de contacto</small></h2></header>
+    <div class="body">
+      <table>
+        <tr><td><span class="ui">App or game</span></td><td>App</td></tr>
+        <tr><td><span class="ui">Category</span></td><td>Medical</td></tr>
+        <tr><td><span class="ui">Email address</span></td><td><code>hola@fluxia-health.com</code></td></tr>
+        <tr><td><span class="ui">Website</span></td><td><code class="only-pa">https://fluxia-health.com/app/</code><code class="only-ma">https://fluxia-health.com</code></td></tr>
+        <tr><td><span class="ui">Phone</span></td><td>Opcional</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="step" data-id="listing">
+    <header><input type="checkbox"><h2>11. Set up your store listing<small>Ficha de Play Store principal</small></h2></header>
+    <div class="body">
+      <ul>
+        <li><b>Textos</b>: pestaña <span class="only-pa">Fluxia</span><span class="only-ma">Fluxia Pro</span> de <code>store-assets/textos-stores.html</code> → <span class="ui">App name</span>, <span class="ui">Short description</span> y <span class="ui">Full description</span>.</li>
+        <li><b>Imágenes</b>, en <code class="only-pa">store-assets/salida/pa/</code><code class="only-ma">store-assets/salida/ma/</code>:
+          <ul>
+            <li><span class="ui">App icon</span>: <code>play-icon-512.png</code></li>
+            <li><span class="ui">Feature graphic</span>: <code>play-feature-graphic.jpg</code></li>
+            <li><span class="ui">Phone screenshots</span>: las de <code>play-phone/</code></li>
+          </ul>
+        </li>
+      </ul>
+      <p class="only-ma note">Las imágenes de Fluxia Pro aún no están: faltan sus capturas.</p>
+    </div>
+  </section>
+
+  <p class="muted">Cuando todo esté en verde, ve a <span class="ui">Publishing overview</span> para enviar los cambios a revisión.</p>
+</main>
+<script>
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* sin almacenamiento */ } },
+  };
+  let app = 'pa';
+  const steps = [...document.querySelectorAll('.step')];
+  function render() {
+    const done = store.get('play-app-content-' + app);
+    steps.forEach((s) => {
+      const on = !!done[s.dataset.id];
+      s.classList.toggle('done', on);
+      s.querySelector('input').checked = on;
+    });
+    const n = steps.filter((s) => s.classList.contains('done')).length;
+    document.getElementById('bar').style.width = (100 * n / steps.length) + '%';
+    document.getElementById('count').textContent = `${n} de ${steps.length}`;
+  }
+  steps.forEach((s) => {
+    const box = s.querySelector('input');
+    box.addEventListener('change', () => {
+      const done = store.get('play-app-content-' + app);
+      done[s.dataset.id] = box.checked;
+      store.set('play-app-content-' + app, done);
+      render();
+    });
+  });
+  document.querySelectorAll('.tabs button').forEach((t) => t.addEventListener('click', () => {
+    app = t.dataset.app;
+    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+    document.body.className = 'app-' + app;
+    render();
+  }));
+  render();
+</script>
+</body>
+</html>
