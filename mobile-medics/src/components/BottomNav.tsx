@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { View, Pressable, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { UserIcon, SlidersIcon } from './icons';
+import { SlidersIcon } from './icons';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 
-export type Tab = 'inicio' | 'pacientes' | 'config';
+export type Tab = 'pacientes' | 'config';
 
 // Mismo degradado que la topbar de src/components/MedicsPanel.tsx (web).
 // Invitar ya no es una pestaña: es un botón en la lista de pacientes (InvitePatientModal).
-// Inicio no tiene icono: su hueco lo ocupa el logo (como la píldora blanca de
-// la topbar de MW) y al tocarlo se va a Inicio.
-const TABS: { id: Tab; label: string; Icon: typeof UserIcon }[] = [
-  { id: 'pacientes', label: 'Pacientes', Icon: UserIcon },
+// La sección de pacientes no tiene icono: la abre el logo (como la píldora
+// blanca de la topbar de MW, que lleva a la lista de pacientes).
+const TABS: { id: Tab; label: string; Icon: typeof SlidersIcon }[] = [
   { id: 'config', label: 'Ajustes', Icon: SlidersIcon },
 ];
 
@@ -27,7 +26,7 @@ export default function BottomNav({ active, onChange, logoUrl }: BottomNavProps)
   const insets = useSafeAreaInsets();
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const customLogo = logoUrl && logoUrl !== failedUrl ? logoUrl : null;
-  const homeActive = active === 'inicio';
+  const patientsActive = active === 'pacientes';
   return (
     <View style={styles.outer}>
       <LinearGradient
@@ -38,13 +37,13 @@ export default function BottomNav({ active, onChange, logoUrl }: BottomNavProps)
         style={[styles.nav, centered(CONTENT_MAX_WIDTH), { paddingBottom: Math.max(10, insets.bottom + 6) }]}
       >
         <Pressable
-          onPress={() => onChange('inicio')}
+          onPress={() => onChange('pacientes')}
           style={styles.button}
           accessibilityRole="button"
-          accessibilityLabel="Inicio"
-          accessibilityState={{ selected: homeActive }}
+          accessibilityLabel="Pacientes"
+          accessibilityState={{ selected: patientsActive }}
         >
-          <View style={[styles.logoPill, homeActive && styles.logoPillActive]}>
+          <View style={[styles.logoPill, patientsActive && styles.logoPillActive]}>
             <Image
               source={customLogo ? { uri: customLogo } : require('../assets/fluxia-logo.png')}
               onError={() => setFailedUrl(logoUrl)}
@@ -53,7 +52,7 @@ export default function BottomNav({ active, onChange, logoUrl }: BottomNavProps)
               accessibilityIgnoresInvertColors
             />
           </View>
-          <View style={[styles.activeBar, homeActive && styles.activeBarOn]} />
+          <View style={[styles.activeBar, patientsActive && styles.activeBarOn]} />
         </Pressable>
         {TABS.map(({ id, label, Icon }) => {
           const isActive = id === active;

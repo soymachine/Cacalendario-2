@@ -32,19 +32,6 @@ export interface PatientLink {
   weight_kg?: number | null;
 }
 
-export interface PracticeStats {
-  thisWeekEntries: number;
-  lastWeekEntries: number;
-  thisWeekBristol: number | null;
-  lastWeekBristol: number | null;
-}
-
-export interface BristolAlert {
-  patientId: string;
-  curr: number;
-  prev: number;
-}
-
 export async function loadPatients(doctorId: string): Promise<PatientLink[]> {
   const { data, error } = await supabase
     .from('patient_links')
@@ -104,53 +91,6 @@ export async function loadPatients(doctorId: string): Promise<PatientLink[]> {
 
     return { ...p, display_name, patient_email, lastEntryDate, daysSinceLast, hasPushSub };
   }));
-}
-
-/** Practice-wide entry/Bristol stats (last 2 weeks) and per-patient worsening alerts. */
-export async function loadPracticeStatsAndAlerts(
-  acceptedPatientIds: string[],
-): Promise<{ practiceStats: PracticeStats | null; bristolAlerts: BristolAlert[] }> {
-  if (acceptedPatientIds.length === 0) return { practiceStats: null, bristolAlerts: [] };
-
-  const d98 = new Date(); d98.setDate(d98.getDate() - 98);
-  const d14 = new Date(); d14.setDate(d14.getDate() - 14);
-  const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-  const s98 = d98.toISOString().split('T')[0];
-  const s14 = d14.toISOString().split('T')[0];
-  const s7 = d7.toISOString().split('T')[0];
-
-  const { data } = await supabase
-    .from('entries')
-    .select('date, bristol, entry_type, user_id')
-    .in('user_id', acceptedPatientIds)
-    .gte('date', s98);
-  if (!data) return { practiceStats: null, bristolAlerts: [] };
-
-  const thisWeek = data.filter((e) => e.date >= s7);
-  const lastWeek = data.filter((e) => e.date >= s14 && e.date < s7);
-  const avgB = (es: typeof data) => {
-    const bv = es.filter((e) => e.entry_type === 'poop' && e.bristol != null).map((e) => e.bristol as number);
-    return bv.length ? bv.reduce((s, v) => s + v, 0) / bv.length : null;
-  };
-  const practiceStats: PracticeStats = {
-    thisWeekEntries: thisWeek.length,
-    lastWeekEntries: lastWeek.length,
-    thisWeekBristol: avgB(thisWeek),
-    lastWeekBristol: avgB(lastWeek),
-  };
-
-  const bristolAlerts: BristolAlert[] = [];
-  for (const pid of acceptedPatientIds) {
-    const pe = data.filter((e) => e.user_id === pid && e.entry_type === 'poop' && e.bristol != null);
-    const cw = pe.filter((e) => e.date >= s7).map((e) => e.bristol as number);
-    const lw = pe.filter((e) => e.date >= s14 && e.date < s7).map((e) => e.bristol as number);
-    if (cw.length >= 2 && lw.length >= 2) {
-      const ca = cw.reduce((s, v) => s + v, 0) / cw.length;
-      const pa = lw.reduce((s, v) => s + v, 0) / lw.length;
-      if (Math.abs(ca - 4) > Math.abs(pa - 4) + 0.5) bristolAlerts.push({ patientId: pid, curr: ca, prev: pa });
-    }
-  }
-  return { practiceStats, bristolAlerts };
 }
 
 export function patientLabel(p: PatientLink): string {
