@@ -51,7 +51,9 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
       ? (knownWhy ? 'fixed' : 'pass')
       : knownWhy ? 'known' : opts.warnOnly ? 'warn' : 'fail';
     const detail = status === 'fixed' ? `ya no ocurre: quita '${opts.known}' de KNOWN en tests/sim/checks.ts`
-      : status === 'known' ? `${knownWhy}${out.detail ? ` · ${out.detail}` : ''}` : out.detail;
+      : status === 'known' ? `${knownWhy}${out.detail ? ` · ${out.detail}` : ''}`
+      // El detalle de cada comprobación describe el fallo: si pasa, no se guarda.
+      : status === 'pass' ? undefined : out.detail;
     results.push({ area, name, status, detail, ms: Date.now() - t0 });
   };
 
