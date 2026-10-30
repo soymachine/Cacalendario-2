@@ -81,3 +81,9 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
   `supabase/migrations/` anteriores a esa fecha no lo reproducen (faltan las
   tablas iniciales y algunas divergen de prod); para levantar una base desde
   cero, aplica el snapshot y solo las migraciones posteriores.
+- **Simulación funcional**: `npm run sim` (necesita Docker) levanta Supabase
+  local con ese snapshot y hace vivir un mes virtual a 1 médico + 9 pacientes
+  (`tests/sim/`), con las mismas llamadas que PA y MW/MA, y comprueba
+  sincronización, panel del médico, semáforo, avisos, trial y RLS. Si cambias
+  una llamada a Supabase en las apps, actualiza `tests/sim/agents.ts`. Si no
+  descarga imágenes de public.ecr.aws: `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io`.

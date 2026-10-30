@@ -29,3 +29,9 @@ pnpm-debug.log*
 /backups
 /supabase
 /documents
+
+# simulador funcional (tests/sim): generado en cada ejecución
+/tests/sim/out/
+/tests/sim/supabase/migrations/
+/tests/sim/supabase/.temp/
+/tests/sim/supabase/.branches/

@@ -8,7 +8,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "node --test --experimental-strip-types tests/*.test.ts",
-    "test:sql": "bash supabase/tests/run.sh"
+    "test:sql": "bash supabase/tests/run.sh",
+    "sim": "bash tests/sim/local.sh"
   },
   "dependencies": {
     "@astrojs/react": "^3.6.0",
