@@ -9,13 +9,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { startServer } from '../server.mjs';
-import { SHORTS, FPS, WIDTH, HEIGHT } from './shorts.js';
+import { SHORTS, FPS, WIDTH, HEIGHT, totalDuration } from './shorts.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, 'out');
 const id = process.argv[2];
 if (!SHORTS[id]) throw new Error(`Uso: node render.mjs <${Object.keys(SHORTS).join('|')}> [--stills t1,t2]`);
-const { duration } = SHORTS[id];
+const duration = totalDuration(SHORTS[id]);
 const stillsArg = process.argv.indexOf('--stills');
 const stills = stillsArg > -1 ? process.argv[stillsArg + 1].split(',').map(Number) : null;
 mkdirSync(OUT, { recursive: true });

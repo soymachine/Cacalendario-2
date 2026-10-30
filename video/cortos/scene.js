@@ -12,9 +12,9 @@ import {
 } from '../v2/scene.js';
 
 const END_BG = '#EEEFDF';
-let SH = SHORTS.recordatorios, C = SH.cues;
+let SH = SHORTS.recordatorios, C = SH.cues, IC = SH.intro.cues;
 export async function loadAssets(id) {
-  SH = SHORTS[id]; C = SH.cues;
+  SH = SHORTS[id]; C = SH.cues; IC = SH.intro.cues;
   setBase('../v2/');
   await loadV2Assets();
 }
@@ -30,10 +30,6 @@ function bellIcon(ctx, cx, cy, s, color) {
   ctx.restore();
 }
 const bellCallout = (x, y) => (ctx) => bellIcon(ctx, x, y, 30, APP_BLUE);
-function titlePill(ctx, t) {
-  const a = prog(t, C.title, C.title + 0.5) * (1 - prog(t, 2.6, 3.1));
-  callout(ctx, W / 2, 92, SH.title, BLUE, a, { size: 30 });
-}
 // Toast dentro de la pantalla del móvil.
 function phoneToast(ctx, label, a) {
   if (a <= 0) return;
@@ -332,7 +328,52 @@ function sceneHistorial(ctx, t) {
     { size: 26, icon: (x, y) => picto(ctx, k.kind, x, y, 40, APP_BLUE) }));
 }
 
+// ================================================================ INTRO
+// Cabecera: el isotipo se dibuja, "Fluxia" aparece letra a letra y debajo el
+// tema del vídeo.
+function sceneCabecera(ctx, t) {
+  ctx.fillStyle = END_BG; ctx.fillRect(0, 0, W, H);
+  const mh = 110, fs = 86;
+  ctx.font = `600 ${fs}px Lexend`;
+  const mw = mh * 505.5 / 432.5, gap = 26, ww = mw + gap + ctx.measureText('Fluxia').width;
+  const mx = (W - ww) / 2, my = 400;
+  drawLogoMark(ctx, mx, my, mh, eio(prog(t, IC.logo, IC.logo + 0.85)));
+  let x = mx + mw + gap;
+  [...'Fluxia'].forEach((ch, i) => {
+    layer(ctx, prog(t, IC.letters + i * 0.07, IC.letters + i * 0.07 + 0.3), () => text(ctx, ch, x, my + mh * 0.86, { size: fs, weight: 600, color: '#383838' }));
+    ctx.font = `600 ${fs}px Lexend`; x += ctx.measureText(ch).width;
+  });
+  const a = eo(prog(t, IC.subtitle, IC.subtitle + 0.6));
+  layer(ctx, a, () => {
+    ctx.translate(0, (1 - a) * 12);
+    text(ctx, SH.title, W / 2, 640, { size: 40, weight: 300, color: '#3D3F3A', align: 'center' });
+  });
+}
+// Contexto (recordatorios): qué registra el paciente desde la app.
+function sceneContexto(ctx, t) {
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  layer(ctx, eo(prog(t, 2.2, 2.8)), () => text(ctx, 'Con la app, el paciente registra', 200, 330, { size: 30, weight: 300, color: INK2 }));
+  KINDS.forEach((k, i) => {
+    const e = eo(prog(t, IC.trio[i] - 0.15, IC.trio[i] + 0.35)), y = 430 + i * 140;
+    if (e <= 0) return;
+    layer(ctx, e, () => {
+      ctx.translate((1 - e) * -40, 0);
+      shadow(ctx, 24, 8, 'rgba(40,45,30,0.16)');
+      ctx.beginPath(); ctx.arc(250, y, 48, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); noShadow(ctx);
+      picto(ctx, k.kind, 250, y, 64, APP_BLUE);
+      text(ctx, k.label, 322, y + 15, { size: 44, weight: 600, color: INK, spacing: -0.6 });
+    });
+  });
+  const e = eo(prog(t, 2.0, 2.7));
+  phoneFrame(ctx, 1380, 540 + (1 - e) * 60, 1.0, () => {
+    appShot(ctx, IMG.appPoop);
+    appShot(ctx, IMG.appUrine, prog(t, IC.trio[1], IC.trio[1] + 0.25));
+    appShot(ctx, IMG.appFood, prog(t, IC.trio[2], IC.trio[2] + 0.25));
+  });
+}
+
 const CANVAS = {
+  cabecera: sceneCabecera, contexto: sceneContexto,
   bloqueo: sceneBloqueo, avisoConfig: sceneAvisoConfig, registro: sceneRegistro, llega: sceneLlega,
   papel: scenePapel, fluxiaApp: sceneFluxiaApp, historial: sceneHistorial, cierre: sceneCierre,
 };
@@ -341,23 +382,28 @@ async function drawShot(ctx, shot, t) {
   if (shot.kind === 'orig') {
     const tt = clamp(t, shot.start, shot.end);
     await drawOrig(ctx, shot, tt);
-    if (shot === SH.shots[0]) titlePill(ctx, t);
     if (shot.id === 'dudas') dudasOverlay(ctx, t);
   } else {
     CANVAS[shot.id](ctx, clamp(t, shot.start - XFADE, shot.end + XFADE));
-    if (shot === SH.shots[0]) titlePill(ctx, t);
+  }
+}
+// Dibuja una lista de planos con fundido entre ellos; `after` es lo que viene
+// detrás del último plano (el cuerpo del vídeo, tras la intro).
+async function renderShots(ctx, shots, t, after) {
+  const i = shots.indexOf(shotAt(shots, t));
+  const shot = shots[i];
+  await drawShot(ctx, shot, t);
+  if (t > shot.end - XFADE && (shots[i + 1] || after)) {
+    ctx.save(); ctx.globalAlpha = eio(prog(t, shot.end - XFADE, shot.end));
+    if (shots[i + 1]) await drawShot(ctx, shots[i + 1], t);
+    else await after();
+    ctx.restore();
   }
 }
 export async function renderFrame(ctx, t) {
   ctx.save();
-  const i = SH.shots.indexOf(shotAt(SH, t));
-  const shot = SH.shots[i];
-  await drawShot(ctx, shot, t);
-  const next = SH.shots[i + 1];
-  if (next && t > shot.end - XFADE) {
-    ctx.save(); ctx.globalAlpha = eio(prog(t, shot.end - XFADE, shot.end));
-    await drawShot(ctx, next, t);
-    ctx.restore();
-  }
+  const off = SH.intro.offset;
+  if (t < off) await renderShots(ctx, SH.intro.shots, t, () => drawShot(ctx, SH.shots[0], 0));
+  else await renderShots(ctx, SH.shots, t - off);
   ctx.restore();
 }

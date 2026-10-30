@@ -24,14 +24,14 @@
 </div>
 <script type="module">
   import { renderFrame, loadAssets } from './scene.js';
-  import { SHORTS } from './shorts.js';
+  import { SHORTS, totalDuration } from './shorts.js';
   const id = new URLSearchParams(location.search).get('id') || 'recordatorios';
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
   if (new URLSearchParams(location.search).has('render')) document.body.classList.add('render');
   await Promise.all([300, 400, 500, 600, 700].map((w) => document.fonts.load(`${w} 20px Lexend`)));
   await loadAssets(id);
-  document.getElementById('seek').max = SHORTS[id].duration;
+  document.getElementById('seek').max = totalDuration(SHORTS[id]);
   // API para render.mjs: dibuja el instante t y devuelve el frame en JPEG/PNG.
   window.renderAt = async (t, type = 'image/png', q) => { await renderFrame(ctx, t); return canvas.toDataURL(type, q); };
   window.ready = true;

@@ -11,8 +11,9 @@ import { SHORTS, PHRASES } from './shorts.js';
 
 const id = process.argv[2];
 if (!SHORTS[id]) throw new Error(`Uso: node mix.mjs <${Object.keys(SHORTS).join('|')}>`);
-const SH = SHORTS[id], DURATION = SH.duration, CUES = SH.cues, SHOTS = SH.shots;
-const toOut = (t) => t, toBase = (t) => t;
+const SH = SHORTS[id], OFF = SH.intro.offset, DURATION = OFF + SH.duration, CUES = SH.cues, SHOTS = SH.shots;
+// Los tiempos del cuerpo son relativos al final de la intro.
+const toOut = (t) => t + OFF, toBase = (t) => t - OFF;
 const VOICE = join(dirname(fileURLToPath(import.meta.url)), '..', 'v2', 'voz', 'locucion-elevenlabs-marina.mp3');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -53,11 +54,11 @@ const CHORDS = [
   { root: 41, notes: [53, 57, 60, 64] }, // Fmaj7
   { root: 36, notes: [52, 55, 60, 62] }, // Cadd9
 ];
-const END_CHORD = SH.endChord;               // acorde final con "Fluxia. Datos reales…"
+const END_CHORD = toOut(SH.endChord);               // acorde final con "Fluxia. Datos reales…"
 // Intensidad por tramos del montaje (0 = sólo pad … 3 = completo).
 function energy(t) {
   let e = 0;
-  for (const [t0, v] of SH.energy) if (t >= t0) e = v;
+  for (const [t0, v] of SH.energy) if (toBase(t) >= t0) e = v;
   return t < END_CHORD ? e : 0;
 }
 const nBars = Math.ceil(END_CHORD / BAR);
@@ -169,6 +170,12 @@ if (CUES.trio != null) [76, 79, 84].forEach((m, i) => bell(CUES.trio + i * 0.2, 
 if (CUES.chips) CUES.chips.forEach((c, i) => bell(c, [76, 79, 84][i], 0.5, -0.3 + i * 0.3));
 if (CUES.endChips != null) [77, 81, 84, 89].forEach((m, i) => bell(CUES.endChips + i * 0.12, m, 0.5, -0.4 + i * 0.25));
 whoosh(CUES.logoDraw, 1.6, 0.45, 250, 2500);
+// intro (tiempos absolutos; bell/whoosh suman OFF, de ahí el -OFF)
+const IC = SH.intro.cues;
+whoosh(IC.logo - OFF, 1.0, 0.4, 250, 2500);
+[77, 81, 84].forEach((m, i) => bell(IC.letters + i * 0.15 - OFF, m, 0.4, -0.3 + i * 0.3));
+for (const s of SH.intro.shots) if (s.kind === 'canvas' && s.start > 0) whoosh(s.start - 0.45 - OFF, 0.8, 0.6);
+if (IC.trio) IC.trio.forEach((c, i) => bell(c - OFF, [76, 79, 84][i], 0.6, -0.3 + i * 0.3));
 
 // ------------------------------------------------------------ mezcla
 function reverb(input, spread) {
@@ -188,7 +195,7 @@ const wetL = reverb(send.L, 0), wetR = reverb(send.R, 23);
 // Locución: frases recortadas de la grabación y remuestreadas a 44,1 kHz con FFmpeg.
 const voice = new Float32Array(N);
 const speaking = new Float32Array(N);
-for (const [start, key] of SH.vo) {
+for (const [start, key] of [...SH.vo, ...SH.intro.vo.map(([s, k]) => [s - OFF, k])]) {
   const [a, b] = PHRASES[key];
   const raw = execFileSync('ffmpeg', ['-loglevel', 'error', '-ss', String(a), '-t', String(b - a), '-i', VOICE,
     '-af', `afade=t=in:d=0.02,afade=t=out:st=${(b - a - 0.06).toFixed(3)}:d=0.06`, '-f', 'f32le', '-ac', '1', '-ar', String(SR), '-'], { maxBuffer: 1 << 28 });

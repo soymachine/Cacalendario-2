@@ -6,13 +6,15 @@ frases de la grabación de ElevenLabs (voz Marina, `../v2/voz/`).
 
 | Vídeo | Duración | Qué cuenta |
 |---|---|---|
-| [`fluxia-corto-recordatorios.mp4`](fluxia-corto-recordatorios.mp4) | 27 s | Si el paciente deja de registrar, Fluxia le envía un recordatorio (textos reales de las notificaciones); el profesional decide cuándo avisar; el paciente registra en unos toques y el semáforo vuelve a verde. |
-| [`fluxia-corto-memoria-papel.mp4`](fluxia-corto-memoria-papel.mp4) | 31 s | La memoria falla y el papel se pierde; con Fluxia cada registro queda con fecha y hora en el historial (deposiciones, micciones y comidas). |
+| [`fluxia-corto-recordatorios.mp4`](fluxia-corto-recordatorios.mp4) | 32 s | Contexto: qué registra el paciente desde la app. Si el paciente deja de registrar, Fluxia le envía un recordatorio (textos reales de las notificaciones); el profesional decide cuándo avisar; el paciente registra en unos toques y el semáforo vuelve a verde. |
+| [`fluxia-corto-memoria-papel.mp4`](fluxia-corto-memoria-papel.mp4) | 36 s | Contexto: la consulta. La memoria falla y el papel se pierde; con Fluxia cada registro queda con fecha y hora en el historial (deposiciones, micciones y comidas). |
+
+Cada corto abre con una intro breve: cabecera con el logo dibujándose, «Fluxia» letra a letra y el tema del vídeo, y una frase de contexto.
 
 Locución de cada corto:
 
-- **Recordatorios**: «¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento. Bastan unos toques. Cada registro llega al instante a tu panel, porque un buen seguimiento empieza con información fiable. Fluxia. Datos reales, decisiones mejores.»
-- **Memoria y papel**: «El problema es que, muchas veces, los detalles de esa historia se pierden entre visitas. Detalles que se olvidan, registros incompletos, información difícil de reconstruir. Fluxia te ayuda a cambiar eso: tienes el historial completo de cada paciente: deposiciones, micciones y comidas. Porque un buen seguimiento empieza con información fiable. Fluxia. Datos reales, decisiones mejores.»
+- **Recordatorios**: «Desde la app, el paciente registra sus deposiciones, sus micciones y su alimentación. ¿El paciente deja de hacerlo? Fluxia le envía recordatorios automáticos para mantener el seguimiento. Bastan unos toques. Cada registro llega al instante a tu panel. Fluxia. Datos reales, decisiones mejores.»
+- **Memoria y papel**: «Cada paciente cuenta una historia. El problema es que, muchas veces, los detalles de esa historia se pierden entre visitas. Detalles que se olvidan, registros incompletos, información difícil de reconstruir. Fluxia te ayuda a cambiar eso: tienes el historial completo de cada paciente: deposiciones, micciones y comidas. Porque un buen seguimiento empieza con información fiable. Fluxia. Datos reales, decisiones mejores.»
 
 ## Archivos
 
