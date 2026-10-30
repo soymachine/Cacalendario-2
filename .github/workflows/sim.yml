@@ -1,0 +1,93 @@
+name: Simulación funcional
+
+# Un médico y 9 pacientes simulados viven un mes en un Supabase local idéntico
+# a producción (npm run sim, tests/sim/). El informe se sube a /admin →
+# Simulaciones. Si alguna comprobación falla, el workflow sale en rojo y
+# GitHub avisa por correo.
+#
+# La ejecución diaria se pausa y reanuda desde /admin (tabla sim_schedule,
+# supabase/migrations/20261102_sim_schedule.sql). Lanzarlo a mano desde la
+# pestaña Actions ignora la pausa.
+
+on:
+  schedule:
+    # 03:17 UTC (04:17 en invierno / 05:17 en verano en Madrid). Si lo cambias,
+    # cambia también SIM_SCHEDULE_UTC en src/lib/simReport.ts (lo muestra /admin).
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Semilla del mes simulado (un número para repetir uno concreto, o "random")'
+        required: false
+        default: 'random'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim
+  cancel-in-progress: false
+
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # La URL y la clave pública de Supabase no son secretas: son las de la web.
+      - name: Proyecto de Supabase donde se guardan los informes
+        id: target
+        run: |
+          echo "url=$(grep -o 'https://[a-z0-9]*\.supabase\.co' src/lib/supabase.ts | head -1)" >> "$GITHUB_OUTPUT"
+          echo "key=$(grep -o 'sb_publishable_[A-Za-z0-9_]*' src/lib/supabase.ts | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: ¿Está en pausa desde /admin?
+        id: gate
+        if: github.event_name == 'schedule'
+        env:
+          URL: ${{ steps.target.outputs.url }}
+          KEY: ${{ steps.target.outputs.key }}
+          SIM_REPORT_TOKEN: ${{ secrets.SIM_REPORT_TOKEN }}
+        run: |
+          res=$(curl -sS --max-time 20 -X POST "$URL/rest/v1/rpc/sim_schedule_status" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+            -d "{\"p_token\":\"$SIM_REPORT_TOKEN\"}" || true)
+          if [ "$res" = "false" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::La simulación diaria está en pausa desde /admin → Simulaciones."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            # Si no se puede consultar, mejor simular que saltarse el día en silencio.
+            [ "$res" = "true" ] || echo "::warning::No se pudo consultar la pausa ($res); se ejecuta igualmente."
+          fi
+
+      - name: Node
+        if: steps.gate.outputs.run != 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependencias
+        if: steps.gate.outputs.run != 'false'
+        run: npm ci --no-audit --no-fund
+
+      - name: Simular el mes
+        if: steps.gate.outputs.run != 'false'
+        env:
+          SIM_SEED: ${{ github.event.inputs.seed || 'random' }}
+          SIM_REPORT_URL: ${{ steps.target.outputs.url }}
+          SIM_REPORT_KEY: ${{ steps.target.outputs.key }}
+          SIM_REPORT_TOKEN: ${{ secrets.SIM_REPORT_TOKEN }}
+        run: npm run sim
+
+      - name: Guardar el informe
+        if: always() && steps.gate.outputs.run != 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-simulacion
+          path: tests/sim/out/report.json
+          if-no-files-found: ignore
+          retention-days: 30

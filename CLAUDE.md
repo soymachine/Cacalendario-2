@@ -76,3 +76,17 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
 - **Lógica compartida y Edge Functions**: `npm test` (node:test, sin dependencias).
 - **Migraciones y RLS**: `npm run test:sql` (Postgres local efímero con un mock
   mínimo de Supabase; como root: `su postgres -c 'bash supabase/tests/run.sh'`).
+- **Esquema completo**: `supabase/schema/prod_baseline.sql` es un snapshot
+  idempotente del esquema de producción (2026-10-30). Las migraciones de
+  `supabase/migrations/` anteriores a esa fecha no lo reproducen (faltan las
+  tablas iniciales y algunas divergen de prod); para levantar una base desde
+  cero, aplica el snapshot y solo las migraciones posteriores.
+- **Simulación funcional**: `npm run sim` (necesita Docker) levanta Supabase
+  local con ese snapshot y hace vivir un mes virtual a 1 médico + 9 pacientes
+  (`tests/sim/`), con las mismas llamadas que PA y MW/MA, y comprueba
+  sincronización, panel del médico, semáforo, avisos, trial y RLS. Si cambias
+  una llamada a Supabase en las apps, actualiza `tests/sim/agents.ts`. Si no
+  descarga imágenes de public.ecr.aws: `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io`.
+  Cada ejecución genera un informe (`src/lib/simReport.ts`) que se sube a
+  `public.sim_runs` con `SIM_REPORT_URL/KEY/TOKEN` y se ve en /admin →
+  Simulaciones (`src/components/admin/SimulationsSection.tsx`).
