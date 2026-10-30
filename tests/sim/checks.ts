@@ -9,11 +9,12 @@
 import { patientDaysSinceLast } from '../../src/lib/food.ts';
 import { isAccessBlocked, testPlanDaysLeft, type DoctorPlan } from '../../src/lib/plan.ts';
 import { getSemaforoKey, resolveSemaforoThresholds } from '../../src/lib/semaforo.ts';
-import { type Admin, type DoctorAgent, entryRow, type PatientAgent } from './agents.ts';
+import { type Admin, type DoctorAgent, entryRow, PatientAgent, type SimEnv } from './agents.ts';
 import type { Persona } from './personas.ts';
 import type { Scenario, SimEntry } from './scenario.ts';
 
 export interface SimState {
+  env: SimEnv;
   scenario: Scenario;
   admin: Admin;
   doctor: DoctorAgent;
@@ -39,10 +40,7 @@ export interface CheckResult {
  * Mientras sigan ocurriendo se marcan como "conocidos" y no rompen la
  * ejecución diaria; cuando dejen de ocurrir, el informe pide quitarlos de aquí.
  */
-const KNOWN: Record<string, string> = {
-  'patient-edits-center': 'Políticas de centers con USING (true) (tarea: cerrar políticas RLS abiertas en centers)',
-  'patient-edits-link-doctor-fields': 'Política "Patients can update own links" sin restricción de columnas',
-};
+const KNOWN: Record<string, string> = {};
 
 type Outcome = { ok: boolean; detail?: string };
 
@@ -109,8 +107,8 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
     await check('Panel del médico (MW/MA)', `${p.key}: tras archivar, la base de datos no deja leer registros posteriores`, async () => {
       const rows = await doctor.patientEntries(agent(p.key).userId, null);
       const after = rows.length - visibleToDoctor(p.key).length;
-      return { ok: after <= 0, detail: `el médico puede leer ${after} registros posteriores al archivo (solo los oculta la interfaz)` };
-    }, { warnOnly: true });
+      return { ok: after <= 0, detail: `el médico puede leer ${after} registros posteriores al archivo` };
+    });
   }
 
   await check('Panel del médico (MW/MA)', 'puede abrir las fotos de comida de sus pacientes', async () => {
@@ -188,8 +186,8 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
     return { ok: foreign.length === 0, detail: `ve ${foreign.length} vínculos ajenos` };
   });
   await check('Seguridad (RLS)', 'un paciente no puede cambiar su pauta de comidas', async () => {
-    const { error } = await laura.sb.from('patient_links').update({ food_config: { version: 1, enabled: false } }).eq('id', s.linkIds.get('laura')!);
-    return { ok: !!error, detail: 'el update se aceptó' };
+    const { data } = await laura.sb.from('patient_links').update({ food_config: { version: 1, enabled: false } }).eq('id', s.linkIds.get('laura')!).select('id');
+    return { ok: (data ?? []).length === 0, detail: 'el update se aceptó' };
   });
   await check('Seguridad (RLS)', 'un paciente no puede abrir las fotos de otro', async () => {
     const path = [...(s.photoPaths.get('laura')?.values() ?? [])][0];
@@ -205,6 +203,38 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
     const { error } = await marcos.sb.rpc('billing_apply_subscription', { p_customer_id: 'cus_sim', p_doctor_id: doctor.userId, p_plan: 'pro' });
     return { ok: !!error, detail: 'la RPC se ejecutó' };
   });
+  await check('Seguridad (RLS)', 'un médico no puede vincularse por su cuenta a un paciente que no aceptó', async () => {
+    const victim = agent('andres');
+    const forged = await doctor.sb.from('patient_links')
+      .insert({ doctor_id: doctor.userId, patient_id: victim.userId, status: 'accepted' }).select('id');
+    const forgedId = forged.data?.[0]?.id as string | undefined;
+    const hijacked = await doctor.sb.from('patient_links')
+      .update({ patient_id: victim.userId, status: 'accepted' }).eq('id', s.linkIds.get('andres')!).select('id');
+    const { data: leaked } = await doctor.sb.from('entries').select('id').eq('user_id', victim.userId);
+    if (forgedId) await admin.sb.from('patient_links').delete().eq('id', forgedId);
+    await admin.sb.from('patient_links').update({ patient_id: null, status: 'rejected' }).eq('id', s.linkIds.get('andres')!);
+    const how = [forgedId && 'creando un vínculo', (hijacked.data ?? []).length && 'editando la invitación rechazada'].filter(Boolean).join(' y ');
+    return { ok: !how && (leaked ?? []).length === 0, detail: `${how || 'sin vínculo'}: lee ${leaked?.length ?? 0} registros de andres` };
+  });
+  await check('Seguridad (RLS)', 'un médico no puede cambiarse de centro', async () => {
+    const { data } = await doctor.sb.from('doctors').update({ center_id: null }).eq('id', doctor.userId).select('id');
+    const changed = (data ?? []).length > 0;
+    if (changed) await admin.sb.from('doctors').update({ center_id: doctorProfile.center_id }).eq('id', doctor.userId);
+    return { ok: !changed, detail: 'el update se aceptó' };
+  });
+  await check('Seguridad (RLS)', 'un paciente no puede leer el buzón de sugerencias', async () => {
+    const { error } = await marcos.sb.from('feedback').insert({ user_email: marcos.email, message: 'Simulación: sugerencia', type: 'suggestion' });
+    const { data } = await laura.sb.from('feedback').select('id');
+    return { ok: (data ?? []).length === 0 && !error, detail: `lee ${data?.length} sugerencias${error ? `; no puede enviar: ${error.message}` : ''}` };
+  });
+  await check('Seguridad (RLS)', 'un paciente no puede hacerse premium', async () => {
+    const { data } = await marcos.sb.from('user_profiles').update({ tier: 'premium' }).eq('id', marcos.userId).select('tier');
+    const changed = data?.[0]?.tier === 'premium';
+    if (changed) await admin.sb.from('user_profiles').update({ tier: 'free' }).eq('id', marcos.userId);
+    const { error: nameErr } = await marcos.sb.from('user_profiles')
+      .upsert({ id: marcos.userId, display_name: 'Marcos', email: marcos.email }, { onConflict: 'id' });
+    return { ok: !changed && !nameErr, detail: changed ? 'se puso premium' : `no puede guardar su nombre: ${nameErr?.message}` };
+  });
   await check('Seguridad (RLS)', 'un paciente no puede modificar el centro de su médico', async () => {
     const centerId = doctorProfile.center_id as string;
     const before = await admin.sb.from('centers').select('name').eq('id', centerId).single();
@@ -212,14 +242,63 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
     const changed = (data ?? []).length > 0;
     if (changed) await admin.sb.from('centers').update({ name: before.data?.name }).eq('id', centerId);
     return { ok: !changed, detail: 'el paciente renombró el centro' };
-  }, { known: 'patient-edits-center' });
+  });
   await check('Seguridad (RLS)', 'un paciente no puede cambiar las etiquetas ni las notas del médico en su vínculo', async () => {
     const linkId = s.linkIds.get('marcos')!;
     const { data } = await marcos.sb.from('patient_links').update({ tags: ['puesto-por-el-paciente'], doctor_notes: 'x' }).eq('id', linkId).select('id');
     const changed = (data ?? []).length > 0;
     if (changed) await admin.sb.from('patient_links').update({ tags: [], doctor_notes: null }).eq('id', linkId);
     return { ok: !changed, detail: 'el paciente sobrescribió tags y doctor_notes' };
-  }, { known: 'patient-edits-link-doctor-fields' });
+  });
+
+  // ── 7. Flujos legítimos que las restricciones de arriba no deben romper ──
+  const legit = 'Flujos legítimos del médico';
+  const changedRows = (what: string, res: { data: unknown[] | null; error: { message: string } | null }): Outcome =>
+    ({ ok: !res.error && (res.data ?? []).length > 0, detail: res.error ? `${what}: ${res.error.message}` : `${what}: no cambió ninguna fila` });
+
+  await check(legit, 'renombra su centro y cambia su imagen (Configuración)', async () => {
+    const res = await doctor.sb.from('centers').update({ name: 'Consulta Simulada (renombrada)', image_url: null })
+      .eq('id', doctorProfile.center_id as string).select('id');
+    return changedRows('centers update', res);
+  });
+  await check(legit, 'edita la ficha y los avisos de un paciente', async () => {
+    const res = await doctor.sb.from('patient_links')
+      .update({ dob: '1980-05-01', height_cm: 170, weight_kg: 68.5, push_min_hours: 48, push_frequency: 1, push_disabled: false, doctor_notes: 'Ficha' })
+      .eq('id', s.linkIds.get('marcos')!).select('id');
+    return changedRows('patient_links update', res);
+  });
+  await check(legit, 'reactiva un seguimiento archivado y vuelve a verlo todo', async () => {
+    const res = await doctor.sb.from('patient_links').update({ doctor_unlinked: false, unlinked_at: null })
+      .eq('id', s.linkIds.get('lucia')!).select('id');
+    if (res.error || !(res.data ?? []).length) return changedRows('desarchivar', res);
+    const rows = await doctor.patientEntries(agent('lucia').userId, null);
+    return { ok: rows.length === expectedOf('lucia').length, detail: `ve ${rows.length} de ${expectedOf('lucia').length}` };
+  });
+  await check(legit, 'borra una invitación pendiente', async () => {
+    const id = await doctor.invite(`sim-pendiente-${Date.now()}@sim.fluxia.test`);
+    const res = await doctor.sb.from('patient_links').delete().eq('id', id).select('id');
+    return changedRows('patient_links delete', res);
+  });
+  await check(legit, 'alta con Google: crea su centro y su ficha de médico', async () => {
+    const google = new PatientAgent(s.env, `sim-google-${Date.now()}@sim.fluxia.test`);
+    await google.signUp();
+    const center = await google.sb.from('centers').insert({ name: 'Centro Google' }).select('id').single();
+    if (center.error) return { ok: false, detail: `centers insert: ${center.error.message}` };
+    const doc = await google.sb.from('doctors').insert({ id: google.userId, center_id: center.data.id, name: 'Dr. Google' }).select('plan');
+    return { ok: !doc.error && doc.data?.[0]?.plan === 'test', detail: doc.error?.message ?? `plan ${doc.data?.[0]?.plan}` };
+  });
+  await check(legit, 'alta por invitación del admin: reclama el centro preparado', async () => {
+    const email = `sim-invitado-${Date.now()}@sim.fluxia.test`;
+    const pre = await admin.sb.from('centers').insert({ name: 'Centro preparado', pending_doctor_email: email, pending_doctor_name: 'Dr. Invitado' }).select('id').single();
+    const invited = new PatientAgent(s.env, email);
+    await invited.signUp();
+    const found = await invited.sb.from('centers').select('*').eq('pending_doctor_email', email).limit(1).single();
+    if (found.error) return { ok: false, detail: `buscar centro: ${found.error.message}` };
+    const doc = await invited.sb.from('doctors').insert({ id: invited.userId, center_id: pre.data!.id, name: 'Dr. Invitado' });
+    if (doc.error) return { ok: false, detail: `doctors insert: ${doc.error.message}` };
+    return changedRows('limpiar pending_doctor_*', await invited.sb.from('centers')
+      .update({ pending_doctor_email: null, pending_doctor_name: null, pending_doctor_specialty: null }).eq('id', pre.data!.id).select('id'));
+  });
 
   return results;
 }

@@ -52,7 +52,7 @@ async function main() {
   const doctor = new DoctorAgent(e, emailOf(DOCTOR.key));
   const patients = new Map(PERSONAS.map((p) => [p.key, new PatientAgent(e, emailOf(p.key))]));
   const state: SimState = {
-    scenario, admin, doctor, patients, personas: PERSONAS,
+    env: e, scenario, admin, doctor, patients, personas: PERSONAS,
     linkIds: new Map(), photoPaths: new Map(), unlinkedAt: new Map(), errors: [],
   };
 
