@@ -207,17 +207,25 @@ export function saveReport(r: SimReport): void {
   writeFileSync(new URL('./out/report.json', import.meta.url), JSON.stringify(r, null, 2));
 }
 
-/** Sube el informe a public.sim_runs si hay destino configurado. Nunca rompe la ejecución. */
-export async function uploadReport(r: SimReport): Promise<void> {
+/**
+ * Sube el informe a public.sim_runs si hay destino configurado. Devuelve false
+ * si había destino y no se pudo subir (en CI eso pone el workflow en rojo:
+ * si no, /admin se quedaría sin el informe sin que nadie lo notara).
+ */
+export async function uploadReport(r: SimReport): Promise<boolean> {
   const url = process.env.SIM_REPORT_URL;
   const key = process.env.SIM_REPORT_KEY;
   const token = process.env.SIM_REPORT_TOKEN;
   if (!url || !key || !token) {
     console.log('Informe en tests/sim/out/report.json (sin SIM_REPORT_URL/KEY/TOKEN: no se sube a /admin)\n');
-    return;
+    return true;
   }
   const sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { error } = await sb.rpc('sim_ingest_report', { p_token: token, p_report: r });
-  if (error) console.error(`No se pudo subir el informe a ${new URL(url).host}: ${error.message}\n`);
-  else console.log(`Informe subido a ${new URL(url).host} (/admin → Simulaciones)\n`);
+  if (error) {
+    console.error(`No se pudo subir el informe a ${new URL(url).host}: ${error.message}\n`);
+    return false;
+  }
+  console.log(`Informe subido a ${new URL(url).host} (/admin → Simulaciones)\n`);
+  return true;
 }

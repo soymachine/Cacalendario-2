@@ -124,3 +124,13 @@ export interface SimRunRow {
   git_ref: string | null;
   summary: Partial<SimReport['summary']>;
 }
+
+/** Hora (UTC) del cron diario de .github/workflows/sim.yml ('17 3 * * *'). */
+export const SIM_SCHEDULE_UTC = { hour: 3, minute: 17 };
+
+/** Estado de la ejecución diaria (admin_get_sim_schedule / admin_set_sim_schedule). */
+export interface SimSchedule {
+  enabled: boolean;
+  updated_at: string;
+  updated_by: string | null;
+}

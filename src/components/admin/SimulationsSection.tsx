@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { supabaseAdmin as supabase } from '../../lib/supabase';
-import type { SimCheckStatus, SimReport, SimRunRow } from '../../lib/simReport';
+import { SIM_SCHEDULE_UTC, type SimCheckStatus, type SimReport, type SimRunRow, type SimSchedule } from '../../lib/simReport';
 import { SectionHeader, StatCard, s } from './ui';
 import {
   BristolSpark, DailyEntriesChart, DataTable, localDate, PersonaHeatmap, RUN_STATUS, RunCalendar, StatusPill,
@@ -90,6 +90,8 @@ export default function SimulationsSection() {
         subtitle="Un médico y 9 pacientes simulados viven un mes en un Supabase de pruebas, con las mismas llamadas que las apps (npm run sim)"
         actions={<button onClick={load} style={s.headerBtn}>🔄 Actualizar</button>}
       />
+
+      <ScheduleCard />
 
       {/* Filtros: una fila, encima de todo lo que acotan */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
@@ -221,6 +223,88 @@ function RunRow({ run: r, last, onOpen }: { run: SimRunRow; last: boolean; onOpe
         </div>
       )}
     </button>
+  );
+}
+
+// ── Ejecución diaria (cron de GitHub Actions) ──
+
+const WORKFLOW_URL = 'https://github.com/soymachine/cacalendario-2/actions/workflows/sim.yml';
+
+/** Próxima ejecución del cron (GitHub puede retrasarla unos minutos). */
+function nextScheduledRun(now = new Date()): Date {
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), SIM_SCHEDULE_UTC.hour, SIM_SCHEDULE_UTC.minute));
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+  return next;
+}
+
+function ScheduleCard() {
+  const [schedule, setSchedule] = useState<SimSchedule | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const { data, error: err } = await supabase.rpc('admin_get_sim_schedule');
+      if (err) setError(err.message);
+      else setSchedule(data as SimSchedule);
+    })();
+  }, []);
+
+  const toggle = async () => {
+    if (!schedule) return;
+    setSaving(true);
+    setError('');
+    const { data, error: err } = await supabase.rpc('admin_set_sim_schedule', { p_enabled: !schedule.enabled });
+    if (err) setError(err.message);
+    else setSchedule(data as SimSchedule);
+    setSaving(false);
+  };
+
+  const next = nextScheduledRun();
+  const nextText = next.toLocaleString('es-ES', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const dailyAt = next.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const changed = schedule?.updated_by
+    ? `${schedule.enabled ? 'Reanudada' : 'Pausada'} por ${schedule.updated_by} el ${new Date(schedule.updated_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+    : null;
+
+  return (
+    <div style={{ ...s.card, padding: 20, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+      <div style={{ flex: 1, minWidth: 280 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>Ejecución diaria automática</span>
+          {schedule && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+              background: `${schedule.enabled ? viz.good : viz.warning}1F`, color: '#111',
+            }}>
+              <span style={{ color: schedule.enabled ? viz.good : '#B7791F', fontWeight: 900 }}>{schedule.enabled ? '▶' : '⏸️'}</span>
+              {schedule.enabled ? 'Activa' : 'En pausa'}
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: 13, color: '#555', marginTop: 6, lineHeight: 1.5 }}>
+          {!schedule && !error && 'Cargando…'}
+          {schedule?.enabled && <>Se lanza cada día a las {dailyAt} desde GitHub Actions. Próxima: <strong>{nextText}</strong> (GitHub puede retrasarla unos minutos).</>}
+          {schedule && !schedule.enabled && <>No se lanzará hasta que la reanudes. El cron sigue despertándose cada día, pero termina sin simular.</>}
+          {changed && <span style={{ display: 'block', fontSize: 12, color: '#888' }}>{changed}</span>}
+          <span style={{ display: 'block', fontSize: 12, color: '#888' }}>
+            Para lanzarla ahora: <a href={WORKFLOW_URL} target="_blank" rel="noreferrer" style={{ color: '#3C7DB8' }}>GitHub → Actions → Simulación funcional</a> → Run workflow (ignora la pausa).
+          </span>
+        </div>
+        {error && <div style={{ fontSize: 13, color: '#BB4E4E', marginTop: 6 }}>No se ha podido {schedule ? 'cambiar' : 'consultar'} el estado: {error}</div>}
+      </div>
+      {schedule && (
+        <button onClick={toggle} disabled={saving}
+          style={{
+            padding: '10px 20px', borderRadius: 999, border: 'none', fontSize: 14, fontWeight: 600,
+            cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
+            backgroundColor: schedule.enabled ? '#fff' : '#274867', color: schedule.enabled ? '#274867' : '#fff',
+            boxShadow: schedule.enabled ? 'inset 0 0 0 1.5px #274867' : 'none',
+          }}>
+          {saving ? 'Guardando…' : schedule.enabled ? '⏸️ Pausar' : '▶ Reanudar'}
+        </button>
+      )}
+    </div>
   );
 }
 

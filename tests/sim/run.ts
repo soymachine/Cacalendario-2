@@ -183,8 +183,9 @@ async function main() {
   const report = buildReport({ state, runId, seed, timings, checks, snapshot, fatal });
   printReport(report);
   saveReport(report);
-  await uploadReport(report);
+  const uploaded = await uploadReport(report);
   process.exitCode = report.status === 'pass' ? 0 : report.status === 'fail' ? 1 : 2;
+  if (!uploaded && process.env.GITHUB_ACTIONS && !process.exitCode) process.exitCode = 3;
 }
 
 main().catch((err) => {
