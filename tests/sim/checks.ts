@@ -9,6 +9,7 @@
 import { patientDaysSinceLast } from '../../src/lib/food.ts';
 import { isAccessBlocked, testPlanDaysLeft, type DoctorPlan } from '../../src/lib/plan.ts';
 import { getSemaforoKey, resolveSemaforoThresholds } from '../../src/lib/semaforo.ts';
+import type { SimCheck, SimError } from '../../src/lib/simReport.ts';
 import { type Admin, type DoctorAgent, entryRow, PatientAgent, type SimEnv } from './agents.ts';
 import type { Persona } from './personas.ts';
 import type { Scenario, SimEntry } from './scenario.ts';
@@ -25,15 +26,10 @@ export interface SimState {
   photoPaths: Map<string, Map<string, string>>;
   /** Fecha (ISO) en que el médico archivó a cada paciente. */
   unlinkedAt: Map<string, string>;
-  errors: { what: string; message: string }[];
+  errors: SimError[];
 }
 
-export interface CheckResult {
-  area: string;
-  name: string;
-  status: 'pass' | 'fail' | 'warn' | 'known' | 'fixed';
-  detail?: string;
-}
+export type CheckResult = SimCheck;
 
 /**
  * Fallos de seguridad ya detectados en producción y pendientes de corregir.
@@ -48,6 +44,7 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
   const check = async (area: string, name: string, fn: () => Promise<Outcome>, opts: { warnOnly?: boolean; known?: string } = {}) => {
     let out: Outcome;
+    const t0 = Date.now();
     try { out = await fn(); } catch (err) { out = { ok: false, detail: err instanceof Error ? err.message : String(err) }; }
     const knownWhy = opts.known ? KNOWN[opts.known] : undefined;
     const status: CheckResult['status'] = out.ok
@@ -55,7 +52,7 @@ export async function runChecks(s: SimState): Promise<CheckResult[]> {
       : knownWhy ? 'known' : opts.warnOnly ? 'warn' : 'fail';
     const detail = status === 'fixed' ? `ya no ocurre: quita '${opts.known}' de KNOWN en tests/sim/checks.ts`
       : status === 'known' ? `${knownWhy}${out.detail ? ` · ${out.detail}` : ''}` : out.detail;
-    results.push({ area, name, status, detail });
+    results.push({ area, name, status, detail, ms: Date.now() - t0 });
   };
 
   const { doctor, admin, scenario } = s;

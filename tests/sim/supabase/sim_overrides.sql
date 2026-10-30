@@ -13,3 +13,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Token para subir el informe al propio Supabase local (local.sh lo usa si no
+-- se indica otro destino con SIM_REPORT_URL/KEY/TOKEN). Solo existe aquí.
+INSERT INTO public.sim_ingest_tokens (token_hash, label)
+VALUES (encode(sha256(convert_to('local-sim-token', 'UTF8')), 'hex'), 'Supabase local del simulador')
+ON CONFLICT DO NOTHING;

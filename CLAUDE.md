@@ -87,3 +87,6 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
   sincronización, panel del médico, semáforo, avisos, trial y RLS. Si cambias
   una llamada a Supabase en las apps, actualiza `tests/sim/agents.ts`. Si no
   descarga imágenes de public.ecr.aws: `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io`.
+  Cada ejecución genera un informe (`src/lib/simReport.ts`) que se sube a
+  `public.sim_runs` con `SIM_REPORT_URL/KEY/TOKEN` y se ve en /admin →
+  Simulaciones (`src/components/admin/SimulationsSection.tsx`).

@@ -6,6 +6,10 @@
 #   SIM_SEED=random bash tests/sim/local.sh # otra variante del mes
 #   SIM_KEEP=1 bash tests/sim/local.sh      # no para Supabase al terminar
 #
+# El informe se sube a /admin → Simulaciones del proyecto indicado en
+# SIM_REPORT_URL/SIM_REPORT_KEY/SIM_REPORT_TOKEN; sin ellas, al propio
+# Supabase local (útil con SIM_KEEP=1 para verlo en el /admin local).
+#
 # Requiere Docker. Cada ejecución resetea la base de datos: no hay que limpiar.
 # Si no se puede descargar de public.ecr.aws: SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io
 set -euo pipefail
@@ -34,5 +38,6 @@ $SUPABASE db reset --no-seed
 
 eval "$($SUPABASE status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
 cd "$ROOT"
+export SIM_REPORT_URL="${SIM_REPORT_URL:-$API_URL}" SIM_REPORT_KEY="${SIM_REPORT_KEY:-$ANON_KEY}" SIM_REPORT_TOKEN="${SIM_REPORT_TOKEN:-local-sim-token}"
 SIM_SUPABASE_URL="$API_URL" SIM_ANON_KEY="$ANON_KEY" SIM_SERVICE_KEY="$SERVICE_ROLE_KEY" TZ=Europe/Madrid \
   node --experimental-strip-types --no-warnings=ExperimentalWarning tests/sim/run.ts
