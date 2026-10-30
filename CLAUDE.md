@@ -76,3 +76,8 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
 - **Lógica compartida y Edge Functions**: `npm test` (node:test, sin dependencias).
 - **Migraciones y RLS**: `npm run test:sql` (Postgres local efímero con un mock
   mínimo de Supabase; como root: `su postgres -c 'bash supabase/tests/run.sh'`).
+- **Esquema completo**: `supabase/schema/prod_baseline.sql` es un snapshot
+  idempotente del esquema de producción (2026-10-30). Las migraciones de
+  `supabase/migrations/` anteriores a esa fecha no lo reproducen (faltan las
+  tablas iniciales y algunas divergen de prod); para levantar una base desde
+  cero, aplica el snapshot y solo las migraciones posteriores.
