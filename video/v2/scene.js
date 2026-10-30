@@ -16,6 +16,9 @@ const BLUE = '#3C7DB8', APP_BLUE = '#3F7EC1', GREEN = '#3F9E6E', ORANGE = '#E09F
 
 // ------------------------------------------------------------------ activos
 const IMG = {};
+// Prefijo de rutas (assets y frames) para reutilizar estas escenas desde otra página.
+let BASE = '';
+export function setBase(b) { BASE = b; }
 const ASSET_FILES = {
   appPoop: 'assets/app-deposicion.png', appUrine: 'assets/app-miccion.png', appFood: 'assets/app-comida.png', appSymptoms: 'assets/app-sintomas.png',
   webHome: 'assets/web-inicio.webp', webList: 'assets/web-pacientes.webp', webDetail: 'assets/web-detalle.webp',
@@ -25,14 +28,14 @@ function loadImage(src) {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(src)); i.src = src; });
 }
 export async function loadAssets() {
-  await Promise.all(Object.entries(ASSET_FILES).map(async ([k, f]) => { IMG[k] = await loadImage(f); }));
+  await Promise.all(Object.entries(ASSET_FILES).map(async ([k, f]) => { IMG[k] = await loadImage(BASE + f); }));
 }
 // Frames del vídeo original (out/src/f00001.jpg …), con una pequeña caché.
 const frameCache = new Map();
 function srcFrame(n) {
   n = Math.max(1, n);
   if (!frameCache.has(n)) {
-    frameCache.set(n, loadImage(`out/src/f${String(n).padStart(5, '0')}.jpg`));
+    frameCache.set(n, loadImage(`${BASE}out/src/f${String(n).padStart(5, '0')}.jpg`));
     if (frameCache.size > 12) frameCache.delete(frameCache.keys().next().value);
   }
   return frameCache.get(n);
@@ -494,3 +497,9 @@ export async function renderFrame(ctx, tOut) {
   }
   ctx.restore();
 }
+
+// Piezas reutilizadas por los vídeos cortos (video/cortos).
+export {
+  BG, NAVY, BLUE, APP_BLUE, GREEN, ORANGE, RED, INK, INK2, IMG, drawOrig, picto, KINDS, PH, phoneFrame, appShot, A, touch, pulse,
+  browser, webImg, highlight, callout, WEB_W, WEB_H,
+};
