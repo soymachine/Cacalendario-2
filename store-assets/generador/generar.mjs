@@ -32,7 +32,9 @@ const LOGO = fileUrl(resolve(ROOT, '..', 'public', 'Logo-Icon.png'));
 
 // Tamaños que piden las tiendas (px)
 const FORMATS = {
-  'apple-iphone-6.9': { w: 1320, h: 2868, device: 'phone' },  // obligatorio en App Store
+  // App Store Connect (desde oct. 2026) pide como mínimo la de 6,1"/6,3"; la de 6,9" es opcional
+  'apple-iphone-6.3': { w: 1206, h: 2622, device: 'phone' },
+  'apple-iphone-6.9': { w: 1320, h: 2868, device: 'phone' },
   'apple-ipad-13': { w: 2064, h: 2752, device: 'tablet' },    // solo MA (admite iPad)
   'play-phone': { w: 1080, h: 1920, device: 'phone' },
 };

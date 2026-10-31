@@ -16,13 +16,15 @@ salida/<app>/            resultado, listo para subir
 
 | Archivo | Tienda | Dónde |
 |---|---|---|
-| `salida/<app>/apple-iphone-6.9/*.jpg` (1320×2868) | App Store Connect | Versión → Capturas → iPhone 6,9" |
+| `salida/<app>/apple-iphone-6.3/*.jpg` (1206×2622) | App Store Connect | Versión → Capturas → iPhone 6,1"/6,3" (obligatorio) |
+| `salida/<app>/apple-iphone-6.9/*.jpg` (1320×2868) | App Store Connect | Versión → Capturas → iPhone 6,9" (opcional) |
 | `salida/ma/apple-ipad-13/*.jpg` (2064×2752) | App Store Connect | Versión → Capturas → iPad 13" |
 | `salida/<app>/play-phone/*.jpg` (1080×1920) | Play Console | Ficha de Play Store principal → Capturas de pantalla del teléfono |
 | `salida/<app>/play-feature-graphic.jpg` (1024×500) | Play Console | Ficha de Play Store principal → Gráfico de funciones |
 | `salida/<app>/play-icon-512.png` | Play Console | Ficha de Play Store principal → Icono de la aplicación |
 
-En App Store Connect basta con el tamaño de 6,9": Apple lo reduce para el resto de iPhone.
+Desde octubre de 2026, App Store Connect exige las de iPhone 6,1"/6,3" (rechaza otros tamaños con
+"File dimensions are invalid"). Las de 6,9" son opcionales; el resto de iPhone se escala.
 
 ## Regenerar
 
