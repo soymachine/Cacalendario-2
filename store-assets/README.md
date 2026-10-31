@@ -36,6 +36,12 @@ node store-assets/generador/generar.mjs pa     # solo una
 
 Consejos para las capturas: hazlas en el iPhone (o en el Simulador de un iPhone de 6,9")
 con datos de ejemplo realistas, sin notificaciones ni iconos de otras apps en la barra de
-estado, y pásalas sin recortar.
+estado, y pásalas sin recortar ni reducir (1179×2556 en un iPhone de 6,1"; si llegan más
+pequeñas, el generador las amplía y se ven algo suaves).
+
+**Nada de datos reales**: las imágenes de las tiendas son públicas. Nombres, emails y
+notas de pacientes (o de cuentas de prueba con tu email) tienen que ser ficticios antes
+de copiar la captura aquí. Las de `capturas/ma/` están retocadas así: los pacientes son
+los del simulador (Laura Martín, Javier Ruiz…) y los emails usan `@ejemplo.com`.
 
 La tipografía es Lexend (`generador/fonts/`, licencia OFL).

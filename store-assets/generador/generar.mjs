@@ -182,6 +182,11 @@ for (const [key, app] of Object.entries(config)) {
   for (const [fmt, size] of Object.entries(FORMATS)) {
     const tablet = size.device === 'tablet';
     if (tablet && key !== 'ma') continue; // PA no admite iPad
+    // Sin ninguna captura de iPad no se generan huecos que puedan subirse por error
+    if (tablet && !app.slides.some((sl) => existsSync(join(capDir, 'ipad', sl.file)))) {
+      console.log(`⚠ ${app.name}: no hay capturas de iPad en store-assets/capturas/${key}/ipad/ (no se genera ${fmt})`);
+      continue;
+    }
     for (const [i, slide] of app.slides.entries()) {
       const shot = join(capDir, tablet ? 'ipad' : '', slide.file);
       const has = existsSync(shot);
