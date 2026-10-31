@@ -6,13 +6,25 @@ export const SYMPTOM_LABEL: Record<string, string> = {
   abdominal_pain: 'Dolor abdominal', bloating: 'Hinchazón', heartburn: 'Ardor', cramp: 'Calambre',
   rectal_pain: 'Dolor rectal', blood: 'Sangre', mucus: 'Moco', smelly: 'Maloliente',
   sticky: 'Pegajoso', stringy: 'Filamentoso', undigested: 'No digerido',
+  gases: 'Gases', laxative_use: 'Uso de laxantes', astringent_agents: 'Agentes astringentes',
+  fever: 'Fiebre', weight_loss: 'Pérdida de peso',
 };
 export const URINE_TYPE_LABEL: Record<string, string> = {
   voluntary: 'Voluntaria', involuntary_escape: 'Escape', involuntary_drip: 'Goteo',
 };
 export const URINE_CHAR_LABEL: Record<string, string> = {
-  blood: 'Sangre', odor: 'Olor', pain: 'Dolor',
+  blood: 'Sangre', odor: 'Olor', pain: 'Dolor', turbid: 'Turbio',
 };
+/** Etiqueta legible para una clave; si no está en el mapa, convierte
+ *  `snake_case` en texto ("some_new_key" → "Some new key") para no
+ *  enseñar nunca un identificador técnico. */
+export function labelFor(map: Record<string, string>, key: string): string {
+  const known = map[key];
+  if (known) return known;
+  const text = String(key ?? '').replace(/[_-]+/g, ' ').trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
 export const BRISTOL_LABEL: Record<number, string> = {
   1: 'Separados duros', 2: 'Grumoso duro', 3: 'Fisurado',
   4: 'Suave (ideal)', 5: 'Blandos', 6: 'Pastoso', 7: 'Líquido',

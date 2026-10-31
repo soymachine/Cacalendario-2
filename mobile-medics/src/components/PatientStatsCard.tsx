@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { G, Path, Rect, Line, Text as SvgText, Circle as SvgCircle } from 'react-native-svg';
 import type { PatientDetail } from '../lib/patientDetail';
-import { SYMPTOM_LABEL } from '../lib/entryLabels';
+import { SYMPTOM_LABEL, labelFor } from '../lib/entryLabels';
 import { D } from '../lib/design';
 
 interface PatientStatsCardProps {
@@ -119,7 +119,7 @@ export default function PatientStatsCard({ detail }: PatientStatsCardProps) {
           <Text style={[styles.sectionLabel, { marginTop: 10 }]}>SÍNTOMAS MÁS FRECUENTES</Text>
           <View style={styles.symptomsRow}>
             {topSymptoms.map(([sym, count]) => (
-              <Text key={sym} style={styles.symptomChip}>{SYMPTOM_LABEL[sym] || sym} ×{count}</Text>
+              <Text key={sym} style={styles.symptomChip}>{labelFor(SYMPTOM_LABEL, sym)} ×{count}</Text>
             ))}
           </View>
         </>

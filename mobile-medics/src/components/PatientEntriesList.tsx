@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Platform } from 'react-na
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
 import type { PatientEntry } from '../lib/patientDetail';
-import { FLOATS_LABEL, DURATION_LABEL, SYMPTOM_LABEL, URINE_TYPE_LABEL, URINE_CHAR_LABEL } from '../lib/entryLabels';
+import { FLOATS_LABEL, DURATION_LABEL, SYMPTOM_LABEL, URINE_TYPE_LABEL, URINE_CHAR_LABEL, labelFor } from '../lib/entryLabels';
 import { D } from '../lib/design';
 import { mealTypeLabel, portionLabel } from '../lib/food';
 import { tagColor } from '../lib/tags';
@@ -149,7 +149,7 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
                   <>
                     {entry.urine_type != null && <Chip label={URINE_TYPE_LABEL[entry.urine_type] || entry.urine_type} bg="#EAF2FB" color={D.primary} />}
                     {entry.urine_quantity != null && entry.urine_quantity > 0 && <Chip label={`${entry.urine_quantity} ml`} bg={D.accentSoft} color={D.accent} />}
-                    {entry.urine_characteristics.map((c) => <Chip key={c} label={URINE_CHAR_LABEL[c] || c} bg="#FBEDED" color="#B94A4A" />)}
+                    {entry.urine_characteristics.map((c) => <Chip key={c} label={labelFor(URINE_CHAR_LABEL, c)} bg="#FBEDED" color="#B94A4A" />)}
                     {entry.urine_urgency != null && <Chip label={`Urgencia ${entry.urine_urgency}/5`} bg="#FCF4E7" color="#C0832B" />}
                     {entry.during_sleep === true && <Chip label="Durante sueño" bg="#E7F5EC" color={D.secondary} />}
                   </>
@@ -159,7 +159,7 @@ export default function PatientEntriesList({ entries, totalEntries, onSaveNote }
                     {entry.floats != null && <Chip label={FLOATS_LABEL[entry.floats]} bg="#EAF2FB" color={D.primary} />}
                     {entry.quantity != null && <Chip label={`${entry.quantity}`} bg={D.accentSoft} color={D.accent} />}
                     {entry.duration != null && <Chip label={DURATION_LABEL[entry.duration]} bg="#FCF4E7" color="#C0832B" />}
-                    {entry.symptoms.map((s) => <Chip key={s} label={SYMPTOM_LABEL[s] || s} bg="#FBEDED" color="#B94A4A" />)}
+                    {entry.symptoms.map((s) => <Chip key={s} label={labelFor(SYMPTOM_LABEL, s)} bg="#FBEDED" color="#B94A4A" />)}
                   </>
                 )}
               </View>
