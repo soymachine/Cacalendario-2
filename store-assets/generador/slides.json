@@ -18,10 +18,10 @@
     "iconBackground": null,
     "slides": [
       { "file": "01.png", "title": "Todos tus pacientes, a simple vista", "subtitle": "El semáforo te avisa de quién necesita atención" },
-      { "file": "02.png", "title": "La evolución de cada paciente", "subtitle": "Sus registros llegan en tiempo real, entre consulta y consulta" },
-      { "file": "03.png", "title": "Un seguimiento a medida", "subtitle": "Configura qué registra cada paciente y sus umbrales de alerta" },
-      { "file": "04.png", "title": "Invita en un momento", "subtitle": "Tu paciente descarga Fluxia gratis y queda vinculado contigo" },
-      { "file": "05.png", "title": "Recordatorios automáticos", "subtitle": "Fluxia avisa al paciente cuando deja de registrar" }
+      { "file": "02.png", "title": "La evolución de cada paciente", "subtitle": "Tendencia de Bristol, frecuencia y síntomas, siempre al día" },
+      { "file": "03.png", "title": "Cada registro, con detalle", "subtitle": "Deposiciones, micciones y comidas, con las notas del paciente" },
+      { "file": "04.png", "title": "Un seguimiento a medida", "subtitle": "Semáforo, etiquetas y qué registra cada paciente" },
+      { "file": "05.png", "title": "No se te escapa nadie", "subtitle": "Ve quién lleva días sin registrar y activa sus recordatorios" }
     ]
   }
 }
