@@ -41,13 +41,25 @@ const SYMPTOM_LABEL: Record<string, string> = {
   abdominal_pain: 'Dolor abdominal', bloating: 'Hinchazón', heartburn: 'Ardor', cramp: 'Calambre',
   rectal_pain: 'Dolor rectal', blood: 'Sangre', mucus: 'Moco', smelly: 'Maloliente',
   sticky: 'Pegajoso', stringy: 'Filamentoso', undigested: 'No digerido',
+  gases: 'Gases', laxative_use: 'Uso de laxantes', astringent_agents: 'Agentes astringentes',
+  fever: 'Fiebre', weight_loss: 'Pérdida de peso',
 };
 const URINE_TYPE_LABEL: Record<string, string> = {
   voluntary: 'Voluntaria', involuntary_escape: 'Escape', involuntary_drip: 'Goteo',
 };
 const URINE_CHAR_LABEL: Record<string, string> = {
-  blood: 'Sangre', odor: 'Olor', pain: 'Dolor',
+  blood: 'Sangre', odor: 'Olor', pain: 'Dolor', turbid: 'Turbio',
 };
+/**
+ * Etiqueta de una clave (síntoma, característica…). Si PA guarda una clave que
+ * aún no está en el mapa, se muestra legible ("weight_loss" → "Weight loss")
+ * en vez del identificador técnico. Igual que entryLabel() en MA.
+ */
+function entryLabel(map: Record<string, string>, key: string): string {
+  if (map[key]) return map[key];
+  const text = key.replace(/_/g, ' ').trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 const BRISTOL_LABEL: Record<number, string> = {
   1: 'Separados duros', 2: 'Grumoso duro', 3: 'Fisurado',
   4: 'Suave (ideal)', 5: 'Blandos', 6: 'Pastoso', 7: 'Líquido',
@@ -2626,7 +2638,7 @@ export default function MedicsPanel() {
                         <div className="flex gap-1 flex-wrap">
                           {top.map(([sym, count]) => (
                             <span key={sym} className="text-[11px] px-2 py-0.5 rounded-md font-semibold" style={{ backgroundColor: 'rgba(210,100,100,0.055)', color: 'var(--fx-error-700)' }}>
-                              {SYMPTOM_LABEL[sym] || sym} <span className="font-normal opacity-55">×{count}</span>
+                              {entryLabel(SYMPTOM_LABEL, sym)} <span className="font-normal opacity-55">×{count}</span>
                             </span>
                           ))}
                         </div>
@@ -2674,7 +2686,7 @@ export default function MedicsPanel() {
                         e.urine_type ? URINE_TYPE_LABEL[e.urine_type] : null,
                         e.urine_quantity ? `${e.urine_quantity} ml` : null,
                         e.urine_urgency != null ? `Urgencia ${e.urine_urgency}/5` : null,
-                        ...e.urine_characteristics.map(c => URINE_CHAR_LABEL[c] || c),
+                        ...e.urine_characteristics.map(c => entryLabel(URINE_CHAR_LABEL, c)),
                         e.notes,
                       ].filter(Boolean).join(' · '),
                     };
@@ -2683,7 +2695,7 @@ export default function MedicsPanel() {
                     title: ENTRY_KIND_LABEL.poop,
                     detail: [
                       e.bristol != null ? `Bristol ${e.bristol}` : null,
-                      ...e.symptoms.map(sy => SYMPTOM_LABEL[sy] || sy),
+                      ...e.symptoms.map(sy => entryLabel(SYMPTOM_LABEL, sy)),
                       e.notes,
                     ].filter(Boolean).join(' · '),
                   };
@@ -2842,7 +2854,7 @@ export default function MedicsPanel() {
                                       {entry.urine_quantity != null && entry.urine_quantity > 0 && chip(`${entry.urine_quantity} ml`, 'var(--fx-teal-50)', 'var(--color-accent)')}
                                       {entry.urine_color && <span className="inline-block w-4 h-4 rounded-full align-middle" style={{ backgroundColor: entry.urine_color, border: '1px solid var(--border)' }} />}
                                       {entry.urine_characteristics.length > 0
-                                        ? entry.urine_characteristics.map(c => chip(URINE_CHAR_LABEL[c] || c, 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
+                                        ? entry.urine_characteristics.map(c => chip(entryLabel(URINE_CHAR_LABEL, c), 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
                                         : null}
                                       {entry.urine_urgency != null && chip(`Urgencia ${entry.urine_urgency}/5`, 'var(--color-warning-soft)', 'var(--fx-warning-700)')}
                                       {entry.during_sleep === true && chip('Durante sueño', 'var(--color-secondary-soft)', 'var(--color-secondary)')}
@@ -2856,7 +2868,7 @@ export default function MedicsPanel() {
                                       {entry.quantity != null && chip(`${entry.quantity}`, 'var(--fx-teal-50)', 'var(--color-accent)')}
                                       {entry.duration != null && chip(DURATION_LABEL[entry.duration], 'rgba(224,159,60,0.08)', 'var(--color-warning)')}
                                       {entry.symptoms.length > 0
-                                        ? entry.symptoms.map(s => chip(SYMPTOM_LABEL[s] || s, 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
+                                        ? entry.symptoms.map(s => chip(entryLabel(SYMPTOM_LABEL, s), 'rgba(210,100,100,0.07)', 'var(--fx-error-700)'))
                                         : null}
                                       {entry.bristol == null && entry.floats == null && !entry.color && entry.quantity == null && entry.symptoms.length === 0 && <span className="text-xs" style={{ color: 'var(--fx-ink-300)' }}>—</span>}
                                     </>
