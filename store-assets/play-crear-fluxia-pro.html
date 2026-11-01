@@ -57,6 +57,7 @@
   button.copy.ok { background: var(--done); border-color: var(--done); color: #fff; }
   .count { font-size: 12px; color: var(--muted); white-space: nowrap; }
   .count.over { color: #c53030; font-weight: 700; }
+  .facts { border-style: dashed; }
 </style>
 </head>
 <body>
@@ -66,6 +67,18 @@
   <p class="muted">App: <b>Fluxia Pro</b> (MA, <code>mobile-medics/</code>) · paquete <code>com.fluxiahealth.medics</code>. Los nombres de los botones van como <span class="ui">English <i>· Español</i></span>; pueden variar ligeramente según la versión de Play Console. La app de pacientes (Fluxia) ya está creada: si dudas en algún formulario, puedes mirar cómo quedó la suya.</p>
 
   <div class="progress"><div class="bar"><span id="bar"></span></div><b id="count"></b><button id="reset" type="button">Reiniciar</button></div>
+
+  <section class="step facts" data-id="" aria-label="Datos de la app">
+    <div class="body" style="border-top:none; padding-top:12px">
+      <p style="margin:0 0 6px"><b>Datos de Fluxia Pro</b> <span class="muted">(salen de <code>mobile-medics/app.json</code>; no se pueden cambiar después de publicar)</span></p>
+      <table>
+        <tr><td><span class="ui">Package name <i>· Nombre del paquete</i></span></td><td><div class="val"><span class="text">com.fluxiahealth.medics</span><button class="copy">Copiar</button></div></td></tr>
+        <tr><td><span class="ui">App name <i>· Nombre</i></span></td><td><div class="val"><span class="text" data-max="30">Fluxia Pro: seguimiento médico</span><span class="count"></span><button class="copy">Copiar</button></div></td></tr>
+        <tr><td>Proyecto de EAS (Expo)</td><td><code>fluxia-medics</code> · carpeta <code>mobile-medics/</code></td></tr>
+        <tr><td>Versión de la primera build</td><td><code>0.90.0</code> (el <i>versionCode</i> lo pone EAS solo)</td></tr>
+      </table>
+    </div>
+  </section>
 
   <!-- ─────────────────────────────────────────────────────────────── -->
   <h3>Antes de empezar</h3>
@@ -92,12 +105,20 @@
       <table>
         <tr><td><span class="ui">App name <i>· Nombre de la aplicación</i></span></td><td><div class="val"><span class="text" data-max="30">Fluxia Pro: seguimiento médico</span><span class="count"></span><button class="copy">Copiar</button></div></td></tr>
         <tr><td><span class="ui">Default language <i>· Idioma predeterminado</i></span></td><td>Español (España) – es-ES</td></tr>
+        <tr><td><span class="ui">Package name <i>· Nombre del paquete</i></span></td><td><div class="val"><span class="text">com.fluxiahealth.medics</span><button class="copy">Copiar</button></div><span class="muted">Tiene que ser exactamente este: es el de <code>mobile-medics/app.json</code> y el de la build. No se puede cambiar después.</span></td></tr>
         <tr><td><span class="ui">App or game <i>· Aplicación o juego</i></span></td><td>App</td></tr>
         <tr><td><span class="ui">Free or paid <i>· Gratis o de pago</i></span></td><td><b>Free</b> (gratis)</td></tr>
         <tr><td><span class="ui">Declarations <i>· Declaraciones</i></span></td><td>Marca las dos: <span class="ui">Developer Program Policies</span> y <span class="ui">US export laws</span></td></tr>
       </table>
       <p class="note"><b>Free</b> es la descarga: la suscripción de Fluxia Pro se paga en la web (Stripe) y la app no tiene compras ni enlaces de pago. Una app gratuita no puede pasar a ser de pago después, pero aquí no hace falta.</p>
       <p>Pulsa <span class="ui">Create app <i>· Crear aplicación</i></span>. Se abre el <span class="ui">Dashboard <i>· Panel</i></span> con la lista de tareas de configuración.</p>
+      <p><b>Registro del nombre del paquete.</b> Desde 2026 (verificación de desarrolladores de Android), Play registra el paquete a vuestra cuenta al crear la app. Compruébalo en Play Console → <span class="ui">Android developer verification <i>· Verificación de desarrolladores de Android</i></span>: <code>com.fluxiahealth.medics</code> tiene que salir como registrado.</p>
+      <div class="note">
+        <b>Si Play dice que el paquete ya se conoce o te pide demostrar que es tuyo:</b> pasa cuando un APK con ese paquete ya se instaló en algún Android, por ejemplo una build de prueba de Fluxia Pro (<code>eas build -p android --profile preview</code>). Hay que demostrar que tenéis la clave con la que se firmó: la de EAS del proyecto <code>fluxia-medics</code>. Play te dará un archivo para meter en un APK, firmarlo con esa clave y subirlo (solo sirve para verificar; no se publica). Se descarga con:
+        <div class="val" style="margin-top:6px"><span class="text">eas credentials -p android</span><button class="copy">Copiar</button></div>
+        <span class="muted">→ perfil <i>production</i> → <i>Keystore</i> → <i>Download existing keystore</i>. Si te pasa, mándame lo que pide Play y te preparo el APK de verificación.</span>
+        <br><b>Si dice que el paquete lo usa otro desarrollador</b>, no sigas: avísame antes de elegir otro, porque habría que cambiarlo también en la app.
+      </div>
     </div>
   </section>
 
@@ -109,7 +130,8 @@
       <div class="val"><span class="text">eas whoami</span><button class="copy">Copiar</button></div>
       <div class="val"><span class="text">eas build -p android --profile production</span><button class="copy">Copiar</button></div>
       <ul>
-        <li>La primera vez preguntará <i>Generate a new Android Keystore?</i> → <b>Yes</b>. EAS la guarda en su servidor; es la <b>clave de subida</b> de Fluxia Pro (distinta de la de Fluxia).</li>
+        <li>Si nunca se ha hecho una build de Android de Fluxia Pro, preguntará <i>Generate a new Android Keystore?</i> → <b>Yes</b>. Si ya hubo builds de prueba (APK), EAS reutiliza la misma clave sin preguntar. Esa clave se queda en los servidores de EAS: es la <b>clave de subida</b> de Fluxia Pro (distinta de la de Fluxia). No la borres: es también la que demuestra que el paquete es vuestro.</li>
+        <li>Comprueba en la salida que pone <code>com.fluxiahealth.medics</code> (el mismo paquete del paso 1).</li>
         <li>Al terminar, descarga el <code>.aab</code> desde el enlace que imprime (o desde <code>expo.dev</code> → el proyecto <code>fluxia-medics</code> → Builds).</li>
       </ul>
       <p class="muted">La primera subida a Google Play tiene que ser manual (paso 4): <code>eas submit</code> solo funciona cuando la app ya tiene una versión subida.</p>
@@ -143,7 +165,7 @@ Primera versión de Fluxia Pro para Android: sigue a tus pacientes de Fluxia con
         </li>
         <li><span class="ui">Next <i>· Siguiente</i></span> → revisa los avisos → <span class="ui">Save and publish <i>· Guardar y publicar</i></span> (o <span class="ui">Start rollout to Internal testing</span>).</li>
         <li>En la pestaña <span class="ui">Testers</span>, copia el <span class="ui">link to join <i>· enlace para unirse</i></span>, ábrelo en un Android con una de las cuentas de la lista e instala la app.</li>
-        <li><b>Pruébala</b>: entra con la cuenta del paso 0, abre un paciente, revisa estadísticas e historial y cambia la imagen del centro en Ajustes.</li>
+        <li><b>Pruébala</b>: entra con la cuenta del paso 0, abre un paciente, revisa estadísticas e historial y cambia la imagen del centro en Ajustes. Prueba también <b>Continuar con Google</b>: al terminar en el navegador tiene que volver a la app con la sesión abierta.</li>
       </ol>
     </div>
   </section>
@@ -153,7 +175,7 @@ Primera versión de Fluxia Pro para Android: sigue a tus pacientes de Fluxia con
     <div class="body">
       <p>Google exige a las <b>cuentas de desarrollador personales</b> creadas a partir de noviembre de 2023 una <b>prueba cerrada con al menos 12 testers durante 14 días seguidos</b> antes de poder publicar en producción. Las cuentas de <b>organización</b> no lo tienen.</p>
       <ul>
-        <li>Si en el <span class="ui">Dashboard</span> te aparece la tarea <i>Run a closed test</i> o <i>Apply for production access</i>: crea una versión en <span class="ui">Testing → Closed testing</span> con el mismo <code>.aab</code>, añade una lista con 12 o más emails de Google y espera los 14 días. Después, solicita el acceso a producción desde el <span class="ui">Dashboard</span>.</li>
+        <li>Si en el <span class="ui">Dashboard</span> te aparece la tarea <i>Run a closed test</i> o <i>Apply for production access</i>: crea una versión en <span class="ui">Testing → Closed testing</span> con el mismo <code>.aab</code>, elige los países de esa pista (España), añade una lista con 12 o más emails de Google y espera los 14 días. Después, solicita el acceso a producción desde el <span class="ui">Dashboard</span>.</li>
         <li>Si no aparece, marca este paso y sigue. Mira cómo fue con Fluxia: es la misma cuenta de desarrollador.</li>
       </ul>
     </div>
@@ -401,7 +423,7 @@ Fluxia es una herramienta de registro y seguimiento: no realiza diagnósticos. L
     get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } },
     set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* sin almacenamiento */ } },
   };
-  const steps = [...document.querySelectorAll('.step')];
+  const steps = [...document.querySelectorAll('.step[data-id]:not([data-id=""])')];
   function render() {
     const done = store.get();
     steps.forEach((s) => {
