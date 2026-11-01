@@ -12,6 +12,10 @@ generador/generar.mjs    el generador
 salida/<app>/            resultado, listo para subir
 ```
 
+Guías paso a paso para Google Play: `play-crear-fluxia-pro.html` (crear Fluxia Pro desde cero:
+app, primera build, formularios, ficha y publicación) y `play-app-content.html` (formularios de
+*App content* de las dos apps). Ábrelas en el navegador: cada valor tiene botón de copiar.
+
 ## Qué se sube y dónde
 
 | Archivo | Tienda | Dónde |
