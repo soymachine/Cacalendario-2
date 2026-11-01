@@ -156,6 +156,77 @@ function featureHtml(app, shotPath) {
   </body></html>`;
 }
 
+// ── Creative assets de App Store Connect (Asset Library, oct. 2026) ──
+// Header (cabecera de la ficha, 21:9) y Search results (resultados de búsqueda,
+// 3:2). Apple no publica la zona segura: lo importante va en el centro.
+const CREATIVE = {
+  'apple-header': { w: 3840, h: 1646 },  // 21:9, JPG/PNG
+  'apple-search': { w: 3840, h: 2560 },  // 3:2, máximo admitido
+};
+
+// Móvil con marco, del mismo estilo que las capturas de las fichas.
+function phoneFrame(shotPath, width, style = '') {
+  const bezel = width * 0.032, radius = width * 0.13;
+  return `<div class="phone" style="width:${width}px;padding:${bezel}px;border-radius:${radius}px;${style}">
+    <img src="${fileUrl(shotPath)}" style="border-radius:${radius - bezel}px"></div>`;
+}
+
+const PHONE_CSS = `
+  .phone { position: absolute; background: #1D2430; box-shadow: 0 40px 110px rgba(31,58,83,.35), inset 0 0 0 10px #3A4352; }
+  .phone img { display: block; width: 100%; }
+`;
+
+// Cabecera: degradado de marca y tres móviles en abanico en el centro, sin texto.
+function headerHtml(app, shots, { w, h }) {
+  const center = 0.80 * h * imageAspect(shots[1]);     // ancho del móvil central
+  const side = center * 0.86;
+  const top = 0.09 * h;
+  const cx = w / 2;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${BASE_CSS}${PHONE_CSS}
+    body {
+      position: relative;
+      background:
+        radial-gradient(ellipse 45% 70% at 50% 55%, rgba(255,255,255,.22), transparent 70%),
+        linear-gradient(105deg, #3E78B5 0%, #539D9F 36%, #78AD89 62%, #D8DA56 100%);
+    }
+  </style></head><body>
+    ${phoneFrame(shots[0], side, `left:${cx - center / 2 - side * 0.78}px;top:${top + 0.07 * h}px;transform:rotate(-8deg);`)}
+    ${phoneFrame(shots[2], side, `left:${cx + center / 2 - side * 0.22}px;top:${top + 0.07 * h}px;transform:rotate(8deg);`)}
+    ${phoneFrame(shots[1], center, `left:${cx - center / 2}px;top:${top}px;z-index:1;`)}
+  </body></html>`;
+}
+
+// Búsqueda: titular corto y tres pantallas grandes que salen por abajo.
+function searchHtml(app, shots, title, { w, h }) {
+  const titleSize = 0.074 * h;
+  const phoneW = 0.255 * w;
+  const gap = 0.045 * w;
+  const top = 0.27 * h;
+  const lefts = [-1, 0, 1].map((k) => w / 2 - phoneW / 2 + k * (phoneW + gap));
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${BASE_CSS}${PHONE_CSS}
+    body {
+      position: relative;
+      background:
+        radial-gradient(ellipse 80% 45% at 85% 8%, rgba(216,218,86,.30), transparent 70%),
+        radial-gradient(ellipse 90% 50% at 5% 35%, rgba(83,157,159,.24), transparent 70%),
+        linear-gradient(170deg, #EEF4FB 0%, #EAF4EE 100%);
+    }
+    header { position: absolute; top: ${0.065 * h}px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; }
+    .brand { display: flex; align-items: center; gap: ${0.012 * w}px; margin-bottom: ${0.02 * h}px; }
+    .brand img { height: ${0.045 * h}px; }
+    .brand span { font-size: ${0.036 * h}px; font-weight: 700; color: #274867; letter-spacing: -0.02em; }
+    h1 { font-size: ${titleSize}px; font-weight: 700; color: #1F3A53; letter-spacing: -0.02em; text-align: center; }
+  </style></head><body>
+    <header>
+      <div class="brand"><img src="${LOGO}"><span>${esc(app.name)}</span></div>
+      <h1>${esc(title)}</h1>
+    </header>
+    ${shots.map((sh, i) => phoneFrame(sh, phoneW, `left:${lefts[i]}px;top:${top + (i === 1 ? 0 : 0.035 * h)}px;`)).join('')}
+  </body></html>`;
+}
+
+const imageAspect = (p) => { const { w, h } = imageSize(p); return w / h; };
+
 const browser = await pw.chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const tmp = mkdtempSync(join(tmpdir(), 'fluxia-store-'));
 let missing = 0;
@@ -202,6 +273,21 @@ for (const [key, app] of Object.entries(config)) {
   await render(featureHtml(app, existsSync(first) ? first : null), 1024, 500, join(outDir, 'play-feature-graphic.jpg'));
   // Icono de Google Play (512×512): el de la app
   copyFileSync(resolve(HERE, app.icon), join(outDir, 'play-icon-512.png'));
+
+  // Creative assets de App Store Connect: Header y Search results
+  if (app.creative) {
+    const pick = (files) => files.map((f) => join(capDir, f)).filter((f) => existsSync(f));
+    const headerShots = pick(app.creative.headerShots);
+    const searchShots = pick(app.creative.searchShots);
+    if (headerShots.length === 3) {
+      const size = CREATIVE['apple-header'];
+      await render(headerHtml(app, headerShots, size), size.w, size.h, join(outDir, 'apple-header.jpg'));
+    }
+    if (searchShots.length === 3) {
+      const size = CREATIVE['apple-search'];
+      await render(searchHtml(app, searchShots, app.creative.searchTitle, size), size.w, size.h, join(outDir, 'apple-search.jpg'));
+    }
+  }
   console.log(`✔ ${app.name} → store-assets/salida/${key}/`);
 }
 

@@ -9,7 +9,12 @@
       { "file": "02.png", "title": "También tus micciones", "subtitle": "Tipo, cantidad, color y síntomas en una sola pantalla" },
       { "file": "03.png", "title": "Y tus comidas, con foto", "subtitle": "Cuando tu profesional te pida seguir lo que comes" },
       { "file": "04.png", "title": "Tu historial, de un vistazo", "subtitle": "Calendario y estadísticas de todos tus registros" }
-    ]
+    ],
+    "creative": {
+      "headerShots": ["03.png", "01.png", "04.png"],
+      "searchShots": ["01.png", "03.png", "04.png"],
+      "searchTitle": "Tu diario digestivo"
+    }
   },
   "ma": {
     "name": "Fluxia Pro",
@@ -22,6 +27,11 @@
       { "file": "03.png", "title": "Cada registro, con detalle", "subtitle": "Deposiciones, micciones y comidas, con las notas del paciente" },
       { "file": "04.png", "title": "Un seguimiento a medida", "subtitle": "Semáforo, etiquetas y qué registra cada paciente" },
       { "file": "05.png", "title": "No se te escapa nadie", "subtitle": "Ve quién lleva días sin registrar y activa sus recordatorios" }
-    ]
+    ],
+    "creative": {
+      "headerShots": ["02.png", "01.png", "05.png"],
+      "searchShots": ["01.png", "02.png", "03.png"],
+      "searchTitle": "Tus pacientes, a simple vista"
+    }
   }
 }

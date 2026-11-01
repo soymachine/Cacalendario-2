@@ -23,9 +23,15 @@ app, primera build, formularios, ficha y publicación) y `play-app-content.html`
 | `salida/<app>/apple-iphone-6.3/*.jpg` (1206×2622) | App Store Connect | Versión → Capturas → iPhone 6,1"/6,3" (obligatorio) |
 | `salida/<app>/apple-iphone-6.9/*.jpg` (1320×2868) | App Store Connect | Versión → Capturas → iPhone 6,9" (opcional) |
 | `salida/ma/apple-ipad-13/*.jpg` (2064×2752) | App Store Connect | Versión → Capturas → iPad 13" |
+| `salida/<app>/apple-header.jpg` (3840×1646, 21:9) | App Store Connect | Asset Library → Creative assets → Header (cabecera de la ficha) |
+| `salida/<app>/apple-search.jpg` (3840×2560, 3:2) | App Store Connect | Asset Library → Creative assets → Search Results |
 | `salida/<app>/play-phone/*.jpg` (1080×1920) | Play Console | Ficha de Play Store principal → Capturas de pantalla del teléfono |
 | `salida/<app>/play-feature-graphic.jpg` (1024×500) | Play Console | Ficha de Play Store principal → Gráfico de funciones |
 | `salida/<app>/play-icon-512.png` | Play Console | Ficha de Play Store principal → Icono de la aplicación |
+
+Header y Search Results son opcionales (creative assets, octubre de 2026). Apple no publica la zona
+segura: el generador deja lo importante en el centro. Sus capturas y el titular de búsqueda se eligen
+en `creative` de `slides.json`.
 
 Desde octubre de 2026, App Store Connect exige las de iPhone 6,1"/6,3" (rechaza otros tamaños con
 "File dimensions are invalid"). Las de 6,9" son opcionales; el resto de iPhone se escala.
