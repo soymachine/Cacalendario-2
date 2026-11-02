@@ -2,20 +2,26 @@ import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { formatDateForDisplay } from '../lib/dates';
 import { D } from '../lib/design';
-import { CloseIcon } from './icons';
+import { CloseIcon, FoodSwitchIcon } from './icons';
 import PoopSmallIcon from '../assets/poop-small.svg';
 
 interface CongratsScreenProps {
   date: string;
   time: string;
-  entryType: 'poop' | 'urine';
+  entryType: 'poop' | 'urine' | 'food';
+  /** Tipo de comida (Desayuno, Cena…) para el resumen de un registro de comida. */
+  mealLabel?: string | null;
   onEdit: () => void;
   onClose: () => void;
 }
 
-export default function CongratsScreen({ date, time, entryType, onEdit, onClose }: CongratsScreenProps) {
+export default function CongratsScreen({ date, time, entryType, mealLabel, onEdit, onClose }: CongratsScreenProps) {
   const dayText = formatDateForDisplay(date); // "LUNES, 13 de abril"
   const isPoop = entryType === 'poop';
+  const isFood = entryType === 'food';
+  const typeText = isFood
+    ? (mealLabel ? `Comida registrada · ${mealLabel}` : 'Comida registrada')
+    : isPoop ? 'Deposición registrada' : 'Micción registrada';
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
@@ -51,14 +57,14 @@ export default function CongratsScreen({ date, time, entryType, onEdit, onClose 
 
           {/* Type badge row */}
           <View style={styles.typeRow}>
-            {isPoop ? (
+            {isFood ? (
+              <FoodSwitchIcon color={D.text} size={28} />
+            ) : isPoop ? (
               <PoopSmallIcon width={28} height={28} />
             ) : (
               <Text style={styles.typeEmoji}>💧</Text>
             )}
-            <Text style={styles.typeText}>
-              {isPoop ? 'Deposición registrada' : 'Micción registrada'}
-            </Text>
+            <Text style={styles.typeText}>{typeText}</Text>
           </View>
 
           {/* Edit button */}

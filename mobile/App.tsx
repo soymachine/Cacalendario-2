@@ -29,6 +29,7 @@ import { hydrateLocalStore } from './src/lib/localStore';
 import { emitEvent, FLUXIA_UPDATED } from './src/lib/events';
 import { type PoopEntry, getEntryById, retryPendingFoodPhotos } from './src/lib/storage';
 import { D } from './src/lib/design';
+import { mealTypeLabel } from './src/lib/food';
 
 type Overlay = 'none' | 'edit' | 'dayDetail' | 'congrats' | 'auth' | 'privacy' | 'registerDate';
 
@@ -40,7 +41,7 @@ function AppContent() {
   const [registerDate, setRegisterDate] = useState<string | null>(null);
   const [detailDate, setDetailDate] = useState<string | null>(null);
   const [congratsData, setCongratsData] = useState<{
-    date: string; time: string; entryType: 'poop' | 'urine'; entryId: string;
+    date: string; time: string; entryType: RegisterType; entryId: string;
   } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
@@ -93,15 +94,6 @@ function AppContent() {
   };
 
   const handleRegisterSuccess = (date: string, time: string, entryType: RegisterType, entryId: string) => {
-    // Comida: registro rápido, sin pantalla intermedia. El formulario muestra
-    // la confirmación; si se abrió desde el calendario, se cierra.
-    if (entryType === 'food') {
-      if (overlay === 'registerDate') {
-        setRegisterDate(null);
-        setOverlay('none');
-      }
-      return;
-    }
     setCongratsData({ date, time, entryType, entryId });
     setOverlay('congrats');
   };
@@ -229,6 +221,9 @@ function AppContent() {
           date={congratsData.date}
           time={congratsData.time}
           entryType={congratsData.entryType}
+          mealLabel={congratsData.entryType === 'food'
+            ? mealTypeLabel(getEntryById(congratsData.entryId)?.food_meal_type ?? null)
+            : null}
           onEdit={() => {
             const entry = getEntryById(congratsData.entryId);
             if (entry) { setEditEntry(entry); setOverlay('edit'); }

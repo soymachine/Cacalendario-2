@@ -86,10 +86,12 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
   const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
-  const [savedBanner, setSavedBanner] = useState<string | null>(null);
+  // Contador de altas: refresca la lista de "Repetir comida" tras guardar.
+  // La confirmación la muestra App (modal "Registro correcto").
+  const [savedCount, setSavedCount] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const recent = useMemo(() => (isEdit ? [] : recentMeals(getFoodEntries(), 5)), [isEdit, savedBanner]);
+  const recent = useMemo(() => (isEdit ? [] : recentMeals(getFoodEntries(), 5)), [isEdit, savedCount]);
 
   const existingPhoto = entry && !s.photoRemoved && (entry.photo_local_uri || entry.food_photo_path)
     ? { localUri: entry.photo_local_uri ?? null, path: entry.food_photo_path ?? null } : null;
@@ -201,8 +203,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
     if (photo_local_uri && !food_photo_path) syncFoodPhoto(id);
 
     if (!isEdit) {
-      const label = mealTypeLabel(saved.food_meal_type) ?? FOOD_TEXT.module;
-      setSavedBanner(`${FOOD_TEXT.saved}: ${label}, ${formatDateForDisplay(saved.date).toLowerCase()} a las ${saved.time}`);
+      setSavedCount((n) => n + 1);
       setS(initialState(undefined, initialDate, show('meal_type')));
       setCopiedFrom(null);
     }
@@ -218,12 +219,6 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
   return (
     <View>
-      {savedBanner && (
-        <Pressable onPress={() => setSavedBanner(null)} style={styles.successBanner} accessibilityRole="alert">
-          <Text style={styles.successText}>✓ {savedBanner}</Text>
-        </Pressable>
-      )}
-
       {/* Repetir comida */}
       {!isEdit && recent.length > 0 && (
         <View style={styles.block}>
@@ -491,16 +486,6 @@ const styles = StyleSheet.create({
   rowGap10: { flexDirection: 'row', gap: 10 },
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  successBanner: {
-    backgroundColor: D.accentSoft,
-    borderLeftWidth: 5,
-    borderLeftColor: D.success,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  successText: { fontSize: 16, fontWeight: '700', color: D.text, lineHeight: 22 },
   repeatButton: {
     minHeight: 56,
     borderRadius: 99,
