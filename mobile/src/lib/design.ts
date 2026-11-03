@@ -12,6 +12,8 @@ export const D = {
   primary: '#3C7DB8', // --fx-blue-500
   primaryText: '#FFFFFF',
   secondary: '#4DA078', // --fx-green-500
+  secondarySoft: '#D6EEE0', // --fx-green-100
+  secondaryBorder: '#AFDDC3', // --fx-green-200
   navBg: '#FFFFFF',
   danger: '#D26464', // --fx-error-500
   dangerBg: '#FBEDED', // --fx-error-50

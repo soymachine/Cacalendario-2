@@ -88,7 +88,11 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
             }
             const bristolType = getBristolType(entry.bristol);
             return (
-              <Pressable key={entry.id} onPress={() => onEditEntry(entry)} style={styles.entryCard}>
+              <Pressable
+                key={entry.id}
+                onPress={() => onEditEntry(entry)}
+                style={[styles.entryCard, entry.entry_type !== 'urine' && styles.poopCard]}
+              >
                 <View style={styles.entryRow}>
                   {/* Icon */}
                   <View style={styles.entryIcon}>
@@ -213,6 +217,12 @@ const styles = StyleSheet.create({
     backgroundColor: D.card,
     borderRadius: 14,
     padding: 14,
+  },
+  // Deposiciones: tono verdoso para distinguirlas de un vistazo en el listado
+  poopCard: {
+    backgroundColor: D.secondarySoft,
+    borderWidth: 1,
+    borderColor: D.secondaryBorder,
   },
   entryRow: {
     flexDirection: 'row',
