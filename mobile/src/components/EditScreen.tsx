@@ -239,7 +239,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
             )}
 
             <View style={styles.card}>
-              <Text style={styles.sectionLabel}>PÉRDIDA DE PESO</Text>
+              <Text style={styles.sectionLabel}>¿Has notado pérdida de peso significativa últimamente?</Text>
               <View style={styles.rowGap10}>
                 {[{ label: 'No', value: false }, { label: 'Sí', value: true }].map(opt => {
                   const active = weightLoss === opt.value;

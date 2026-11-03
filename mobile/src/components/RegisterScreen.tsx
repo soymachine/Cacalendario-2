@@ -15,7 +15,7 @@ import {
 } from '../lib/formOptions';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
-import { CloseIcon, EditIcon, PoopSwitchIcon, UrineSwitchIcon, FoodSwitchIcon } from './icons';
+import { CloseIcon, PoopSwitchIcon, UrineSwitchIcon, FoodSwitchIcon } from './icons';
 import FoodEntryForm from './FoodEntryForm';
 import { BOTTOM_NAV_HEIGHT } from './BottomNav';
 import LigeroIcon from '../assets/Ligero-icon.svg';
@@ -47,7 +47,10 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const currentType: RegisterType = availableTypes.includes(entryType) ? entryType : availableTypes[0];
   const [hours, setHours] = useState(now.getHours());
   const [minutes, setMinutes] = useState(now.getMinutes());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  // Fecha del registro: la del día elegido en el calendario o hoy; "Cambiar"
+  // despliega aquí mismo los selectores de día y hora.
+  const [targetDate, setTargetDate] = useState(date ?? toDateKey(now));
+  const [showWhenPickers, setShowWhenPickers] = useState(false);
   const [notes, setNotes] = useState('');
 
   // Poop fields
@@ -68,7 +71,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const [urineUrgency, setUrineUrgency] = useState<number | null>(null);
   const [duringSleep, setDuringSleep] = useState<boolean | null>(null);
 
-  const targetDate = date ?? toDateKey(now);
   const dayText = formatDateForDisplay(targetDate);
   const timeText = formatTime(hours, minutes);
   const quantityLabel = quantity <= 25 ? 'Ligero' : quantity <= 50 ? 'Moderado' : quantity <= 75 ? 'Abundante' : 'Pesado';
@@ -81,8 +83,20 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
   const toggleUrineChar = (key: string) =>
     setUrineCharacteristics(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]);
 
+  // Android abre cada selector como diálogo: se encadenan día → hora.
+  const [androidPicker, setAndroidPicker] = useState<'none' | 'date' | 'time'>('none');
+  const openWhenPickers = () => {
+    if (Platform.OS === 'android') setAndroidPicker('date');
+    else setShowWhenPickers((v) => !v);
+  };
+
+  const onDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setAndroidPicker(event.type === 'set' ? 'time' : 'none');
+    if (event.type === 'set' && selected) setTargetDate(toDateKey(selected));
+  };
+
   const onTimeChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (Platform.OS === 'android') setAndroidPicker('none');
     if (event.type === 'set' && selected) {
       setHours(selected.getHours());
       setMinutes(selected.getMinutes());
@@ -166,31 +180,57 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         </View>
       ) : <>
 
-      {/* Date + time row */}
+      {/* Día + hora: "Cambiar" despliega aquí mismo los selectores */}
       <View style={styles.dateRow}>
         <Text style={styles.dateText}>
           {dayText} {timeText}
         </Text>
-        <Pressable onPress={() => setShowTimePicker(true)}>
-          <EditIcon />
+        <Pressable
+          onPress={openWhenPickers}
+          style={styles.changeButton}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showWhenPickers }}
+        >
+          <Text style={styles.changeButtonText}>Cambiar</Text>
         </Pressable>
       </View>
 
-      {showTimePicker && (
+      {Platform.OS === 'ios' && showWhenPickers && (
         <View style={styles.timePickerWrap}>
+          <DateTimePicker
+            value={(() => { const [y, mo, d] = targetDate.split('-').map(Number); return new Date(y, mo - 1, d); })()}
+            mode="date"
+            maximumDate={new Date()}
+            display="spinner"
+            onChange={onDateChange}
+          />
           <DateTimePicker
             value={new Date(2000, 0, 1, hours, minutes)}
             mode="time"
             is24Hour
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="spinner"
             onChange={onTimeChange}
           />
-          {Platform.OS === 'ios' && (
-            <Pressable onPress={() => setShowTimePicker(false)} style={styles.timeDone}>
-              <Text style={styles.timeDoneText}>Listo</Text>
-            </Pressable>
-          )}
+          <Pressable onPress={() => setShowWhenPickers(false)} style={styles.timeDone}>
+            <Text style={styles.timeDoneText}>Listo</Text>
+          </Pressable>
         </View>
+      )}
+      {Platform.OS === 'android' && androidPicker === 'date' && (
+        <DateTimePicker
+          value={(() => { const [y, mo, d] = targetDate.split('-').map(Number); return new Date(y, mo - 1, d); })()}
+          mode="date"
+          maximumDate={new Date()}
+          onChange={onDateChange}
+        />
+      )}
+      {Platform.OS === 'android' && androidPicker === 'time' && (
+        <DateTimePicker
+          value={new Date(2000, 0, 1, hours, minutes)}
+          mode="time"
+          is24Hour
+          onChange={onTimeChange}
+        />
       )}
 
       {/* Entry type toggle — only shown when more than one type is allowed */}
@@ -264,7 +304,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
         )}
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>Pérdida de peso</Text>
+          <Text style={styles.sectionLabel}>¿Has notado pérdida de peso significativa últimamente?</Text>
           <View style={styles.rowGap10}>
             {[{ label: 'No', value: false }, { label: 'Sí', value: true }].map(opt => {
               const active = weightLoss === opt.value;
@@ -587,6 +627,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: D.text,
+  },
+  changeButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 50,
+    backgroundColor: D.primary,
+  },
+  changeButtonText: {
+    color: D.primaryText,
+    fontSize: 12,
+    fontWeight: '700',
   },
   timePickerWrap: {
     marginBottom: 12,
