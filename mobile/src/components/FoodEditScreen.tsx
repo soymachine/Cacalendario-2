@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Pressable, StyleSheet, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { PoopEntry } from '../lib/storage';
 import { D } from '../lib/design';
@@ -23,7 +23,6 @@ export default function FoodEditScreen({ entry, onClose }: FoodEditScreenProps) 
           </Pressable>
         </View>
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Editar comida</Text>
           <FoodEntryForm entry={entry} onSaved={onClose} onDeleted={onClose} />
         </KeyboardAwareScrollView>
       </SafeAreaView>
@@ -36,6 +35,6 @@ const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: D.bg },
   closeRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 8, paddingRight: 16 },
   closeButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 16, paddingBottom: 40 },
-  title: { fontSize: 28, fontWeight: '900', color: D.secondary, marginBottom: 14 },
+  // Mismos márgenes que Editar deposición/micción
+  content: { paddingTop: 12, paddingHorizontal: 16, paddingBottom: 40 },
 });

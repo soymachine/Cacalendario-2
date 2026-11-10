@@ -210,15 +210,66 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
     onSaved(saved, !isEdit);
   };
 
+  // Edición: mismo formato que Editar deposición/micción (tarjetas blancas,
+  // títulos en mayúsculas). El alta sigue el formato de la pantalla de Registro.
+  const card = isEdit ? [styles.sectionCard, styles.editCard] : styles.sectionCard;
+  const inactive = isEdit ? styles.optionInactiveEdit : styles.optionInactive;
+  const secondary = isEdit ? [styles.secondaryButton, styles.secondaryButtonEdit] : styles.secondaryButton;
+  const input = isEdit ? [styles.textInput, styles.textInputEdit] : styles.textInput;
+
   const label = (f: FoodField, text: string = FOOD_FIELD_LABEL[f]) => (
-    <Text style={styles.sectionLabel}>
-      {text}
-      {req(f) && <Text style={styles.requiredMark}>{`  ·  ${FOOD_TEXT.required}`}</Text>}
+    <Text style={isEdit ? styles.editLabel : styles.sectionLabel}>
+      {isEdit ? text.toUpperCase() : text}
+      {req(f) && <Text style={styles.requiredMark}>{`  ·  ${isEdit ? FOOD_TEXT.required.toUpperCase() : FOOD_TEXT.required}`}</Text>}
     </Text>
   );
 
+  const pickerValue = picker === 'date'
+    ? new Date(entryTimestamp(s.date, '12:00'))
+    : new Date(2000, 0, 1, s.hours, s.minutes);
+  const whenPicker = (mode: 'date' | 'time') => picker === mode && (
+    <DateTimePicker
+      value={pickerValue}
+      mode={mode}
+      is24Hour
+      maximumDate={mode === 'date' ? new Date() : undefined}
+      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+      onChange={onPickerChange}
+      locale="es-ES"
+    />
+  );
+  const togglePicker = (mode: 'date' | 'time') => setPicker((p) => (p === mode ? 'none' : mode));
+
   return (
     <View>
+      {/* Día y hora (edición; en el alta los controla la pantalla de Registro) */}
+      {!when && <>
+        <View style={card}>
+          <Text style={styles.editLabel}>DÍA</Text>
+          <View style={styles.editRow}>
+            <Text style={styles.dayText}>{formatDateForDisplay(s.date)}</Text>
+            <Pressable onPress={() => togglePicker('date')} style={styles.changeButton} accessibilityRole="button">
+              <Text style={styles.changeButtonText}>cambiar</Text>
+            </Pressable>
+          </View>
+          {whenPicker('date')}
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeBadgeText}>🍽️ Comida</Text>
+          </View>
+        </View>
+
+        <View style={card}>
+          <Text style={styles.editLabel}>HORA</Text>
+          <View style={styles.editRow}>
+            <Text style={styles.timeText}>{timeText}</Text>
+            <Pressable onPress={() => togglePicker('time')} style={styles.changeButton} accessibilityRole="button">
+              <Text style={styles.changeButtonText}>cambiar</Text>
+            </Pressable>
+          </View>
+          {whenPicker('time')}
+        </View>
+      </>}
+
       {/* Repetir comida */}
       {!isEdit && recent.length > 0 && (
         <View style={styles.block}>
@@ -255,7 +306,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
       {/* Foto */}
       {show('photo') && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('photo')}
           {hasPhoto ? (
             <View>
@@ -268,10 +319,10 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
               />
               <Text style={styles.photoZoomHint}>Toca la foto para ampliarla</Text>
               <View style={styles.rowGap10}>
-                <Pressable onPress={() => takePhoto('library')} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
+                <Pressable onPress={() => takePhoto('library')} style={[secondary, styles.flex1]} accessibilityRole="button">
                   <Text style={styles.secondaryText}>Cambiar foto</Text>
                 </Pressable>
-                <Pressable onPress={removePhoto} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
+                <Pressable onPress={removePhoto} style={[secondary, styles.flex1]} accessibilityRole="button">
                   <Text style={[styles.secondaryText, { color: D.danger }]}>Quitar foto</Text>
                 </Pressable>
               </View>
@@ -292,43 +343,9 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
         </View>
       )}
 
-      {/* Fecha y hora (siempre se registran; editables para registros a posteriori) */}
-      {!when && <View style={styles.sectionCard}>
-        <Text style={styles.sectionLabel}>¿Cuándo?</Text>
-        <Text style={styles.whenText}>{formatDateForDisplay(s.date)} · {timeText}</Text>
-        <View style={styles.rowGap10}>
-          <Pressable onPress={() => setPicker('date')} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
-            <Text style={styles.secondaryText}>Cambiar día</Text>
-          </Pressable>
-          <Pressable onPress={() => setPicker('time')} style={[styles.secondaryButton, styles.flex1]} accessibilityRole="button">
-            <Text style={styles.secondaryText}>Cambiar hora</Text>
-          </Pressable>
-        </View>
-        {picker !== 'none' && (
-          <View style={styles.pickerWrap}>
-            <DateTimePicker
-              value={picker === 'date'
-                ? new Date(entryTimestamp(s.date, '12:00'))
-                : new Date(2000, 0, 1, s.hours, s.minutes)}
-              mode={picker}
-              is24Hour
-              maximumDate={picker === 'date' ? new Date() : undefined}
-              display={Platform.OS === 'ios' ? (picker === 'date' ? 'inline' : 'spinner') : 'default'}
-              onChange={onPickerChange}
-              locale="es-ES"
-            />
-            {Platform.OS === 'ios' && (
-              <Pressable onPress={() => setPicker('none')} style={styles.doneButton}>
-                <Text style={styles.doneText}>Listo</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
-      </View>}
-
       {/* Tipo de comida */}
       {show('meal_type') && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('meal_type')}
           <View style={styles.grid2}>
             {MEAL_TYPES.map((m) => {
@@ -337,7 +354,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
                 <Pressable
                   key={m}
                   onPress={() => set({ mealType: active ? null : m, mealTouched: true })}
-                  style={[styles.bigOption, active ? styles.optionActive : styles.optionInactive]}
+                  style={[styles.bigOption, active ? styles.optionActive : inactive]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: active }}
                 >
@@ -351,7 +368,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
       {/* ¿Qué has comido? */}
       {show('description') && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('description')}
           <TextInput
             value={s.description}
@@ -360,7 +377,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
             placeholderTextColor={D.textMuted}
             multiline
             maxLength={500}
-            style={styles.textInput}
+            style={input}
             accessibilityLabel={FOOD_FIELD_LABEL.description}
           />
         </View>
@@ -368,7 +385,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
       {/* Cantidad */}
       {show('portion') && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('portion')}
           <View style={styles.rowGap10}>
             {PORTION_SIZES.map((p, i) => {
@@ -377,7 +394,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
                 <Pressable
                   key={p}
                   onPress={() => set({ portion: active ? null : p })}
-                  style={[styles.portionOption, active ? styles.optionActive : styles.optionInactive]}
+                  style={[styles.portionOption, active ? styles.optionActive : inactive]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: active }}
                   accessibilityLabel={PORTION_LABEL[p]}
@@ -393,7 +410,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
       {/* Etiquetas definidas por el profesional */}
       {show('tags') && cfg.tags.length > 0 && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('tags')}
           <View style={styles.wrap}>
             {cfg.tags.map((t) => {
@@ -402,7 +419,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
                 <Pressable
                   key={t}
                   onPress={() => toggleTag(t)}
-                  style={[styles.tagChip, active ? styles.optionActive : styles.optionInactive]}
+                  style={[styles.tagChip, active ? styles.optionActive : inactive]}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: active }}
                 >
@@ -416,7 +433,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
 
       {/* Observaciones */}
       {show('notes') && (
-        <View style={styles.sectionCard}>
+        <View style={card}>
           {label('notes')}
           <TextInput
             value={s.notes}
@@ -424,7 +441,7 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
             placeholder={FOOD_TEXT.notesPlaceholder}
             placeholderTextColor={D.textMuted}
             multiline
-            style={styles.textInput}
+            style={input}
             accessibilityLabel={FOOD_FIELD_LABEL.notes}
           />
         </View>
@@ -443,12 +460,12 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
       {isEdit && onDeleted && (
         confirmDelete ? (
           <View style={styles.rowGap10}>
-            <Pressable onPress={() => setConfirmDelete(false)} style={[styles.secondaryButton, styles.flex1]}>
+            <Pressable onPress={() => setConfirmDelete(false)} style={[secondary, styles.flex1]}>
               <Text style={styles.secondaryText}>Cancelar</Text>
             </Pressable>
             <Pressable
               onPress={() => { deleteEntry(entry!.id); emitEvent(FLUXIA_UPDATED); onDeleted(); }}
-              style={[styles.secondaryButton, styles.flex1, { backgroundColor: D.dangerBg }]}
+              style={[secondary, styles.flex1, { backgroundColor: D.dangerBg }]}
             >
               <Text style={[styles.secondaryText, { color: D.danger }]}>Sí, eliminar</Text>
             </Pressable>
@@ -478,6 +495,24 @@ const styles = StyleSheet.create({
     color: D.secondary,
     marginBottom: 12,
   },
+  editCard: { backgroundColor: D.card, padding: 14 },
+  editLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: D.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  dayText: { fontSize: 18, fontWeight: '700', color: D.text },
+  timeText: { fontSize: 20, fontWeight: '700', color: D.text },
+  changeButton: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 50, backgroundColor: D.primary },
+  changeButtonText: { color: D.primaryText, fontSize: 12, fontWeight: '700' },
+  typeBadge: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 99, backgroundColor: D.chip },
+  typeBadgeText: { fontSize: 12, fontWeight: '700', color: D.chipText },
+  optionInactiveEdit: { backgroundColor: D.chip },
+  secondaryButtonEdit: { backgroundColor: D.chip },
+  textInputEdit: { backgroundColor: D.bg, borderWidth: 1, borderColor: D.border },
   requiredMark: {
     fontSize: 13,
     fontWeight: '700',
@@ -528,7 +563,6 @@ const styles = StyleSheet.create({
   photoButtonText: { fontSize: 16, fontWeight: '800', color: D.primary, textAlign: 'center' },
   photoPreview: { width: '100%', height: 220, borderRadius: 12, marginBottom: 6 },
   photoZoomHint: { fontSize: 12, color: D.textMuted, textAlign: 'center', marginBottom: 10 },
-  whenText: { fontSize: 18, fontWeight: '700', color: D.text, marginBottom: 12 },
   secondaryButton: {
     minHeight: 52,
     borderRadius: 12,
@@ -538,9 +572,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   secondaryText: { fontSize: 16, fontWeight: '700', color: D.text },
-  pickerWrap: { marginTop: 12, alignItems: 'center' },
-  doneButton: { paddingVertical: 12, paddingHorizontal: 32, borderRadius: 99, backgroundColor: D.primary, marginTop: 6 },
-  doneText: { color: D.primaryText, fontWeight: '800', fontSize: 16 },
   bigOption: {
     width: '48%',
     flexGrow: 1,
