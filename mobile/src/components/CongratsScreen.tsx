@@ -2,8 +2,7 @@ import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { formatDateForDisplay } from '../lib/dates';
 import { D } from '../lib/design';
-import { CloseIcon, FoodSwitchIcon } from './icons';
-import PoopSmallIcon from '../assets/poop-small.svg';
+import { CloseIcon, FoodSwitchIcon, PoopSwitchIcon, UrineSwitchIcon } from './icons';
 
 interface CongratsScreenProps {
   date: string;
@@ -60,9 +59,9 @@ export default function CongratsScreen({ date, time, entryType, mealLabel, onEdi
             {isFood ? (
               <FoodSwitchIcon color={D.text} size={28} />
             ) : isPoop ? (
-              <PoopSmallIcon width={28} height={28} />
+              <PoopSwitchIcon color={D.text} size={28} />
             ) : (
-              <Text style={styles.typeEmoji}>💧</Text>
+              <UrineSwitchIcon color={D.text} size={28} />
             )}
             <Text style={styles.typeText}>{typeText}</Text>
           </View>
@@ -141,9 +140,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 14,
-  },
-  typeEmoji: {
-    fontSize: 22,
   },
   typeText: {
     fontSize: 15,

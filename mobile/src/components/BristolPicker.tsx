@@ -9,7 +9,8 @@ import Fluxia5 from '../assets/fluxia_5.svg';
 import Fluxia6 from '../assets/fluxia_6.svg';
 import Fluxia7 from '../assets/fluxia_7.svg';
 
-const BRISTOL_ICONS = [Fluxia1, Fluxia2, Fluxia3, Fluxia4, Fluxia5, Fluxia6, Fluxia7];
+/** Iconos de la escala de Bristol (tipo 1 → índice 0). */
+export const BRISTOL_ICONS = [Fluxia1, Fluxia2, Fluxia3, Fluxia4, Fluxia5, Fluxia6, Fluxia7];
 
 interface BristolPickerProps {
   value: number | null;

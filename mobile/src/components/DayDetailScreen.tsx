@@ -6,10 +6,10 @@ import { getEntriesForDate, type PoopEntry } from '../lib/storage';
 import { onEvent, FLUXIA_UPDATED } from '../lib/events';
 import { getBristolType, getBristolHealthColor } from '../lib/bristol';
 import { D } from '../lib/design';
-import { CloseIcon, ChevronSmallIcon, FoodSwitchIcon } from './icons';
+import { CloseIcon, ChevronSmallIcon, FoodSwitchIcon, PoopSwitchIcon, UrineSwitchIcon } from './icons';
+import { BRISTOL_ICONS } from './BristolPicker';
 import { mealTypeLabel, portionLabel } from '../lib/food';
 import FoodPhotoView from './FoodPhotoView';
-import PoopSmallIcon from '../assets/poop-small.svg';
 import PoopButtonIcon from '../assets/poop-button.svg';
 
 interface DayDetailScreenProps {
@@ -87,6 +87,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
               );
             }
             const bristolType = getBristolType(entry.bristol);
+            const BristolIcon = bristolType ? BRISTOL_ICONS[entry.bristol! - 1] : null;
             return (
               <Pressable
                 key={entry.id}
@@ -94,12 +95,12 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                 style={[styles.entryCard, entry.entry_type !== 'urine' && styles.poopCard]}
               >
                 <View style={styles.entryRow}>
-                  {/* Icon */}
+                  {/* Icon — los mismos que el selector de tipo de Registro */}
                   <View style={styles.entryIcon}>
                     {entry.entry_type === 'urine' ? (
-                      <Text style={styles.entryEmoji}>💧</Text>
+                      <UrineSwitchIcon color={D.primary} size={28} />
                     ) : (
-                      <PoopSmallIcon width={28} height={28} />
+                      <PoopSwitchIcon color={D.secondary} size={28} />
                     )}
                   </View>
 
@@ -124,10 +125,13 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
                         </>
                       ) : (
                         <>
-                          {bristolType && (
-                            <Text style={[styles.badge, { backgroundColor: getBristolHealthColor(entry.bristol!), color: '#fff' }]}>
-                              {bristolType.emoji} Tipo {entry.bristol}
-                            </Text>
+                          {bristolType && BristolIcon && (
+                            <View style={styles.bristolBadge}>
+                              <BristolIcon width={26} height={26} />
+                              <Text style={[styles.badge, { backgroundColor: getBristolHealthColor(entry.bristol!), color: '#fff' }]}>
+                                Tipo {entry.bristol}
+                              </Text>
+                            </View>
                           )}
                           {entry.floats === 'floats' && <Text style={styles.entryMeta}>🫧</Text>}
                         </>
@@ -233,9 +237,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginTop: 2,
   },
-  entryEmoji: {
-    fontSize: 26,
-  },
   entryInfo: {
     flex: 1,
     minWidth: 0,
@@ -250,6 +251,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     color: D.primary,
+  },
+  bristolBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   badge: {
     fontSize: 10,
