@@ -272,9 +272,9 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                   thumbTintColor={D.primary}
                 />
                 <View style={styles.quantityScale}>
-                  <LigeroIcon width={20} height={20} opacity={0.5} />
+                  <LigeroIcon width={36} height={36} opacity={0.5} />
                   <Text style={styles.quantityScaleText}>{quantityLabel}</Text>
-                  <PesadoIcon width={20} height={20} opacity={0.5} />
+                  <PesadoIcon width={36} height={36} opacity={0.5} />
                 </View>
               </View>
             )}
@@ -604,14 +604,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  // 4 por fila (círculos ~30% más grandes que con 5); la última fila,
+  // si queda incompleta, sale centrada.
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  // 9 colores: 5 + 4 por fila
   colorCell: {
-    width: '20%',
-    padding: 5,
+    width: '25%',
+    padding: 4,
   },
   colorSwatch: {
     width: '100%',

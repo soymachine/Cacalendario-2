@@ -348,7 +348,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           <View style={styles.sectionCard}>
             <Text style={styles.sectionLabel}>Cantidad</Text>
             <View style={styles.sliderRow}>
-              <LigeroIcon width={24} height={24} opacity={0.6} />
+              <LigeroIcon width={36} height={36} opacity={0.6} />
               <Slider
                 style={styles.slider}
                 minimumValue={0}
@@ -360,7 +360,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                 maximumTrackTintColor={D.chipDark}
                 thumbTintColor={D.primary}
               />
-              <PesadoIcon width={24} height={24} opacity={0.6} />
+              <PesadoIcon width={36} height={36} opacity={0.6} />
             </View>
             <Text style={styles.quantityLabel}>{quantityLabel}</Text>
           </View>
@@ -752,14 +752,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  // 4 por fila (círculos ~30% más grandes que con 5); la última fila,
+  // si queda incompleta, sale centrada.
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  // 9 colores: 5 + 4 por fila
   colorCell: {
-    width: '20%',
-    padding: 5,
+    width: '25%',
+    padding: 4,
   },
   colorSwatch: {
     width: '100%',
