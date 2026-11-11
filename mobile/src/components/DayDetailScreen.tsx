@@ -92,7 +92,7 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
               <Pressable
                 key={entry.id}
                 onPress={() => onEditEntry(entry)}
-                style={[styles.entryCard, entry.entry_type !== 'urine' && styles.poopCard]}
+                style={styles.entryCard}
               >
                 <View style={styles.entryRow}>
                   {/* Icon — los mismos que el selector de tipo de Registro */}
@@ -221,12 +221,6 @@ const styles = StyleSheet.create({
     backgroundColor: D.card,
     borderRadius: 14,
     padding: 14,
-  },
-  // Deposiciones: tono verdoso para distinguirlas de un vistazo en el listado
-  poopCard: {
-    backgroundColor: D.secondarySoft,
-    borderWidth: 1,
-    borderColor: D.secondaryBorder,
   },
   entryRow: {
     flexDirection: 'row',
