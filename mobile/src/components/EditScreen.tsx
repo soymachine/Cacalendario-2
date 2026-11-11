@@ -608,8 +608,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
+  // 9 colores: 5 + 4 por fila
   colorCell: {
-    width: '25%',
+    width: '20%',
     padding: 5,
   },
   colorSwatch: {

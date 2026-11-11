@@ -13,6 +13,7 @@ export const COLOR_OPTIONS = [
   { hex: '#7B4226', label: 'Marrón' },
   { hex: '#C4844A', label: 'Marrón claro' },
   { hex: '#D4B84A', label: 'Amarillo' },
+  { hex: '#6B8E3A', label: 'Verde' },
   { hex: '#C0392B', label: 'Rojo' },
   { hex: '#9E9E9E', label: 'Gris' },
   { hex: '#F5F5F5', label: 'Blanco' },
