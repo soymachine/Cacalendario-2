@@ -202,6 +202,11 @@ const benefits = [
   .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid white; }
   .legend-row span:last-child { font-size: 15.5px; color: #fff; }
   .split-reverse .split-visual img { max-width: 100%; filter: none; }
+  /* Panel clínico: la imagen (ordenador + iPad + iPhone) ocupa ~50% más que
+     la columna de texto; el bloque se ensancha para no estrechar el texto. */
+  .split-reverse .split { max-width: 1320px; gap: 48px; }
+  .split-reverse .split-copy { flex: 1 1 380px; }
+  .split-reverse .split-visual { flex: 5 1 560px; }
 
   /* ————————————————————— Personalización del seguimiento (#customization) */
   .record-types {
