@@ -242,7 +242,9 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             const label = t === 'poop' ? 'Deposición' : t === 'urine' ? 'Micción' : 'Comida';
             return (
               <Pressable
-                key={t}
+                // La key cambia con el estado: en Android el redondeo no se reaplica
+                // al pasar el fondo de transparente a blanco (se veía un cuadrado).
+                key={`${t}-${active ? 'on' : 'off'}`}
                 onPress={() => setEntryType(t)}
                 style={[styles.typeButton, active && styles.typeButtonActive]}
                 accessibilityRole="tab"
@@ -331,7 +333,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                   onPress={() => setColor(color === opt.hex ? null : opt.hex)}
                   style={styles.colorCell}
                 >
-                  <View style={color === opt.hex ? styles.colorSelectedRing : undefined}>
+                  <View key={color === opt.hex ? 'on' : 'off'} style={color === opt.hex ? styles.colorSelectedRing : undefined}>
                     <View style={[
                       styles.colorSwatch,
                       { backgroundColor: opt.hex },
@@ -475,7 +477,7 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                   onPress={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                   style={styles.urineColorCell}
                 >
-                  <View style={urineColor === opt.hex ? styles.colorSelectedRing : undefined}>
+                  <View key={urineColor === opt.hex ? 'on' : 'off'} style={urineColor === opt.hex ? styles.colorSelectedRing : undefined}>
                     <View style={[
                       styles.urineColorSwatch,
                       { backgroundColor: opt.hex },

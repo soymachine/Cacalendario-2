@@ -205,7 +205,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       onPress={() => setColor(color === opt.hex ? null : opt.hex)}
                       style={styles.colorCell}
                     >
-                      <View style={color === opt.hex ? styles.colorSelectedRing : undefined}>
+                      <View key={color === opt.hex ? 'on' : 'off'} style={color === opt.hex ? styles.colorSelectedRing : undefined}>
                         <View style={[
                           styles.colorSwatch,
                           { backgroundColor: opt.hex },
@@ -389,7 +389,7 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
                       onPress={() => setUrineColor(urineColor === opt.hex ? null : opt.hex)}
                       style={styles.urineColorCell}
                     >
-                      <View style={urineColor === opt.hex ? styles.colorSelectedRing : undefined}>
+                      <View key={urineColor === opt.hex ? 'on' : 'off'} style={urineColor === opt.hex ? styles.colorSelectedRing : undefined}>
                         <View style={[
                           styles.urineColorSwatch,
                           { backgroundColor: opt.hex },

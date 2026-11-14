@@ -58,7 +58,10 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               <Pressable key={id} onPress={() => onChange(id)} style={styles.registerButton}>
                 {/* Elevated circle backdrop */}
                 <View style={styles.registerOuter}>
-                  <View style={[styles.registerInner, isActive && styles.activeCircle]}>
+                  {/* key: en Android (nueva arquitectura) el redondeo no se vuelve a aplicar
+                    cuando el fondo pasa de transparente a color y se ve un cuadrado;
+                    al cambiar de estado se vuelve a crear la vista. */}
+                  <View key={isActive ? 'on' : 'off'} style={[styles.registerInner, isActive && styles.activeCircle]}>
                     <RegisterIcon color="#000000" />
                   </View>
                 </View>
@@ -69,7 +72,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
           const Icon = id === 'calendar' ? HistorialIcon : AccountIcon;
           return (
             <Pressable key={id} onPress={() => onChange(id)} style={styles.tabButton}>
-              <View style={[styles.tabCircle, isActive && styles.activeCircle]}>
+              <View key={isActive ? 'on' : 'off'} style={[styles.tabCircle, isActive && styles.activeCircle]}>
                 <Icon color="#000000" />
               </View>
             </Pressable>
