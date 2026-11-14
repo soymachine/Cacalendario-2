@@ -311,24 +311,6 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
           </View>
         )}
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>¿Has notado pérdida de peso significativa últimamente?</Text>
-          <View style={styles.rowGap10}>
-            {[{ label: 'No', value: false }, { label: 'Sí', value: true }].map(opt => {
-              const active = weightLoss === opt.value;
-              return (
-                <Pressable
-                  key={String(opt.value)}
-                  onPress={() => setWeightLoss(opt.value)}
-                  style={[styles.yesNoButton, { backgroundColor: active ? D.primary : D.navBg }]}
-                >
-                  <Text style={[styles.yesNoText, { color: active ? D.primaryText : D.text }]}>{opt.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
         {show('color') && (
           <View style={styles.sectionCard}>
             <Text style={styles.sectionLabel}>Color</Text>
@@ -343,7 +325,8 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
                     <View style={[
                       styles.colorSwatch,
                       { backgroundColor: opt.hex },
-                      color === opt.hex && styles.colorSelected,
+                      // Borde fino: el Blanco no se veía sobre el fondo y parecía un hueco
+                      color === opt.hex ? styles.colorSelected : styles.urineColorBorder,
                     ]} />
                   </View>
                 </Pressable>
@@ -427,6 +410,24 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             </View>
           </View>
         )}
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionLabel}>¿Has notado pérdida de peso significativa últimamente?</Text>
+          <View style={styles.rowGap10}>
+            {[{ label: 'No', value: false }, { label: 'Sí', value: true }].map(opt => {
+              const active = weightLoss === opt.value;
+              return (
+                <Pressable
+                  key={String(opt.value)}
+                  onPress={() => setWeightLoss(opt.value)}
+                  style={[styles.yesNoButton, { backgroundColor: active ? D.primary : D.navBg }]}
+                >
+                  <Text style={[styles.yesNoText, { color: active ? D.primaryText : D.text }]}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       </>}
 
       {/* ── URINE FORM ── */}
