@@ -654,10 +654,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+  // Radios exactos (la mitad del alto): con borderRadius mayor, Android
+  // pinta el botón activo como un cuadrado.
   typeToggle: {
     flexDirection: 'row',
     backgroundColor: D.primary,
-    borderRadius: 999,
+    borderRadius: 30,
     padding: 4,
     marginBottom: 10,
     gap: 4,
@@ -665,7 +667,7 @@ const styles = StyleSheet.create({
   typeButton: {
     flex: 1,
     height: 52,
-    borderRadius: 999,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',

@@ -15,7 +15,7 @@ import {
 } from '../lib/formOptions';
 import BristolPicker from './BristolPicker';
 import { D } from '../lib/design';
-import { CloseIcon } from './icons';
+import { CloseIcon, PoopSwitchIcon, UrineSwitchIcon } from './icons';
 import LigeroIcon from '../assets/Ligero-icon.svg';
 import PesadoIcon from '../assets/Pesado-icon.svg';
 import KeyboardAwareScrollView from './KeyboardAwareScrollView';
@@ -160,7 +160,8 @@ export default function EditScreen({ entry, onClose }: EditScreenProps) {
               />
             )}
             <View style={styles.typeBadge}>
-              <Text style={styles.typeBadgeText}>{isUrine ? '💧 Micción' : '💩 Deposición'}</Text>
+              {isUrine ? <UrineSwitchIcon color={D.chipText} size={18} /> : <PoopSwitchIcon color={D.chipText} size={18} />}
+              <Text style={styles.typeBadgeText}>{isUrine ? 'Micción' : 'Deposición'}</Text>
             </View>
           </View>
 
@@ -578,6 +579,9 @@ const styles = StyleSheet.create({
   },
   typeBadge: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 99,

@@ -13,7 +13,7 @@ import {
   type FoodField, type MealType, type PortionSize, type FoodDraft,
 } from '../lib/food';
 import { D } from '../lib/design';
-import { CameraIcon, GalleryIcon, PortionIcon, RepeatIcon } from './icons';
+import { CameraIcon, FoodSwitchIcon, GalleryIcon, PortionIcon, RepeatIcon } from './icons';
 import FoodPhotoView from './FoodPhotoView';
 
 // Formulario de comida del paciente (alta y edición). Solo muestra los campos
@@ -254,7 +254,8 @@ export default function FoodEntryForm({ entry, initialDate, when, onSaved, onDel
           </View>
           {whenPicker('date')}
           <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>🍽️ Comida</Text>
+            <FoodSwitchIcon color={D.chipText} size={18} />
+            <Text style={styles.typeBadgeText}>Comida</Text>
           </View>
         </View>
 
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
   timeText: { fontSize: 20, fontWeight: '700', color: D.text },
   changeButton: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 50, backgroundColor: D.primary },
   changeButtonText: { color: D.primaryText, fontSize: 12, fontWeight: '700' },
-  typeBadge: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 99, backgroundColor: D.chip },
+  typeBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 99, backgroundColor: D.chip },
   typeBadgeText: { fontSize: 12, fontWeight: '700', color: D.chipText },
   optionInactiveEdit: { backgroundColor: D.chip },
   secondaryButtonEdit: { backgroundColor: D.chip },

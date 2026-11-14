@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Modal, Image } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { D } from '../lib/design';
 import { CloseIcon } from './icons';
-import LogoIcon from '../assets/poop-small.svg';
 
 interface PrivacyScreenProps {
   onClose: () => void;
@@ -34,7 +33,7 @@ export default function PrivacyScreen({ onClose }: PrivacyScreenProps) {
         <ScrollView contentContainerStyle={styles.container}>
           {/* Header: logo + close */}
           <View style={styles.header}>
-            <LogoIcon width={64} height={57} />
+            <Image source={require('../assets/fluxia-logo.png')} style={{ width: 124, height: 48 }} resizeMode="contain" accessibilityLabel="Fluxia" />
             <Pressable onPress={onClose} style={styles.closeButton}>
               <CloseIcon size={24} />
             </Pressable>

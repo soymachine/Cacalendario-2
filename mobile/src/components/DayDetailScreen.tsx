@@ -10,7 +10,6 @@ import { CloseIcon, ChevronSmallIcon, FoodSwitchIcon, PoopSwitchIcon, UrineSwitc
 import { BRISTOL_ICONS } from './BristolPicker';
 import { mealTypeLabel, portionLabel } from '../lib/food';
 import FoodPhotoView from './FoodPhotoView';
-import PoopButtonIcon from '../assets/poop-button.svg';
 
 interface DayDetailScreenProps {
   date: string;
@@ -159,7 +158,6 @@ export default function DayDetailScreen({ date, onClose, onAddEntry, onEditEntry
         <View style={styles.footer}>
           <Pressable onPress={() => onAddEntry(date)} style={styles.addButton}>
             <Text style={styles.addButtonText}>+ añadir registro</Text>
-            <PoopButtonIcon width={24} height={24} />
           </Pressable>
         </View>
       </SafeAreaView>
