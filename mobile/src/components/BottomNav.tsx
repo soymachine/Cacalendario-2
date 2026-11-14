@@ -1,5 +1,5 @@
 import { View, Pressable, StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { D } from '../lib/design';
 
 export type Tab = 'calendar' | 'register' | 'account';
@@ -45,6 +45,17 @@ function AccountIcon({ color }: { color: string }) {
   );
 }
 
+// Fondo de la opción activa dibujado en SVG: en Android, un View con
+// backgroundColor + borderRadius se pintaba como un cuadrado al cambiar de
+// opción (al arrancar salía bien). Un círculo SVG no depende de eso.
+function ActiveCircle({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={ACTIVE_BG} />
+    </Svg>
+  );
+}
+
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <View style={styles.nav}>
@@ -58,10 +69,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               <Pressable key={id} onPress={() => onChange(id)} style={styles.registerButton}>
                 {/* Elevated circle backdrop */}
                 <View style={styles.registerOuter}>
-                  {/* key: en Android (nueva arquitectura) el redondeo no se vuelve a aplicar
-                    cuando el fondo pasa de transparente a color y se ve un cuadrado;
-                    al cambiar de estado se vuelve a crear la vista. */}
-                  <View key={isActive ? 'on' : 'off'} style={[styles.registerInner, isActive && styles.activeCircle]}>
+                  <View style={styles.registerInner}>
+                    {isActive && <ActiveCircle size={68} />}
                     <RegisterIcon color="#000000" />
                   </View>
                 </View>
@@ -72,7 +81,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
           const Icon = id === 'calendar' ? HistorialIcon : AccountIcon;
           return (
             <Pressable key={id} onPress={() => onChange(id)} style={styles.tabButton}>
-              <View key={isActive ? 'on' : 'off'} style={[styles.tabCircle, isActive && styles.activeCircle]}>
+              <View style={styles.tabCircle}>
+                {isActive && <ActiveCircle size={52} />}
                 <Icon color="#000000" />
               </View>
             </Pressable>
@@ -82,6 +92,8 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
     </View>
   );
 }
+
+const ACTIVE_BG = '#A4AA7C';
 
 // Radios exactos (la mitad del lado): con borderRadius mayor que la mitad,
 // Android puede pintar el círculo como un cuadrado.
@@ -141,8 +153,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  activeCircle: {
-    backgroundColor: '#A4AA7C',
   },
 });

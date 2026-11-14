@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
+import Svg, { Rect } from 'react-native-svg';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateForDisplay, formatTime, toDateKey } from '../lib/dates';
 import { saveEntry, generateEntryId } from '../lib/storage';
@@ -242,15 +243,20 @@ export default function RegisterScreen({ date, isTab, onClose, onSuccess }: Regi
             const label = t === 'poop' ? 'Deposición' : t === 'urine' ? 'Micción' : 'Comida';
             return (
               <Pressable
-                // La key cambia con el estado: en Android el redondeo no se reaplica
-                // al pasar el fondo de transparente a blanco (se veía un cuadrado).
-                key={`${t}-${active ? 'on' : 'off'}`}
+                key={t}
                 onPress={() => setEntryType(t)}
-                style={[styles.typeButton, active && styles.typeButtonActive]}
+                style={styles.typeButton}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={label}
               >
+                {/* Fondo del activo en SVG: en Android un View con fondo y
+                    borderRadius se pintaba cuadrado al cambiar de opción. */}
+                {active && (
+                  <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+                    <Rect x="0" y="0" width="100%" height="100%" rx={26} ry={26} fill={D.card} />
+                  </Svg>
+                )}
                 {t === 'poop' ? <PoopSwitchIcon color={color} />
                   : t === 'urine' ? <UrineSwitchIcon color={color} />
                   : <FoodSwitchIcon color={color} />}
@@ -673,9 +679,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-  },
-  typeButtonActive: {
-    backgroundColor: D.card,
   },
   archivedCard: {
     backgroundColor: D.card,

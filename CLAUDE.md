@@ -73,6 +73,12 @@ tiene un rol único (ver más abajo), así que usa el código suelto de
   ExpoModulesCore"). Al añadir uno, sube antes `expo` a la última revisión
   (`npm install expo@~57.0.x`) y alinea el resto con
   `EXPO_OFFLINE=1 npx expo install --fix`.
+- **Versión de PA**: cada cambio que llegue a la app de pacientes sube la
+  última cifra de la versión de la plataforma afectada en `mobile/app.json`
+  (`expo.ios.version` y/o `expo.android.version`: 0.90.1, 0.90.2…). iOS y
+  Android llevan numeración propia para saber qué build se está viendo; la
+  versión se muestra en Cuenta (`mobile/src/lib/version.ts`). Los números de
+  build (`buildNumber` / `versionCode`) los sube EAS solo (`autoIncrement`).
 - **Lógica compartida y Edge Functions**: `npm test` (node:test, sin dependencias).
 - **Migraciones y RLS**: `npm run test:sql` (Postgres local efímero con un mock
   mínimo de Supabase; como root: `su postgres -c 'bash supabase/tests/run.sh'`).
