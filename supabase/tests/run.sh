@@ -27,14 +27,15 @@ PSQL=("$PG_BIN/psql" -h "$DATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_S
 
 "${PSQL[@]}" -f "$HERE/00_mock_supabase.sql"
 
-# Solo las migraciones autocontenidas (comida, billing_apply_subscription y push):
+# Solo las migraciones autocontenidas (comida, billing_apply_subscription, push y Apple):
 # el resto depende de tablas (centers, stripe...) que el mock no reproduce.
 # Se aplican dos veces para comprobar que son idempotentes.
 for m in "$MIGRATIONS"/20261001_food_tracking.sql "$MIGRATIONS"/20261001_food_tracking.sql \
          "$MIGRATIONS"/20261004_billing_keep_trial.sql "$MIGRATIONS"/20261004_billing_keep_trial.sql \
          "$MIGRATIONS"/20261006_food_config_default.sql "$MIGRATIONS"/20261006_food_config_default.sql \
          "$MIGRATIONS"/20261018_archived_patients_no_push.sql "$MIGRATIONS"/20261018_archived_patients_no_push.sql \
-         "$MIGRATIONS"/20261023_push_tokens_and_log.sql "$MIGRATIONS"/20261023_push_tokens_and_log.sql; do
+         "$MIGRATIONS"/20261023_push_tokens_and_log.sql "$MIGRATIONS"/20261023_push_tokens_and_log.sql \
+         "$MIGRATIONS"/20261115_apple_auth_tokens.sql "$MIGRATIONS"/20261115_apple_auth_tokens.sql; do
   "${PSQL[@]}" -f "$m"
 done
 

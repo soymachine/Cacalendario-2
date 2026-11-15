@@ -6,6 +6,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { appleConfigFromEnv, revokeAppleForUser } from '../_shared/apple.ts'
 
 const json = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -88,7 +89,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Solo entonces, el usuario de auth
+    // 6. Iniciar sesión con Apple: revocar sus tokens en Apple (App Store
+    // 5.1.1(v)). Si Apple falla no se bloquea la baja: se registra el error.
+    try {
+      const appleResult = await revokeAppleForUser(supabaseAdmin, user.id, appleConfigFromEnv((n) => Deno.env.get(n)))
+      if (appleResult === 'not_configured') console.error('[delete-user] Tokens de Apple sin revocar: faltan los secretos APPLE_*')
+    } catch (err) {
+      console.error('[delete-user] Error revocando tokens de Apple:', (err as Error).message)
+    }
+
+    // 7. Solo entonces, el usuario de auth
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
     if (deleteUserError) {
       return json({ error: 'Failed to delete auth account: ' + deleteUserError.message }, 500)

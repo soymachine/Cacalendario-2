@@ -31,6 +31,9 @@ interface AuthContextType {
   clearRecovery: () => void;
 }
 
+// Bundle id de esta app: client_id de Iniciar sesión con Apple
+const APPLE_CLIENT_ID = 'com.fluxiahealth.medics';
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // Deep link back into the app after the OAuth browser flow (fluxiamedics://auth-callback)
@@ -191,6 +194,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('[auth] Apple signInWithIdToken error:', error.message);
         return { error: 'No se ha podido iniciar sesión con Apple' };
       }
+      // Guardar el refresh token de Apple para poder revocarlo al borrar la
+      // cuenta (App Store 5.1.1(v)); el código caduca en 5 minutos. No bloquea
+      // el acceso si falla.
+      if (credential.authorizationCode) {
+        supabase.functions.invoke('apple-auth', {
+          body: { action: 'store', authorizationCode: credential.authorizationCode, clientId: APPLE_CLIENT_ID },
+        }).then(({ error: fnError }) => {
+          if (fnError) console.error('[auth] apple-auth store error:', fnError.message);
+        });
+      }
       // Apple solo da el nombre la primera vez que se autoriza la app
       const fullName = [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(' ');
       if (fullName) await supabase.auth.updateUser({ data: { full_name: fullName } });
@@ -216,6 +229,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // wipes the doctor's data (patient links, clinical notes, center if
   // orphaned) and the auth user itself.
   const deleteAccount = async () => {
+    // Cuentas de Iniciar sesión con Apple: revocar sus tokens en Apple antes de
+    // borrar (App Store 5.1.1(v)). Si falla, la baja sigue adelante.
+    const { error: appleError } = await supabase.functions.invoke('apple-auth', { body: { action: 'revoke' } });
+    if (appleError) console.error('[auth] apple-auth revoke error:', appleError.message);
     const { error } = await supabase.rpc('doctor_self_delete_account');
     if (error) return { error: error.message };
     await supabase.auth.signOut();
