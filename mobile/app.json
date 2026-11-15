@@ -24,7 +24,7 @@
       ]
     },
     "android": {
-      "version": "0.90.4",
+      "version": "0.90.5",
       "package": "com.fluxiahealth.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
