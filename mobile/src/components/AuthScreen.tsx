@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth';
+import AppleSignInButton from './AppleSignInButton';
 import { D } from '../lib/design';
 import { CloseIcon, EyeIcon, GoogleIcon } from './icons';
 
@@ -41,7 +42,7 @@ function PasswordInput({ showPassword, onToggle, ...props }: {
 }
 
 export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthScreenProps) {
-  const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecovery, clearRecovery } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithApple, resetPassword, updatePassword, isRecovery, clearRecovery } = useAuth();
   const [mode, setMode] = useState<Mode>(isRecovery ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -182,6 +183,12 @@ export default function AuthScreen({ onClose, onSuccess, onShowPrivacy }: AuthSc
               </Text>
 
               {/* Google button */}
+              <AppleSignInButton onPress={async () => {
+                setError('');
+                const { error } = await signInWithApple();
+                if (error) setError(error);
+              }} />
+
               <Pressable onPress={signInWithGoogle} style={styles.googleButton}>
                 <GoogleIcon />
                 <Text style={styles.googleButtonText}>Continuar con Google</Text>

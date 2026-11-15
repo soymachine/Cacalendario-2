@@ -89,7 +89,8 @@ interface BootstrapUser {
  * completion via completeGoogleDoctorProfile.
  */
 export async function bootstrapDoctor(user: BootstrapUser): Promise<DoctorBootstrapResult> {
-  const isGoogle = (user.app_metadata?.provider || '') === 'google';
+  // Google y Apple: sin metadatos de alta, la primera vez se pide nombre y centro
+  const isGoogle = ['google', 'apple'].includes(user.app_metadata?.provider || '');
   const userMeta = user.user_metadata || {};
 
   // 1. Existing doctor record — 8s timeout so a hung query doesn't block forever.

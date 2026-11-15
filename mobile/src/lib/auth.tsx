@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
 import { unregisterPushSubscription } from './push';
@@ -15,6 +17,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
@@ -165,6 +168,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Iniciar sesión con Apple (iOS): token nativo → Supabase (signInWithIdToken).
+  // Se envía a Apple el hash del nonce y a Supabase el nonce en claro.
+  const signInWithApple = async (): Promise<{ error: string | null }> => {
+    try {
+      const rawNonce = Crypto.randomUUID();
+      const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+      if (!credential.identityToken) return { error: 'No se ha podido iniciar sesión con Apple' };
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple', token: credential.identityToken, nonce: rawNonce,
+      });
+      if (error) {
+        console.error('[auth] Apple signInWithIdToken error:', error.message);
+        return { error: 'No se ha podido iniciar sesión con Apple' };
+      }
+      // Apple solo da el nombre la primera vez que se autoriza la app
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(' ');
+      if (fullName) await supabase.auth.updateUser({ data: { full_name: fullName } });
+      return { error: null };
+    } catch (err: any) {
+      if (err?.code === 'ERR_REQUEST_CANCELED') return { error: null };
+      console.error('[auth] Apple sign-in error:', err);
+      return { error: 'No se ha podido iniciar sesión con Apple' };
+    }
+  };
+
   const signOut = async () => {
     // Mientras aún hay sesión (RLS): el móvil deja de recibir los avisos de esta cuenta
     if (user) await unregisterPushSubscription(user.id);
@@ -191,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearRecovery = () => setIsRecovery(false);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isRecovery, signUp, signIn, signInWithGoogle, signOut, resetPassword, updatePassword, clearRecovery }}>
+    <AuthContext.Provider value={{ user, session, loading, isRecovery, signUp, signIn, signInWithGoogle, signInWithApple, signOut, resetPassword, updatePassword, clearRecovery }}>
       {children}
     </AuthContext.Provider>
   );

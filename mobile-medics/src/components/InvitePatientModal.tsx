@@ -124,7 +124,7 @@ export default function InvitePatientModal({ doctor, patients, onClose, onInvite
                   {doctor.plan === 'beta' && atLimit && (
                     <View style={styles.planBanner}>
                       <Text style={styles.planBannerTitle}>{`Plan Beta · ${activeCount}/${BETA_PLAN_PATIENT_LIMIT} pacientes`}</Text>
-                      <Text style={styles.planBannerBody}>Has alcanzado el límite de tu plan. Archiva pacientes o pasa a Pro desde la web para invitar a más.</Text>
+                      <Text style={styles.planBannerBody}>Has alcanzado el límite de tu plan. Archiva pacientes para poder invitar a más.</Text>
                     </View>
                   )}
                   <Text style={styles.label}>EMAIL DEL PACIENTE</Text>

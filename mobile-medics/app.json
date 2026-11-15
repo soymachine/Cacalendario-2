@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fluxiahealth.medics",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -24,6 +25,7 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
+      "expo-apple-authentication",
       "expo-web-browser",
       [
         "expo-splash-screen",

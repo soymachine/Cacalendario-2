@@ -189,17 +189,14 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
         </View>
 
         {/* Tu suscripción — solo informativa. Reglas de App Store (3.1.1): nada de
-            botones, enlaces ni precios para pagar fuera de la app (ver
-            TrialExpiredScreen). El cambio de plan y la facturación viven en MW. */}
+            botones, enlaces, precios ni indicaciones de dónde pagar fuera de la
+            app (ver TrialExpiredScreen). El cambio de plan y la facturación viven en MW. */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Tu suscripción</Text>
           <View style={[styles.planBox, { backgroundColor: planTone.bg, borderColor: planTone.border }]}>
             <Text style={styles.planTitle}>{plan.title}</Text>
             <Text style={[styles.planDetail, { color: planTone.text }]}>{plan.detail}</Text>
           </View>
-          <Text style={styles.hint}>
-            Para cambiar de plan o gestionar la facturación, entra en tu cuenta desde el navegador de tu ordenador.
-          </Text>
         </View>
 
         <Pressable onPress={() => setGuideOpen(true)} style={styles.guideButton} accessibilityRole="button">

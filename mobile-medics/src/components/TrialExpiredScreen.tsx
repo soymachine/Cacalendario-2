@@ -4,8 +4,8 @@
 // IMPORTANTE — reglas de App Store: esta pantalla NO puede incluir botones,
 // enlaces ni llamadas a la acción que lleven a pagar fuera de la app (App
 // Review Guideline 3.1.1). Por eso no hay precio, ni botón de pago, ni enlace
-// a fluxia-health.com: solo se informa de que la cuenta se gestiona desde el
-// navegador. El cobro vive únicamente en MW.
+// a fluxia-health.com, ni se dice dónde ni cómo activar el plan (Apple lo
+// considera "steering"): solo se informa del estado. El cobro vive en MW.
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { D, FORM_MAX_WIDTH, centered } from '../lib/design';
 import { useAuth } from '../lib/auth';
@@ -22,9 +22,8 @@ export default function TrialExpiredScreen({ proEnded = false }: { proEnded?: bo
           Tus pacientes y todos tus registros siguen guardados: no se ha borrado nada.
         </Text>
         <Text style={styles.body}>
-          Para seguir usando Fluxia Pro, entra en tu cuenta desde el navegador de tu
-          ordenador y activa tu plan desde ahí. En cuanto lo hagas, esta app volverá a
-          funcionar con normalidad.
+          Cuando tu plan vuelva a estar activo, esta app funcionará de nuevo con
+          normalidad.
         </Text>
         <Pressable onPress={signOut} style={styles.signOutButton}>
           <Text style={styles.signOutText}>Cerrar sesión</Text>
