@@ -36,6 +36,8 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
 
   // Settings state
   const [displayName, setDisplayName] = useState('');
+  // Nombre guardado (user_profiles.display_name): el que se muestra arriba
+  const [savedName, setSavedName] = useState('');
   const [nameSaved, setNameSaved] = useState(false);
   const [linkedCenter, setLinkedCenter] = useState<string | null>(null);
   const [linkedDoctor, setLinkedDoctor] = useState<string | null>(null);
@@ -83,8 +85,23 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
   useEffect(() => {
     if (!user) return;
     // Load display_name
-    supabase.from('user_profiles').select('display_name').eq('id', user.id).single()
-      .then(({ data }) => { if (data?.display_name) setDisplayName(data.display_name); });
+    // Sin nombre guardado, se usa el que dio Apple/Google al registrarse
+    // (user_metadata.full_name) y se guarda: así el médico ve el nombre y no
+    // el email, que con Apple puede ser una dirección oculta …@privaterelay.
+    supabase.from('user_profiles').select('display_name').eq('id', user.id).maybeSingle()
+      .then(({ data }) => {
+        const metaName = typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name.trim() : '';
+        const name = data?.display_name || metaName;
+        if (!name) return;
+        setDisplayName(name);
+        setSavedName(name);
+        if (!data?.display_name) {
+          supabase.from('user_profiles').upsert(
+            { id: user.id, display_name: name, email: user.email ?? null },
+            { onConflict: 'id' },
+          ).then(() => {});
+        }
+      });
     // Load linked center
     loadLinkedCenter();
     // Check push
@@ -103,6 +120,11 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
     if (user) setFeedbackEmail(user.email || '');
   }, [user]);
 
+  // Cabecera: el nombre si lo hay; si no, el email, salvo el oculto de Apple
+  // (…@privaterelay.appleid.com), que no dice nada al usuario.
+  const isAppleRelay = !!user?.email?.endsWith('@privaterelay.appleid.com');
+  const headerName = savedName || (isAppleRelay ? 'Cuenta de Apple' : user?.email ?? '');
+
   const handleSaveName = async () => {
     if (!user) return;
     const trimmed = displayName.trim();
@@ -110,6 +132,7 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
       { id: user.id, display_name: trimmed || null, email: user.email ?? null },
       { onConflict: 'id' }
     );
+    setSavedName(trimmed);
     setNameSaved(true);
     setTimeout(() => setNameSaved(false), 2000);
   };
@@ -235,10 +258,10 @@ export default function AccountScreen({ onShowAuth, onShowPrivacy }: AccountScre
           {/* User card */}
           <View style={[styles.card, styles.userCard]}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{(user.email || '?')[0].toUpperCase()}</Text>
+              <Text style={styles.avatarText}>{(headerName || '?')[0].toUpperCase()}</Text>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
+              <Text style={styles.userEmail} numberOfLines={1}>{headerName}</Text>
               <View style={styles.syncRow}>
                 <View style={styles.syncDot} />
                 <Text style={styles.syncText}>Sincronización activa</Text>

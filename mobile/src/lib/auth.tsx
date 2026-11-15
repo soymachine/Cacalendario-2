@@ -204,7 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       // Apple solo da el nombre la primera vez que se autoriza la app
       const fullName = [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(' ');
-      if (fullName) await supabase.auth.updateUser({ data: { full_name: fullName } });
+      if (fullName) {
+        await supabase.auth.updateUser({ data: { full_name: fullName } });
+        // Nombre visible para el médico (en vez del email oculto de Apple)
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u) {
+          await supabase.from('user_profiles').upsert(
+            { id: u.id, display_name: fullName, email: u.email ?? null },
+            { onConflict: 'id' },
+          );
+        }
+      }
       return { error: null };
     } catch (err: any) {
       if (err?.code === 'ERR_REQUEST_CANCELED') return { error: null };
