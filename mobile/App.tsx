@@ -51,6 +51,14 @@ function AppContent() {
     if (isRecovery) setOverlay('auth');
   }, [isRecovery]);
 
+  // Al iniciar sesión con Apple o Google, AuthScreen no llama a onSuccess: la
+  // sesión llega por onAuthStateChange. Si no se cerrara aquí, la pantalla de
+  // acceso se quedaría abierta encima de la app ya con sesión. (Con el enlace
+  // de cambio de contraseña hay sesión y debe seguir abierta.)
+  useEffect(() => {
+    if (user && !isRecovery) setOverlay((o) => (o === 'auth' ? 'none' : o));
+  }, [user, isRecovery]);
+
   // Sync and apply doctor config (hidden fields, center image, entry type) on login/logout
   useEffect(() => {
     if (user) {

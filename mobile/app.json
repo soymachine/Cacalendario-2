@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#F4F7F3",
     "ios": {
-      "version": "0.90.3",
+      "version": "0.90.4",
       "supportsTablet": false,
       "bundleIdentifier": "com.fluxiahealth.app",
       "usesAppleSignIn": true,
@@ -24,7 +24,7 @@
       ]
     },
     "android": {
-      "version": "0.90.3",
+      "version": "0.90.4",
       "package": "com.fluxiahealth.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
