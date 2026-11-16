@@ -7,7 +7,7 @@ import type { DoctorInfo } from '../lib/doctor';
 import type { PatientLink } from '../lib/patients';
 import { saveDoctorConfig, saveGlobalTags, deleteGlobalTag, pickAndUploadCenterLogo } from '../lib/config';
 import { tagColor } from '../lib/tags';
-import { planSummary, type PlanTone } from '../lib/plan';
+import { planSummary, type PlanTone, hasLiveSubscription } from '../lib/plan';
 import { D, CONTENT_MAX_WIDTH, centered } from '../lib/design';
 import GuideModal from './GuideModal';
 
@@ -213,6 +213,11 @@ export default function ConfigScreen({ doctor, patients, onDoctorUpdated }: Conf
             <Text style={styles.deleteBody}>
               Esta acción es <Text style={styles.bold}>irreversible</Text>. Se borrarán tu perfil, tus pacientes vinculados y las notas clínicas que hayas escrito.
             </Text>
+            {hasLiveSubscription(doctor) && (
+              <Text style={styles.deleteBody}>
+                Tienes una suscripción activa: <Text style={styles.bold}>se cancelará al momento</Text> y no se te volverá a cobrar. El periodo ya pagado no se reembolsa.
+              </Text>
+            )}
             {!!deleteError && <Text style={styles.deleteErrorText}>{deleteError}</Text>}
             <View style={styles.rowGap8}>
               <Pressable onPress={() => { setConfirmDelete(false); setDeleteError(''); }} style={[styles.outlineBtn, styles.flex1]} disabled={deleting}>

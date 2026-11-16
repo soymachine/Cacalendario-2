@@ -229,12 +229,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // wipes the doctor's data (patient links, clinical notes, center if
   // orphaned) and the auth user itself.
   const deleteAccount = async () => {
-    // Cuentas de Iniciar sesión con Apple: revocar sus tokens en Apple antes de
-    // borrar (App Store 5.1.1(v)). Si falla, la baja sigue adelante.
-    const { error: appleError } = await supabase.functions.invoke('apple-auth', { body: { action: 'revoke' } });
-    if (appleError) console.error('[auth] apple-auth revoke error:', appleError.message);
-    const { error } = await supabase.rpc('doctor_self_delete_account');
-    if (error) return { error: error.message };
+    // Edge Function delete-doctor: cancela la suscripción de Stripe (si la
+    // hay), revoca Apple (App Store 5.1.1(v)) y borra datos y usuario con
+    // doctor_self_delete_account. Si Stripe falla no borra nada.
+    const { error } = await supabase.functions.invoke('delete-doctor', { body: {} });
+    if (error) {
+      let message = 'No se ha podido eliminar la cuenta. Inténtalo de nuevo.';
+      try {
+        const body = await (error as { context?: Response }).context?.json();
+        if (body?.error) message = body.error;
+      } catch { /* respuesta sin JSON */ }
+      return { error: message };
+    }
     await supabase.auth.signOut();
     return { error: null };
   };

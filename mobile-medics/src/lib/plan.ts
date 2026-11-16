@@ -136,3 +136,11 @@ export function planSummary(d: DoctorBillingFields): PlanSummary {
 
   return { title: 'Sin plan activo', detail: 'Pasa al plan Pro para seguir usando Fluxia', tone: 'warning' };
 }
+
+/**
+ * ¿Tiene una suscripción de Stripe que aún puede cobrar? Se usa para avisar
+ * antes de borrar la cuenta (la Edge Function delete-doctor la cancela).
+ */
+export function hasLiveSubscription(d: Pick<DoctorBillingFields, 'stripe_status'>): boolean {
+  return !!d.stripe_status && d.stripe_status !== 'canceled' && d.stripe_status !== 'incomplete_expired';
+}

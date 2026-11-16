@@ -10,7 +10,7 @@ import { initSentry } from '../lib/sentry';
 import { getSemaforo, getSemaforoKey, resolveSemaforoThresholds } from '../lib/semaforo';
 import { tagColor } from '../lib/tags';
 import { filterEntriesByDateRange } from '../lib/entryFilters';
-import { testPlanDaysLeft, isAccessBlocked, planSummary } from '../lib/plan';
+import { testPlanDaysLeft, isAccessBlocked, planSummary, hasLiveSubscription } from '../lib/plan';
 import { professionalFirstName, stripTitle } from '../lib/doctorName';
 import EntryTypeIcon, { ENTRY_KIND_LABEL, type EntryKind } from './EntryTypeIcon';
 import FoodConfigEditor from './FoodConfigEditor';
@@ -403,6 +403,32 @@ export default function MedicsPanel() {
     }
 
     setConfigPalette(info.palette);
+  };
+
+  // ── Baja del profesional (Edge Function delete-doctor: cancela Stripe,
+  // revoca Apple y borra la cuenta con doctor_self_delete_account) ──
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    setDeleteAccountError(null);
+    const { error } = await supabase.functions.invoke('delete-doctor', { body: {} });
+    if (error) {
+      let message = 'No se ha podido eliminar la cuenta. Inténtalo de nuevo.';
+      try {
+        const body = await (error as { context?: Response }).context?.json();
+        if (body?.error) message = body.error;
+      } catch { /* respuesta sin JSON */ }
+      setDeleteAccountError(message);
+      setDeletingAccount(false);
+      return;
+    }
+    await supabase.auth.signOut();
+    setDeletingAccount(false);
+    setDeleteAccountOpen(false);
+    setLoggedIn(false);
+    setDoctorInfo(null);
   };
 
   // ── Stripe billing ──
@@ -3714,6 +3740,59 @@ export default function MedicsPanel() {
                   </div>
                 </div>
               </div>}
+
+              {/* Eliminar cuenta (App Store 5.1.1(v) y RGPD) */}
+              <div className="medics-config__delete bg-fx-surface rounded-fx-lg shadow-fx-sm border border-fx-border-soft md:col-span-2">
+                <div className="py-3.5 px-5 border-b border-fx-border-soft">
+                  <span className="text-[15px] font-bold text-fx-text">Eliminar mi cuenta</span>
+                </div>
+                <div className="p-5">
+                  {!deleteAccountOpen ? (
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <p className="text-[13px] text-fx-text-secondary leading-relaxed m-0 max-w-[640px]">
+                        Borra tu cuenta de Fluxia Pro, tu perfil, los vínculos con tus pacientes y las notas clínicas que hayas escrito. Tus pacientes conservan sus propios registros.
+                      </p>
+                      <button
+                        onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(null); }}
+                        className="py-2.5 px-5 rounded-fx-pill border border-fx-error-500 bg-transparent text-fx-error-600 text-[15px] font-semibold font-sans cursor-pointer hover:bg-fx-error-50"
+                      >
+                        Eliminar mi cuenta
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-fx-md border border-fx-error-500 bg-fx-error-50 p-4">
+                      <div className="text-[15px] font-bold text-fx-error-600">¿Seguro que quieres eliminar tu cuenta?</div>
+                      <p className="text-[13px] text-fx-text leading-relaxed mt-2 mb-0">
+                        Esta acción es <b>irreversible</b>. Se borrarán tu perfil, tus pacientes vinculados y las notas clínicas que hayas escrito.
+                      </p>
+                      {doctorInfo && hasLiveSubscription(doctorInfo) && (
+                        <p className="text-[13px] text-fx-text leading-relaxed mt-2 mb-0">
+                          Tienes una suscripción activa: <b>se cancelará al momento</b> y no se te volverá a cobrar. El periodo ya pagado no se reembolsa. Tus facturas seguirán disponibles: si las necesitas, descárgalas antes desde <i>Facturación y suscripción</i>.
+                        </p>
+                      )}
+                      {deleteAccountError && (
+                        <p className="text-[13px] font-semibold text-fx-error-600 mt-2 mb-0">{deleteAccountError}</p>
+                      )}
+                      <div className="flex gap-2 mt-4 flex-wrap">
+                        <button
+                          onClick={() => { setDeleteAccountOpen(false); setDeleteAccountError(null); }}
+                          disabled={deletingAccount}
+                          className="py-2.5 px-5 rounded-fx-pill border border-fx-border bg-fx-surface text-fx-text text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={deletingAccount}
+                          className="py-2.5 px-5 rounded-fx-pill border-none bg-fx-error-500 text-white text-[15px] font-semibold font-sans cursor-pointer disabled:opacity-60"
+                        >
+                          {deletingAccount ? 'Eliminando…' : 'Sí, eliminar mi cuenta'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
             </div>
             {isMobile && (

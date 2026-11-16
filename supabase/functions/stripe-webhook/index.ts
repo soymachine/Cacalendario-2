@@ -142,6 +142,16 @@ async function apply(
   doctorId: string | null,
 ) {
   const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+
+  // Médico dado de baja (delete-doctor): su customer de Stripe se conserva por
+  // la facturación, pero ya no hay fila en doctors. Los eventos posteriores
+  // (sobre todo customer.subscription.deleted de la cancelación) se ignoran;
+  // si fallaran, Stripe los reintentaría durante días.
+  if (!(await doctorExists(admin, customerId, doctorId))) {
+    console.warn(`Evento de una suscripción sin médico (customer=${customerId}, sub=${sub.id}): ignorado`);
+    return;
+  }
+
   const entitled = sub.status !== 'canceled' && ENTITLED.has(sub.status);
   const { priceId, interval } = priceInfo(sub);
 
@@ -158,4 +168,18 @@ async function apply(
   });
 
   if (error) throw new Error(error.message);
+}
+
+async function doctorExists(
+  admin: ReturnType<typeof adminClient>,
+  customerId: string,
+  doctorId: string | null,
+): Promise<boolean> {
+  const filter = doctorId
+    ? `id.eq.${doctorId},stripe_customer_id.eq.${customerId}`
+    : `stripe_customer_id.eq.${customerId}`;
+  const { data, error } = await admin.from('doctors').select('id').or(filter).limit(1);
+  // Ante un error de lectura se sigue como antes (el RPC decide)
+  if (error) return true;
+  return (data?.length ?? 0) > 0;
 }
