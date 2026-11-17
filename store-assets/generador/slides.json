@@ -1,7 +1,7 @@
 {
   "pa": {
     "name": "Fluxia",
-    "tagline": "Tu diario digestivo, conectado con tu profesional",
+    "tagline": "Tu diario de salud, conectado con tu profesional",
     "icon": "../../mobile/assets/icon.png",
     "iconBackground": "#ffffff",
     "slides": [
@@ -13,7 +13,7 @@
     "creative": {
       "headerShots": ["03.png", "01.png", "04.png"],
       "searchShots": ["01.png", "03.png", "04.png"],
-      "searchTitle": "Tu diario digestivo"
+      "searchTitle": "Tu diario de salud"
     }
   },
   "ma": {
