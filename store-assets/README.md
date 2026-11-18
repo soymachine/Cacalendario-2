@@ -25,11 +25,12 @@ app, primera build, formularios, ficha y publicación) y `play-app-content.html`
 | `salida/ma/apple-ipad-13/*.jpg` (2064×2752) | App Store Connect | Versión → Capturas → iPad 13" |
 | `salida/<app>/apple-header.jpg` (3840×1646, 21:9) | App Store Connect | Asset Library → Creative assets → Header (cabecera de la ficha) |
 | `salida/<app>/apple-search.jpg` (3840×2560, 3:2) | App Store Connect | Asset Library → Creative assets → Search Results |
+| `salida/<app>/apple-header-search.png` (5244×2950, 16:9, PNG) | App Store Connect | Asset Library → Creative assets → Header and Search results (un solo recurso para los dos huecos; solo admite PNG) |
 | `salida/<app>/play-phone/*.jpg` (1080×1920) | Play Console | Ficha de Play Store principal → Capturas de pantalla del teléfono |
 | `salida/<app>/play-feature-graphic.jpg` (1024×500) | Play Console | Ficha de Play Store principal → Gráfico de funciones |
 | `salida/<app>/play-icon-512.png` | Play Console | Ficha de Play Store principal → Icono de la aplicación |
 
-Header y Search Results son opcionales (creative assets, octubre de 2026). Apple no publica la zona
+Header y Search Results son opcionales (creative assets, octubre de 2026). Se suben por separado (los JPG) o con un solo recurso universal en el hueco combinado "Header and Search results" (el PNG de 5244×2950; con un JPG da "File has an invalid extension"). La carpeta `salida/ma/iPad/` (capturas de iPad listas a mano) no la borra el generador. Apple no publica la zona
 segura: el generador deja lo importante en el centro. Sus capturas y el titular de búsqueda se eligen
 en `creative` de `slides.json`.
 

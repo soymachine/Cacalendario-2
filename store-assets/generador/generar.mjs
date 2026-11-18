@@ -10,7 +10,7 @@
 //   o bien  npm i --no-save playwright && npx playwright install chromium
 
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, mkdtempSync, copyFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, mkdtempSync, copyFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -162,6 +162,9 @@ function featureHtml(app, shotPath) {
 const CREATIVE = {
   'apple-header': { w: 3840, h: 1646 },  // 21:9, JPG/PNG
   'apple-search': { w: 3840, h: 2560 },  // 3:2, máximo admitido
+  // Recurso universal: un solo PNG para el hueco combinado "Header and
+  // Search results" (16:9, solo PNG y sin transparencia).
+  'apple-universal': { w: 5244, h: 2950 },
 };
 
 // Móvil con marco, del mismo estilo que las capturas de las fichas.
@@ -198,9 +201,12 @@ function headerHtml(app, shots, { w, h }) {
 
 // Búsqueda: titular corto y tres pantallas grandes que salen por abajo.
 function searchHtml(app, shots, title, { w, h }) {
+  // Las medidas se calculan sobre un 3:2 centrado: en formatos más anchos
+  // (el universal, 16:9) los móviles no crecen hasta salirse por abajo.
+  const base = Math.min(w, 1.5 * h);
   const titleSize = 0.074 * h;
-  const phoneW = 0.255 * w;
-  const gap = 0.045 * w;
+  const phoneW = 0.255 * base;
+  const gap = 0.045 * base;
   const top = 0.27 * h;
   const lefts = [-1, 0, 1].map((k) => w / 2 - phoneW / 2 + k * (phoneW + gap));
   return `<!doctype html><html><head><meta charset="utf-8"><style>${BASE_CSS}${PHONE_CSS}
@@ -212,7 +218,7 @@ function searchHtml(app, shots, title, { w, h }) {
         linear-gradient(170deg, #EEF4FB 0%, #EAF4EE 100%);
     }
     header { position: absolute; top: ${0.065 * h}px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; }
-    .brand { display: flex; align-items: center; gap: ${0.012 * w}px; margin-bottom: ${0.02 * h}px; }
+    .brand { display: flex; align-items: center; gap: ${0.012 * base}px; margin-bottom: ${0.02 * h}px; }
     .brand img { height: ${0.045 * h}px; }
     .brand span { font-size: ${0.036 * h}px; font-weight: 700; color: #274867; letter-spacing: -0.02em; }
     h1 { font-size: ${titleSize}px; font-weight: 700; color: #1F3A53; letter-spacing: -0.02em; text-align: center; }
@@ -239,8 +245,13 @@ async function render(html, w, h, out) {
   await page.evaluate(() => document.fonts.ready);
   await page.waitForLoadState('networkidle');
   mkdirSync(dirname(out), { recursive: true });
-  // JPEG: las tiendas rechazan imágenes con canal alfa
-  await page.screenshot({ path: out, type: 'jpeg', quality: 95 });
+  // JPEG: las tiendas rechazan imágenes con canal alfa. Si se pide PNG (el
+  // recurso universal de Apple), el fondo es opaco y se guarda sin alfa.
+  if (out.endsWith('.png')) {
+    await page.screenshot({ path: out, type: 'png', omitBackground: false });
+  } else {
+    await page.screenshot({ path: out, type: 'jpeg', quality: 95 });
+  }
   await page.close();
 }
 
@@ -250,7 +261,13 @@ for (const [key, app] of Object.entries(config)) {
   app.key = key;
   const capDir = join(ROOT, 'capturas', key);
   const outDir = join(ROOT, 'salida', key);
-  rmSync(outDir, { recursive: true, force: true });
+  // Se vacía la salida salvo iPad/: capturas de iPad ya listas que se dejan
+  // a mano (store-assets/salida/ma/iPad, 2732×2048) y el generador no crea.
+  if (existsSync(outDir)) {
+    for (const entry of readdirSync(outDir)) {
+      if (entry !== 'iPad') rmSync(join(outDir, entry), { recursive: true, force: true });
+    }
+  }
 
   for (const [fmt, size] of Object.entries(FORMATS)) {
     const tablet = size.device === 'tablet';
@@ -286,6 +303,8 @@ for (const [key, app] of Object.entries(config)) {
     if (searchShots.length === 3) {
       const size = CREATIVE['apple-search'];
       await render(searchHtml(app, searchShots, app.creative.searchTitle, size), size.w, size.h, join(outDir, 'apple-search.jpg'));
+      const uni = CREATIVE['apple-universal'];
+      await render(searchHtml(app, searchShots, app.creative.searchTitle, uni), uni.w, uni.h, join(outDir, 'apple-header-search.png'));
     }
   }
   console.log(`✔ ${app.name} → store-assets/salida/${key}/`);
