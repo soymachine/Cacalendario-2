@@ -27,6 +27,14 @@
     "plugins": [
       "expo-apple-authentication",
       "expo-web-browser",
+    [
+      "expo-image-picker",
+      {
+        "photosPermission": "Fluxia Pro usa tus fotos solo si eliges una para la imagen de tu consulta o centro, la que ven tus pacientes en su app.",
+        "cameraPermission": false,
+        "microphonePermission": false
+      }
+    ],
       [
         "expo-splash-screen",
         {
