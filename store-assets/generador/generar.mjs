@@ -298,11 +298,11 @@ for (const [key, app] of Object.entries(config)) {
     const searchShots = pick(app.creative.searchShots);
     if (headerShots.length === 3) {
       const size = CREATIVE['apple-header'];
-      await render(headerHtml(app, headerShots, size), size.w, size.h, join(outDir, 'apple-header.jpg'));
+      await render(headerHtml(app, headerShots, size), size.w, size.h, join(outDir, 'apple-header.png'));
     }
     if (searchShots.length === 3) {
       const size = CREATIVE['apple-search'];
-      await render(searchHtml(app, searchShots, app.creative.searchTitle, size), size.w, size.h, join(outDir, 'apple-search.jpg'));
+      await render(searchHtml(app, searchShots, app.creative.searchTitle, size), size.w, size.h, join(outDir, 'apple-search.png'));
       const uni = CREATIVE['apple-universal'];
       await render(searchHtml(app, searchShots, app.creative.searchTitle, uni), uni.w, uni.h, join(outDir, 'apple-header-search.png'));
     }
