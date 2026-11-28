@@ -289,7 +289,8 @@ for (const [key, app] of Object.entries(config)) {
   const first = join(capDir, app.slides[0].file);
   await render(featureHtml(app, existsSync(first) ? first : null), 1024, 500, join(outDir, 'play-feature-graphic.jpg'));
   // Icono de Google Play (512×512): el de la app
-  copyFileSync(resolve(HERE, app.icon), join(outDir, 'play-icon-512.png'));
+  // (se reescala: los iconos de las apps pueden ser de 1024×1024 y Play pide 512×512)
+  await render(`<!doctype html><html><body style="margin:0"><img src="${fileUrl(resolve(HERE, app.icon))}" style="display:block;width:512px;height:512px"></body></html>`, 512, 512, join(outDir, 'play-icon-512.png'));
 
   // Creative assets de App Store Connect: Header y Search results
   if (app.creative) {
